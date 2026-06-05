@@ -567,13 +567,25 @@ https://live.kh.malimarcdn.com/live/tvk.stream/playlist.m3u8
 https://cdnssc.wewatch.asia/b3A9WTJsa1BUQkZOekl3TmtVeE9UQkRORFEwTWtVNU5UaEdOakZGT1VaR05UYzVORE0wSm5OMFBXeHBkbVVtYzNSNVBXaHNjdyUzZCUzZCZ0b2s9Njk3YmU0ODE1ZWNiNjc2ZjBhNjk2ZTNjNzZhMWRiM2U2YTA5YzYyOCZkZXZpZD1kY2ZhZWZhNzNhNjM4ZGZhMmNjZGM2M2VmNzUyZTVjNw%3D%3D/master.m3u8
 #EXTINF:-1 tvg-id="FreshNews.kh" tvg-logo="https://i.imgur.com/bV6sawt.png" group-title="News",Fresh News (720p)
 http://streaming.freshnewsasia.com:1935/live/myStream/playlist.m3u8
-#EXTINF:-1 tvg-id="MOITV.kh@SD" tvg-logo="https://i.imgur.com/fbI2ybo.png" group-title="Legislative",MOI TV
+
+#EXTINF:-1 tvg-name="Kênh 18 KhmerTV" tvg-logo="https://khmertv.com/wp-content/uploads/2020/12/newlogo.png", KhmerTV
+https://livefta.malimarcdn.com/ftaedge00/khmertv2020.stream/chunklist.m3u8
+
+#EXTINF:-1 tvg-name="Kênh 19 NetLink TV" tvg-logo="https://api.netlinkbroadcaster.com/uploads/netlink_9c548a0a4e.jpg", NetLink TV
+https://netlink.netlinkbroadcaster.com/hls/test.m3u8
+
+#EXTINF:-1 tvg-name="Kênh 20 MOI TV" tvg-logo="https://imgur.com/PSdMe2m.jpg", MOI TV
 http://202.62.56.22:8080/hls/MOITV.m3u8
+
 #EXTINF:-1 tvg-id="SEATV.kh" tvg-logo="https://i.imgur.com/oZPorvg.png" group-title="ប៉ុស្តិ៍ខ្មែរ",SEATV (1080p)
 https://seatv.netlinkbroadcaster.com/hls/test.m3u8
 
-#EXTINF:-1 tvg-id="KHMERTV.KH" tvg-name="KhmerTV" tvg-country="KH" tvg-language="khmer" tvg-logo="" group-title="ប៉ុស្តិ៍ខ្មែរ", Khmer TV
-https://livefta.malimarcdn.com/ftaedge00/khmertv2020.stream/chunklist.m3u8
+EXTINF:-1 tvg-name="Kênh 24 Phim hoạt hình Metfone" tvg-logo="https://img-evg4.tv360.metfone.com.kh/vtc-image/2024/02/16/18/1708082997435/fdcf1f1a18d7_640_360.png", Phim hoạt hình Metfone
+https://live-evg3.tv360.metfone.com.kh/live_hq/14_metfone_cartoon/chunks.m3u8
+
+#EXTINF:-1 tvg-name="Kênh 25 Metfone Film" tvg-logo="https://img-evg4.tv360.metfone.com.kh/vtc-image/2024/02/16/15/1708072464939/777718d546a3_640_360.png", Metfone Film
+https://live-evg3.tv360.metfone.com.kh/live_hq/13_metfone_film/chunks.m3u8
+
 #EXTINF:-1 tvg-id="(no tvg-id)" tvg-name="CTN" tvg-logo="https://static.wikia.nocookie.net/logopedia/images/d/df/CTN_2003.png/revision/latest?cb=20191209085803" group-title="CTN Group",CTN 
 #work-http://103.25.92.30:10016/2.m3u8
 #work-https://live.happywatch99.com/live/ctn_hp99$!24/playlist.m3u8
