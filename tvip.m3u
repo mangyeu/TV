@@ -420,7 +420,7 @@ https://live.fptplay53.net/fnxhd2/davincihd_vhls.smil/chunklist.m3u8
 #https://sgclient.duckdns.org/source/tv360.m3u8?id=9856
 
 #EXTINF:-1 tvg-logo="https://mejav.tv/storage/images/posters/heyzo-3830-co-giao-chan-day-bai-bang-chinh-co-the.webp", HEYZO-3830 Cô giáo Chan dạy bài bằng chính cơ thể 
-https://embed.streamxx.net/stream/5uuvJ1fE1t/main.m3u8
+#https://embed.streamxx.net/stream/5uuvJ1fE1t/main.m3u8
 
 
 #EXTINF:-1 tvg-id="animalhd" group-title="Quốc tế" tvg-logo="https://i.postimg.cc/tCHWwG9R/143.png" catchup="append" catchup-days="2" catchup-source="https://tshift.fptplay.net/dvr/animalplanet_1000.stream/chunks_dvr_range-${start}-${offset}.m3u8", Animal Planet
