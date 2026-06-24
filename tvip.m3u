@@ -83,11 +83,13 @@ https://vpsttt.vietanhtv.top/tv360/tv360.php?id=188
 
 #------------------------------ĐỊA PHƯƠNG-------------------#
 #EXTINF:-1 group-title="Truyền Hình"tvg-logo="https://i.imgur.com/pTVybK6.png",Vĩnh Long 1
-https://livecdn-vthcm-bp.vieon.vn/ceb153215b1dc0441e1ba98a21e1c82e/1782294322000/livetv/group-02/b39935eee4d0c52fd9a5357c4ade8cc2/playlist.m3u8?c=h
+#https://livecdn-vthcm-bp.vieon.vn/ceb153215b1dc0441e1ba98a21e1c82e/1782294322000/livetv/group-02/b39935eee4d0c52fd9a5357c4ade8cc2/playlist.m3u8?c=h
+https://live.fptplay53.net/epzhd2/vinhlong1_vhls.smil/chunklist_b5000000.m3u8
 #EXTINF:-1 group-title="Truyền Hình"tvg-logo="https://i.imgur.com/MsHdGNZ.png",Vĩnh Long 2
 https://live.fptplay53.net/epzhd2/vinhlong2_vhls.smil/chunklist.m3u8
 #EXTINF:-1 group-title="Truyền Hình"tvg-logo="https://i.imgur.com/44c1Yoz.png",Vĩnh Long 3
-https://livecdn-vthcm-bp.vieon.vn/fa1ddda14552f795e1b9ad43a2c8b703/1782294593000/livetv/group-02/d163c8c091b5c937a0b5789d2be251b4/playlist.m3u8?c=h
+#https://livecdn-vthcm-bp.vieon.vn/fa1ddda14552f795e1b9ad43a2c8b703/1782294593000/livetv/group-02/d163c8c091b5c937a0b5789d2be251b4/playlist.m3u8?c=h
+https://live.fptplay53.net/epzhd2/vinhlong3_vhls.smil/chunklist_b5000000.m3u8
 #EXTINF:-1 group-title="Truyền Hình"tvg-logo="https://i.imgur.com/JWDsJxB.png",Vĩnh Long 4
 https://livecdn-vthcm-bp.vieon.vn/a008f386fe2a2c74f2ce872f04d394a6/1782294681000/livetv/group-02/759df25e7b439639ed0c2588b776735b/playlist.m3u8?c=h
 #EXTINF:-1 group-title="Truyền Hình"tvg-logo="http://static3.thvli.vn/assets/thumbnail/2025/08/28/gb1vfh5n_buttonchanels_thvl_2025_sua-1.png",Vĩnh Long 5
