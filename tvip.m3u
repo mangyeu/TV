@@ -180,7 +180,8 @@ https://live.baoquangninh.vn/qtvlive/tv3live.m3u8
 #EXTINF:-1 group-title="Truyền Hình"tvg-logo="https://i.imgur.com/xjkm6Zg.png",Sơn La
 https://live.mediatech.vn/live/28595222e707a364251b8724717894baa46/playlist.m3u8
 #EXTINF:-1 group-title="Truyền Hình"tvg-logo="https://i.imgur.com/UwTCbZ5.png",Thanh Hóa
-https://freem3u.xyz/api/live/play.m3u8?vid=89
+#https://freem3u.xyz/api/live/play.m3u8?vid=89
+https://s3-fpt-cdn.sohatv.vn/live/pull/Y5Kan2X7I7GHo4VN/thth-live/eVc6tyHuFZLQYgmX/337a54767a7233703637564336316a6dde8a4e21a61a532513ae165c43d4a7d93946b209589f8ea1c57a2e15d3408eaba0f217dadd0267cb1f0b2bac0d6ad6cc11f692cc8ada7fc8407de5868097b1101f5c50e00b76ec5905f83e1e9f10aaef7ca671272205608525923cda52d8b6c1718d878f5fc22acb9237e0b59c837326df0d2fdb127370b06d31d49a28f1b19ded3ea0670b3f5c6d106cfd0718a6bffc939be7a18150e6caf007344c5fc4eff3/mobile.m3u8
 #EXTINF:-1 group-title="Truyền Hình"tvg-logo="https://i.imgur.com/qPZeGPa.png",Tuyên Quang
 https://live.fptplay53.net/fnxsd1/tuyenquang_hls.smil/chunklist.m3u8
 #EXTINF:-1 group-title="Truyền Hình"tvg-logo="https://i.imgur.com/QztqOe0.png",An Ninh TV
