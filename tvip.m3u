@@ -96,11 +96,14 @@ https://livecdn-vthcm-bp.vieon.vn/33c9bacc4cc54280f7882ba4e083923c/1782535887000
 #EXTINF:-1 group-title="Truyền Hình"tvg-logo="http://static3.thvli.vn/assets/thumbnail/2025/08/28/gb1vfh5n_buttonchanels_thvl_2025_sua-1.png",Vĩnh Long 5
 https://livecdn-vthcm-bp.vieon.vn/83efafa39ba4dacb382283d323afd0b8/1782452305000/livetv/group-01/4613aed1b1174347f0c42c2296b893da/playlist.m3u8?c=h
 #EXTINF:-1 group-title="Truyền Hình" tvg-logo="https://i.imgur.com/0fGI8cJ.png",Cần Thơ 1
-https://livecdn-vthcm-bp.vieon.vn/577930b2438cec21e6659cc736b13e4e/1782295140000/livetv/group-07/7a3eefa65c1b20d6dbd945adcb41fa46/playlist.m3u8?c=h
+#https://livecdn-vthcm-bp.vieon.vn/c9692b46c14653007d29129e1d17d5b0/1782536526000/livetv/group-07/7a3eefa65c1b20d6dbd945adcb41fa46/playlist.m3u8?c=h
+https://live.canthotv.vn/live/tv/playlist.m3u8
 #EXTINF:-1 group-title="Truyền Hình" tvg-logo="https://i.imgur.com/0fGI8cJ.png",Cần Thơ 2
-https://livecdn-vthcm-bp.vieon.vn/daf3e6c2d2b0b0e66d02820d0d48b5c6/1782295252000/livetv/group-07/5c0ef0a46e5a1e0547f6c844247f8466/playlist.m3u8?c=h
+#https://livecdn-vthcm-bp.vieon.vn/f0f53142ec61378a7dbf16fe1dc899c6/1782536635000/livetv/group-07/5c0ef0a46e5a1e0547f6c844247f8466/playlist.m3u8?c=h
+https://live.canthotv.vn/cs2/live.stream/playlist.m3u8
 #EXTINF:-1 group-title="Truyền Hình" tvg-logo="https://i.imgur.com/0fGI8cJ.png",Cần Thơ 3
-https://live.fptplay53.net/epzsd1/cantho03_hls.smil/chunklist.m3u8
+#https://live.fptplay53.net/epzsd1/cantho03_hls.smil/chunklist.m3u8
+https://live.canthotv.vn/cs3/tv/playlist.m3u8
 #EXTINF:-1 group-title="Truyền Hình" tvg-logo="https://i.imgur.com/0TkI4Ar.png",An Giang 1
 https://live.fptplay53.net/epzsd1/angiang01_hls.smil/chunklist.m3u8
 #EXTINF:-1 group-title="Truyền Hình" tvg-logo="https://i.imgur.com/0TkI4Ar.png",An Giang 2
