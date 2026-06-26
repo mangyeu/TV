@@ -4,13 +4,12 @@
 #https://vtvgolive-ssaimh.vtvdigital.vn/w6St8YpzFQno0iu7xOt6JA/1781119805/manifest/vtv1/master.m3u8
 https://live.fptplay53.net/live/media/vtv1/live247-hls-avc/vtv1.m3u8
 #EXTINF:-1 tvg-logo="https://img-ali1.tv360.vn/image1/2024/12/06/22/1733499750594/3ee337ec7e2b_640_360.png" group-title="VTV",VTV2
-#https://vtvgolive-ssaimh.vtvdigital.vn/PkBByou2ulglDiGAPiyskQ/1781119869/manifest/vtv2/master.m3u8
-#https://live.fptplay53.net/live/media/vtv2/live247-hls-avc/vtv2.m3u8
-https://vtvgoliveapp1-aws-tn.vtvdigital.vn/eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJHLUYzNDQwQThDOUYxIiwiaWF0IjoxNzgyNDM4NzYzLCJleHAiOjE3ODI0NjAzNjN9.yHVQ-uTI_Ox4XC_ncVMlf-5dvjs-np8Jm5HRxm9rqjY/vtv2free/vtv2-endpoint/vtv2.m3u8
+https://live.fptplay53.net/live/media/vtv2/live247-hls-avc/vtv2.m3u8
+
 #EXTINF:-1 tvg-logo="https://img-ali1.tv360.vn/image1/2024/12/06/22/1733499800775/81ec5a1d4242_640_360.png" group-title="VTV",VTV3
 #https://vtvgolive-ssaimh.vtvdigital.vn/oEXdFMJH2j2unFG0ynXajA/1781119889/manifest/vtv3/master.m3u8
-#https://live-a.fptplay53.net/live/media/vtv3/live247-hls-avc/vtv3.m3u8
-https://vtvgoliveapp1-aws-tn.vtvdigital.vn/eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJHLUYzNDQwQThDOUYxIiwiaWF0IjoxNzgyNDM3NjM0LCJleHAiOjE3ODI0NTkyMzR9.Q5710bd2hGg7kIbEYkX2-F5UVnHkc7GC1LyzOFdqEMM/vtv3free/vtv3-endpoint/vtv3.m3u8
+https://live-a.fptplay53.net/live/media/vtv3/live247-hls-avc/vtv3.m3u8
+
 #EXTINF:-1 tvg-logo="https://img-ali1.tv360.vn/image1/2020_09_23/1600822540493/79943158bdd1_640_360.png" group-title="VTV",VTV4
 https://live.fptplay53.net/live/media/vtv4/live247-hls-avc/vtv4.m3u8
 #https://vtvgolive-vtv02.vtvdigital.vn/RHKgLpK_zUyS5LsOuoK9CQ/1782502331/hls/vtv/live/vtv4/free/master.m3u8
@@ -22,10 +21,10 @@ https://vtvgolive-vtv02.vtvdigital.vn/Tzt7ZlpIs9dkoGOai9fHTA/1782503655/hls/vtv/
 #EXTINF:-1 tvg-logo="https://img-ali1.tv360.vn/image1/2024/10/07/13/1728284300790/792061a8f346_640_360.png" group-title="VTV",VTV5 Tây Nguyên
 https://vtvgolive-vtv02.vtvdigital.vn/FX2qLYT98EgvjLz0SQBJhg/1782503554/hls/vtv/live/vtv5tn/free/master.m3u8
 #EXTINF:-1 tvg-id="vtv6hd" group-title="FIFA WORLD CUP 2026" tvg-logo="https://raw.githubusercontent.com/vuminhthanh12/Logo/refs/heads/main/VTV6.png", VTV6
-#https://vtvgolive-ssaimh.vtvdigital.vn/sGlZCErEs8pnh-LK_ZEMfA/1781120474/manifest/vtv6tt/master.m3u8
 #http://fptdat.truongquocvi.com:4022/tqvudp/225.1.2.154:30120
-#https://live-a.fptplay53.net/live/media/vtv6/live247-hls-avc/vtv6.m3u8
-https://vtvgoliveapp1-aws-tn.vtvdigital.vn/eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJHLUYzNDQwQThDOUYxIiwiaWF0IjoxNzgyNDM3NzY0LCJleHAiOjE3ODI0NTkzNjR9.gF826iR9VFouZ6oCyar6Xm2RnoRZ_FubYGjrOV_7vkY/vtv6free/vtv6-endpoint/vtv6.m3u8
+https://live-a.fptplay53.net/live/media/vtv6/live247-hls-avc/vtv6.m3u8
+
+
 #EXTINF:-1 tvg-logo="https://img-ali1.tv360.vn/image1/2020_09_23/1600822556953/09c028dc8443_640_360.png" group-title="VTV",VTV7
 https://vtvgolive-vtv02.vtvdigital.vn/9UrMSfGYf2zKBiL_0GltFQ/1782503733/hls/vtv/live/vtv7/free/master.m3u8
 #EXTINF:-1 tvg-logo="https://img-ali1.tv360.vn/image1/2020_09_21/160069439043/38ef3b4d4000_640_360.png" group-title="VTV",VTV8
