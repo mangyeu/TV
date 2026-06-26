@@ -8,7 +8,8 @@ https://live.fptplay53.net/live/media/vtv1/live247-hls-avc/vtv1.m3u8
 https://live.fptplay53.net/live/media/vtv2/live247-hls-avc/vtv2.m3u8
 #EXTINF:-1 tvg-logo="https://img-ali1.tv360.vn/image1/2024/12/06/22/1733499800775/81ec5a1d4242_640_360.png" group-title="VTV",VTV3
 #https://vtvgolive-ssaimh.vtvdigital.vn/oEXdFMJH2j2unFG0ynXajA/1781119889/manifest/vtv3/master.m3u8
-https://live-a.fptplay53.net/live/media/vtv3/live247-hls-avc/vtv3.m3u8
+#https://live-a.fptplay53.net/live/media/vtv3/live247-hls-avc/vtv3.m3u8
+https://vtvgoliveapp1-aws-tn.vtvdigital.vn/eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJHLUYzNDQwQThDOUYxIiwiaWF0IjoxNzgyNDM3NjM0LCJleHAiOjE3ODI0NTkyMzR9.Q5710bd2hGg7kIbEYkX2-F5UVnHkc7GC1LyzOFdqEMM/vtv3free/vtv3-endpoint/vtv3.m3u8
 #EXTINF:-1 tvg-logo="https://img-ali1.tv360.vn/image1/2020_09_23/1600822540493/79943158bdd1_640_360.png" group-title="VTV",VTV4
 https://vtvgolive-ssaimh.vtvdigital.vn/vKsRVcJ6bLIPJe-M4LLpqA/1781119966/manifest/vtv4/master.m3u8
 #EXTINF:-1 tvg-logo="https://img-ali1.tv360.vn/image1/2023/06/15/08/1686794357811/c08ce385651d_640_360.png" group-title="VTV",VTV5
@@ -20,7 +21,8 @@ https://vtvgolive-ssaimh.vtvdigital.vn/cfcU04ca2eAcKPqsiCRuMA/1781120101/manifes
 #EXTINF:-1 tvg-id="vtv6hd" group-title="FIFA WORLD CUP 2026" tvg-logo="https://raw.githubusercontent.com/vuminhthanh12/Logo/refs/heads/main/VTV6.png", VTV6
 #https://vtvgolive-ssaimh.vtvdigital.vn/sGlZCErEs8pnh-LK_ZEMfA/1781120474/manifest/vtv6tt/master.m3u8
 #http://fptdat.truongquocvi.com:4022/tqvudp/225.1.2.154:30120
-https://live-a.fptplay53.net/live/media/vtv6/live247-hls-avc/vtv6.m3u8
+#https://live-a.fptplay53.net/live/media/vtv6/live247-hls-avc/vtv6.m3u8
+https://vtvgoliveapp1-aws-tn.vtvdigital.vn/eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJHLUYzNDQwQThDOUYxIiwiaWF0IjoxNzgyNDM3NzY0LCJleHAiOjE3ODI0NTkzNjR9.gF826iR9VFouZ6oCyar6Xm2RnoRZ_FubYGjrOV_7vkY/vtv6free/vtv6-endpoint/vtv6.m3u8
 #EXTINF:-1 tvg-logo="https://img-ali1.tv360.vn/image1/2020_09_23/1600822556953/09c028dc8443_640_360.png" group-title="VTV",VTV7
 #https://vtvgolive-ssaimh.vtvdigital.vn/Q3fJmprcj9Nwu0wiRqEubA/1781120162/manifest/vtv7/master.m3u8
 https://live.fptplay53.net/live/media/vtv7/live247-hls-avc/vtv7-avc1_5600000=10000-mp4a_131600=20000.m3u8
