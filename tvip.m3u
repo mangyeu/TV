@@ -12,8 +12,10 @@ https://vtvgoliveapp1-aws-tn.vtvdigital.vn/eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.
 #https://live-a.fptplay53.net/live/media/vtv3/live247-hls-avc/vtv3.m3u8
 https://vtvgoliveapp1-aws-tn.vtvdigital.vn/eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJHLUYzNDQwQThDOUYxIiwiaWF0IjoxNzgyNDM3NjM0LCJleHAiOjE3ODI0NTkyMzR9.Q5710bd2hGg7kIbEYkX2-F5UVnHkc7GC1LyzOFdqEMM/vtv3free/vtv3-endpoint/vtv3.m3u8
 #EXTINF:-1 tvg-logo="https://img-ali1.tv360.vn/image1/2020_09_23/1600822540493/79943158bdd1_640_360.png" group-title="VTV",VTV4
-https://vtvgolive-vtv02.vtvdigital.vn/RHKgLpK_zUyS5LsOuoK9CQ/1782502331/hls/vtv/live/vtv4/free/master.m3u8
+https://live.fptplay53.net/live/media/vtv4/live247-hls-avc/vtv4.m3u8
+#https://vtvgolive-vtv02.vtvdigital.vn/RHKgLpK_zUyS5LsOuoK9CQ/1782502331/hls/vtv/live/vtv4/free/master.m3u8
 #EXTINF:-1 tvg-logo="https://img-ali1.tv360.vn/image1/2023/06/15/08/1686794357811/c08ce385651d_640_360.png" group-title="VTV",VTV5
+#https://live.fptplay53.net/live/media/vtv5/live247-hls-avc/vtv5.m3u8
 https://es15-p3-netcdn.tv360.vn/netcdn-live/194/output/index.m3u8?token=dd501ca8c84d79cda44ff9ee3bdb51a7&wmkid=0&uid=171.243.51.40&minrate=0&maxrate=10000000&timestamp=1782467166
 #EXTINF:-1 tvg-logo="https://img-ali1.tv360.vn/image1/2024/10/07/13/1728284084741/78fe644fb1ff_640_360.png" group-title="VTV",VTV5 Tây Nam Bộ
 https://vtvgolive-vtv02.vtvdigital.vn/Tzt7ZlpIs9dkoGOai9fHTA/1782503655/hls/vtv/live/vtv5tnb/free/master.m3u8
@@ -27,14 +29,14 @@ https://vtvgoliveapp1-aws-tn.vtvdigital.vn/eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.
 #EXTINF:-1 tvg-logo="https://img-ali1.tv360.vn/image1/2020_09_23/1600822556953/09c028dc8443_640_360.png" group-title="VTV",VTV7
 https://vtvgolive-vtv02.vtvdigital.vn/9UrMSfGYf2zKBiL_0GltFQ/1782503733/hls/vtv/live/vtv7/free/master.m3u8
 #EXTINF:-1 tvg-logo="https://img-ali1.tv360.vn/image1/2020_09_21/160069439043/38ef3b4d4000_640_360.png" group-title="VTV",VTV8
+#https://live.fptplay53.net/live/media/vtv8/live-hls-avc/vtv8.m3u8
 https://vtvgolive-vtv02.vtvdigital.vn/A2Bgc0lMc1qTbtBbKXv4XQ/1782503804/hls/vtv/live/vtv8/free/master.m3u8
 #EXTINF:-1 tvg-logo="https://img-ali1.tv360.vn/image1/2020_09_23/1600822568115/7f3b077aabfc_640_360.png" group-title="VTV",VTV9
-https://cdn-live.vtv.vn/i3JpAMsyOUDJlQnxZqsXLw/1782450669/live/vtv9/master.m3u8
+https://live.fptplay53.net/fnxhd1/vtv9hd_vhls.smil/chunklist_b5000000.m3u8
 #EXTINF:-1 tvg-logo="https://img-ali1.tv360.vn/image1/2026/03/30/08/1774833030495/4d4313f52c66_640_360.png" group-title="VTV",VTV10
 https://vtvgolive-vtv02.vtvdigital.vn/CJH3AZ7AeyvwX7rfeM51BQ/1782505053/hls/vtv/live/vtv10/free/master.m3u8
 #EXTINF:-1 tvg-logo="https://img-ali1.tv360.vn/image1/2025/12/05/09/1764903286193/46f72417f718_640_360.png" group-title="VTV",Vietnam Today
-https://ec04-pop3-hht.tv360.vn/bpk-token/ep7ssj67cufsp3nv6mvsf7zje4r76kjh/bpk-tv/448/output/index.m3u8?bkm-query&auth=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.ewogICJleHAiOjE3ODI0Njc1NDYsCiAgImlzcyI6ImJrbSIsCiAgInZlciI6IjEuMCIsCiAgImlhdCI6MTc4MjQ0NTgyNywKICAic3IiOnsKICAgICAidmVyIjoiMi4wIiwKICAgICAic25hIjoiNDQ4X0hMUyIsCiAgICAgInBuYSI6IlZpZXR0ZWwiLAogICAgICJybmEiOiIiLAogICAgICJwbiI6IlBPUC1IQ00tUE9QMyIsCiAgICAgImVuIjoiRURHRS1IQ00tUE9QMyIsCiAgICAgImNjIjoiIiwKICAgICAicmMiOiIiLAogICAgICJhY24iOiJDT1JFLUhDTS1QT1AzIiwKICAgICAiaXNwIjoiTi9BIiwKICAgICAiYXNuIjoiTi9BIiwKICAgICAidnMiOiJCS1M0MDAtUE9QMy0wNF8xNzIuMjQuMTcuNzE6MjAwMDAiLAogICAgICJudCI6Ik9UVCIsCiAgICAgInR0cCI6MCwKICAgICAicGxpZCI6IiIsCiAgICAgInB1aWQiOiIiLAogICAgICJ0ZWlkIjoiIgogIH0sCiAgIm90Ijp7CiAgICAgInRzIjoxNzgyNDQ1ODI3LAogICAgICJ1cmwiOiIvYnBrLXR2LzQ0OC9vdXRwdXQvaW5kZXgubTN1OD9taW5yYXRlPTAmbWF4cmF0ZT0xMDAwMDAwMCIsCiAgICAgInRvayI6ImVwN3NzajY3Y3Vmc3AzbnY2bXZzZjd6amU0cjc2a2poIiwKICAgICAiZXh0IjoiIiwKICAgICAiY2lwIjoiMTAwLjEwMi41LjIwOSIsCiAgICAgImNoayI6IGZhbHNlLAogICAgICJzdHQiOiJOTyIsCiAgICAgImRzY3AiOjAsCiAgICAgInN2Ijp7CiAgICAgICAgImlkIjoiNDQ4X0hMUyIsCiAgICAgICAgInR5cCI6IkxJVkUiCiAgICAgfSwKICAgICAidG8iOnsKICAgICAgICAKICAgICAgICAgCiAgICAgICAgInN1IjowLAogICAgICAgICJyYyI6MTUwCiAgICAgfSwKICAgICAibGF5IjogewogICAgICAibHN0IjpbXSwKICAgICAgIm1heCI6MTAwMDAwMDAsCiAgICAgICJtaW4iOjAKICAgICB9LAogICAgICJyc2giOjAsCiAgICAgInJzaHAiOjEwMCwKICAgICAib2JmIjpmYWxzZSwKICAgICAidGFncyI6e30KICB9Cn0.GgxMfsI2_JXpKO_J8BuLy_uuorPArGE1MPIg9E4oWug
-
+https://live.fptplay53.net/fnxhd1/vntoday_vhls.smil/chunklist.m3u8
 #--------------------VTVCAB--------------------------#
 #EXTINF:-1 tvg-id="onviegiaitri" group-title="VTVcab" tvg-logo="https://img-ali1.tv360.vn/image1/2024/01/02/23/1704211446236/d1503bd3566e_640_360.png", ON Vie Giải Trí
 #EXTVLCOPT:http-user-agent=Dalvik/2.1.0
