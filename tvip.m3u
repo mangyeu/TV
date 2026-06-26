@@ -14,7 +14,7 @@ https://vtvgoliveapp1-aws-tn.vtvdigital.vn/eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.
 #EXTINF:-1 tvg-logo="https://img-ali1.tv360.vn/image1/2020_09_23/1600822540493/79943158bdd1_640_360.png" group-title="VTV",VTV4
 https://vtvgolive-vtv02.vtvdigital.vn/RHKgLpK_zUyS5LsOuoK9CQ/1782502331/hls/vtv/live/vtv4/free/master.m3u8
 #EXTINF:-1 tvg-logo="https://img-ali1.tv360.vn/image1/2023/06/15/08/1686794357811/c08ce385651d_640_360.png" group-title="VTV",VTV5
-https://vtvgolive-vtv02.vtvdigital.vn/9K55x3UkV687e4rZry49Sg/1782502422/hls/vtv/live/vtv5/free/master.m3u8
+https://es15-p3-netcdn.tv360.vn/netcdn-live/194/output/index.m3u8?token=dd501ca8c84d79cda44ff9ee3bdb51a7&wmkid=0&uid=171.243.51.40&minrate=0&maxrate=10000000&timestamp=1782467166
 #EXTINF:-1 tvg-logo="https://img-ali1.tv360.vn/image1/2024/10/07/13/1728284084741/78fe644fb1ff_640_360.png" group-title="VTV",VTV5 Tây Nam Bộ
 https://vtvgolive-vtv02.vtvdigital.vn/TrU1-19YI-1aCumWoNTpOg/1782502480/hls/vtv/live/vtv5tnb/free/master.m3u8
 #EXTINF:-1 tvg-logo="https://img-ali1.tv360.vn/image1/2024/10/07/13/1728284300790/792061a8f346_640_360.png" group-title="VTV",VTV5 Tây Nguyên
@@ -33,7 +33,7 @@ https://vtvgolive-vtv02.vtvdigital.vn/TrU1-19YI-1aCumWoNTpOg/1782502480/hls/vtv/
 #EXTINF:-1 tvg-logo="https://img-ali1.tv360.vn/image1/2026/03/30/08/1774833030495/4d4313f52c66_640_360.png" group-title="VTV",VTV10
 https://vtvgolive-vtv02.vtvdigital.vn/TrU1-19YI-1aCumWoNTpOg/1782502480/hls/vtv/live/vtv5tnb/free/master.m3u8
 #EXTINF:-1 tvg-logo="https://img-ali1.tv360.vn/image1/2025/12/05/09/1764903286193/46f72417f718_640_360.png" group-title="VTV",Vietnam Today
-https://vtvgolive-vtv02.vtvdigital.vn/TrU1-19YI-1aCumWoNTpOg/1782502480/hls/vtv/live/vtv5tnb/free/master.m3u8
+https://vod-evg4.tv360.vn/7NLhGnMHp9AsgpgMvJB-Mw/1782455640/video1/2026/06/19/17/384b3390/1430ba/h264/master.m3u8?uid=1.53.153.39
 
 #--------------------VTVCAB--------------------------#
 #EXTINF:-1 tvg-id="onviegiaitri" group-title="VTVcab" tvg-logo="https://img-ali1.tv360.vn/image1/2024/01/02/23/1704211446236/d1503bd3566e_640_360.png", ON Vie Giải Trí
