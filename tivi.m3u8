@@ -5,7 +5,6 @@
 https://live.fptplay53.net/live/media/vtv1/live247-hls-avc/vtv1.m3u8
 #EXTINF:-1 tvg-logo="https://img-ali1.tv360.vn/image1/2024/12/06/22/1733499750594/3ee337ec7e2b_640_360.png" group-title="VTV",VTV2
 https://live.fptplay53.net/fnxhd1/vtv2hd_vhls.smil/chunklist_b5000000.m3u8
-
 #EXTINF:-1 tvg-logo="https://img-ali1.tv360.vn/image1/2024/12/06/22/1733499800775/81ec5a1d4242_640_360.png" group-title="VTV",VTV3
 https://live.fptplay53.net/fnxhd1/vtv3hd_vhls.smil/chunklist_b5000000.m3u8
 
@@ -19,7 +18,6 @@ https://live.fptplay53.net/live/media/vtv5/live247-hls-avc/vtv5-avc1_5600000=100
 https://vtvgolive-vtv02.vtvdigital.vn/Tzt7ZlpIs9dkoGOai9fHTA/1782503655/hls/vtv/live/vtv5tnb/free/master.m3u8
 #EXTINF:-1 tvg-logo="https://img-ali1.tv360.vn/image1/2024/10/07/13/1728284300790/792061a8f346_640_360.png" group-title="VTV",VTV5 Tây Nguyên
 https://vtvgolive-vtv02.vtvdigital.vn/FX2qLYT98EgvjLz0SQBJhg/1782503554/hls/vtv/live/vtv5tn/free/master.m3u8
-
 #EXTINF:-1 tvg-id="vtv6hd" group-title="FIFA WORLD CUP 2026" tvg-logo="https://raw.githubusercontent.com/vuminhthanh12/Logo/refs/heads/main/VTV6.png", VTV6
 https://live.fptplay53.net/fnxhd1/vtv6hd_vhls.smil/chunklist_b5000000.m3u8
 
