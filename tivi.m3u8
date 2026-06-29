@@ -242,13 +242,10 @@ https://s7771.cdn.mytvnet.vn/pkg20/live_dzones/axn.smil/manifest.mpd
 #KODIPROP:inputstream.adaptive.license_type=clearkey
 #KODIPROP:inputstream.adaptive.license_key={"keys":[{"kty":"oct","k":"6YaPX0c9D9hpnt5I1THCsA","kid":"rLTCNHEGMyetxzLig8CEfw"}],"type":"temporary"}
 https://s2129134.cdn.mytvnet.vn/pkg20/live_dzones/max.smil/manifest.mpd
-
 #EXTINF: -1 tvg-id="Redbull.kh" tvg-logo="https://api.netlinkbroadcaster.com/uploads/Redbull_b83df71b25.jpg" group-title="International TV", RedBull
 https://rbmn-live.akamaized.net/hls/live/590964/BoRB-AT/master_6660.m3u8
-
 #EXTINF: -1 tvg-id="TV.th" tvg-logo="https://upload.wikimedia.org/wikipedia/commons/c/c6/Logo_tv5.png" group-title="Thai TV", TV Thai
 https://639bc5877c5fe.streamlock.net/tv5hdlive/tv5hdlive/playlist.m3u8
-
 #--------------------KHMER--------------------------#
 #EXTINF: -1 tvg-id="ApsaraTV11.kh" tvg-logo="https://i.imgur.com/9wJe71I.png" group-title="Cambodia TV", ApsaraTV11
 https://live.ams.com.kh/app/stream/playlist.m3u8
