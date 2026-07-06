@@ -63,6 +63,27 @@ https://freem3u.xyz/api/live/play.m3u8?vid=188
 #EXTINF:-1 tvg-id="ongolf" group-title="VTVcab" tvg-logo="https://img.lichphatsong.site/logo/on-golf.jpg", On Golf
 https://vpsttt.vietanhtv.top/tv360/tv360.php?id=169
 
+#EXTINF:-1 tvg-id="onsportsplus" group-title="VTVcab" tvg-logo="https://assets-vtvcab.gviet.vn/images/hq/posters/onsportscongmoi1.jpg", ON SPORTS+ 
+#KODIPROP:inputstream=inputstream.adaptive
+#KODIPROP:inputstream.adaptive.manifest_type=dash 
+#KODIPROP:inputstream.adaptive.license_type=clearkey 
+#KODIPROP:inputstream.adaptive.license_key=https://vpsttt.vietanhtv.top/tv/key.php?id=c410ddc6a75244639fd0561fba5ef19b:30d13ea42031b9ff8271e5dc37d90e10 
+https://cdnet-cdn-01.onsports.vn/onplus/HAY_TV/manifest.mpd 
+
+#EXTINF:-1 tvg-id="onfootball" group-title="VTVcab" tvg-logo="https://assets-vtvcab.gviet.vn/images/hq/posters/_ootball_-_opyright_by_cab_logo_202212.jpg", ON FOOTBALL
+#KODIPROP:inputstream=inputstream.adaptive 
+#KODIPROP:inputstream.adaptive.manifest_type=dash 
+#KODIPROP:inputstream.adaptive.license_type=clearkey 
+#KODIPROP:inputstream.adaptive.license_key=https://vpsttt.vietanhtv.top/tv/key.php?id=c410ddc6a75244639fd0561fba5ef19b:30d13ea42031b9ff8271e5dc37d90e10 
+https://cdnet-cdn-01.onsports.vn/onplus/BONGDA_HD/manifest.mpd 
+
+#EXTINF:-1 tvg-id="onsportsnews" group-title="VTVcab" tvg-logo="https://assets-vtvcab.gviet.vn/images/v2/channel/20220613/2022061306/Logo_ONSPORTSNEWS_150x904_1675158858.webp", ON SPORTS NEWS 
+#KODIPROP:inputstream=inputstream.adaptive 
+#KODIPROP:inputstream.adaptive.manifest_type=dash 
+#KODIPROP:inputstream.adaptive.license_type=clearkey 
+#KODIPROP:inputstream.adaptive.license_key=https://vpsttt.vietanhtv.top/tv/key.php?id=c410ddc6a75244639fd0561fba5ef19b:30d13ea42031b9ff8271e5dc37d90e10 
+https://cdnet-cdn-01.onsports.vn/onplus/THETHAO_TINTUC_HD/manifest.mpd
+
 #------------------------------ĐỊA PHƯƠNG-------------------#
 #EXTINF:-1 group-title="Truyền Hình"tvg-logo="https://i.imgur.com/pTVybK6.png",Vĩnh Long 1
 https://freem3u.xyz/api/live/play.m3u8?vid=25
@@ -273,6 +294,14 @@ https://hoiquan.dpdns.org/VTVGo/?sctv20
 #EXTINF:-1 tvg-id="sctv21hd" group-title="SCTV" tvg-logo="https://img.vtvprime.vn/RdeNdMbxoQT-YD6ftVkMaASU1ABNvqODYxkdAQrMYEY/rs:fit:836:468/czM6Ly9wcmQtc24taW1hZ2VzL2NoYW5uZWwvYmI4ZjcyYmItZTM4Mi00ZjU2LTgzMTQtNTlhZTllZDY0NjhjLnBuZw==.png", SCTV21
 #EXTVLCOPT:http-user-agent=Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36
 https://hoiquan.dpdns.org/VTVGo/?sctv21
+
+#EXTINF:-1 tvg-id="sctv22hd" group-title="SCTV" tvg-logo="https://vietanhtv.id.vn/logo/sctv22.png", SCTV22 HD
+#EXTVLCOPT:http-user-agent=Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36
+#KODIPROP:inputstream.adaptive.manifest_type=mpd
+#KODIPROP:inputstream.adaptive.license_type=clearkey
+#KODIPROP:inputstream.adaptive.license_key=https://vpsttt.vietanhtv.top/sctv/cleankey.php?id=sctv22
+https://liveatmvng.vtvprime.vn/live/data8/SCTV22/Live_DASHDRM/SCTV22.mpd
+
 #EXTINF:-1 tvg-id="sctvhdpth" group-title="SCTV" tvg-logo="https://raw.githubusercontent.com/giangnam0201/All-In-One-IPTV/refs/heads/main/logos/sctv/82_51400b18.jpg", SCTV Phim Tổng Hợp
 #EXTVLCOPT:http-user-agent=Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36
 #https://liveh12.vtvprime.vn/hls/SCTVPHIM/03.m3u8
