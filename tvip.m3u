@@ -1,4 +1,4 @@
-#EXTM3U url-tvg="https://vnepg.site/epg.xml.gz"
+#EXTM3U url-tvg="https://vnepg.site/epg.xml"
 #-----------------------Truyền Hình------------------------------#
 #EXTINF:-1 tvg-id="vtv1hd" group-title="📺 VTV" group-logo="https://i.imgur.com/NB53sZL.png" tvg-logo="https://i.imgur.com/EHjW7mC.png",VTV1 HD
 https://live.fptplay53.net/live/media/vtv1/live247-hls-avc/vtv1-avc1_5600000=10000-mp4a_131600=20000.m3u8
@@ -158,7 +158,7 @@ https://freem3u.xyz/api/live/play.m3u8?vid=52
 https://freem3u.xyz/api/live/play.m3u8?vid=83
 #EXTINF:-1 tvg-id="haiphong" group-title="Địa Phương" tvg-logo="https://freem3u.xyz/static/images/diaphuong/haiphong.png", THP HD | TH Hải Phòng
 https://freem3u.xyz/api/live/play.m3u8?vid=60
-#EXTINF:-1 group-title="Truyền Hình"tvg-logo="https://i.imgur.com/iq9JLb9.png",Hải Phòng 3
+#EXTINF:-1 group-title="Truyền Hình"tvg-logo="https://i.imgur.com/FEvJhRf.png",Hải Phòng 3
 https://freem3u.xyz/api/live/play.m3u8?vid=59
 #EXTINF:-1 tvg-id="hungyen" group-title="Địa Phương" tvg-logo="https://freem3u.xyz/static/images/diaphuong/hungyen.png", HY HD | TH Hưng Yên
 https://freem3u.xyz/api/live/play.m3u8?vid=64
@@ -186,7 +186,7 @@ https://freem3u.xyz/api/live/play.m3u8?vid=89
 https://freem3u.xyz/api/live/play.m3u8?vid=92
 #EXTINF:-1 tvg-id="thainguyen" group-title="Địa Phương" tvg-logo="https://freem3u.xyz/static/images/diaphuong/thainguyen.png", TN1 HD | TH Thái Nguyên
 https://freem3u.xyz/api/live/play.m3u8?vid=88
-#EXTINF:-1 group-title="Truyền Hình"tvg-logo="https://i.imgur.com/QztqOe0.png",An Ninh TV
+#EXTINF:-1 group-title="Truyền Hình"tvg-logo="https://i.imgur.com/nOb4rPT.png",An Ninh TV
 https://freem3u.xyz/api/live/play.m3u8?vid=20
 #EXTINF:-1 group-title="Truyền Hình"tvg-logo="https://i.imgur.com/UIGZw0y.png",Quốc Phòng VN
 https://freem3u.xyz/api/live/play.m3u8?vid=19
