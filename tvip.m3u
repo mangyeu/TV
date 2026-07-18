@@ -575,7 +575,7 @@ https://ip.pdtvhd.com/Khmer/streams/CTV8HD.m3u8
 http://43.252.18.195:5080/live/streams/ctv9_hd_playlist.m3u8
 
 #EXTINF:-1 tvg-logo="https://i.imgur.com/lrI4Gf9.png" group-title="Cambodia",Bayon TV (1080p)
-https://cdnssc.wewatch.asia/b3A9WTJsa1BUQkZOekl3TmtVeE9UQkRORFEwTWtVNU5UaEdOakZGT1VaR05UYzVORE0wSm5OMFBXeHBkbVVtYzNSNVBXaHNjdyUzZCUzZCZ0b2s9Njk3YmU0ODE1ZWNiNjc2ZjBhNjk2ZTNjNzZhMWRiM2U2YTA5YzYyOCZkZXZpZD1kY2ZhZWZhNzNhNjM4ZGZhMmNjZGM2M2VmNzUyZTVjNw%3D%3D/master.m3u8
+https://ip.pdtvhd.com/Khmer/streams/Bayonhd.m3u8
 #EXTINF:-1 tvg-id="FreshNews.kh" tvg-logo="https://i.imgur.com/bV6sawt.png" group-title="Cambodia",Fresh News (720p)
 http://streaming.freshnewsasia.com:1935/live/myStream/playlist.m3u8
 
@@ -610,6 +610,8 @@ https://cdnssc.wewatch.asia/b3A9WTJsa1BUQTRNVGRHT1RVMU4wUXhRVFJHUkVRNU9URTJOVEV6
 https://ip.pdtvhd.com/Khmer/streams/ITVHD.m3u8
 #EXTINF:-1 tvg-logo="https://i.postimg.cc/L81tH6zH/unnamed.png" group-title="Cambodia", TOP MUSIC
 https://ip.pdtvhd.com/Khmer/streams/AGGmusic.m3u8
+#EXTINF:-1 tvg-logo="https://i.postimg.cc/2yhLkdGT/c312928b2c77-640-360.png" group-title="Cambodia", Town HD
+https://stream.pdtvhd.com/Sports/streams/town.m3u8
 #EXTINF:-1 tvg-logo="https://i.postimg.cc/mrt0X6hX/BTV.png" group-title="Cambodia", BTV
 https://ip.pdtvhd.com/Khmer/streams/BTVHD.m3u8
 #EXTINF:-1 tvg-logo="https://i.postimg.cc/ZKBq1ncm/logomsj.png" group-title="Cambodia", MSJ TV
@@ -628,3 +630,5 @@ https://restream.pdtvhd.com/memfs/a36ec7de-0eb3-45e2-b1d0-be6dae9338fb.m3u8
 https://ip.pdtvhd.com/Khmer/streams/Comedy.m3u8
 #EXTINF:-1 tvg-logo="https://i.postimg.cc/L8Q80zJw/unnamed.png" group-title="Cambodia", Film khmer
 https://ip.pdtvhd.com/Khmer/streams/SastraFilm.m3u8
+#EXTINF:-1 tvg-logo="https://i.postimg.cc/DwGTZj30/NTV.png" group-title="Cambodia", NTV
+https://stream.pdtvhd.com/LiveApp/streams/ntvhd.m3u8
