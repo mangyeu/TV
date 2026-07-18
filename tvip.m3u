@@ -548,7 +548,7 @@ https://dwamdstream104.akamaized.net/hls/live/2015530/dwstream104/index.m3u8
 #KODIPROP:inputstream.adaptive.license_type=clearkey
 #KODIPROP:inputstream.adaptive.license_key=b6908629732639ada4814a6208296d9c:7ca9bf03623f77b5e2f16df0b53f274d
 https://s129135.cdn.mytvnet.vn/pkg20/live_dzones/tlc.smil/manifest.mpd
-#EXTINF: -1 tvg-id="Redbull.kh" tvg-logo="https://api.netlinkbroadcaster.com/uploads/Redbull_b83df71b25.jpg" group-title="International TV", RedBull
+#EXTINF: -1 tvg-id="Redbull.kh" tvg-logo="https://i.postimg.cc/X7HBDbP7/Redbull.png" group-title="International TV", RedBull
 https://rbmn-live.akamaized.net/hls/live/590964/BoRB-AT/master_6660.m3u8
 #EXTINF: -1 tvg-id="TV.th" tvg-logo="https://upload.wikimedia.org/wikipedia/commons/c/c6/Logo_tv5.png" group-title="Thai TV", TV Thai
 https://639bc5877c5fe.streamlock.net/tv5hdlive/tv5hdlive/playlist.m3u8
@@ -570,30 +570,23 @@ https://live-evg3.tv360.metfone.com.kh/live_hq/13_metfone_film/chunks.m3u8
 http://206.189.93.160:1935/live/myStream_720p/chunklist.m3u8
 #EXTINF:-1 tvg-id="CTV8HD.kh@SD" tvg-logo="https://i.imgur.com/yrdr4Po.png" group-title="Cambodia",CTV8 HD
 #https://server.dtvhd.com/memfs/92d5968d-1b58-486d-a1ba-7b5a3f21c16c.m3u8
+https://ip.pdtvhd.com/Khmer/streams/CTV8HD.m3u8
 #EXTINF:-1 tvg-id="CTV9.kh" tvg-logo="https://i.imgur.com/jgVJt2G.png" group-title="Undefined",CTV 9
 http://43.252.18.195:5080/live/streams/ctv9_hd_playlist.m3u8
 
-# Khmer Channel #
-
-#EXTINF:-9 player-buffer="50" tvg-id="BayonTV.kh" tvg-name="Bayon TV (1080p)" tvg-logo="https://i.imgur.com/lrI4Gf9.png" group-title="Bayon TV Group",Bayon TV (1080p)
+#EXTINF:-1 tvg-id="BayonTV.kh" tvg-name="Bayon TV (1080p)" tvg-logo="https://i.imgur.com/lrI4Gf9.png" group-title="Bayon TV Group",Bayon TV (1080p)
 https://cdnssc.wewatch.asia/b3A9WTJsa1BUQkZOekl3TmtVeE9UQkRORFEwTWtVNU5UaEdOakZGT1VaR05UYzVORE0wSm5OMFBXeHBkbVVtYzNSNVBXaHNjdyUzZCUzZCZ0b2s9Njk3YmU0ODE1ZWNiNjc2ZjBhNjk2ZTNjNzZhMWRiM2U2YTA5YzYyOCZkZXZpZD1kY2ZhZWZhNzNhNjM4ZGZhMmNjZGM2M2VmNzUyZTVjNw%3D%3D/master.m3u8
 #EXTINF:-1 tvg-id="FreshNews.kh" tvg-logo="https://i.imgur.com/bV6sawt.png" group-title="News",Fresh News (720p)
 http://streaming.freshnewsasia.com:1935/live/myStream/playlist.m3u8
 
 #EXTINF:-1 tvg-id="SEATV.kh" tvg-logo="https://i.imgur.com/oZPorvg.png" group-title="ប៉ុស្តិ៍ខ្មែរ",SEATV (1080p)
 https://seatv.netlinkbroadcaster.com/hls/test.m3u8
-#EXTVLCOPT:http-user-agent=WeWatch/1.7.4 (Linux;Android 11) ExoPlayerLib/2.13.2
+
 #EXTINF:-1 tvg-id="TV5Cambodia.kh" tvg-logo="https://i.imgur.com/iMZLyoX.png" group-title="ប៉ុស្តិ៍ខ្មែរ",TV5 Cambodia
-#http://203.176.130.123:8989/live/tv5_480k.stream/playlist.m3u8
-#https://live.kh.malimarcdn.com/live/tv5.stream/playlist.m3u8
-#http://203.80.165.14/stream/channelid/1998895537?profile=pass
-#https://live-evg3.tv360.metfone.com.kh/live/tv5.m3u8
-#https://live.kh.malimarcdn.com/live/tv5.stream/chunklist.m3u8
-#https://cdnssc.wewatch.asia/b3A9WTJsa1BVRkRPRFl5UmpGR1JFVTBRVFE0TVVZNVJVRkJPRU13TnpFd1JFRXpSRGt4Sm5OMFBXeHBkbVVtYzNSNVBXaHNjdyUzZCUzZCZ0b2s9Njk3YmU0ODE1ZWNiNjc2ZjBhNjk2ZTNjNzZhMWRiM2U2YTA5YzYyOCZkZXZpZD1kY2ZhZWZhNzNhNjM4ZGZhMmNjZGM2M2VmNzUyZTVjNw%3D%3D/auto_h264_master.m3u8
-#https://live-evg13.tv360.metfone.com.kh/live/tv5.m3u8
-#http://clive.malisresidences.com:1935/tv5/_definst_/smil:tv5.smil/chunklist_w1949580210_b1800000_sleng.m3u8
-https://wwkhhome.wewatch.asia/nl.m3u8?id=TV5
-#EXTINF:-1 tvg-id="TVK2.kh" tvg-logo="https://i.imgur.com/FYqvxUM.png" group-title="TVK",TVK 2 (720p)
+#https://wwkhhome.wewatch.asia/nl.m3u8?id=TV5
+https://ip.pdtvhd.com/Khmer/streams/CTV5.m3u8
+
+#EXTINF:-1 tvg-id="TVK2.kh" tvg-logo="https://i.postimg.cc/9FWD6GSM/2222.png" group-title="TVK",TVK 2 (720p)
 https://live.kh.malimarcdn.com/live/tvk2.stream/playlist.m3u8
 #EXTINF:-1 tvg-id="TVK.kh" tvg-logo="https://i.imgur.com/5hPxjcl.png" group-title="TVK",TVK (720p)
 https://live.kh.malimarcdn.com/live/tvk.stream/playlist.m3u8
@@ -613,4 +606,12 @@ https://cdnssc.wewatch.asia/b3A9WTJsa1BUVTRNa0pDTWtRNE1UYzVORFEzT1VOQ05VRkZRak13
 #http://43.245.34.8:9000/OneTV/MYTV.m3u8
 https://cdnssc.wewatch.asia/b3A9WTJsa1BUQTRNVGRHT1RVMU4wUXhRVFJHUkVRNU9URTJOVEV6TkRaQk5qY3dOakV4Sm5OMFBXeHBkbVVtYzNSNVBXaHNjdyUzZCUzZCZ0b2s9Njk3YmU0ODE1ZWNiNjc2ZjBhNjk2ZTNjNzZhMWRiM2U2YTA5YzYyOCZkZXZpZD1kY2ZhZWZhNzNhNjM4ZGZhMmNjZGM2M2VmNzUyZTVjNw%3D%3D/master.m3u8
 #EXTINF:-1 tvg-id="iTVHD.kh@SD" tvg-logo="https://i.imgur.com/qIPvw8N.jpg" group-title="Entertainment",iTV HD
-https://live.eac-news.com/Khmer/streams/ITVHD.m3u8
+#https://live.eac-news.com/Khmer/streams/ITVHD.m3u8
+https://ip.pdtvhd.com/Khmer/streams/ITVHD.m3u8
+#EXTINF:-1 tvg-logo="https://i.postimg.cc/L81tH6zH/unnamed.png", TOP MUSIC
+https://ip.pdtvhd.com/Khmer/streams/AGGmusic.m3u8
+#EXTINF:-1 tvg-logo="https://i.postimg.cc/mrt0X6hX/BTV.png", BTV
+https://ip.pdtvhd.com/Khmer/streams/BTVHD.m3u8
+#EXTINF:-1 tvg-logo="https://i.postimg.cc/ZKBq1ncm/logomsj.png", MSJ TV
+https://live.msjtv.com/live/streams/playlist.m3u8
+
