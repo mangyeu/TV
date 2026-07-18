@@ -556,50 +556,50 @@ https://639bc5877c5fe.streamlock.net/tv5hdlive/tv5hdlive/playlist.m3u8
 #--------------------KHMER--------------------------#
 #EXTINF: -1 tvg-id="ApsaraTV11.kh" tvg-logo="https://i.imgur.com/9wJe71I.png" group-title="Cambodia TV", ApsaraTV11
 https://live.ams.com.kh/app/stream/playlist.m3u8
-#EXTINF:-1 tvg-name="Kênh 18 KhmerTV" tvg-logo="https://khmertv.com/wp-content/uploads/2020/12/newlogo.png", KhmerTV
+#EXTINF:-1 tvg-name="Kênh 18 KhmerTV" tvg-logo="https://khmertv.com/wp-content/uploads/2020/12/newlogo.png" group-title="Cambodia", KhmerTV
 https://livefta.malimarcdn.com/ftaedge00/khmertv2020.stream/chunklist.m3u8
-#EXTINF:-1 tvg-name="Kênh 19 NetLink TV" tvg-logo="https://netlinkbroadcaster.com/wp-content/uploads/2025/03/broadcasting_Service.webp", NetLink TV
+#EXTINF:-1 tvg-name="Kênh 19 NetLink TV" tvg-logo="https://netlinkbroadcaster.com/wp-content/uploads/2025/03/broadcasting_Service.webp" group-title="Cambodia", NetLink TV
 https://netlink.netlinkbroadcaster.com/hls/test.m3u8
-#EXTINF:-1 tvg-name="Kênh 20 MOI TV" tvg-logo="https://imgur.com/PSdMe2m.jpg", MOI TV
+#EXTINF:-1 tvg-name="Kênh 20 MOI TV" tvg-logo="https://imgur.com/PSdMe2m.jpg" group-title="Cambodia", MOI TV
 http://202.62.56.22:8080/hls/MOITV.m3u8
-#EXTINF:-1 tvg-name="Kênh 24 Phim hoạt hình Metfone" tvg-logo="https://img-evg4.tv360.metfone.com.kh/vtc-image/2024/02/16/18/1708082997435/fdcf1f1a18d7_640_360.png", Metfone Anime
+#EXTINF:-1 tvg-name="Kênh 24 Phim hoạt hình Metfone" tvg-logo="https://img-evg4.tv360.metfone.com.kh/vtc-image/2024/02/16/18/1708082997435/fdcf1f1a18d7_640_360.png" group-title="Cambodia", Metfone Anime
 https://live-evg3.tv360.metfone.com.kh/live_hq/14_metfone_cartoon/chunks.m3u8
-#EXTINF:-1 tvg-name="Kênh 25 Metfone Film" tvg-logo="https://img-evg4.tv360.metfone.com.kh/vtc-image/2024/02/16/15/1708072464939/777718d546a3_640_360.png", Metfone Film
+#EXTINF:-1 tvg-name="Kênh 25 Metfone Film" tvg-logo="https://img-evg4.tv360.metfone.com.kh/vtc-image/2024/02/16/15/1708072464939/777718d546a3_640_360.png" group-title="Cambodia", Metfone Film
 https://live-evg3.tv360.metfone.com.kh/live_hq/13_metfone_film/chunks.m3u8
-#EXTINF:0 tvg-country="KH" tvg-logo="https://i.imgur.com/rnV0Ui1.png" group-title="Khmer",WIKI TV
+#EXTINF:0 tvg-country="KH" tvg-logo="https://i.imgur.com/rnV0Ui1.png" group-title="Cambodia",WIKI TV
 http://206.189.93.160:1935/live/myStream_720p/chunklist.m3u8
 #EXTINF:-1 tvg-id="CTV8HD.kh@SD" tvg-logo="https://i.imgur.com/yrdr4Po.png" group-title="Cambodia",CTV8 HD
 #https://server.dtvhd.com/memfs/92d5968d-1b58-486d-a1ba-7b5a3f21c16c.m3u8
 https://ip.pdtvhd.com/Khmer/streams/CTV8HD.m3u8
-#EXTINF:-1 tvg-id="CTV9.kh" tvg-logo="https://i.imgur.com/jgVJt2G.png" group-title="Undefined",CTV 9
+#EXTINF:-1 tvg-id="CTV9.kh" tvg-logo="https://i.imgur.com/jgVJt2G.png" group-title="Cambodia",CTV 9
 http://43.252.18.195:5080/live/streams/ctv9_hd_playlist.m3u8
 
-#EXTINF:-1 tvg-id="BayonTV.kh" tvg-name="Bayon TV (1080p)" tvg-logo="https://i.imgur.com/lrI4Gf9.png" group-title="Bayon TV Group",Bayon TV (1080p)
+#EXTINF:-1 tvg-logo="https://i.imgur.com/lrI4Gf9.png" group-title="Cambodia",Bayon TV (1080p)
 https://cdnssc.wewatch.asia/b3A9WTJsa1BUQkZOekl3TmtVeE9UQkRORFEwTWtVNU5UaEdOakZGT1VaR05UYzVORE0wSm5OMFBXeHBkbVVtYzNSNVBXaHNjdyUzZCUzZCZ0b2s9Njk3YmU0ODE1ZWNiNjc2ZjBhNjk2ZTNjNzZhMWRiM2U2YTA5YzYyOCZkZXZpZD1kY2ZhZWZhNzNhNjM4ZGZhMmNjZGM2M2VmNzUyZTVjNw%3D%3D/master.m3u8
-#EXTINF:-1 tvg-id="FreshNews.kh" tvg-logo="https://i.imgur.com/bV6sawt.png" group-title="News",Fresh News (720p)
+#EXTINF:-1 tvg-id="FreshNews.kh" tvg-logo="https://i.imgur.com/bV6sawt.png" group-title="Cambodia",Fresh News (720p)
 http://streaming.freshnewsasia.com:1935/live/myStream/playlist.m3u8
 
-#EXTINF:-1 tvg-id="SEATV.kh" tvg-logo="https://i.imgur.com/oZPorvg.png" group-title="ប៉ុស្តិ៍ខ្មែរ",SEATV (1080p)
+#EXTINF:-1 tvg-id="SEATV.kh" tvg-logo="https://i.imgur.com/oZPorvg.png" group-title="Cambodia",SEATV (1080p)
 https://seatv.netlinkbroadcaster.com/hls/test.m3u8
 
-#EXTINF:-1 tvg-id="TV5Cambodia.kh" tvg-logo="https://i.imgur.com/iMZLyoX.png" group-title="ប៉ុស្តិ៍ខ្មែរ",TV5 Cambodia
+#EXTINF:-1 tvg-id="TV5Cambodia.kh" tvg-logo="https://i.imgur.com/iMZLyoX.png" group-title="Cambodia",TV5 Cambodia
 #https://wwkhhome.wewatch.asia/nl.m3u8?id=TV5
 https://ip.pdtvhd.com/Khmer/streams/CTV5.m3u8
 
-#EXTINF:-1 tvg-id="TVK2.kh" tvg-logo="https://i.postimg.cc/9FWD6GSM/2222.png" group-title="TVK",TVK 2 (720p)
+#EXTINF:-1 tvg-id="TVK2.kh" tvg-logo="https://i.postimg.cc/9FWD6GSM/2222.png" group-title="Cambodia",TVK 2 (720p)
 https://live.kh.malimarcdn.com/live/tvk2.stream/playlist.m3u8
-#EXTINF:-1 tvg-id="TVK.kh" tvg-logo="https://i.imgur.com/5hPxjcl.png" group-title="TVK",TVK (720p)
+#EXTINF:-1 tvg-id="TVK.kh" tvg-logo="https://i.postimg.cc/xds5mfzX/kkkk.png" group-title="Cambodia",TVK (720p)
 https://live.kh.malimarcdn.com/live/tvk.stream/playlist.m3u8
 #http://43.245.34.8:9000/OneTV/TVK.m3u8
 
-#EXTINF:-1 tvg-id="(no tvg-id)" tvg-name="CTN" tvg-logo="https://static.wikia.nocookie.net/logopedia/images/d/df/CTN_2003.png/revision/latest?cb=20191209085803" group-title="CTN Group",CTN 
+#EXTINF:-1 tvg-id="(no tvg-id)" tvg-name="CTN" tvg-logo="https://static.wikia.nocookie.net/logopedia/images/d/df/CTN_2003.png/revision/latest?cb=20191209085803" group-title="Cambodia",CTN 
 #work-http://103.25.92.30:10016/2.m3u8
 #work-https://live.happywatch99.com/live/ctn_hp99$!24/playlist.m3u8
 https://cdnssc.wewatch.asia/b3A9WTJsa1BUVTRNa0pDTWtRNE1UYzVORFEzT1VOQ05VRkZRak13UlRnMk1VTXdPVFV6Sm5OMFBXeHBkbVVtYzNSNVBXaHNjdyUzZCUzZCZ0b2s9Njk3YmU0ODE1ZWNiNjc2ZjBhNjk2ZTNjNzZhMWRiM2U2YTA5YzYyOCZkZXZpZD1kY2ZhZWZhNzNhNjM4ZGZhMmNjZGM2M2VmNzUyZTVjNw%3D%3D/master.m3u8
 #http://live.happywatch99.com/livehd10/02587745dbd71d978954203d7ec78497.sdp/playlist.m3u8
 #http://43.245.34.8:9000/OneTV/CTN.m3u8
 #http://43.252.18.195:5080/live/streams/ctntv.m3u8
-#EXTINF:-1 tvg-id="(no tvg-id)" tvg-name="MYTV" tvg-logo="https://static.wikia.nocookie.net/logopedia/images/b/b1/MYTV_2008.png/revision/latest?cb=20191209085802" group-title="CTN Group",MYTV 
+#EXTINF:-1 tvg-id="(no tvg-id)" tvg-name="MYTV" tvg-logo="https://static.wikia.nocookie.net/logopedia/images/b/b1/MYTV_2008.png/revision/latest?cb=20191209085802" group-title="Cambodia",MYTV 
 #http://103.25.92.30:10018/2.m3u8
 #https://cdnssc.wewatch.asia/b3A9WTJsa1BURkZRemxDUkVKRk5VVkdSalE0T1VRNE56RkdOa0kxTURoRVFqWkVNMFU1Sm5OMFBXeHBkbVVtYzNSNVBXUmhjMmclM2QmdG9rPTY5N2JlNDgxNWVjYjY3NmYwYTY5NmUzYzc2YTFkYjNlNmEwOWM2MjgmZGV2aWQ9ZGNmYWVmYTczYTYzOGRmYTJjY2RjNjNlZjc1MmU1Yzc%3D/auto_h264.mpd
 #http://live.happywatch99.com/livehd11/90ecf35382a7597e553200692c3fc384.sdp/playlist.m3u8
@@ -614,4 +614,13 @@ https://ip.pdtvhd.com/Khmer/streams/AGGmusic.m3u8
 https://ip.pdtvhd.com/Khmer/streams/BTVHD.m3u8
 #EXTINF:-1 tvg-logo="https://i.postimg.cc/ZKBq1ncm/logomsj.png" group-title="Cambodia", MSJ TV
 https://live.msjtv.com/live/streams/playlist.m3u8
-
+#EXTINF:-1 tvg-logo="https://i.postimg.cc/1544QCDb/12.png" group-title="Cambodia", CATV
+https://live.happywatch99.com/ppdhdtv/0c00b89a106bb365ec031b28fa3ae499.sdp/playlist.m3u8
+#EXTINF:-1 tvg-logo="https://i.postimg.cc/wBcmKBhZ/logo.png" group-title="Cambodia", B2B
+https://stream.mekongtv.net/livemp4/B2BChannel.stream/chunklist_w1580825333.m3u8
+#EXTINF:-1 tvg-logo="https://i.postimg.cc/sD0mjNqj/16.png" group-title="Cambodia", Netflix Khmer
+https://ip.pdtvhd.com/Khmer/streams/Netflix.m3u8
+#EXTINF:-1 tvg-logo="https://i.postimg.cc/MKkR9JCD/17.png" group-title="Cambodia", Khmer Movie
+https://ip.pdtvhd.com/Khmer/streams/AGGmovie.m3u8
+#EXTINF:-1 tvg-logo="https://i.postimg.cc/JnfKHgwq/New-Project.png" group-title="Cambodia", Sbm News
+https://restream.pdtvhd.com/memfs/a36ec7de-0eb3-45e2-b1d0-be6dae9338fb.m3u8
