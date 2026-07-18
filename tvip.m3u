@@ -157,7 +157,7 @@ https://freem3u.xyz/api/live/play.m3u8?vid=48
 #EXTINF:-1 tvg-id="dienbien" group-title="Địa Phương" tvg-logo="https://freem3u.xyz/static/images/diaphuong/dienbien.png", ĐTV | TH Điện Biên
 https://freem3u.xyz/api/live/play.m3u8?vid=52
 #EXTINF:-1 tvg-id="hatinh" group-title="Địa Phương" tvg-logo="https://freem3u.xyz/static/images/diaphuong/hatinh_new.png", BHTTV HD | TH Hà Tĩnh
-https://freem3u.xyz/api/live/play.m3u8?vid=83
+https://freem3u.xyz/api/live/play.m3u8?vid=58
 #EXTINF:-1 tvg-id="haiphong" group-title="Địa Phương" tvg-logo="https://freem3u.xyz/static/images/diaphuong/haiphong.png", THP HD | TH Hải Phòng
 https://freem3u.xyz/api/live/play.m3u8?vid=60
 #EXTINF:-1 group-title="Truyền Hình"tvg-logo="https://i.imgur.com/FEvJhRf.png",Hải Phòng 3
