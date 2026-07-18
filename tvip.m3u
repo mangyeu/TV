@@ -554,7 +554,7 @@ https://rbmn-live.akamaized.net/hls/live/590964/BoRB-AT/master_6660.m3u8
 https://639bc5877c5fe.streamlock.net/tv5hdlive/tv5hdlive/playlist.m3u8
 
 #--------------------KHMER--------------------------#
-#EXTINF: -1 tvg-id="ApsaraTV11.kh" tvg-logo="https://i.imgur.com/9wJe71I.png" group-title="Cambodia TV", ApsaraTV11
+#EXTINF: -1 tvg-id="ApsaraTV11.kh" tvg-logo="https://i.imgur.com/9wJe71I.png" group-title="Cambodia", ApsaraTV11
 https://live.ams.com.kh/app/stream/playlist.m3u8
 #EXTINF:-1 tvg-name="Kênh 18 KhmerTV" tvg-logo="https://khmertv.com/wp-content/uploads/2020/12/newlogo.png" group-title="Cambodia", KhmerTV
 https://livefta.malimarcdn.com/ftaedge00/khmertv2020.stream/chunklist.m3u8
@@ -614,8 +614,8 @@ https://ip.pdtvhd.com/Khmer/streams/AGGmusic.m3u8
 https://ip.pdtvhd.com/Khmer/streams/BTVHD.m3u8
 #EXTINF:-1 tvg-logo="https://i.postimg.cc/ZKBq1ncm/logomsj.png" group-title="Cambodia", MSJ TV
 https://live.msjtv.com/live/streams/playlist.m3u8
-#EXTINF:-1 tvg-logo="https://i.postimg.cc/1544QCDb/12.png" group-title="Cambodia", CATV
-https://live.happywatch99.com/ppdhdtv/0c00b89a106bb365ec031b28fa3ae499.sdp/playlist.m3u8
+#EXTINF:-1 tvg-logo="https://i.postimg.cc/1XQTKjsZ/15.png" group-title="Cambodia", CATV
+https://live.happywatch99.com/kaahdtv/0c00b89a106bb365ec031b28fa3ae499.sdp/playlist.m3u8
 #EXTINF:-1 tvg-logo="https://i.postimg.cc/wBcmKBhZ/logo.png" group-title="Cambodia", B2B
 https://stream.mekongtv.net/livemp4/B2BChannel.stream/chunklist_w1580825333.m3u8
 #EXTINF:-1 tvg-logo="https://i.postimg.cc/sD0mjNqj/16.png" group-title="Cambodia", Netflix Khmer
@@ -624,3 +624,7 @@ https://ip.pdtvhd.com/Khmer/streams/Netflix.m3u8
 https://ip.pdtvhd.com/Khmer/streams/AGGmovie.m3u8
 #EXTINF:-1 tvg-logo="https://i.postimg.cc/JnfKHgwq/New-Project.png" group-title="Cambodia", Sbm News
 https://restream.pdtvhd.com/memfs/a36ec7de-0eb3-45e2-b1d0-be6dae9338fb.m3u8
+#EXTINF:-1 tvg-logo="https://i.postimg.cc/0yMnH1Zm/9.png" group-title="Cambodia", Comedy
+https://ip.pdtvhd.com/Khmer/streams/Comedy.m3u8
+#EXTINF:-1 tvg-logo="https://i.postimg.cc/L8Q80zJw/unnamed.png" group-title="Cambodia", Film khmer
+https://ip.pdtvhd.com/Khmer/streams/SastraFilm.m3u8
