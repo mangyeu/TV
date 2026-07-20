@@ -581,8 +581,8 @@ http://streaming.freshnewsasia.com:1935/live/myStream/playlist.m3u8
 https://seatv.netlinkbroadcaster.com/hls/test.m3u8
 
 #EXTINF:-1 tvg-id="TV5Cambodia.kh" tvg-logo="https://i.imgur.com/iMZLyoX.png" group-title="Cambodia",TV5 Cambodia
-#https://wwkhhome.wewatch.asia/nl.m3u8?id=TV5
-https://ip.pdtvhd.com/Khmer/streams/CTV5.m3u8
+https://wwkhhome.wewatch.asia/nl.m3u8?id=TV5
+#https://ip.pdtvhd.com/Khmer/streams/CTV5.m3u8
 
 #EXTINF:-1 tvg-id="TVK2.kh" tvg-logo="https://i.postimg.cc/9FWD6GSM/2222.png" group-title="Cambodia",TVK 2 (720p)
 https://live.kh.malimarcdn.com/live/tvk2.stream/playlist.m3u8
@@ -590,19 +590,11 @@ https://live.kh.malimarcdn.com/live/tvk2.stream/playlist.m3u8
 https://live.kh.malimarcdn.com/live/tvk.stream/playlist.m3u8
 #http://43.245.34.8:9000/OneTV/TVK.m3u8
 
-#EXTINF:-1 tvg-id="(no tvg-id)" tvg-name="CTN" tvg-logo="https://static.wikia.nocookie.net/logopedia/images/d/df/CTN_2003.png/revision/latest?cb=20191209085803" group-title="Cambodia",CTN 
-#work-http://103.25.92.30:10016/2.m3u8
-#work-https://live.happywatch99.com/live/ctn_hp99$!24/playlist.m3u8
-https://cdnssc.wewatch.asia/b3A9WTJsa1BUVTRNa0pDTWtRNE1UYzVORFEzT1VOQ05VRkZRak13UlRnMk1VTXdPVFV6Sm5OMFBXeHBkbVVtYzNSNVBXaHNjdyUzZCUzZCZ0b2s9Njk3YmU0ODE1ZWNiNjc2ZjBhNjk2ZTNjNzZhMWRiM2U2YTA5YzYyOCZkZXZpZD1kY2ZhZWZhNzNhNjM4ZGZhMmNjZGM2M2VmNzUyZTVjNw%3D%3D/master.m3u8
-#http://live.happywatch99.com/livehd10/02587745dbd71d978954203d7ec78497.sdp/playlist.m3u8
-#http://43.245.34.8:9000/OneTV/CTN.m3u8
-#http://43.252.18.195:5080/live/streams/ctntv.m3u8
-#EXTINF:-1 tvg-id="(no tvg-id)" tvg-name="MYTV" tvg-logo="https://static.wikia.nocookie.net/logopedia/images/b/b1/MYTV_2008.png/revision/latest?cb=20191209085802" group-title="Cambodia",MYTV 
-#http://103.25.92.30:10018/2.m3u8
-#https://cdnssc.wewatch.asia/b3A9WTJsa1BURkZRemxDUkVKRk5VVkdSalE0T1VRNE56RkdOa0kxTURoRVFqWkVNMFU1Sm5OMFBXeHBkbVVtYzNSNVBXUmhjMmclM2QmdG9rPTY5N2JlNDgxNWVjYjY3NmYwYTY5NmUzYzc2YTFkYjNlNmEwOWM2MjgmZGV2aWQ9ZGNmYWVmYTczYTYzOGRmYTJjY2RjNjNlZjc1MmU1Yzc%3D/auto_h264.mpd
-#http://live.happywatch99.com/livehd11/90ecf35382a7597e553200692c3fc384.sdp/playlist.m3u8
-#http://43.245.34.8:9000/OneTV/MYTV.m3u8
-https://cdnssc.wewatch.asia/b3A9WTJsa1BUQTRNVGRHT1RVMU4wUXhRVFJHUkVRNU9URTJOVEV6TkRaQk5qY3dOakV4Sm5OMFBXeHBkbVVtYzNSNVBXaHNjdyUzZCUzZCZ0b2s9Njk3YmU0ODE1ZWNiNjc2ZjBhNjk2ZTNjNzZhMWRiM2U2YTA5YzYyOCZkZXZpZD1kY2ZhZWZhNzNhNjM4ZGZhMmNjZGM2M2VmNzUyZTVjNw%3D%3D/master.m3u8
+#EXTINF:-1 tvg-id="(no tvg-id)" tvg-name="CTN" tvg-logo="https://i.imgur.com/r523kOq.png" group-title="Cambodia",CTN 
+https://live.happywatch99.com/ctnhdtv/c83cc584a878608f6b36a9717bd7a8ab.sdp/playlist.m3u8
+#EXTINF:-1 tvg-id="(no tvg-id)" tvg-name="MYTV" tvg-logo="https://i.postimg.cc/Nj76hg2h/13-400-import.png" group-title="Cambodia",MYTV 
+https://live.happywatch99.com/mytvhdtv/c83cc584a878608f6b36a9717bd7a8ab.sdp/playlist.m3u8
+
 #EXTINF:-1 tvg-id="iTVHD.kh@SD" tvg-logo="https://i.imgur.com/qIPvw8N.jpg" group-title="Cambodia",iTV HD
 #https://live.eac-news.com/Khmer/streams/ITVHD.m3u8
 https://ip.pdtvhd.com/Khmer/streams/ITVHD.m3u8
@@ -628,5 +620,10 @@ https://restream.pdtvhd.com/memfs/a36ec7de-0eb3-45e2-b1d0-be6dae9338fb.m3u8
 https://ip.pdtvhd.com/Khmer/streams/Comedy.m3u8
 #EXTINF:-1 tvg-logo="https://i.postimg.cc/L8Q80zJw/unnamed.png" group-title="Cambodia", Film khmer
 https://ip.pdtvhd.com/Khmer/streams/SastraFilm.m3u8
+#EXTINF:-1 tvg-logo="https://i.postimg.cc/m2sJhzHn/Chinese-Drama.png" group-title="Cambodia", Chinese Drama
+https://ip.pdtvhd.com/Sports/streams/Chinese.m3u8
+#EXTINF:-1 tvg-logo="https://i.postimg.cc/wB7bnDCc/Korean-Drama.png" group-title="Cambodia", KOREAN DRAMA
+https://ip.pdtvhd.com/Sports/streams/Korean.m3u8
 #EXTINF:-1 tvg-logo="https://i.postimg.cc/DwGTZj30/NTV.png" group-title="Cambodia", NTV
 https://stream.pdtvhd.com/LiveApp/streams/ntvhd.m3u8
+
