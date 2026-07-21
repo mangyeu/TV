@@ -29,7 +29,7 @@ https://live.fptplay53.net/live/media/v10abr/live247-hls-avc/v10abr-avc1_5600000
 https://live.fptplay53.net/fnxhd1/vntoday_vhls.smil/chunklist.m3u8
 
 #--------------------VTVCAB--------------------------#
-#EXTINF:-1 tvg-id="onviegiaitri" group-title="VTVcab" tvg-logo="https://i.imgur.com/eqZMYx0.png", ON Việt Giải Trí
+#EXTINF:-1 tvg-id="onviegiaitri" group-title="VTVcab" tvg-logo="https://i.imgur.com/7GSKm46.png", ON Việt Giải Trí
 https://freem3u.xyz/api/live/play.m3u8?vid=180
 #EXTINF:-1 tvg-id="onphimviet" group-title="VTVcab" tvg-logo="https://vietanhtv.id.vn/logo/onphimviet.png", ON Phim Việt
 #EXTVLCOPT:http-user-agent=Dalvik/2.1.0
