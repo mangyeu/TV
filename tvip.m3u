@@ -613,7 +613,8 @@ https://ip.pdtvhd.com/Khmer/streams/ITVHD.m3u8
 #EXTINF:-1 tvg-logo="https://i.postimg.cc/L81tH6zH/unnamed.png" group-title="Cambodia", TOP MUSIC
 https://ip.pdtvhd.com/Khmer/streams/AGGmusic.m3u8
 #EXTINF:-1 tvg-logo="https://i.postimg.cc/2yhLkdGT/c312928b2c77-640-360.png" group-title="Cambodia", Town HD
-https://stream.pdtvhd.com/Sports/streams/town.m3u8
+#https://stream.pdtvhd.com/Sports/streams/town.m3u8
+https://myip.pdtvhd.com/LiveApp/streams/Townfullhd.m3u8
 #EXTINF:-1 tvg-logo="https://i.postimg.cc/mrt0X6hX/BTV.png" group-title="Cambodia", BTV
 https://ip.pdtvhd.com/Khmer/streams/BTVHD.m3u8
 #EXTINF:-1 tvg-logo="https://i.postimg.cc/ZKBq1ncm/logomsj.png" group-title="Cambodia", MSJ TV
