@@ -593,8 +593,8 @@ http://streaming.freshnewsasia.com:1935/live/myStream/playlist.m3u8
 https://seatv.netlinkbroadcaster.com/hls/test.m3u8
 
 #EXTINF:-1 tvg-id="TV5Cambodia.kh" tvg-logo="https://i.imgur.com/iMZLyoX.png" group-title="Cambodia",TV5 Cambodia
-#https://wwkhhome.wewatch.asia/nl.m3u8?id=TV5
-https://ip.pdtvhd.com/Khmer/streams/CTV5.m3u8
+https://wwkhhome.wewatch.asia/nl.m3u8?id=TV5
+#https://myip.pdtvhd.com/LiveApp/streams/TV5HD.m3u8
 
 #EXTINF:-1 tvg-id="TVK2.kh" tvg-logo="https://i.postimg.cc/9FWD6GSM/2222.png" group-title="Cambodia",TVK 2 (720p)
 https://live.kh.malimarcdn.com/live/tvk2.stream/playlist.m3u8
