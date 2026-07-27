@@ -642,7 +642,8 @@ https://ip.pdtvhd.com/Sports/streams/Chinese.m3u8
 #EXTINF:-1 tvg-logo="https://i.postimg.cc/wB7bnDCc/Korean-Drama.png" group-title="Cambodia", KOREAN DRAMA
 https://ip.pdtvhd.com/Sports/streams/Korean.m3u8
 #EXTINF:-1 tvg-logo="https://i.postimg.cc/DwGTZj30/NTV.png" group-title="Cambodia", NTV
-https://stream.pdtvhd.com/LiveApp/streams/ntvhd.m3u8
+#https://stream.pdtvhd.com/LiveApp/streams/ntvhd.m3u8
+http://43.252.18.195:5080/LiveApp/streams/ntvhd.m3u8
 
 #EXTINF:-1 tvg-logo="https://i.postimg.cc/vTyPFx1b/4.png", ARDB TV
 https://ardbtv.ardb.com.kh:8443/tv-live/tv-online.m3u8
