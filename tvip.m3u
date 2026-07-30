@@ -21,7 +21,6 @@ https://vips-livecdn.fptplay.net/live/media/vtv7/live247-hls-avc/vtv7-avc1_56000
 #EXTINF:-1 tvg-id="vtv8hd" group-title="📺 VTV" tvg-logo="https://i.imgur.com/tjA1fU8.png",VTV8 HD
 https://vips-livecdn.fptplay.net/live/media/vtv8/live247-hls-avc/vtv8-avc1_5600000=10000-mp4a_131600=20000.m3u8
 #EXTINF:-1 tvg-id="vtv9hd" group-title="📺 VTV" tvg-logo="https://i.imgur.com/rUeimhI.png",VTV9 HD
-#https://freem3u.xyz/api/live/play.m3u8?vid=8
 https://live.fptplay53.net/live/media/v9abr/live247-hls-avc/v9abr-avc1_5600000=10000-mp4a_140800_vie=20000.m3u8
 #EXTINF:-1 tvg-id="vtv10hd" group-title="📺 VTV" tvg-logo="https://i.imgur.com/n1VZWPh.png",VTV10 HD
 https://vips-livecdn.fptplay.net/live/media/vtv10/live247-hls-avc/vtv10-avc1_5600000=10000-mp4a_131600=20000.m3u8
