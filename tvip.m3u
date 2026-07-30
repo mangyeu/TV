@@ -62,8 +62,11 @@ https://freem3u.xyz/api/live/play.m3u8?vid=179
 #EXTINF:-1 tvg-id="onlife" group-title="VTVcab" tvg-logo="https://vietanhtv.id.vn/logo/onlife.png", On Life
 https://freem3u.xyz/api/live/play.m3u8?vid=188
 #EXTINF:-1 tvg-id="ongolf" group-title="VTVcab" tvg-logo="https://vietanhtv.id.vn/logo/ongolf.png", On Golf
-#https://vpsttt.vietanhtv.top/tv360/tv360.php?id=169
-https://HaNoiIPTV.short.gy/HaNoiIPTV-ON_Golf_du_phong
+#KODIPROP:inputstream=inputstream.adaptive 
+#KODIPROP:inputstream.adaptive.manifest_type=dash 
+#KODIPROP:inputstream.adaptive.license_type=clearkey 
+#KODIPROP:inputstream.adaptive.license_key=https://vpsttt.vietanhtv.top/tv/key.php?id=c410ddc6a75244639fd0561fba5ef19b:30d13ea42031b9ff8271e5dc37d90e10 
+https://cdnet-cdn-01.onsports.vn/onplus/THETHAO_GOLF_HD/manifest.mpd
 
 EXTM3U url-tvg="https://vnepg.site/epg.xml" m3uautoload=1 
 #EXTINF:-1 tvg-id="onsports" group-title="VTV/VTVcab" tvg-logo="https://vietanhtv.id.vn/logo/onsports.png", ON SPORTS 
