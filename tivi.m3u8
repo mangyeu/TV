@@ -167,9 +167,9 @@ https://freem3u.xyz/api/live/play.m3u8?vid=89
 https://freem3u.xyz/api/live/play.m3u8?vid=92
 #EXTINF:-1 tvg-id="thainguyen" group-title="Địa phương" tvg-logo="https://i.imgur.com/P3pbab8.png", TN1 HD | TH Thái Nguyên
 https://freem3u.xyz/api/live/play.m3u8?vid=88
-#EXTINF:-1 tvg-id="antvhd" group-title="🌐| Thiết yếu" tvg-logo="https://i.imgur.com/nOb4rPT.png",An Ninh TV
+#EXTINF:-1 tvg-id="antvhd" group-title="Địa phương" tvg-logo="https://i.imgur.com/nOb4rPT.png",An Ninh TV
 https://freem3u.xyz/api/live/play.m3u8?vid=20
-#EXTINF:-1 tvg-id="qpvnhd" group-title="🌐| Thiết yếu" tvg-logo="https://i.imgur.com/UIGZw0y.png",Quốc Phòng VN
+#EXTINF:-1 tvg-id="qpvnhd" group-title="Địa phương" tvg-logo="https://i.imgur.com/UIGZw0y.png",Quốc Phòng VN
 https://freem3u.xyz/api/live/play.m3u8?vid=19
 
 #-----------------------------HTV&HTVC----------------------#
