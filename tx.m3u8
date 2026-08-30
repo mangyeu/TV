@@ -685,7 +685,13 @@ https://2607.senlin2026.com/20260722/fgUzCS06/index.m3u8
 #EXTINF:-1 tvg-logo="",HEYZO-3122-FHD
 https://2607.senlin2026.com/20260729/deU5ef46/index.m3u8
 
-##--------@@---------------SDMM---------------@@----------##
+##--------@@---------------SDMM------6a3fe8184ec34bd5a610ec71a93249fc---------@@----------##
+#EXTINF:-1 tvg-logo="https://files.iw01.xyz/covers/217910/400.webp?token_v2=C-G6Lxxq3l6t1IpcBxcyPQGPo_Cp2RnmmUesb7OZBX4&expires=1788103778&ip=171.243.50.42",ADN-802
+https://www.av01.media/api/v1/videos/217910/manifest/master.m3u8?hb=1eb36a902a7d766a
+#EXTINF:-1 tvg-logo="https://files.iw01.xyz/covers/217919/800.webp?token_v2=EjlrE2T9HNQtQ-2U4NxhX-_YITQY4Era4Ybmcqi-ZeI&expires=1788104737&ip=171.243.50.42",WAAA-682
+https://www.av01.media/api/v1/videos/217919/manifest/master.m3u8?hb=ae393e91f26152ff
+
+
 #EXTINF:-1 tvg-logo="https://fourhoi.mrstcdn.store/sdmm-234-uncensored-leak/cover-n.jpg",SDMM-234 The Magic Mirror
 https://surrit.mrstcdn.store/b6b9f893-a562-4593-a529-0760efc1feaa/playlist.m3u8
 #EXTINF:-1 tvg-logo="https://fourhoi.mrstcdn.store/sdmu-802-uncensored-leak/cover-n.jpg",SDMU-802 Magic Mirror
@@ -695,8 +701,8 @@ https://surrit.mrstcdn.store/38610895-bb1e-438b-bb3b-8d037549e149/playlist.m3u8
 
 ##---------------------------group-title="Sumire Kuramoto"-------------------------------##
 #EXTINF:-1 tvg-logo="https://fourhoi.mrstcdn.store/hmn-870-uncensored-leak/cover-n.jpg" group-title="Sumire Kuramoto",HMN-870
-https://surrit.mrstcdn.store/161da80b-90ac-44c9-b0d3-35153fc2fada/playlist.m3u8
-
+#https://surrit.mrstcdn.store/161da80b-90ac-44c9-b0d3-35153fc2fada/playlist.m3u8
+https://www.av01.media/api/v1/videos/213314/manifest/master.m3u8?hb=2d3d1980cb0c78ca
 #EXTINF:-1 tvg-logo="https://fourhoi.mrstcdn.store/mudr-383-uncensored-leak/cover-n.jpg" group-title="Sumire Kuramoto",MUDR-383
 https://surrit.mrstcdn.store/0f414bd6-a15c-49e2-9128-887e172f5867/playlist.m3u8
 
