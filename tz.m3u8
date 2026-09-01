@@ -1,45 +1,55 @@
 #EXTM3U
 ##---------------SANA MATSUNAGA-----group-title="SANA MATSUNAGA"-----------###
-#EXTINF:-1 tvg-logo="https://fourhoi.mrstcdn.store/juy-762/cover-n.jpg" group-title="SANA MATSUNAGA",JUY-762 Sana matsunaga
-https://cdn.turboviplay.com/data3/6a2820299e44c/6a2820299e44c.m3u8
-#EXTINF:-1 tvg-logo="https://pics.dmm.co.jp/digital/video/nsps00864/nsps00864pl.jpg" group-title="SANA MATSUNAGA",Mosaic NSPS-864
-https://cdn.turboviplay.com/data3/68e5cf312b772/68e5cf312b772.m3u8
-#EXTINF:-1 tvg-logo="https://image.mgstage.com/images/prestige/abp/591/pb_e_abp-591.jpg" group-title="SANA MATSUNAGA",Mosaic ABP-591
-https://cdn.turboviplay.com/data3/68e80ddbae166/68e80ddbae166.m3u8
-#EXTINF:-1 tvg-logo="https://pics.dmm.co.jp/digital/video/13gvg00854/13gvg00854pl.jpg" group-title="SANA MATSUNAGA",Mosaic GVG-854
+#EXTINF:-1 tvg-logo="https://pics.dmm.co.jp/digital/video/juy00762/juy00762pl.jpg" group-title="SANA MATSUNAGA",JUY-762 Sana matsunaga
+https://hanerix.com/stream/goGHjSajeqk0Az6hrcADRQ/kjhhiuahiuhgihdf/1788315008/72699673/master.m3u8
+#EXTINF:-1 tvg-logo="https://pics.dmm.co.jp/digital/video/nsps00864/nsps00864pl.jpg" group-title="SANA MATSUNAGA",NSPS-864
+https://vibuxer.com/stream/UKbZPtyt_kILfBK5Snhv3w/kjhhiuahiuhgihdf/1788315095/61233809/master.m3u8
+#EXTINF:-1 tvg-logo="https://image.mgstage.com/images/prestige/abp/591/pb_e_abp-591.jpg" group-title="SANA MATSUNAGA",ABP-591
+https://hanerix.com/stream/usKyXURsIlioAUnfqIVxhA/kjhhiuahiuhgihdf/1788315224/61345251/master.m3u8
+#EXTINF:-1 tvg-logo="https://pics.dmm.co.jp/digital/video/13gvg00854/13gvg00854pl.jpg" group-title="SANA MATSUNAGA",GVG-854
 https://audinifer.com/stream/rEQ1lnOiJYgACmMnRkzO9w/kjhhiuahiuhgihdf/1788313162/61232974/master.m3u8
-#EXTINF:-1 tvg-logo="https://pics.javhd.today/videos/tmb/000/351/464/1.jpg" group-title="SANA MATSUNAGA",Mosaic ONEZ-202
+#EXTINF:-1 tvg-logo="https://pics.javhd.today/videos/tmb/000/351/464/1.jpg" group-title="SANA MATSUNAGA",ONEZ-202
 https://streambeast.upn.one/hlsmod/p16-ad-site-sign-sg.tiktokcdn.com/UAH2e1nHtF91RFlrVHwsWA/9dz/yg6kbewl/3e35ol/tt/master.m3u8?v=1766826492
-#EXTINF:-1 tvg-logo="https://pics.dmm.co.jp/digital/video/nsps00885/nsps00885pl.jpg" group-title="SANA MATSUNAGA",Mosaic NSPS-885
-https://cdn.turboviplay.com/data3/68e5dbac3e9aa/68e5dbac3e9aa.m3u8
+#EXTINF:-1 tvg-logo="https://pics.dmm.co.jp/digital/video/nsps00885/nsps00885pl.jpg" group-title="SANA MATSUNAGA",NSPS-885
+https://hanerix.com/stream/gIyQG1OLLw3weBG13pNCOA/kjhhiuahiuhgihdf/1788315392/61235273/master.m3u8
 #EXTINF:-1 tvg-logo="https://pics.dmm.co.jp/digital/video/ipx00173/ipx00173pl.jpg" group-title="SANA MATSUNAGA",IPX-173
 https://hanerix.com/stream/AGwuqQ5iZpv3Kros-IFDkw/kjhhiuahiuhgihdf/1788313382/37826790/master.m3u8
-#EXTINF:-1 tvg-logo="https://pics.dmm.co.jp/mono/movie/adult/bijn165/bijn165pl.jpg" group-title="SANA MATSUNAGA",Mosaic BIJN-165
+#EXTINF:-1 tvg-logo="https://pics.dmm.co.jp/mono/movie/adult/bijn165/bijn165pl.jpg" group-title="SANA MATSUNAGA",BIJN-165
 https://vibuxer.com/stream/qUlgOisWSRWhAMsnCOLGfg/kjhhiuahiuhgihdf/1788313593/58700564/master.m3u8
-#EXTINF:-1 tvg-logo="https://image.mgstage.com/images/prestige/abp/643/pb_e_abp-643.jpg" group-title="SANA MATSUNAGA",Mosaic ABP-643
+#EXTINF:-1 tvg-logo="https://image.mgstage.com/images/prestige/abp/643/pb_e_abp-643.jpg" group-title="SANA MATSUNAGA",ABP-643
 https://audinifer.com/stream/ogZ72Iuq9NxDKgvJW97UkA/kjhhiuahiuhgihdf/1788313690/60243927/master.m3u8
-#EXTINF:-1 tvg-logo="https://image.mgstage.com/images/prestige/abp/655/pb_e_abp-655.jpg" group-title="SANA MATSUNAGA",Mosaic ABP-655 
+#EXTINF:-1 tvg-logo="https://image.mgstage.com/images/prestige/abp/655/pb_e_abp-655.jpg" group-title="SANA MATSUNAGA",ABP-655 
 https://audinifer.com/stream/FqPF2zI-tSiLiOCEDcreRg/kjhhiuahiuhgihdf/1788313801/60244701/master.m3u8
-#EXTINF:-1 tvg-logo="https://image.mgstage.com/images/prestige/abp/571/pb_e_abp-571.jpg" group-title="SANA MATSUNAGA",Mosaic ABP-571
+#EXTINF:-1 tvg-logo="https://image.mgstage.com/images/prestige/abp/571/pb_e_abp-571.jpg" group-title="SANA MATSUNAGA",ABP-571
 https://audinifer.com/stream/WaRmutOnlDzMptJmWbjwKw/kjhhiuahiuhgihdf/1788314091/59907679/master.m3u8
+#EXTINF:-1 tvg-logo="https://image.mgstage.com/images/prestige/abp/580/pb_e_abp-580.jpg" group-title="SANA MATSUNAGA",ABP-580
+https://ryderjet.com/stream/EPHPJ-qMyf2pyUkMp-9oGA/hjkrhuihghfvu/1788316477/26664396/master.m3u8
+#EXTINF:-1 tvg-logo="https://image.mgstage.com/images/prestige/abp/550/pb_e_abp-550.jpg" group-title="SANA MATSUNAGA",ABP-550
+https://hanerix.com/stream/DHWnxyi63r4Qyq1QZ6Ayfg/kjhhiuahiuhgihdf/1788316678/59806975/master.m3u8
+#EXTINF:-1 tvg-logo="https://image.mgstage.com/images/prestige/abp/562/pb_e_abp-562.jpg" group-title="SANA MATSUNAGA",ABP-562 
+https://audinifer.com/stream/jjw0fs_f-IotgLR8Az1D5Q/kjhhiuahiuhgihdf/1788316865/58796986/master.m3u8
+#EXTINF:-1 tvg-logo="https://image.mgstage.com/images/prestige/abp/633/pb_e_abp-633.jpg" group-title="SANA MATSUNAGA",FC2-PPV-1035938-Imanaga Sana ABP-633 
+https://vibuxer.com/stream/XHixUjs552Nb3E9f2uwlxw/kjhhiuahiuhgihdf/1788317023/65720851/master.m3u8
+#EXTINF:-1 tvg-logo="https://cdna.sextb.net/thumb/20212709/1635982835.jpg" group-title="SANA MATSUNAGA",ABP-541
+https://ryderjet.com/stream/vVkpZ0IQcmqAB2_-sateQA/hjkrhuihghfvu/1788317506/31689010/master.m3u8
+#EXTINF:-1 tvg-logo="https://pics.dmm.co.jp/mono/movie/adult/ipx190/ipx190pl.jpg" group-title="SANA MATSUNAGA",IPX-190
+https://hanerix.com/stream/8lgv3XlHVxa8zl6iflHnDA/kjhhiuahiuhgihdf/1788315873/38113090/master.m3u8
+#EXTINF:-1 tvg-logo="https://pics.dmm.co.jp/mono/movie/adult/ipx156/ipx156pl.jpg" group-title="SANA MATSUNAGA",IPX-156 Matsunaga SANADA
+https://hanerix.com/stream/fhygljupUxj-SzhUJIg5ig/kjhhiuahiuhgihdf/1788316081/37592807/master.m3u8
+
 
 #EXTINF:-1 tvg-logo="https://pics.javhd.today/videos/tmb/000/323/638/1.jpg",Mosaic Chinese Pukupudo-064
 https://cloudwish.xyz/stream/wVBtv3IPOhBdIQGPlW9rkw/kjhhiuahiuhgihdf/1788157864/69469005/master.m3u8
 #EXTINF:-1 tvg-logo="https://pics.javhd.today/videos/tmb/000/275/014/1.jpg",Mosaic Kumen-010
 https://mycloudz.cc/stream/BpFPTRPT6uvxWhfH8sIXCA/hjkrhuihghfvu/1788167389/26665714/master.m3u8
 
-
-
 #EXTINF:-1 tvg-logo="https://pics.javhd.today/videos/tmb/000/211/471/1.jpg",Mosaic T28-572
 https://cloudwish.xyz/stream/bCxrdlR8kGOHgyFx6aj5tg/kjhhiuahiuhgihdf/1788162874/22330481/master.m3u8
-#EXTINF:-1 tvg-logo="https://pics.javhd.today/videos/tmb/000/275/027/1.jpg",Mosaic ABP-580
-https://mycloudz.cc/stream/KPV_zK9Y_SNoL192-sIkBw/hjkrhuihghfvu/1788163169/26664396/master.m3u8
-#EXTINF:-1 tvg-logo="https://pics.javhd.today/videos/tmb/000/286/151/1.jpg",Mosaic ABP-562 
-https://cloudwish.xyz/stream/If4mGLabBSl6ac8SoU0Uow/kjhhiuahiuhgihdf/1788163471/58796986/master.m3u8
+
+
 #EXTINF:-1 tvg-logo="https://pics.javhd.today/videos/tmb/000/274/203/1.jpg",Mosaic NHDTB-317
 https://mycloudz.cc/stream/VjGZpyGj-wQLtaY_Rhd8HA/hjkrhuihghfvu/1788165175/26801731/master.m3u8
-#EXTINF:-1 tvg-logo="https://pics.javhd.today/videos/tmb/000/288/071/1.jpg",Mosaic ABP-541
-https://mycloudz.cc/stream/WJLIY6p2Rl9E99IV_MUAJw/hjkrhuihghfvu/1788166225/31689010/master.m3u8
+
 #EXTINF:-1 tvg-logo="https://pics.javhd.today/videos/tmb/000/281/755/1.jpg",Mosaic CESD-759
 https://cloudwish.xyz/stream/CBGllhV1k4z2IhNWyJOOSw/kjhhiuahiuhgihdf/1788166388/58989302/master.m3u8
 #EXTINF:-1 tvg-logo="https://pics.javhd.today/videos/tmb/000/285/930/1.jpg",Mosaic AQSH-040
@@ -58,14 +68,10 @@ https://cloudwish.xyz/stream/Ahl6Zo6ihfmlREJWZaaPzg/kjhhiuahiuhgihdf/1788152739/
 #EXTINF:-1 tvg-logo="https://fourhoi.mrstcdn.store/adn-190-uncensored-leak/cover-n.jpg",ADN-190
 https://surrit.mrstcdn.store/faf12b23-c906-4937-9245-5d7826276115/playlist.m3u8
 
-#EXTINF:-1 tvg-logo="https://fourhoi.mrstcdn.store/ipx-156-uncensored-leak/cover-n.jpg",Mosaic IPX-156 Matsunaga SANADA
-#https://surrit.mrstcdn.store/dff45714-7f16-4cbb-b11c-4a6c63f7a77f/playlist.m3u8
-https://cloudwish.xyz/stream/FWjEYjMf-1SlI5ikw-HOLA/kjhhiuahiuhgihdf/1788153146/37592807/master.m3u8
-#EXTINF:-1 tvg-logo="https://fourhoi.mrstcdn.store/ipx-126-uncensored-leak/cover-n.jpg",IPX-126
+
+#EXTINF:-1 tvg-logo="https://pics.dmm.co.jp/mono/movie/adult/ipx126/ipx126pl.jpg",IPX-126
 https://surrit.mrstcdn.store/ee8bad89-627b-44a0-8342-d6fb2efeeceb/playlist.m3u8
-#EXTINF:-1 tvg-logo="https://fourhoi.mrstcdn.store/ipx-190-uncensored-leak/cover-n.jpg",IPX-190
-#https://surrit.mrstcdn.store/2ab5bba3-5ad9-45cd-a648-ce80cdbe6738/playlist.m3u8
-https://mycloudz.cc/stream/MUiDRq85qfxthOPzr9DI-A/hjkrhuihghfvu/1788164763/11196783/master.m3u8
+
 #EXTINF:-1 tvg-logo="https://fourhoi.mrstcdn.store/atid-312-uncensored-leak/cover-n.jpg",ATID-312
 #https://surrit.mrstcdn.store/e6d6fa72-9344-400f-8415-f9705f207301/playlist.m3u8
 https://mycloudz.cc/stream/A3G3Ft3k5QKf1EiELLMMTQ/hjkrhuihghfvu/1788163825/26150723/master.m3u8
@@ -78,12 +84,8 @@ https://surrit.mrstcdn.store/8afd74d2-2d13-4e78-a2ae-70864389fb29/playlist.m3u8
 https://surrit.mrstcdn.store/ca09a20b-d9d4-4d9b-baf0-b08880ed3af6/playlist.m3u8
 #EXTINF:-1 tvg-logo="https://fourhoi.mrstcdn.store/maan-358/cover-n.jpg",MAAN-358
 https://surrit.mrstcdn.store/7d08acab-7e20-4662-8953-8cc7e8ac6954/playlist.m3u8
-#EXTINF:-1 tvg-logo="https://fourhoi.mrstcdn.store/abp-550-uncensored-leak/cover-n.jpg",ABP-550
-#https://surrit.mrstcdn.store/529b4ffd-e80c-436d-a0f7-5391b20ea1cf/playlist.m3u8
-https://cloudwish.xyz/stream/qgpCYp4c7MekrC01axmz_g/kjhhiuahiuhgihdf/1788165384/59806975/master.m3u8
-#EXTINF:-1 tvg-logo="https://fourhoi.mrstcdn.store/fc2-ppv-1035938/cover-n.jpg",FC2-PPV-1035938-Imanaga Sana ABP-633 
-#https://surrit.mrstcdn.store/d5a0219e-33e9-40e0-a508-258016767ff4/playlist.m3u8
-https://mycloudz.cc/stream/1DhmochfUfC1o1KOnd0JAg/hjkrhuihghfvu/1788165533/2345969/master.m3u8
+
+
 
 #EXTINF:-1 tvg-logo="https://pics.javhd.today/videos/tmb/000/280/207/1.jpg",Mosaic PPPD-746
 https://mycloudz.cc/stream/NPIl8cShk5xUaG67hLRZ9g/hjkrhuihghfvu/1788197146/24941591/master.m3u8
