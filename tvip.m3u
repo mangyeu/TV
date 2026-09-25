@@ -619,8 +619,8 @@ https://cdnssc.wewatch.asia/b3A9WTJsa1BUQTRNVGRHT1RVMU4wUXhRVFJHUkVRNU9URTJOVEV6
 http://tv.cootel.com.kh:8077/streams/d/MyTV/playlist.m3u8
 
 #EXTINF:-1 tvg-id="iTVHD.kh@SD" tvg-logo="https://i.imgur.com/qIPvw8N.jpg" group-title="Cambodia",iTV HD
-https://live.eac-news.com/Khmer/streams/ITVHD.m3u8
-##https://ip.pdtvhd.com/Khmer/streams/ITVHD.m3u8
+#https://live.eac-news.com/Khmer/streams/ITVHD.m3u8
+https://ip.pdtvhd.com/Khmer/streams/ITVHD.m3u8
 #EXTINF:-1 tvg-logo="https://i.postimg.cc/L81tH6zH/unnamed.png" group-title="Cambodia", TOP MUSIC
 #https://ip.pdtvhd.com/Khmer/streams/AGGmusic.m3u8
 
@@ -636,8 +636,9 @@ https://live.msjtv.com/live/streams/playlist.m3u8
 https://live.happywatch99.com/kaahdtv/0c00b89a106bb365ec031b28fa3ae499.sdp/playlist.m3u8
 #EXTINF:-1 tvg-logo="https://i.postimg.cc/wBcmKBhZ/logo.png" group-title="Cambodia", B2B
 https://stream.mekongtv.net/livemp4/B2BChannel.stream/chunklist_w1580825333.m3u8
-#EXTINF:-1 tvg-logo="https://i.postimg.cc/sD0mjNqj/16.png" group-title="Cambodia", Netflix Khmer
-https://ip.pdtvhd.com/Khmer/streams/Netflix.m3u8
+#EXTINF:-1 tvg-logo="https://i.postimg.cc/jSyHtKN1/New-Project1.png" group-title="Cambodia", Netflix Khmer
+#https://ip.pdtvhd.com/Khmer/streams/Netflix.m3u8
+https://live.eac-news.com/live/streams/KHBOXMAX.m3u8
 #EXTINF:-1 tvg-logo="https://i.postimg.cc/MKkR9JCD/17.png" group-title="Cambodia", Khmer Movie
 https://ip.pdtvhd.com/Khmer/streams/AGGmovie.m3u8
 #EXTINF:-1 tvg-logo="https://i.postimg.cc/JnfKHgwq/New-Project.png" group-title="Cambodia", Sbm News
