@@ -557,7 +557,7 @@ https://639bc5877c5fe.streamlock.net/tv5hdlive/tv5hdlive/playlist.m3u8
 #--------------------KHMER--------------------------#
 #EXTINF: -1 tvg-id="ApsaraTV11.kh" tvg-logo="https://i.imgur.com/9wJe71I.png" group-title="Cambodia", ApsaraTV11
 https://live.ams.com.kh/app/stream/playlist.m3u8
-#EXTINF:-1 tvg-name="Kênh 18 KhmerTV" tvg-logo="https://khmertv.com/wp-content/uploads/2020/12/newlogo.png" group-title="Cambodia", KhmerTV
+#EXTINF:-1 tvg-name="Kênh 18 KhmerTV" tvg-logo="https://i.postimg.cc/qMvkwxVy/photo-2024-06-03-07-51-59.png" group-title="Cambodia", KhmerTV
 https://livefta.malimarcdn.com/ftaedge00/khmertv2020.stream/chunklist.m3u8
 #EXTINF:-1 tvg-name="Kênh 19 NetLink TV" tvg-logo="https://netlinkbroadcaster.com/wp-content/uploads/2025/03/broadcasting_Service.webp" group-title="Cambodia", NetLink TV
 https://netlink.netlinkbroadcaster.com/hls/test.m3u8
@@ -568,7 +568,7 @@ https://live-evg3.tv360.metfone.com.kh/live_hq/14_metfone_cartoon/chunks.m3u8
 #EXTINF:-1 tvg-name="Kênh 25 Metfone Film" tvg-logo="https://img-evg4.tv360.metfone.com.kh/vtc-image/2024/02/16/15/1708072464939/777718d546a3_640_360.png" group-title="Cambodia", Metfone Film
 https://live-evg3.tv360.metfone.com.kh/live_hq/13_metfone_film/chunks.m3u8
 #EXTINF:-1 tvg-logo="https://i.postimg.cc/1z4f9Wxr/18.png" group-title="Cambodia",TVB khmer
-https://ip.pdtvhd.com/Khmer/streams/TVBHD.m3u8
+https://cdn.pdtvhd.com/live/streams/Tvbhd.m3u8
 #EXTINF:0 tvg-country="KH" tvg-logo="https://i.imgur.com/rnV0Ui1.png" group-title="Cambodia",WIKI TV
 http://206.189.93.160:1935/live/myStream_720p/chunklist.m3u8
 #EXTINF:-1 tvg-id="CTV8HD.kh@SD" tvg-logo="https://i.imgur.com/yrdr4Po.png" group-title="Cambodia",CTV8 HD
@@ -605,7 +605,8 @@ https://live.kh.malimarcdn.com/live/tvk.stream/playlist.m3u8
 #http://43.245.34.8:9000/OneTV/TVK.m3u8
 
 #EXTINF:-1 tvg-id="(no tvg-id)" tvg-name="CTN" tvg-logo="https://i.imgur.com/r523kOq.png" group-title="Cambodia",CTN 
-https://live.happywatch99.com/ctnhdtv/c83cc584a878608f6b36a9717bd7a8ab.sdp/playlist.m3u8
+#https://live.happywatch99.com/ctnhdtv/c83cc584a878608f6b36a9717bd7a8ab.sdp/playlist.m3u8
+https://ip.pdtvhd.com/Khmer/streams/CTNHD.m3u8
 #EXTINF:-1 tvg-id="(no tvg-id)" tvg-name="MYTV" tvg-logo="https://www.cnc.com.kh/pnew/logo/mytv.png" group-title="Cambodia",MYTV 
 ##https://live.happywatch99.com/mytvhdtv/c83cc584a878608f6b36a9717bd7a8ab.sdp/playlist.m3u8
 ##https://cdnssc.wewatch.asia/b3A9WTJsa1BUQTRNVGRHT1RVMU4wUXhRVFJHUkVRNU9URTJOVEV6TkRaQk5qY3dOakV4Sm5OMFBXeHBkbVVtYzNSNVBXaHNjdyUzZCUzZCZ0b2s9Njk3YmU0ODE1ZWNiNjc2ZjBhNjk2ZTNjNzZhMWRiM2U2YTA5YzYyOCZkZXZpZD1kY2ZhZWZhNzNhNjM4ZGZhMmNjZGM2M2VmNzUyZTVjNw%3D%3D/master.m3u8
@@ -642,7 +643,7 @@ https://restream.pdtvhd.com/memfs/a36ec7de-0eb3-45e2-b1d0-be6dae9338fb.m3u8
 #EXTINF:-1 tvg-logo="https://i.postimg.cc/0yMnH1Zm/9.png" group-title="Cambodia", Comedy
 https://ip.pdtvhd.com/Khmer/streams/Comedy.m3u8
 #EXTINF:-1 tvg-logo="https://i.postimg.cc/L8Q80zJw/unnamed.png" group-title="Cambodia", Film khmer
-https://ip.pdtvhd.com/Khmer/streams/SastraFilm.m3u8
+https://cdn.pdtvhd.com/live/streams/SastraFilm.m3u8
 #EXTINF:-1 tvg-logo="https://i.postimg.cc/m2sJhzHn/Chinese-Drama.png" group-title="Cambodia", Chinese Drama
 https://ip.pdtvhd.com/Sports/streams/Chinese.m3u8
 #EXTINF:-1 tvg-logo="https://i.postimg.cc/wB7bnDCc/Korean-Drama.png" group-title="Cambodia", KOREAN DRAMA
