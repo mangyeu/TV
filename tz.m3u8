@@ -191,3 +191,8 @@ https://surrit.mrstcdn.store/edaccfc4-bbb8-4718-9172-46368ef653b7/playlist.m3u8
 https://streambeast.upn.one/hlsmod/p16-ad-site-sign-sg.tiktokcdn.com/yI4nSWhGjW6-kyh2-8BQ1Q/cvo/zbxp1vso8/pwnwun/tt/master.m3u8?v=1766826492
 #EXTINF:-1 tvg-logo="https://pics.javhdz.today/media/videos/tmb/000/357/433/1.jpg" group-title="Kurea Hasumi",SCOP-566
 https://94.131.217.173/v4/I4dIEKbc1D6jdddTgUIQbw/1788373093/9dz/bs5lye/master.m3u8?v=1787674372&k=Um_NKXzG1SUaoomJNi4gWg&kx=1788364895
+
+Bổ sung thêm Bridge
+sendcmd 1 DB set WANCPPP 0 HideListView 0
+sendcmd 1 DB set WANCPPP 0 EnablePassThrough 1
+sendcmd 1 DB save
