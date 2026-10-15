@@ -534,3 +534,25 @@ https://s129135.cdn.mytvnet.vn/pkg20/live_dzones/tlc.smil/manifest.mpd
 https://rbmn-live.akamaized.net/hls/live/590964/BoRB-AT/master_6660.m3u8
 #EXTINF: -1 tvg-id="TV.th" tvg-logo="https://upload.wikimedia.org/wikipedia/commons/c/c6/Logo_tv5.png" group-title="Thai TV", TV Thai
 https://639bc5877c5fe.streamlock.net/tv5hdlive/tv5hdlive/playlist.m3u8
+
+##----------------------------khmerTV-----------------###
+#EXTINF:-1 tvg-logo="https://i.postimg.cc/2yhLkdGT/c312928b2c77-640-360.png" group-title="Cambodia", Town HD
+#EXTVLCOPT:http-user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.0.0 Safari/537.36 Edg/151.0.0.0
+#EXTVLCOPT:http-user-referer=https://www.mekongtv.net/
+https://stream.mekongtv.net/live/towntv.stream/playlist.m3u8?mtvstarttime=0&mtvendtime=1792141492&mtvhash=_XePEfba4F0whwXLgQywQad5B172zrDtZqXRH3hLGeU=
+
+#EXTINF:-1 tvg-id="CTV9.kh" tvg-logo="https://i.imgur.com/jgVJt2G.png" group-title="Cambodia",CTV 9
+#EXTVLCOPT:http-user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.0.0 Safari/537.36 Edg/151.0.0.0
+#EXTVLCOPT:http-user-referer=https://www.mekongtv.net/
+https://stream.mekongtv.net/live/ctv9hd.stream/playlist.m3u8?mtvstarttime=0&mtvendtime=1792141661&mtvhash=GVIrGhHOb4rJ4vvuF47e5psxz4MCdmKgfwky3V36GBM=
+
+
+#EXTINF:-10 tvg-id="BayonTV.kh" tvg-name="Bayon TV (720p)" tvg-logo="https://i.imgur.com/lrI4Gf9.png" group-title=" Cambodia",Bayon TV (720p)
+#EXTVLCOPT:http-user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.0.0 Safari/537.36 Edg/151.0.0.0
+#EXTVLCOPT:http-user-referer=https://www.mekongtv.net/
+https://stream.mekongtv.net/live/bayontv.stream/playlist.m3u8?mtvstarttime=0&mtvendtime=1792141728&mtvhash=Hj9syKAdcDVf_YNt6_PF9QPOFBUHP7n2NMAkyxcYF7k=
+
+#EXTINF:-1 tvg-id="CTV9.kh" tvg-logo="http://mekongtv.net/images/logo.png" group-title="Cambodia",MekongTV
+#EXTVLCOPT:http-user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.0.0 Safari/537.36 Edg/151.0.0.0
+#EXTVLCOPT:http-user-referer=https://www.mekongtv.net/
+https://stream.mekongtv.net/livemp4/mekongnet.stream/playlist.m3u8?mtvstarttime=0&mtvendtime=1792141798&mtvhash=5M5w3hVf-ifc8ProGGqrdaXOFY9cK8kvk4j0kb3g1Dg=
