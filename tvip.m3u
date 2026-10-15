@@ -16,9 +16,11 @@ https://vmttv.dpdns.org/tv360/?id=vtv4
 #https://vips-livecdn.fptplay.net/live/media/vtv5/live247-hls-avc/vtv5-avc1_5600000=10000-mp4a_131600=20000.m3u8
 https://vmttv.dpdns.org/tv360/?id=vtv5
 #EXTINF:-1 tvg-id="vtv5hdtnb" group-title="📺 VTV" tvg-logo="https://i.imgur.com/xiuHjEQ.png",VTV5 TÂY NAM BỘ HD
-https://vips-livecdn.fptplay.net/live/media/vtv5tnb/live-hls-avc/vtv5tnb-avc1_4000000=10000-mp4a_131600=20000.m3u8
+#https://vips-livecdn.fptplay.net/live/media/vtv5tnb/live-hls-avc/vtv5tnb-avc1_4000000=10000-mp4a_131600=20000.m3u8
+https://vmttv.dpdns.org/tv360/?id=vtv5-tay-nam-bo
 #EXTINF:-1 tvg-id="vtv5hdtn" group-title="📺 VTV" tvg-logo="https://i.imgur.com/Hlcnqqt.png",VTV5 TÂY NGUYÊN HD
-https://vips-livecdn.fptplay.net/live/media/vtv5tn/live-hls-avc/vtv5tn-avc1_4000000=10000-mp4a_131600=20000.m3u8
+#https://vips-livecdn.fptplay.net/live/media/vtv5tn/live-hls-avc/vtv5tn-avc1_4000000=10000-mp4a_131600=20000.m3u8
+https://vmttv.dpdns.org/tv360/?id=vtv5-tay-nguyen
 #EXTINF:-1 tvg-id="vtv6hd" group-title="📺 VTV" tvg-logo="https://i.imgur.com/WYu3c0U.png",VTV6 HD
 https://vmttv.dpdns.org/tv360/?id=vtv6
 #EXTINF:-1 tvg-id="vtv7hd" group-title="📺 VTV" tvg-logo="https://i.imgur.com/bphN2eA.png",VTV7 HD
