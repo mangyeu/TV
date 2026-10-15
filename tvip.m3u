@@ -33,8 +33,13 @@ https://vmttv.dpdns.org/tv360/?id=vtv9
 #EXTINF:-1 tvg-id="vtv10hd" group-title="📺 VTV" tvg-logo="https://i.imgur.com/n1VZWPh.png",VTV10 HD
 #https://vips-livecdn.fptplay.net/live/media/vtv10/live247-hls-avc/vtv10-avc1_5600000=10000-mp4a_131600=20000.m3u8
 https://vmttv.dpdns.org/tv360/?id=vtv10
-#EXTINF:-1 tvg-logo="https://img-ali1.tv360.vn/image1/2025/12/05/09/1764903286193/46f72417f718_640_360.png" group-title="📺 VTV",Vietnam Today
-https://vips-livecdn.fptplay.net/live/media/vietnamtoday/live-hls-avc/vietnamtoday-avc1_4000000=10000-mp4a_131600=20000.m3u8
+###EXTINF:-1 tvg-logo="https://img-ali1.tv360.vn/image1/2025/12/05/09/1764903286193/46f72417f718_640_360.png" group-title="📺 VTV",Vietnam Today
+#https://vips-livecdn.fptplay.net/live/media/vietnamtoday/live-hls-avc/vietnamtoday-avc1_4000000=10000-mp4a_131600=20000.m3u8
+
+#EXTINF:-1 tvg-id="VietnamToday" group-title="📺 VTV"  tvg-logo="https://img-ali1.tv360.vn/image1/2025/12/05/09/1764903286193/46f72417f718_640_360.png" group-title="VTV",Vietnam Today
+#EXTVLCOPT:http-user-agent=Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Mobile Safari/537.36 EdgA/153.0.0.0
+#EXTVLCOPT:http-user-referer=https://m.tv360.vn/
+https://pop3-ec2-ateme.tv360.vn/tok_eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJleHAiOiIxNzkyMDkwNTE3Iiwic2lwIjoiIiwicGF0aCI6Ii9saXZlL2Vkcy80NDgvSExTX0NsZWFuX01ITl8ycy8iLCJzZXNzaW9uX2Nkbl9pZCI6ImZmMjZlNDVlNjVjN2I3MTMiLCJzZXNzaW9uX2lkIjoiIiwiY2xpZW50X2lkIjoiIiwiZGV2aWNlX2lkIjoiIiwibWF4X3Nlc3Npb25zIjowLCJzZXNzaW9uX2R1cmF0aW9uIjowLCJ1cmwiOiJodHRwczovLzE3Mi4yNC4xNzMuMTk2Iiwic2Vzc2lvbl90aW1lb3V0IjowLCJhdWQiOiIxNDUiLCJzb3VyY2VzIjpbMzMyLDQ4OCw0OTEsNDk1XX0=.4KI7WniF8Bnz8w_gItuOmIkHxki-NjcIwh7fAWBnRhIRAxBm1Voz9Ti6YA-ONgIa7Pld0nNTZgt25ieJdDdJyg==/live/eds/448/HLS_Clean_MHN_2s/index.m3u8?uid=171.239.223.97
 
 #--------------------VTVCAB--------------------------#
 #EXTINF:-1 tvg-id="onviegiaitri" group-title="VTVcab" tvg-logo="https://i.imgur.com/7GSKm46.png", ON Việt Giải Trí
