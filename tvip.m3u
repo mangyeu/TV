@@ -647,7 +647,8 @@ https://ip.pdtvhd.com/Khmer/streams/CTNHD.m3u8
 https://cdnssc.wewatch.asia/b3A9WTJsa1BUQTRNVGRHT1RVMU4wUXhRVFJHUkVRNU9URTJOVEV6TkRaQk5qY3dOakV4Sm5OMFBXeHBkbVVtYzNSNVBXaHNjdyUzZCUzZCZ0b2s9Njk3YmU0ODE1ZWNiNjc2ZjBhNjk2ZTNjNzZhMWRiM2U2YTA5YzYyOCZkZXZpZD1kY2ZhZWZhNzNhNjM4ZGZhMmNjZGM2M2VmNzUyZTVjNw%3D%3D/master.m3u8
 #EXTINF:-20 tvg-id="MyTV.kh" tvg-name="MyTV (576p)" tvg-logo="https://static.wikia.nocookie.net/logopedia/images/e/e9/HangMeasTV2013.svg/revision/latest/scale-to-width-down/250?cb=20240220162432" group-title=" Cambodia",Hang Meas HDTV
 #http://tv.cootel.com.kh:8077/streams/d/MyTV/playlist.m3u8
-https://cdn.pdtvhd.com/live/streams/HangMeas.m3u8
+https://video.fvca1-2.fna.fbcdn.net/o1/v/t2/f2/m366/AQMDuZFdUlU713x1sOrus-IwpchotZ3xX2ujbWpJt6UMEfhHUTy4V-zvsXlA15VNjOnx3Dkr50KSl221hibL-Nm3qc5W_mU73yLQJ3Apktbgh8YTDwaQBoqDjEOOK9hqt2BwnjgsrJ6f2dTq6ItIbUqUsP3A.mp4?_nc_cat=101&_nc_oc=AdoEFUidxagilEXhy463Vvy70JTRzmDjD2H5ffLVnYRX40L7ytasffGET8FOAJUM4xtHAz-Sbxi7BiVMuXpsbCCy&_nc_sid=8bf8fe&_nc_ht=video.fvca1-2.fna.fbcdn.net&_nc_ohc=baOcYAZxaogQ7kNvwG-eGBk&efg=eyJ2ZW5jb2RlX3RhZyI6Inhwdl9wcm9ncmVzc2l2ZS5GQUNFQk9PSy4uQzMuNjQwLnNkIiwieHB2X2Fzc2V0X2lkIjoxMDgyODUwNTYxNDUwMDE0LCJhc3NldF9hZ2VfZGF5cyI6MCwidmlfdXNlY2FzZV9pZCI6MTAxMjUsImR1cmF0aW9uX3MiOjUwNiwidXJsZ2VuX3NvdXJjZSI6Ind3dyJ9&ccb=17-1&_nc_gid=kfyWTWVp1XMJib3aEG067Q&_nc_ss=7b39b&_nc_map=urlgen_bucketless&_nc_ad=z-m&_nc_cid=0&_nc_zt=28&_nc_rml=0&oh=00_AQMFLkWhl5SDCM9NqhqPFqE9w7G1ExcUa8AjzvHO_QZLig&oe=6AE2263E&bitrate=566901&tag=sd
+
 #EXTINF:-1 tvg-id="iTVHD.kh@SD" tvg-logo="https://i.imgur.com/qIPvw8N.jpg" group-title="Cambodia",iTV HD
 #https://live.eac-news.com/Khmer/streams/ITVHD.m3u8
 https://live.pdtvhd.com/hls/itvhd.m3u8
