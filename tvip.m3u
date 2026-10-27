@@ -145,8 +145,8 @@ https://freem3u.xyz/api/live/play.m3u8?vid=255
 #EXTINF:-1 tvg-id="dongnai3" group-title="Địa phương" tvg-logo="https://freem3u.xyz/static/images/diaphuong/caicach/dongnai3.png", ĐNRTV3 HD | TH Đồng Nai
 #EXTVLCOPT:http-user-agent=Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Mobile Safari/537.36 EdgA/155.0.0.0
 #EXTVLCOPT:http-user-referer=https://vieon.vn/truyen-hinh-truc-tuyen/
-https://livecdn-vthcm-bp.vieon.vn/30a3ee62997f43574d91697657d2f761/1792904136000/livetv/group-05/43ec53af7a809687be1a97622aec2eff/playlist.m3u8?c=h
-#https://tv.vietanhtv.top/vieon/vieon.php?id=dong-nai-3
+#https://livecdn-vthcm-bp.vieon.vn/30a3ee62997f43574d91697657d2f761/1792904136000/livetv/group-05/43ec53af7a809687be1a97622aec2eff/playlist.m3u8?c=h
+https://tv.vietanhtv.top/vieon/vieon.php?id=dong-nai-3
 #EXTINF:-1 tvg-id="dongthap1" group-title="Địa phương" tvg-logo="https://freem3u.xyz/static/images/diaphuong/dongthap1.png", THĐT1 HD | TH Đồng Tháp
 https://freem3u.xyz/api/live/play.m3u8?vid=54
 #EXTINF:-1 tvg-id="dongthap2" group-title="Địa Phương" tvg-logo="https://freem3u.xyz/static/images/diaphuong/dongthap2.png", THĐT2 HD | TH Đồng Tháp
