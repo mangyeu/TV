@@ -10,7 +10,7 @@ function getManifest() {
         "baseUrl": "https://chillhayz.pro/",
         "iconUrl": "https://chillhayz.pro/assets/v1/images/favicon.ico",
         "isEnabled": true,
-        "type": "MOVIE"
+        "type": " "
     });
 }
 
