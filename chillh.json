@@ -1,12 +1,13 @@
 {
-    "version": 1,
+    "version": l,
     "plugins": [
         {
-            "id": "chillhay",
-            "name": "chillhay",
+            "id": "ophim",
+            "name": "OPhim",
             "version": "0.0.1",
             "scriptUrl": "https://raw.githubusercontent.com/mangyeu/TV/refs/heads/main/demochillhayz.js",
-            "iconUrl": "https://raw.githubusercontent.com/youngbi/repo/main/plugins/kkphim.png"
+            "iconUrl": "https://raw.githubusercontent.com/youngbi/repo/main/plugins/ophim.ico"
         }
+		
     ]
 }
