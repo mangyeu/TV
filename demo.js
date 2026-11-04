@@ -1,16 +1,12 @@
-// =============================================================================
-// CONFIGURATION & METADATA
-// =============================================================================
-
 function getManifest() {
     return JSON.stringify({
-        "id": "chillhayz",
-        "name": "Chillhayz",
-        "version": "0.0.1",
-        "baseUrl": "https://chillhayz.pro/",
-        "iconUrl": "https://chillhayz.pro/assets/v1/images/favicon.ico",
+        "id": "kkphim",
+        "name": "KKPhim",
+        "version": "1.0.1",
+        "baseUrl": "https://phimapi.com",
+        "iconUrl": "https://raw.githubusercontent.com/youngbi/repo/main/plugins/kkphim.png",
         "isEnabled": true,
-        "type": " "
+        "type": "MOVIE"
     });
 }
 
@@ -73,10 +69,10 @@ function getUrlList(slug, filtersJson) {
 
         // Special handling for 'phim-moi-cap-nhat-v3' which uses a different base URL structure
         if (slug === 'phim-moi-cap-nhat-v3' || typeList === 'phim-moi-cap-nhat-v3') {
-            return "https://chillhayz.pro/danh-sach/phim-moi-cap-nhat-v3?page=" + page;
+            return "https://phimapi.com/danh-sach/phim-moi-cap-nhat-v3?page=" + page;
         }
 
-        var url = "https://chillhayz.pro/" + basePath + "/" + typeList + "?page=" + page;
+        var url = "https://phimapi.com/v1/api/" + basePath + "/" + typeList + "?page=" + page;
 
         // Query Params (Common for all endpoints)
         if (filters.limit) url += "&limit=" + filters.limit;
@@ -90,27 +86,27 @@ function getUrlList(slug, filtersJson) {
 
         return url;
     } catch (e) {
-        return "https://chillhayz.pro/danh-sach/" + slug;
+        return "https://phimapi.com/v1/api/danh-sach/" + slug;
     }
 }
 
 function getUrlSearch(keyword, filtersJson) {
     var filters = JSON.parse(filtersJson || "{}");
     var limit = filters.limit || 24;
-    return "https://chillhayz.pro/tim-kiem?keyword=" + encodeURIComponent(keyword) + "&limit=" + limit;
+    return "https://phimapi.com/v1/api/tim-kiem?keyword=" + encodeURIComponent(keyword) + "&limit=" + limit;
 }
 
 function getUrlDetail(slug) {
-    return "https://chillhayz.pro/phim/" + slug;
+    return "https://phimapi.com/phim/" + slug;
 }
 
-function getUrlCategories() { return "https://chillhayz.pro/the-loai"; }
-function getUrlCountries() { return "https://chillhayz.pro/quoc-gia"; }
+function getUrlCategories() { return "https://phimapi.com/the-loai"; }
+function getUrlCountries() { return "https://phimapi.com/quoc-gia"; }
 function getUrlYears() {
     // KKPhim doesn't seem to have a 'list years' API in the doc, but implies support (1970-now).
     // We can return empty or a hardcoded generator if needed. 
     // But the Kotlin generic logic expects a URL.
-    // User instruction: GET https://chillhayz.pro/nam/{type_list}
+    // User instruction: GET https://phimapi.com/v1/api/nam/{type_list}
     // But how to get the LIST of years?
     // User didn't provide "GET list years". Just "GET detailed year".
     // I will return empty string to signal "No dynamic years list", 
@@ -118,7 +114,7 @@ function getUrlYears() {
     // but better to just let Kotlin handle fallback if connection fails. 
     // Actually, I can construct a local JSON response if I implement a specific "local" parser?
     // No, let's stick to API. 
-    // User provided: "Năm: GET https://chillhayz.pro/{type_list}"
+    // User provided: "Năm: GET https://phimapi.com/v1/api/nam/{type_list}"
     // But didn't provide "GET all years".
     // I will omit it for now or return a known valid one if found.
     // Re-reading user prompt: "Năm phát hành của phim (1970 - hiện tại)."
@@ -257,7 +253,7 @@ function parseDetailResponse(apiResponseJson) {
         // Checking `PlayerScreen.kt` or `VideoPlayerControls.kt` would clarify this but I'm in writing file mode.
         // I'll assume for KKPhim, if I return empty URL here, the Player might use the episode ID passed to it?
         // Actually, I'll return the raw response just in case.
-        headers: { "User-Agent": "Mozilla/5.0", "Referer": "https://chillhayz.pro" },
+        headers: { "User-Agent": "Mozilla/5.0", "Referer": "https://phimapi.com" },
         subtitles: []
     });
 }
@@ -286,5 +282,5 @@ function parseYearsResponse(apiResponseJson) {
 function getPosterUrl(path) {
     if (!path) return "";
     if (path.indexOf("http") === 0) return path;
-    return "https://chillhayz.pro/image.php?url=https://phimimg.com/" + path;
+    return "https://phimapi.com/image.php?url=https://phimimg.com/" + path;
 }
