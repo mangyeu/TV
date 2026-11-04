@@ -8,7 +8,7 @@ function getManifest() {
         "name": "Chillhayz",
         "version": "0.0.1",
         "baseUrl": "https://chillhayz.pro/",
-        "iconUrl": "https://raw.githubusercontent.com/youngbi/repo/main/plugins/kkphim.png",
+        "iconUrl": "https://chillhayz.pro/assets/v1/images/favicon.ico",
         "isEnabled": true,
         "type": "MOVIE"
     });
