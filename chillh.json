@@ -1,0 +1,12 @@
+{
+    "version": 1,
+    "plugins": [
+        {
+            "id": "chillhay",
+            "name": "chillhay",
+            "version": "1.0.1",
+            "scriptUrl": "https://raw.githubusercontent.com/mangyeu/TV/refs/heads/main/demochillhayz.js",
+            "iconUrl": "https://raw.githubusercontent.com/youngbi/repo/main/plugins/kkphim.png"
+        }
+    ]
+}
