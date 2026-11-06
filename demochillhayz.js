@@ -4,9 +4,9 @@
 
 function getManifest() {
     return JSON.stringify({
-        "id": "javhd",
-        "name": "JavHD",
-        "version": "1.0.5",
+        "id": "chillhayz",
+        "name": "chillhayz",
+        "version": "0.0.1",
         "baseUrl": "https://chillhayz.pro",
         "iconUrl": "https://chillhayz.pro/assets/v1/images/favicon.ico",
         "isEnabled": true,
