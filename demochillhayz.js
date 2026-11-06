@@ -10,7 +10,6 @@ function getManifest() {
         "baseUrl": "https://phimapi.com",
         "iconUrl": "https://chillhayz.pro/assets/v1/images/favicon.ico",
         "isEnabled": true,
-        "isAdult": true,
         "type": "VIDEO",
         "playerType": "embedtoexoplay"
     });
