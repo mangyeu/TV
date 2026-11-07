@@ -628,8 +628,9 @@ http://streaming.freshnewsasia.com:1935/live/myStream/playlist.m3u8
 https://seatv.netlinkbroadcaster.com/hls/test.m3u8
 
 #EXTINF:-1 tvg-id="TV5Cambodia.kh" tvg-logo="https://i.imgur.com/iMZLyoX.png" group-title="Cambodia",TV5 Cambodia
-https://wwkhhome.wewatch.asia/nl.m3u8?id=TV5
+#https://wwkhhome.wewatch.asia/nl.m3u8?id=TV5
 #https://myip.pdtvhd.com/LiveApp/streams/TV5HD.m3u8
+https://stream.pdtvhd.com/live/streams/ctv5.m3u8
 
 #EXTINF:-1 tvg-id="TVK2.kh" tvg-logo="https://i.postimg.cc/9FWD6GSM/2222.png" group-title="Cambodia",TVK 2 (720p)
 https://live.kh.malimarcdn.com/live/tvk2.stream/playlist.m3u8
@@ -676,7 +677,7 @@ https://restream.pdtvhd.com/memfs/a36ec7de-0eb3-45e2-b1d0-be6dae9338fb.m3u8
 #EXTINF:-1 tvg-logo="https://i.postimg.cc/0yMnH1Zm/9.png" group-title="Cambodia", Comedy
 https://ip.pdtvhd.com/Khmer/streams/Comedy.m3u8
 #EXTINF:-1 tvg-logo="https://i.postimg.cc/L8Q80zJw/unnamed.png" group-title="Cambodia", Film khmer
-https://cdn.pdtvhd.com/live/streams/SastraFilm.m3u8
+https://stream.pdtvhd.com/live/streams/SastraFilm.m3u8
 #EXTINF:-1 tvg-logo="https://i.postimg.cc/43BNjghF/New-Project-(1).png" group-title="Cambodia", ppctv6
 #https://ip.pdtvhd.com/Sports/streams/Chinese.m3u8
 https://stream.pdtvhd.com/live/streams/PDTVHDMusic.m3u8
