@@ -108,7 +108,7 @@ function getUrlSearch(keyword, filtersJson) {
 function getUrlDetail(slug) {
     if (slug.indexOf("http") === 0) return slug;
     if (slug.indexOf("/") === 0) return "https://chillhayz.pro" + slug;
-    return "https://chillhayz.pro/phim-sex/" + slug;
+    return "https://chillhayz.pro/phim/" + slug;
 }
 
 function getUrlCategories() { return "https://chillhayz.pro/?view=the-loai"; }
