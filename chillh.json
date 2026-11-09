@@ -2,8 +2,8 @@
     "version": 3,
     "plugins": [
         {
-            "id": "chillhayz",
-            "name": "Chillhayz",
+            "id": "chillPhim",
+            "name": "chillPhim",
             "version": "0.0.1",
             "scriptUrl": "https://raw.githubusercontent.com/mangyeu/TV/refs/heads/main/demochillhayz.js",
             "iconUrl": "https://chillhayz.pro/assets/v1/images/favicon.ico",
