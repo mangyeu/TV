@@ -2,7 +2,7 @@
 // SIÊU TẦM PHIM VAAPP PLUGIN (Code thêm từ bản của bạn ʚʚ Ƭ Ɗųƴ ɞɞ)
 // ========================================================
 
-//const BASE_URL = "https://www.sieutamphim.site";
+const BASE_URL = "https://www.sieutamphim.site";
 
 // ========================================================
 // CONFIGURATION & METADATA
