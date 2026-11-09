@@ -64,7 +64,7 @@ function getUrlList(slug, filtersJson) {
             return "https://chillhayz.pro/danh-sach/phim-moi-cap-nhat?page=" + page;
         }
 
-        var url = "https://chillhayz.pro/v1/api/" + basePath + "/" + typeList + "?page=" + page;
+        var url = "https://chillhayz.pro/" + basePath + "/" + typeList + "?page=" + page;
 
         // Query Params (Common for all endpoints)
         if (filters.limit) url += "&limit=" + filters.limit;
@@ -78,6 +78,15 @@ function getUrlList(slug, filtersJson) {
 
         return url;
     } catch (e) {
-        return "https://chillhayz.pro/v1/api/danh-sach/" + slug;
+        return "https://chillhayz.pro/danh-sach/" + slug;
     }
+}
+function getUrlSearch(keyword, filtersJson) {
+    var filters = JSON.parse(filtersJson || "{}");
+    var limit = filters.limit || 24;
+    return "https://chillhayz.pro/tim-kiem?keyword=" + encodeURIComponent(keyword) + "&limit=" + limit;
+}
+
+function getUrlDetail(slug) {
+    return "https://chillhayz.pro/phim/" + slug;
 }
