@@ -61,7 +61,7 @@ function getUrlList(slug, filtersJson) {
 
         // Special handling for 'phim-moi-cap-nhat-v3' which uses a different base URL structure
         if (slug === 'phim-moi-cap-nhat-v3' || typeList === 'phim-moi-cap-nhat') {
-            return "https://chillhayz.pro//danh-sach/phim-moi-cap-nhat?page=" + page;
+            return "https://chillhayz.pro/danh-sach/phim-moi-cap-nhat?page=" + page;
         }
 
         var url = "https://chillhayz.pro/v1/api/" + basePath + "/" + typeList + "?page=" + page;
