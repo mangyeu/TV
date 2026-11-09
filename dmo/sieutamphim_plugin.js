@@ -2,7 +2,7 @@
 // SIÊU TẦM PHIM VAAPP PLUGIN (ʚʚ Ƭ Ɗųƴ ɞɞ)
 // ========================================================
 
-const BASE_URL = "https://www.sieutamphim.site";
+//const BASE_URL = "https://www.sieutamphim.site";
 
 // ========================================================
 // CONFIGURATION & METADATA
@@ -14,7 +14,7 @@ function getManifest() {
         "name": "Sưu Tầm Phim",
         "version": "1.0.1",
         "baseUrl": "https://www.sieutamphim.site",
-        "iconUrl": "https://www.sieutamphim.pro/posts/2024/06/cropped-logosieutamphim-192x192.png",
+        "iconUrl": "https://www.sieutamphim.site/posts/2024/06/cropped-logosieutamphim-192x192.png",
         "isEnabled": true,
         "isAdult": false,
         "type": "MOVIE",
