@@ -11,10 +11,10 @@ const BASE_URL = "https://www.sieutamphim.site";
 function getManifest() {
     return JSON.stringify({
         "id": "sieutamphim",
-        "name": "Sưu Tầm Phim",
+        "name": "SIEUTAMPHIM",
         "version": "1.0.9",
         "baseUrl": "https://www.sieutamphim.site",
-        "iconUrl": "https://www.sieutamphim.site/posts/2024/06/cropped-logosieutamphim-192x192.png",
+        "iconUrl": "https://www.sieutamphim.site/wp-content/themes/sieutamphim/assets/logo.png",
         "isEnabled": true,
         "isAdult": true,
         "type": "MOVIE",
