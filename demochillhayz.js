@@ -12,40 +12,56 @@ function getManifest() {
         "isEnabled": true,
         "isAdult": true,
         "type": "VIDEO",
+        "playerType": "embed",
         "layoutType": "HORIZONTAL"
     });
 }
 
 function getPrimaryCategories() {
     return JSON.stringify([
-        { name: 'Phim Mới', slug: 'phim-moi' },
-        { name: 'Phim Lẻ', slug: 'phim-le' },
-        { name: 'Phim Bộ', slug: 'phim-bo' },
-        { name: 'Hành Động', slug: 'genre/phim-hanh-dong' },
-        { name: 'Chiếu Rạp', slug: 'genre/phim-chieu-rap' }
+        { name: 'Mới cập nhật', slug: 'moi-nhat' },
+        { name: 'Diễn viên', slug: 'actresses' },
+        { name: 'Vietsub', slug: 'phim-sex-vietsub' },
+        { name: 'Không che', slug: 'phim-sex-khong-che' },
+        { name: 'JAV HD', slug: 'jav' }
     ]);
 }
 
 function getHomeSections() {
     return JSON.stringify([
-        { slug: 'list/phim-moi', title: 'Phim Mới Cập Nhật', type: 'Horizontal' },
-        { slug: 'list/phim-le', title: 'Phim Lẻ', type: 'Horizontal' },
-        { slug: 'list/phim-bo', title: 'Phim Bộ', type: 'Horizontal' },
-        { slug: 'genre/phim-hanh-dong', title: 'Hành Động', type: 'Horizontal' },
-        { slug: 'genre/phim-tinh-cam', title: 'Tình Cảm', type: 'Grid' }
+        { slug: 'phim-sex-hay', title: 'Phim Hay', type: 'Horizontal', path: 'the-loai' },
+        { slug: 'phim-sex-vietsub', title: 'Việt Sub', type: 'Horizontal', path: 'the-loai' },
+        { slug: 'phim-sex-khong-che', title: 'Không Che', type: 'Horizontal', path: 'the-loai' },
+        { slug: 'jav', title: 'JAV', type: 'Horizontal', path: 'the-loai' },
+        { slug: 'phim-sex-chau-au', title: 'Âu Mỹ', type: 'Horizontal', path: 'the-loai' },
+        { slug: 'phim-sex-trung-quoc', title: 'Trung Quốc', type: 'Horizontal', path: 'the-loai' },
+        { slug: 'moi-nhat', title: 'Phim Mới Cập Nhật', type: 'Grid', path: '' }
     ]);
 }
 
 function getFilterConfig() {
     return JSON.stringify({
-        sort: [],
+        sort: [
+            { name: 'Mới nhất', value: 'latest' },
+            { name: 'Xem nhiều', value: 'views' }
+        ],
         category: [
-            { name: "Hành Động", value: "genre/phim-hanh-dong" },
-            { name: "Võ Thuật", value: "genre/phim-vo-thuat" },
-            { name: "Tình Cảm", value: "genre/phim-tinh-cam" },
-            { name: "Hài Hước", value: "genre/phim-hai-huoc" },
-            { name: "Hoạt Hình", value: "genre/phim-hoat-hinh" },
-            { name: "Chiếu Rạp", value: "genre/phim-chieu-rap" }
+            { name: "JAV HD", value: "jav" },
+            { name: "Vietsub", value: "phim-sex-vietsub" },
+            { name: "Không Che", value: "phim-sex-khong-che" },
+            { name: "Loạn Luân", value: "phim-sex-loan-luan" },
+            { name: "Hiếp Dâm", value: "phim-sex-hiep-dam" },
+            { name: "Âu Mỹ", value: "phim-sex-chau-au" },
+            { name: "Vụng Trộm", value: "phim-sex-vung-trom" },
+            { name: "Học Sinh", value: "phim-sex-hoc-sinh" },
+            { name: "Gái Xinh", value: "phim-sex-gai-xinh" },
+            { name: "Bạo Dâm", value: "bao-dam" },
+            { name: "Xnxx", value: "xnxx" },
+            { name: "Xvideos", value: "xvideos" },
+            { name: "Doggy", value: "doggy" },
+            { name: "Bú cu", value: "bu-cu" },
+            { name: "Mông to", value: "mong-to" },
+            { name: "Vú To", value: "vu-to" }
         ]
     });
 }
@@ -57,48 +73,45 @@ function getFilterConfig() {
 function getUrlList(slug, filtersJson) {
     var filters = JSON.parse(filtersJson || "{}");
     var page = filters.page || 1;
-    var baseSlug = slug || 'phim-moi';
-    var path = filters.path || 'list';
 
-    // Nếu filter có category thì dùng category, ghi đè slug
+    // Prioritize category filter if present
     if (filters.category) {
-        baseSlug = filters.category;
+        return "https://chillhayz.pro/the-loai/" + filters.category + "?page=" + page;
     }
 
-    // Nếu slug đã chứa prefix thì không cần thêm path
-    var url = "https://chillhayz.pro/";
-    if (baseSlug.indexOf('/') > -1) {
-        url += baseSlug;
-    } else {
-        url += path + "/" + baseSlug;
+    if (slug === 'moi-nhat' || !slug) {
+        return "https://chillhayz.pro/?page=" + page;
     }
 
-    if (page > 1) {
-        url += "/page-" + page;
+    if (slug === 'actresses') {
+        return "https://chillhayz.pro/actresses?page=" + page;
     }
-    return url;
+
+    // Handle full URL slugs or relative paths
+    if (slug.indexOf("http") === 0) {
+        return slug + (slug.indexOf("?") === -1 ? "?" : "&") + "page=" + page;
+    }
+
+    if (slug.indexOf("/") === 0) {
+        return "https://chillhayz.pro" + slug + (slug.indexOf("?") === -1 ? "?" : "&") + "page=" + page;
+    }
+
+    return "https://chillhayz.pro/the-loai/" + slug + "?page=" + page;
 }
 
 function getUrlSearch(keyword, filtersJson) {
     var filters = JSON.parse(filtersJson || "{}");
     var page = filters.page || 1;
-    return "https://chillhayz.pro/tim-kiem/" + encodeURIComponent(keyword).replace(/%20/g, '+');
+    return "https://chillhayz.pro/search?k=" + encodeURIComponent(keyword) + "&page=" + page;
 }
 
 function getUrlDetail(slug) {
-    if (!slug) return "https://chillhayz.pro/";
     if (slug.indexOf("http") === 0) return slug;
-
-    // Xử lý slug bị lỗi do app gộp (nếu có /xem/ hoặc /info/ bên trong)
-    if (slug.indexOf("/xem/") > -1 || slug.indexOf("/info/") > -1) {
-        return "https://chillhayz.pro" + (slug.indexOf("/") === 0 ? "" : "/") + slug;
-    }
-
-    // PhimMoiChill dùng /info/ cho trang chi tiết
-    return "https://chillhayz.pro/info/" + slug.replace(".html", "");
+    if (slug.indexOf("/") === 0) return "https://chillhayz.pro" + slug;
+    return "https://chillhayz.pro/phim-sex/" + slug;
 }
 
-function getUrlCategories() { return "https://chillhayz.pro/"; }
+function getUrlCategories() { return "https://chillhayz.pro/?view=the-loai"; }
 function getUrlCountries() { return "https://chillhayz.pro/"; }
 function getUrlYears() { return "https://chillhayz.pro/"; }
 
@@ -108,103 +121,40 @@ function getUrlYears() { return "https://chillhayz.pro/"; }
 
 function parseListResponse(html) {
     var moviesMap = {};
-    // PhimMoiChill thường dùng thẻ li class="item" hoặc div class="item" 
-    var parts = html.split(/<li[^>]*class=["']item["'][^>]*>/);
-    if (parts.length <= 1) {
-        parts = html.split(/<div[^>]*class=["']item(?:[^"']*)?["'][^>]*>/);
-    }
-
-    // Nếu trang web có wrapper "halim-item" thường thấy ở theme Halim/Phimmoi
-    if (parts.length <= 1) {
-        parts = html.split(/<article[^>]*class=["'][^"']*halim-item["'][^>]*>/);
-        if (parts.length <= 1) {
-            parts = html.split(/<div[^>]*class=["'][^"']*halim-item["'][^>]*>/);
-        }
-    }
-
-    // Một cấu trúc khác phổ biến của phimmoichill
-    if (parts.length <= 1) {
-        parts = html.split(/<div[^>]*class=["']flw-item["'][^>]*>/); // flix mẫu
-    }
-
-    if (parts.length <= 1) {
-        // Fallback catch-all links if needed
-        var listItems = html.match(/<a[^>]+href="[^"]+\/phim\/[^"]+">[\s\S]*?<\/a>/g);
-        if (listItems) {
-            parts = [""];
-            for (var k = 0; k < listItems.length; k++) parts.push(listItems[k]);
-        }
-    }
+    // Stricter regex to match class="item" with boundaries (space or quote)
+    var parts = html.split(/<div[^>]*class=["'](?:[^"']*\s)?item(?:\s[^"']*)?["'][^>]*>/);
 
     for (var i = 1; i < parts.length; i++) {
         var itemHtml = parts[i];
 
-        // Lấy link và ID/Slug
-        var linkMatch = itemHtml.match(/href="([^"]*(?:\/phim\/|\/xem\/|\/info\/)([^"\/]+)(?:\.html|))"/);
-        if (!linkMatch) linkMatch = itemHtml.match(/href="([^"]+)"/);
+        var titleMatch = itemHtml.match(/<h4[^>]*>([\s\S]*?)<\/h4>/);
+        var title = titleMatch ? titleMatch[1].trim() : "";
 
+        var linkMatch = itemHtml.match(/href="([^"]*\/(phim-sex|actresses)\/([^"\/]+))"/);
         var fullUrl = linkMatch ? linkMatch[1] : "";
-        var slugMatch = fullUrl.match(/\/phim\/([^\/.]+)/) || fullUrl.match(/\/xem\/([^\/]+)-pm/) || fullUrl.match(/\/info\/([^\/.]+)/);
-        var slug = slugMatch ? slugMatch[1] : (linkMatch ? linkMatch[2] : "");
+        var type = linkMatch ? linkMatch[2] : "";
+        var id = linkMatch ? linkMatch[3] : "";
 
-        if (slug) {
-            slug = slug.replace(".html", "")
-                .replace("info-", "")
-                .replace(/^info\//, "")
-                .replace(/^phim\//, "");
-        }
+        var slug = type === 'actresses' ? "/actresses/" + id : id;
 
-        // Lấy tiêu đề 
-        var title = "";
-        var pMatch = itemHtml.match(/<p[^>]*>([\s\S]*?)<\/p>/i);
-        if (pMatch) title = pMatch[1].replace(/<[^>]*>/g, "").trim();
-
-        if (!title) {
-            var h3Match = itemHtml.match(/<h3[^>]*>(?:<a[^>]*>)?([\s\S]*?)(?:<\/a>)?<\/h3>/i);
-            if (h3Match) title = h3Match[1].replace(/<[^>]*>/g, "").trim();
-            else {
-                var pMatch2 = itemHtml.match(/<p[^>]*class="name"[^>]*>([\s\S]*?)<\/p>/i);
-                if (pMatch2) title = pMatch2[1].replace(/<[^>]*>/g, "").trim();
-            }
-        }
-
-        if (!title && itemHtml.indexOf('title="') > -1) {
-            var maybeTitleMatch = itemHtml.match(/title="([^"]+)"/);
-            if (maybeTitleMatch) title = maybeTitleMatch[1];
-        }
-
-        // Lấy ảnh Thumbnail
-        var thumbMatch = itemHtml.match(/data-src="([^"]+)"/) || itemHtml.match(/src="([^"]+)"/);
+        var thumbMatch = itemHtml.match(/<img[^>]*src="([^"]+)"/);
         var thumb = thumbMatch ? thumbMatch[1] : "";
 
-        // Dọn dẹp URL ảnh nếu là lazyload url base64
-        if (thumb.indexOf("data:image") === 0) {
-            var fallbackThumbMatch = itemHtml.match(/data-bg="([^"]+)"/) || itemHtml.match(/style=".*url\('([^']+)'/);
-            if (fallbackThumbMatch) thumb = fallbackThumbMatch[1];
-        }
+        if (slug) {
+            var rawTitle = cleanText(title);
+            var isActress = slug.indexOf("/actresses/") === 0;
 
-        // Kiểm tra xem có lấy được hay không, nếu không bỏ qua
-        if (slug && title) {
-            var rawTitle = PluginUtils.cleanText(title);
-
-            // Tìm nhãn chất lượng (VD: HD, FHD, 4K, Vietsub)
+            // Extract labels (e.g., Không Che, Trung Quốc)
             var labels = [];
-            var qualityMatch = itemHtml.match(/class="[^"]*(?:quality|label|status)[^"]*"[^>]*>([\s\S]*?)<\//i);
-            if (!qualityMatch) qualityMatch = itemHtml.match(/<span class="status">([^<]+)<\/span>/);
-
-            if (qualityMatch) labels.push(PluginUtils.cleanText(qualityMatch[1]));
-
-            // Tìm 4K đặc biệt
-            if (itemHtml.indexOf("4K") !== -1 || itemHtml.indexOf("4k") !== -1) {
-                if (labels.join(" ").indexOf("4K") === -1) {
-                    labels.push("4K");
+            var labelsMatch = itemHtml.match(/<div[^>]*class="item__labels"[^>]*>([\s\S]*?)<\/div>/);
+            if (labelsMatch) {
+                var spanRegex = /<span>([\s\S]*?)<\/span>/g;
+                var spanMatch;
+                while ((spanMatch = spanRegex.exec(labelsMatch[1])) !== null) {
+                    labels.push(cleanText(spanMatch[1]));
                 }
             }
-
-            var episodeMatch = itemHtml.match(/class="[^"]*episode[^"]*"[^>]*>([\s\S]*?)<\//);
-            if (episodeMatch && PluginUtils.cleanText(episodeMatch[1]) !== "") labels.push(PluginUtils.cleanText(episodeMatch[1]));
-
-            var statusText = labels.length > 0 ? labels.join(" | ") : "Full";
+            var labelText = isActress ? "Diễn viên" : (labels.length > 0 ? labels.join(" | ") : "Full");
 
             if (!moviesMap[slug]) {
                 moviesMap[slug] = {
@@ -213,10 +163,23 @@ function parseListResponse(html) {
                     posterUrl: thumb,
                     backdropUrl: thumb,
                     year: 0,
-                    quality: (labels.join(" ").indexOf("4K") > -1) ? "4K" : "HD",
-                    episode_current: statusText,
+                    quality: isActress ? "ACTRESS" : "HD",
+                    episode_current: labelText,
                     lang: "Vietsub"
                 };
+            } else {
+                // Merge if duplicate found
+                var existing = moviesMap[slug];
+                if ((!existing.title || existing.title === "Phim không tiêu đề") && rawTitle) {
+                    existing.title = rawTitle;
+                }
+                if (!existing.posterUrl && thumb) {
+                    existing.posterUrl = thumb;
+                    existing.backdropUrl = thumb;
+                }
+                if (labelText !== "Full") {
+                    existing.episode_current = labelText;
+                }
             }
         }
     }
@@ -228,13 +191,13 @@ function parseListResponse(html) {
         }
     }
 
-    // Lấy số trang
     var totalPages = 1;
-    var pagesMatch = html.match(/href="[^"]*page-(\d+)[^"]*"/g);
-    if (!pagesMatch) pagesMatch = html.match(/page=(\d+)/g);
+    var pagesMatch = html.match(/page=(\d+)"[^>]*class="paginator__item__link"/g);
+    if (!pagesMatch) pagesMatch = html.match(/class="paginator__item__link"[^>]*page=(\d+)"/g);
+
     if (pagesMatch) {
         for (var j = 0; j < pagesMatch.length; j++) {
-            var pMatch = pagesMatch[j].match(/page-(\d+)/) || pagesMatch[j].match(/page=(\d+)/);
+            var pMatch = pagesMatch[j].match(/page=(\d+)/);
             if (pMatch) {
                 var p = parseInt(pMatch[1]);
                 if (p > totalPages) totalPages = p;
@@ -271,120 +234,67 @@ var PluginUtils = {
 
 function parseMovieDetail(html) {
     try {
-        // Tên phim
-        var titleMatch = html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/);
-        if (!titleMatch) titleMatch = html.match(/<h2[^>]*class="title[^"]*"[^>]*>([\s\S]*?)<\/h2>/);
+        var titleMatch = html.match(/<h1[^>]*class="[^"]*heading__title[^"]*"[^>]*>([\s\S]*?)<\/h1>/);
         var title = titleMatch ? titleMatch[1].trim() : "";
 
-        // ID phim (Slug) - Cần cực kỳ cẩn thận với regex để không lấy nhầm tag html
-        var id = "";
-        var idMatch = html.match(/<link rel="canonical" href="[^"]+\/(?:phim|info)\/([^"\/?>\s]+)/) ||
-            html.match(/<meta property="og:url" content="[^"]+\/(?:phim|info)\/([^"\/?>\s]+)/);
-        if (idMatch) id = idMatch[1];
-
-        if (!id) {
-            // Fallback từ các link trên trang, ưu tiên /info/ hoặc /phim/
-            var pathMatch = html.match(/\/(?:phim|info)\/([^"\/?>\s.]+)(?:\.html|)/);
-            id = pathMatch ? pathMatch[1] : "";
-        }
-
-        // Final check để đảm bảo id không chứa ký tự lạ của HTML
-        if (id) {
-            id = id.split('"')[0].split("'")[0].split('>')[0].split(' ')[0];
-        }
-
-        // Mô tả
-        var descMatch = html.match(/<div[^>]*class="[^"]*film-content[^"]*"[^>]*>([\s\S]*?)<\/div>/i) ||
-            html.match(/<div[^>]*class="[^"]*description[^"]*"[^>]*>([\s\S]*?)<\/div>/i) ||
-            html.match(/id="info-film"[^>]*>([\s\S]*?)<\/div>/i);
+        var descMatch = html.match(/<article[^>]*>([\s\S]*?)<\/article>/);
         var description = descMatch ? descMatch[1].replace(/<[^>]*>/g, "").trim() : "";
 
-        // URL Ảnh Thumbnail
-        var thumbMatch = html.match(/<meta[^>]*property="og:image"[^>]*content="([^"]+)"/) ||
-            html.match(/<img[^>]*class="[^"]*poster[^"]*"[^>]*src="([^"]+)"/);
+        var sourceRegex1 = /class="[^"]*(?:set-player-source|player__cdn)[^"]*"[^>]*data-source="([^"]+)"/g;
+        var sourceRegex2 = /data-source="([^"]+)"[^>]*class="[^"]*(?:set-player-source|player__cdn)[^"]*"/g;
+
+        var servers = [];
+        var serverMap = {};
+
+        function extractSources(regex, html) {
+            var match;
+            while ((match = regex.exec(html)) !== null) {
+                var url = match[1];
+                if (url && !serverMap[url]) {
+                    serverMap[url] = true;
+                    var name = "Server " + (servers.length + 1);
+                    servers.push({
+                        name: name,
+                        episodes: [{
+                            id: url,
+                            name: "Full",
+                            slug: "full"
+                        }]
+                    });
+                }
+            }
+        }
+
+        extractSources(sourceRegex1, html);
+        extractSources(sourceRegex2, html);
+
+
+
+
+
+        var thumbMatch = html.match(/<meta[^>]*property="og:image"[^>]*content="([^"]+)"/);
         var thumb = thumbMatch ? thumbMatch[1] : "";
 
-        // Servers và Episodes
-        var serversMap = {};
-        serversMap["Server 1"] = [];
-        var defaultServerName = "PhimMoi";
-
-        // PhimMoiChill thường có list tập dạng <li><a href="...xem/slug-tap-1...">...
-        // Hoặc có thể nằm rải rác trong các nút "Xem phim"
-        var epsArr = [];
-        var epRegex = /<a[^>]+href="([^"]*(?:\/xem\/)[^"]*)"[^>]*>(?:<span[^>]*>)?([\s\S]*?)(?:<\/span>)?<\/a>/gi;
-        var epMatch;
-        var seenUrls = {};
-
-        // Tìm trong toàn bộ HTML trang info
-        while ((epMatch = epRegex.exec(html)) !== null) {
-            var epUrl = epMatch[1];
-            var epName = PluginUtils.cleanText(epMatch[2]);
-
-            // Nếu là icon-play hoặc không có text rõ ràng, đặt là "Xem Phim"
-            if (!epName || epName === "" || epMatch[0].indexOf("icon-play") > -1) {
-                epName = "Xem Phim";
-            }
-
-            if (!seenUrls[epUrl]) {
-                var fullEpUrl = (epUrl.indexOf("http") === 0) ? epUrl : ("https://chillhayz.pro" + epUrl);
-                epsArr.push({
-                    id: fullEpUrl, // Dùng FULL URL để tránh bị app prefix /info/ khi fetch stream
-                    name: epName,
-                    slug: epName
-                });
-                seenUrls[epUrl] = true;
-            }
-        }
-
-        if (epsArr.length > 0) {
-            // Sắp xếp lại nếu cần, hoặc lọc các mảng rác
-            // Thường thì danh sách tập sẽ có tên là "Tập 1", "Tập 2"...
-            // Ưu tiên các link có text là số
-            serversMap[defaultServerName] = epsArr;
-        }
-
-        // Nếu vẫn không có mảng tập nào
-        if (!serversMap[defaultServerName] || serversMap[defaultServerName].length === 0) {
-            serversMap[defaultServerName] = [{
-                id: "",
-                name: "Trailer",
-                slug: "trailer"
-            }];
-        }
-
-        var parsedServers = [];
-        for (var serverName in serversMap) {
-            if (serversMap.hasOwnProperty(serverName) && serversMap[serverName].length > 0) {
-                parsedServers.push({
-                    name: serverName,
-                    episodes: serversMap[serverName]
-                });
-            }
-        }
-
-        // Status text 
+        // Extract labels for status
         var labels = [];
-        var qualityMatch = html.match(/<span[^>]*class="quality"[^>]*>([\s\S]*?)<\/span>/i);
-        if (qualityMatch) labels.push(PluginUtils.cleanText(qualityMatch[1]));
-
-        if (html.indexOf("4K") !== -1) {
-            if (labels.join(" ").indexOf("4K") === -1) {
-                labels.push("4K");
+        var labelsMatch = html.match(/<div[^>]*class="item__labels"[^>]*>([\s\S]*?)<\/div>/);
+        if (labelsMatch) {
+            var spanRegex = /<span>([\s\S]*?)<\/span>/g;
+            var spanMatch;
+            while ((spanMatch = spanRegex.exec(labelsMatch[1])) !== null) {
+                labels.push(PluginUtils.cleanText(spanMatch[1]));
             }
         }
-
-        var statusMatch = html.match(/<span[^>]*class="status"[^>]*>([\s\S]*?)<\/span>/i);
-        if (statusMatch) labels.push(PluginUtils.cleanText(statusMatch[1]));
+        var statusText = labels.length > 0 ? labels.join(" | ") : "Full";
 
         return JSON.stringify({
-            id: id,
+            id: "", // Kotlin will fill this from slug
             title: PluginUtils.cleanText(title),
             posterUrl: thumb,
             backdropUrl: thumb,
             description: PluginUtils.cleanText(description),
-            servers: parsedServers,
-            quality: (labels.join(" ").indexOf("4K") > -1) ? "4K" : "HD",
+            servers: servers,
+            quality: "HD",
             lang: "Vietsub",
             year: 0,
             rating: 0,
@@ -392,7 +302,7 @@ function parseMovieDetail(html) {
             director: "",
             country: "",
             category: "",
-            status: labels.length > 0 ? labels.join(" | ") : "Full"
+            status: statusText
         });
     } catch (e) {
         return "null";
@@ -401,80 +311,119 @@ function parseMovieDetail(html) {
 
 function parseDetailResponse(html, fallbackUrl) {
     try {
-        // Trên trang xem phim PhimMoiChill, frame phim thường được nhúng vào hoặc gọi ajax 
-        // 1. Kiểm tra iframe trực tiếp
-        var iframeMatch = html.match(/<iframe[^>]*src="([^"]+)"/);
-        if (iframeMatch) {
-            var url = iframeMatch[1];
-            // Bỏ qua các iframe rác như facebook, youtube trailer
-            if (url.indexOf("facebook") === -1 && url.indexOf("youtube") === -1 && url.indexOf("google") === -1) {
-                // Nếu iframe là src dạng //domain.com thì thêm https:
-                if (url.indexOf("//") === 0) {
-                    url = "https:" + url;
-                }
-                return JSON.stringify({
-                    url: url,
-                    headers: {
-                        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-                        "Referer": "https://chillhayz.pro/",
-                        "Custom-Js": "(function() { var s = document.createElement('style'); s.textContent = '#header, #footer, .header, .footer, .sidebar, .sidebar-content, .comment-box, .film-note, .breadcrumb, div[id^=\"ads-\"], div[id*=\"banner\"], div[class*=\"ads-top\"], div[class*=\"ads-bottom\"] { display:none !important; }'; document.head.appendChild(s); })();"
-                    },
-                    subtitles: []
-                });
-            }
-        }
+        var sourceMatch = html.match(/class="[^"]*(?:set-player-source|player__cdn)[^"]*"[^>]*data-source="([^"]+)"/)
+            || html.match(/data-source="([^"]+)"[^>]*class="[^"]*(?:set-player-source|player__cdn)[^"]*"/);
+        var streamUrl = sourceMatch ? sourceMatch[1] : (fallbackUrl || "");
 
-        // 2. Thử tìm script chứa link m3u8 hoặc nguồn embed (nếu có player trực tiếp)
-        var sourceMatch = html.match(/sources:\s*\[\s*{\s*file:\s*["']([^"']+)["']/i) ||
-            html.match(/source\s*src\s*=\s*["']([^"']+)["']/i);
-        if (sourceMatch) {
-            return JSON.stringify({
-                url: sourceMatch[1],
-                headers: {
-                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-                    "Referer": "https://chillhayz.pro/"
-                },
-                subtitles: []
-            });
-        }
-
-        // 3. Fallback: Cố gắng bóc tách div bọc ngoài trình embed thay vì load cả website
-        var playerDivMatch = html.match(/<div[^>]+(?:id|class)=["'](?:player|box-player|player-content|video-container|streaming-container)["'][^>]*>[\s\S]*?<\/div>/i);
-        if (playerDivMatch) {
-            var playerHtml = '<html><head><meta name="viewport" content="width=device-width, initial-scale=1.0"><style>body{margin:0;padding:0;background:#000;overflow:hidden;display:flex;justify-content:center;align-items:center;height:100vh;} .player-container{width:100%;height:100%;}</style></head><body><div class="player-container">' + playerDivMatch[0] + '</div></body></html>';
-            return JSON.stringify({
-                url: playerHtml,
-                headers: {
-                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-                    "Referer": "https://chillhayz.pro/",
-                    "Custom-Js": "(function() { var s = document.createElement('style'); s.textContent = '#header, #footer, .header, .footer, .sidebar, .sidebar-content, .comment-box, .film-note, .breadcrumb, div[id^=\"ads-\"], div[id*=\"banner\"], div[class*=\"ads-top\"], div[class*=\"ads-bottom\"] { display:none !important; }'; document.head.appendChild(s); })();"
-                },
-                subtitles: []
-            });
-        }
-
-        var fullWebUrl = (fallbackUrl && fallbackUrl.indexOf("http") === 0) ? fallbackUrl : ("https://chillhayz.pro" + (fallbackUrl || ""));
         return JSON.stringify({
-            url: fullWebUrl,
+            url: streamUrl.replace(/&amp;/g, "&"),
             headers: {
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-                "Referer": "https://chillhayz.pro/",
-                "Allowed-Domains": "phimmoichill.my, googleapis.com",
-                "Custom-Js": "(function() { var s = document.createElement('style'); s.textContent = '#header, #footer, .header, .footer, .sidebar, .sidebar-content, .comment-box, .film-note, .breadcrumb, div[id^=\"ads-\"], div[id*=\"banner\"], div[class*=\"ads-top\"], div[class*=\"ads-bottom\"] { display:none !important; }'; document.head.appendChild(s); })();"
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+                "Referer": "https://chillhayz.pro/"
             },
-            subtitles: []
+            subtitles: [],
+            isEmbed: true,
+            embedRegex: "['\"](https?:\\/\\/[^\\s'\"]+\\.m3u8[^'\"]*)['\"]"
         });
-
-
-
     } catch (e) {
-        return JSON.stringify({ url: "https://chillhayz.pro" + fallbackUrl, headers: {}, subtitles: [] });
+        return JSON.stringify({ url: fallbackUrl || "", headers: {}, subtitles: [] });
     }
 }
 
+function unpack(code) {
+    if (!code) return "";
+    var p_match = code.match(/}\s*\('(.*)',\s*(\d+),\s*(\d+),\s*'([^']+)'\.split\('\|'\)/);
+    if (!p_match) return code;
+
+    var p = p_match[1];
+    var a = parseInt(p_match[2]);
+    var c = parseInt(p_match[3]);
+    var k = p_match[4].split('|');
+    var e = function (c) {
+        return (c < a ? '' : e(parseInt(c / a))) + ((c = c % a) > 35 ? String.fromCharCode(c + 29) : c.toString(36));
+    };
+
+    while (c--) {
+        if (k[c]) {
+            var regex = new RegExp('\\b' + e(c) + '\\b', 'g');
+            p = p.replace(regex, k[c]);
+        }
+    }
+    return p;
+}
+
+function parseEmbedResponse(html, fallbackUrl) {
+    var finalUrl = "";
+
+    // First try to find eval code
+    var evalMatch = html.match(/eval\(function\(p,a,c,k,e,d\).*?split\('\|'\)\)\)/);
+    if (evalMatch) {
+        var unpacked = unpack(evalMatch[0]);
+        var m3u8Match = unpacked.match(/['"](https?:\/\/[^\s'"]+\.m3u8[^'"]*)['"]/);
+        if (m3u8Match) {
+            finalUrl = m3u8Match[1];
+        }
+    }
+
+    // Fallback if not eval or eval failed
+    if (!finalUrl) {
+        var m3u8Match = html.match(/['"](https?:\/\/[^\s'"]+\.m3u8[^'"]*)['"]/);
+        if (m3u8Match) {
+            finalUrl = m3u8Match[1];
+        }
+    }
+
+    // Fix escaped slashes
+    finalUrl = finalUrl.replace(/\\\//g, "/");
+
+    return JSON.stringify({
+        url: finalUrl.replace(/&amp;/g, "&"),
+        headers: {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+            "Referer": fallbackUrl || "https://chillhayz.pro/"
+        },
+        subtitles: [],
+        isEmbed: false // We already parsed it
+    });
+}
+
 function parseCategoriesResponse(html) {
-    // Để cho dễ, trả về string rỗng hoặc menu tĩnh nếu trang không dễ parse menu
-    return "[]";
+    var categories = [];
+    // Regex to match <a href=".../the-loai/slug">Name</a>
+    // We look for links with /the-loai/ in them
+    var regex = /<a[^>]+href="[^"]*\/the-loai\/([^"]+)"[^>]*>([^<]+)<\/a>/g;
+    var match;
+    var seen = {};
+
+    while ((match = regex.exec(html)) !== null) {
+        var slug = match[1];
+        var name = cleanText(match[2]);
+
+        if (slug && name && !seen[slug]) {
+            seen[slug] = true;
+            categories.push({
+                name: name,
+                slug: slug
+            });
+        }
+    }
+
+    // Sort cleanly
+    categories.sort(function (a, b) {
+        return a.name.localeCompare(b.name);
+    });
+
+    return JSON.stringify(categories);
 }
 function parseCountriesResponse(html) { return "[]"; }
 function parseYearsResponse(html) { return "[]"; }
+
+function cleanText(text) {
+    if (!text) return "";
+    return text.replace(/<[^>]*>/g, "")
+        .replace(/&amp;/g, "&")
+        .replace(/&quot;/g, '"')
+        .replace(/&#039;/g, "'")
+        .replace(/\s+/g, " ")
+        .trim();
+}
