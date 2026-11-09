@@ -16,7 +16,7 @@ function getManifest() {
         "baseUrl": "https://www.sieutamphim.site",
         "iconUrl": "https://www.sieutamphim.site/posts/2024/06/cropped-logosieutamphim-192x192.png",
         "isEnabled": true,
-        "isAdult": false,
+        "isAdult": true,
         "type": "MOVIE",
         "layoutType": "VERTICAL",
         "playerType": "embed"
