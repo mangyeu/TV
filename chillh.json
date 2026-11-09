@@ -19,7 +19,7 @@
         {
             "id": "sieutamphim",
             "name": "Sưu Tầm Phim",
-            "version": "1.0.1",
+            "version": "1.0.9",
             "scriptUrl": "https://raw.githubusercontent.com/mangyeu/TV/refs/heads/main/dmo/sieutamphim_plugin.js",
             "iconUrl": "https://www.sieutamphim.pro/posts/2024/06/cropped-logosieutamphim-192x192.png"
         },
