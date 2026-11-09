@@ -17,9 +17,9 @@ function getManifest() {
 
 function log(msg) {
     if (typeof nativeLog !== 'undefined') {
-        nativeLog("[PhimHDCS] " + msg);
+        nativeLog("[SIEUTAMPHIM] " + msg);
     } else if (typeof console !== 'undefined' && console.log) {
-        console.log("[PhimHDCS] " + msg);
+        console.log("[SIEUTAMPHIM] " + msg);
     }
 }
 
@@ -104,7 +104,7 @@ function getUrlList(slug, filtersJson) {
     try {
         var filters = JSON.parse(filtersJson || "{}");
         var page = filters.page || 1;
-        var baseUrl = "https://phimhdcss.com";
+        var baseUrl = "https://www.sieutamphim.site";
 
         var hasFilter = filters.sort || filters.category || filters.country || filters.year || filters.type || filters.language;
 
@@ -137,7 +137,7 @@ function getUrlList(slug, filtersJson) {
 
         return url;
     } catch (e) {
-        return "https://phimhdcss.com/danh-sach/phim-moi";
+        return "https://www.sieutamphim.site/danh-sach/phim-moi";
     }
 }
 
@@ -158,7 +158,7 @@ function getUrlDetail(slug) {
 }
 
 function getUrlCategories() {
-    return "https://phimhdcss.com/the-loai";
+    return "https://www.sieutamphim.site/the-loai";
 }
 
 function getUrlCountries() {
@@ -371,7 +371,7 @@ function parseMovieDetail(htmlContent) {
             var epMatch;
             while ((epMatch = epPattern.exec(episodesHtml)) !== null) {
                 var epUrl = epMatch[1];
-                if (epUrl.indexOf('http') !== 0) epUrl = 'https://phimhdcss.com' + (epUrl.startsWith('/') ? '' : '/') + epUrl;
+                if (epUrl.indexOf('http') !== 0) epUrl = 'https://www.sieutamphim.site' + (epUrl.startsWith('/') ? '' : '/') + epUrl;
 
                 episodes.push({
                     id: epUrl,
@@ -406,7 +406,7 @@ function parseMovieDetail(htmlContent) {
         var extraUrl = "";
         var btnPlayMatch = /<a\s+class="btn-see btn btn-danger btn-stream-link"\s+href="([^"]+)"/i.exec(htmlContent);
         if (btnPlayMatch) extraUrl = btnPlayMatch[1];
-        if (extraUrl && extraUrl.indexOf('http') !== 0) extraUrl = 'https://phimhdcss.com' + (extraUrl.startsWith('/') ? '' : '/') + extraUrl;
+        if (extraUrl && extraUrl.indexOf('http') !== 0) extraUrl = 'https://www.sieutamphim.site' + (extraUrl.startsWith('/') ? '' : '/') + extraUrl;
 
         var fullDesc = description;
         if (duration) fullDesc += "\nThời lượng: " + duration;
@@ -462,7 +462,7 @@ function parseDetailResponse(htmlContent, pageUrl) {
                 url: playerUrl,
                 headers: {
                     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-                    "Referer": "https://phimhdcss.com/"
+                    "Referer": "https://www.sieutamphim.site/"
                 },
                 subtitles: []
             });
@@ -517,10 +517,10 @@ function parseDetailResponse(htmlContent, pageUrl) {
                     if (jsonEnd > 0) {
                         var jsonStr = htmlContent.substring(startIdx, jsonEnd);
                         oxData = JSON.parse(jsonStr);
-                        log('PHIMHDCS_DEBUG Found fallback _0xData successfully');
+                        log('SIEUTAMPHIM_DEBUG Found fallback _0xData successfully');
                     }
                 } catch (e) {
-                    log('PHIMHDCS_DEBUG _0xData parse error: ' + e);
+                    log('SIEUTAMPHIM_DEBUG _0xData parse error: ' + e);
                 }
             }
         }
@@ -584,7 +584,7 @@ function parseDetailResponse(htmlContent, pageUrl) {
                             mimeType: "application/x-mpegURL",
                             headers: {
                                 "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-                                "Referer": "https://phimhdcss.com/"
+                                "Referer": "https://www.sieutamphim.site/"
                             },
                             subtitles: []
                         });
