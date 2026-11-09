@@ -12,7 +12,7 @@ function getManifest() {
 
 function getHomeSections() {
     return JSON.stringify([
-        { slug: 'phim-moi-cap-nhat', title: 'phim-moi-cap-nhat', type: 'Horizontal', path: 'danh-sach' },
+        { slug: 'phim-moi-cap-nhat', id='menu-item-199696', type: 'Horizontal', path: 'danh-sach' },
         { slug: 'phim-bo', title: 'Phim Bộ', type: 'Horizontal', path: 'danh-sach' },
         { slug: 'phim-le', title: 'Phim Lẻ', type: 'Horizontal', path: 'danh-sach' }
     ]);
