@@ -24,13 +24,6 @@
             "iconUrl": "https://www.sieutamphim.site/wp-content/themes/sieutamphim/assets/logo.png"
         },
         {
-            "id": "avhd",
-            "name": "AVHD",
-            "version": "1.0.5",
-            "scriptUrl": "https://raw.githubusercontent.com/mangyeu/TV/refs/heads/main/dmo/avhd_plugin.js",
-            "iconUrl": "https://static.iw01.xyz/static/av01-icon-export.svg"
-        },
-        {
             "id": "vlxx",
             "name": "VLXX",
             "version": "1.0.0",
