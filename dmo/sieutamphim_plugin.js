@@ -731,7 +731,7 @@ function parseEmbedResponse(htmlContent, url) {
                     mimeType: "application/x-mpegURL",
                     headers: {
                         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-                        "Referer": "https://play.streamxemphimhd.site/"
+                        "Referer": "https://www.sieutamphim.site/wp-admin/admin-ajax.php"
                     },
                     subtitles: subtitles
                 });
@@ -794,12 +794,12 @@ function parseEmbedResponse(htmlContent, url) {
         
         // 3. Trả về cấu hình POST request đến API getVideo để VAAPP fetch tiếp (depth 2)
         var subtitlesQuery = encodeURIComponent(JSON.stringify(subtitles));
-        var postUrl = "https://play.streamxemphimhd.site/player/index.php?data=" + embedId + "&do=getVideo&subs=" + subtitlesQuery;
+        var postUrl = "https://www.sieutamphim.site/wp-admin/admin-ajax.php?data=" + embedId + "&do=getVideo&subs=" + subtitlesQuery;
         var postBody = "hash=" + embedId + "&r=https%3A%2F%2Fphimhdcss.com%2F";
         var headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
             "Referer": url,
-            "Origin": "https://play.streamxemphimhd.site",
+            "Origin": "https://www.sieutamphim.site/wp-admin/admin-ajax.php",
             "Content-Type": "application/x-www-form-urlencoded",
             "X-Requested-With": "XMLHttpRequest"
         };
