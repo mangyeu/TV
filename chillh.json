@@ -30,6 +30,7 @@
             "scriptUrl": "https://raw.githubusercontent.com/mangyeu/TV/refs/heads/main/dmo/av01_plugin.js",
             "iconUrl": "https://static.iw01.xyz/static/pwa-192x192.png"
         },
+        
         {
             "id": "vlxx",
             "name": "VLXX",
