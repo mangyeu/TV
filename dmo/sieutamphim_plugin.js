@@ -50,32 +50,57 @@ function getFilters() {
 // =============================================================================
 
 function getUrlList(slug, filtersJson) {
-    try {
-        var filters = JSON.parse(filtersJson || "{}");
-        var page = filters.page || 1;
-        
-        if (page > 1) {
-            return "https://chillhayz.pro/" + slug + "?page=" + page;
-        }
-        return "https://chillhayz.pro/" + slug;
-    } catch (e) {
-        return "https://chillhayz.pro/" + slug;
+    var filters = JSON.parse(filtersJson || "{}");
+    var page = filters.page || 1;
+    var baseUrl = "https://chillhayz.pro";
+
+    // Prioritize category filter if present
+    if (filters.category) {
+        return baseUrl + "/" + filters.category + "/page/" + page + "/";
     }
+
+    if (!slug || slug === '') {
+        return baseUrl + "/page/" + page + "/";
+    }
+
+    // Handle full URL slugs if passed
+    if (slug.indexOf("http") === 0) {
+        return slug;
+    }
+
+    return baseUrl + "/" + slug + "/page/" + page + "/";
 }
 
 function getUrlSearch(keyword, filtersJson) {
-    return "https://chillhayz.pro/" + encodeURIComponent(keyword);
+    var filters = JSON.parse(filtersJson || "{}");
+    var page = filters.page || 1;
+    return "https://chillhayz.pro/page/" + page + "/?s=" + encodeURIComponent(keyword);
 }
 
 function getUrlDetail(slug) {
     if (!slug) return "";
-    if (slug.indexOf('http') === 0) return slug;
-    return "https://chillhayz.pro/" + slug;
+
+    // Check if it's our special combined ID: slug|postId|svId
+    if (slug.indexOf("|") !== -1) {
+        var parts = slug.split("|");
+        if (parts.length >= 3) {
+            var epSlug = parts[0];
+            var postId = parts[1];
+            var svId = parts[2];
+            // Format for player.php direct call
+            return "https://chillhayz.pro/wp-content/themes/halimmovies/player.php?episode_slug=" + epSlug + "&server_id=" + svId + "&subsv_id=&post_id=" + postId;
+        }
+    }
+
+    if (slug.indexOf("http") === 0) return slug;
+    if (slug.indexOf("/") === 0) return "https://chillhayz.pro" + slug;
+    return "https://chillhayz.pro" + slug;
 }
 
-function getUrlCategories() { return ""; }
-function getUrlCountries() { return ""; }
-function getUrlYears() { return ""; }
+function getUrlCategories() { return "https://chillhayz.pro/"; }
+function getUrlCountries() { return ""; } // Not supported
+function getUrlYears() { return ""; } // Not supported
+
 
 // =============================================================================
 // PARSERS
