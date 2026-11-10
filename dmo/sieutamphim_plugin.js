@@ -1,72 +1,289 @@
-// ========================================================
-// SIÊU TẦM PHIM VAAPP PLUGIN (Code thêm từ bản của bạn ʚʚ Ƭ Ɗųƴ ɞɞ)
-// ========================================================
-
-const BASE_URL = "https://www.sieutamphim.site";
-
-// ========================================================
-// CONFIGURATION & METADATA
-// ========================================================
+// =============================================================================
+// VAAPP Plugin - Phim Chill
+// =============================================================================
 
 function getManifest() {
     return JSON.stringify({
-        "id": "sieutamphim",
-        "name": "Sưu Tầm Phim",
-        "version": "1.0.9",
-        "baseUrl": "https://www.sieutamphim.site",
-        "iconUrl": "https://www.sieutamphim.site/posts/2024/06/cropped-logosieutamphim-192x192.png",
+        "id": "phimchill",          
+        "name": "Phim Chill",
+        "description": "Phim online",
+        "version": "1.0.0",             
+        "baseUrl": "https://chillhayz.pro",
+        "iconUrl": "https://phimchillhdc.im/favicon.ico", 
         "isEnabled": true,
-        "isAdult": false,
-        "type": "MOVIE",
-        "layoutType": "VERTICAL",
-        "playerType": "embed"
+        "type": "VIDEO",
+        "playerType": "embedtoexoplay"
     });
 }
 
-function log(msg) {
-    if (typeof nativeLog !== 'undefined') {
-        nativeLog("[STPhim] " + msg);
-    }
-}
-
-function getSlugFromUrl(url) {
-    if (!url) return "";
-    var cleanUrl = url.split("?")[0];
-    var match = cleanUrl.match(/\/([^\/]+)\.html$/i);
-    if (match) return match[1];
-    var parts = cleanUrl.split("/");
-    var last = parts[parts.length - 1] || parts[parts.length - 2] || "";
-    return last.replace(".html", "");
-}
-
-// ========================================================
-// HOME
-// ========================================================
-
 function getHomeSections() {
     return JSON.stringify([
-        { slug: "phim-bo", title: "Phim Bộ Mới", type: "Horizontal" },
-        { slug: "phim-le", title: "Phim Lẻ Mới", type: "Horizontal" },
-        { slug: "long-tieng", title: "Phim Lồng Tiếng", type: "Horizontal" },
-        { slug: "thuyet-minh", title: "Phim Thuyết Minh", type: "Horizontal" },
-        { slug: "phim-moi", title: "Mới cập nhật", type: "Grid" }
+        { "slug": "danh-sach/phim-le.html", "title": "1.Phim Lẻ", "type": "Horizontal" },
+        { "slug": "danh-sach/phim-bo.html", "title": "2.Phim Bộ", "type": "Horizontal" },
+        { "slug": "the-loai/short-drama.html", "title": "3.Phim Ngắn", "type": "Horizontal" },
+        { "slug": "the-loai/kinh-di.html", "title": "4.Kinh Dị", "type": "Grid" }
     ]);
 }
-
-// ========================================================
-// CATEGORY
-// ========================================================
 
 function getPrimaryCategories() {
     return JSON.stringify([
-        { name: 'Phim Lẻ', slug: 'phim-le' },
-        { name: 'Phim Bộ', slug: 'phim-bo' },
-        { name: 'Hoạt Hình', slug: 'hoat-hinh' },
-        { name: 'Phim Việt Nam', slug: 'phim-viet-nam' },
-        { name: 'Phim Hàn Quốc', slug: 'phim-han-quoc' },
-        { name: 'Phim Trung Quốc', slug: 'phim-trung-quoc' },
-        { name: 'Phim Nhật Bản', slug: 'phim-nhat-ban' },
-        { name: 'Hành Động', slug: 'hanh-dong' },
-        { name: 'Viễn Tưởng', slug: 'vien-tuong' }
-    ]);
+        { "slug": "the-loai/hoat-hinh.html", "name": "Hoạt Hình" },
+        { "slug": "the-loai/phim-18.html", "name": "18+" },
+        { "slug": "the-loai/hanh-dong.html", "name": "Hành Động" },
+        { "slug": "the-loai/hai-huoc.html", "name": "Hài Hước" },
+        { "slug": "the-loai/vien-tuong.html", "name": "Viễn Tưởng" },
+        { "slug": "the-loai/phieu-luu.html", "name": "Phiêu Lưu" },
+        { "slug": "the-loai/chien-tranh.html", "name": "Chiến Tranh" }
+	]);
 }
+
+function getFilters() {
+    return JSON.stringify({
+        "sort": [
+            { "name": "Mới nhất", "value": "newest" }
+        ]
+    });
+}
+
+// =============================================================================
+// URL GENERATION
+// =============================================================================
+
+function getUrlList(slug, filtersJson) {
+    try {
+        var filters = JSON.parse(filtersJson || "{}");
+        var page = filters.page || 1;
+        
+        if (page > 1) {
+            return "https://chillhayz.pro/" + slug + "?page=" + page;
+        }
+        return "https://chillhayz.pro/" + slug;
+    } catch (e) {
+        return "https://chillhayz.pro/" + slug;
+    }
+}
+
+function getUrlSearch(keyword, filtersJson) {
+    return "https://chillhayz.pro/" + encodeURIComponent(keyword);
+}
+
+function getUrlDetail(slug) {
+    if (!slug) return "";
+    if (slug.indexOf('http') === 0) return slug;
+    return "https://chillhayz.pro/" + slug;
+}
+
+function getUrlCategories() { return ""; }
+function getUrlCountries() { return ""; }
+function getUrlYears() { return ""; }
+
+// =============================================================================
+// PARSERS
+// =============================================================================
+
+function parseListResponse(html) {
+    try {
+        var items = [];
+        var pattern = /(?=<article[^>]*class="[^"]*max-w-xs[^"]*")/g;
+        var splitItems = html.split(pattern).filter(Boolean);
+
+        for (var j = 1; j < splitItems.length; j++) {
+            var block = splitItems[j];
+            var hrefMatch = block.match(/href="([^"]+)"/i);
+            if (!hrefMatch) continue; 
+
+            var rawUrl = hrefMatch[1].trim();
+            var id = "https://script.google.com/macros/s/AKfycby7drcNdhTGOQQ2yB-tTEFH4rHhyjhWYZbSvuX5eqJntT-f2ayEvwKFUI4qOrdUTZ8/exec?check=phimchill&url=" + rawUrl;
+            
+            var title = "";
+            var altMatch = block.match(/title="([^"]+)"/i);
+            if (altMatch) {
+                title = altMatch[1].trim();
+            } else {
+                var labelMatch = block.match(/title="([^"]+)"/i);
+                title = labelMatch ? labelMatch[1].trim() : "";
+            }
+            
+            if (!title || title === "Video không tiêu đề") {
+                continue; 
+            }
+            
+            var srcMatch = block.match(/img[\s\S]*?src="([^"]+)"/i);
+            var posterUrl = srcMatch ? srcMatch[1].trim() : "https://ic-vt-nss.cdnsolutions.media/a/YjgwNDg0MGRkZWVjZjQ1ZGVhZjc5MzQ0ZWJkMDlhOTA/s(w:1280,h:720),webp/026/522/500/1280x720.17475568.jpg";
+            if (posterUrl.indexOf('/') === 0 && posterUrl.indexOf('//') !== 0) {
+    			posterUrl = "https://chillhayz.pro/" + posterUrl;
+			} 
+// Nếu link ảnh là dạng tương đối không có dấu "/" ở đầu (ví dụ: uploads/abc.jpg)
+			else if (posterUrl.indexOf('http') !== 0 && posterUrl.indexOf('//') !== 0) {
+    			posterUrl = "https://chillhayz.pro/" + posterUrl;
+			}
+            items.push({
+                "id": id,          
+                "title": title, 
+                "posterUrl": posterUrl, 
+                "backdropUrl": posterUrl
+            });
+        }
+		
+        var activeRegex = /active".*?<a[^>]*>\s*(\d+)\s*<\/a>/s;
+		var activeMatch = html.match(activeRegex);
+		var activePage = activeMatch ? parseInt(activeMatch[1]) : 1;
+
+		var lastPageRegex = /(\d+)\s*<\/a>\s*<\/li>\s*<li[^>]*next/s;
+		var lastPageMatch = html.match(lastPageRegex);
+		var lastPage = lastPageMatch ? parseInt(lastPageMatch[1]) : 1;
+
+        return JSON.stringify({
+            "items": items,
+            "pagination": { 
+                "currentPage": activePage, 
+                "totalPages": lastPage, 
+                "totalItems": 48 * lastPage,
+                "itemsPerPage": 48
+            }
+        });
+    } catch (e) {
+        return JSON.stringify({ "items": [], "pagination": { "currentPage": 1, "totalPages": 1 } });
+    }
+}
+
+function parseSearchResponse(html) {
+    return parseListResponse(html);
+}
+
+function parseMovieDetail(html) {
+    var lurl = "";
+    var limg = "";
+    var lname = "Đang cập nhật...";
+    var ldes = "Không có mô tả.";
+    var ldirec = ""; // ĐÃ SỬA: Khai báo biến tránh ReferenceError
+    var lactor = ""; // ĐÃ SỬA: Khai báo biến tránh ReferenceError
+    var lduran = ""; // ĐÃ SỬA: Khai báo biến tránh ReferenceError
+
+    var rmatch = html.match(/meta\s+property="og:url"\s+content="([^"]+)"/i);
+    if (rmatch && rmatch[1]) { lurl = rmatch[1]; }
+
+    rmatch = html.match(/meta\s+property="og:image"\s+content="([^"]+)"/i);
+    if (rmatch && rmatch[1]) { limg = rmatch[1]; }
+
+    rmatch = html.match(/meta\s+property="og:title"\s+content="([^"]+)"/i);
+    if (rmatch && rmatch[1]) { lname = rmatch[1]; }
+
+    rmatch = html.match(/meta\s+property="og:description"\s+content="([^"]+)"/i);
+    if (rmatch && rmatch[1]) { ldes = rmatch[1]; }   
+    
+    rmatch = html.match(/meta\s+property="video:director"\s+content="([^"]+)"/i);
+    if (rmatch && rmatch[1]) { ldirec = rmatch[1]; }   
+    
+    rmatch = html.match(/meta\s+property="video:actor"\s+content="([^"]+)"/i);
+    if (rmatch && rmatch[1]) { lactor = rmatch[1]; }   
+    
+    rmatch = html.match(/meta\s+property="video:duration"\s+content="([^"]+)"/i);
+    if (rmatch && rmatch[1]) { lduran = rmatch[1]; }   
+    
+    // 1. Regex bóc tách chính xác từng khối server dựa theo Class Tailwind
+    var serverBlockRegex = /<span class="text-zinc-200[^"]*">([\s\S]*?)<\/span>\s*<div class="flex flex-row flex-wrap">([\s\S]*?)<\/div>/gi;
+
+    // 2. Regex bóc tách thẻ <a> của từng tập phim
+    var episodeRegex = /<a\s+href="([^"]+)"[^>]*>([\s\S]*?)<\/a>/gi;
+
+    var servers = [];
+    var serverMatch;
+    var serverCounter = 1; 
+
+    while ((serverMatch = serverBlockRegex.exec(html)) !== null) {
+        var episodesHtml = serverMatch[2]; 
+        var rawEpisodes = [];
+        var epMatch;
+        episodeRegex.lastIndex = 0; 
+        
+        while ((epMatch = episodeRegex.exec(episodesHtml)) !== null) {
+            rawEpisodes.push({
+                url: epMatch[1],
+                text: epMatch[2].trim()
+            });
+        }
+        
+        if (rawEpisodes.length === 0) continue;
+        
+        var isSingleEpisode = rawEpisodes.length === 1;
+        
+        var formattedEpisodes = rawEpisodes.map(function(ep) {
+            var numberMatch = ep.text.match(/\d+/);
+            var epNumber = numberMatch ? parseInt(numberMatch[0], 10) : 1;
+            
+            return {
+                id: ep.url,
+                name: "Tập " + epNumber,
+                slug: isSingleEpisode ? "" : "tap-" + epNumber
+            };
+        });
+        
+        servers.push({
+            name: "Server " + serverCounter++,
+            episodes: formattedEpisodes
+        });
+    }
+	
+	var streamUrl = "";
+    var rmatch = html.match(/chooseStreamingServer[\s\S]*?data-link="([\s\S]*?)"/i);
+   if (rmatch && rmatch[1]) { streamUrl = rmatch[1]; }
+	
+    return JSON.stringify({
+        id: lurl,
+        title: lname,
+        posterUrl: limg,
+        backdropUrl: limg,
+        description: ldes + "\r\n\r\n" + lurl + "\r\n\r\n" + streamUrl,
+        servers: servers,
+        quality: "HD",
+        year: 2026,
+        rating: 8.5,
+        status: "Full",
+        duration: lduran || "",
+        casts: lactor || "",
+        director: ldirec || "",
+        category: "Phim"
+    });
+}
+
+function parseDetailResponse(html) {
+    try {
+		var customJs = `
+function initCustomVideoFix() {
+  const player = jwplayer("previewPlayer");
+  if (player && typeof player.getMute === "function") {
+      if (player.getMute()) {
+          player.setMute(false);
+          console.log("Đã bật tiếng video!");
+      }
+      player.setVolume(100); 
+  }
+}
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initCustomVideoFix);
+} else {
+  initCustomVideoFix();
+}
+`;
+		var streamUrl = "";
+        var rmatch = html.match(/chooseStreamingServer[\s\S]*?data-link="([\s\S]*?)"/i);
+   	    if (rmatch && rmatch[1]) { streamUrl = rmatch[1]; }
+   	
+        return JSON.stringify({
+            url: streamUrl,
+            headers: {
+                "Referer": "https://chillhayz.pro/",
+                "Origin": "https://chillhayz.pro",
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+                "Custom-Js": customJs.trim()
+            }
+        });
+    } catch (error) {
+        return JSON.stringify({ url: "", headers: {} });
+    }
+}
+
+function parseCategoriesResponse(html) { return "[]"; }
+function parseCountriesResponse(html) { return "[]"; }
+function parseYearsResponse(html) { return "[]"; }
