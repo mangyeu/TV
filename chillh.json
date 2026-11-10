@@ -17,9 +17,9 @@
             "iconUrl": "https://hoathinh3d.co/wp-content/uploads/2023/09/favicon.png"
         },
         {
-            "id": "sieutamphim",
-            "name": "SIEUTAMPHIM",
-            "version": "1.1.3",
+            "id": "phimchill",
+            "name": "Phim Chill",
+            "version": "1.0.0",
             "scriptUrl": "https://raw.githubusercontent.com/mangyeu/TV/refs/heads/main/dmo/sieutamphim_plugin.js",
             "iconUrl": "https://www.sieutamphim.site/wp-content/themes/sieutamphim/assets/logo.png"
         },
