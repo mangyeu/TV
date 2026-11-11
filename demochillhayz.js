@@ -52,7 +52,7 @@ function getUrlList(slug, filtersJson) {
     try {
         var filters = JSON.parse(filtersJson || "{}");
         var page = filters.page || 1;
-        var baseUrl = "https://motchilliz.net";
+        var baseUrl = "https://s.w.org/images/core/emoji/17.0.2/72x72/";
 
         var hasFilter = filters.sort || filters.category || filters.country || filters.year || filters.type || filters.language;
 
