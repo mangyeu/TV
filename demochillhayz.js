@@ -17,11 +17,10 @@ function getManifest() {
 
 function getPrimaryCategories() {
     return JSON.stringify([
-        { name: 'Phim mới cập nhật', slug: 'moi-nhat' }, ///title="Phim mới cập nhật"
-        { name: 'Diễn viên', slug: 'actresses' },
-        { name: 'Vietsub', slug: 'phim-sex-vietsub' },
-        { name: 'Không che', slug: 'phim-sex-khong-che' },
-        { name: 'JAV HD', slug: 'jav' }
+        { name: 'Phim mới cập nhật', slug: 'PHIM MỚI' }, ///title="Phim mới cập nhật"
+        { name: 'PHIM BỘ', slug: 'phim-bo' },
+        { name: 'PHIM LẺ', slug: 'phim-le' },
+        { name: 'PHIM CHIẾU RẠP', slug: 'phim-chieu-rap' }
     ]);
 }
 
