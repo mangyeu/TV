@@ -4,22 +4,20 @@
 
 function getManifest() {
     return JSON.stringify({
-        "id": "chillPhim",
-        "name": "CHILLPHIM",
-        "version": "0.0.1",
-        "baseUrl": "https://chillhayz.pro",
-        "iconUrl": "https://chillhayz.pro/assets/v1/images/favicon.ico",
+        "id": "motchilliz",
+        "name": "MOTCHILLIZ",
+        "version": "1.0.0",
+        "baseUrl": "https://motchilliz.net",
+        "iconUrl": "https://motchilliz.net/wp-content/uploads/2025/11/logo-motchill.png",
         "isEnabled": true,
-        "isAdult": true,
-        "type": "VIDEO",
-        "playerType": "embed",
-        "layoutType": "HORIZONTAL"
+        "playerType": "exoplayer",
+        "type": "MOVIE"
     });
 }
 
 function getPrimaryCategories() {
     return JSON.stringify([
-        { name: 'Mới cập nhật', slug: 'moi-nhat' },
+        { name: 'Phim mới cập nhật', slug: 'moi-nhat' }, ///title="Phim mới cập nhật"
         { name: 'Diễn viên', slug: 'actresses' },
         { name: 'Vietsub', slug: 'phim-sex-vietsub' },
         { name: 'Không che', slug: 'phim-sex-khong-che' },
