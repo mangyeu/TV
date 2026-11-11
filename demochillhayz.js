@@ -49,30 +49,42 @@ function getFilterConfig() {
 // =============================================================================
 
 function getUrlList(slug, filtersJson) {
-    var filters = JSON.parse(filtersJson || "{}");
-    var page = filters.page || 1;
-    var baseUrl = "https://motchilliz.net";
+    try {
+        var filters = JSON.parse(filtersJson || "{}");
+        var page = filters.page || 1;
+        var baseUrl = "https://motchilliz.net";
 
-    if (slug === '' || slug === 'home') {
-        if (page > 1) {
-            return baseUrl + "/new/" + page + "/";
+        var hasFilter = filters.sort || filters.category || filters.country || filters.year || filters.type || filters.language;
+
+        if (hasFilter) {
+            var params = [];
+            if (filters.sort) params.push("filter[sort]=" + filters.sort);
+            if (filters.type) params.push("filter[type]=" + filters.type);
+            if (filters.category) params.push("filter[category]=" + filters.category);
+            if (filters.country) params.push("filter[region]=" + filters.country);
+            if (filters.year) params.push("filter[year]=" + filters.year);
+            if (filters.language) params.push("filter[language]=" + encodeURIComponent(filters.language));
+            if (page > 1) params.push("page=" + page);
+
+            return baseUrl + "/?" + params.join("&");
         }
-        return baseUrl + "/";
-    }
 
-    if (page > 1) {
-        return baseUrl + "/" + slug + "/" + page + "/";
-    }
-    return baseUrl + "/" + slug + "/";
-}
+        var path = "";
+        if (slug === 'phim-moi-cap-nhat') {
+            path = "/danh-sach/bang-xep-hang";
+        } else if (slug === 'phim-le' || slug === 'phim-bo' || slug === 'phim-chieu-rap' || slug === 'phim-moi') {
+            path = "/danh-sach/" + slug;
+        } else {
+            path = "/the-loai/" + slug;
+        }
 
-function getUrlSearch(keyword, filtersJson) {
-    var filters = JSON.parse(filtersJson || "{}");
-    var page = filters.page || 1;
-    var safeKeyword = encodeURIComponent(keyword.replace(/\s+/g, '-'));
-    var url = "https://motchilliz.net/search/" + safeKeyword + "/";
-    if (page > 1) {
-        url = "https://motchilliz.net/search/" + safeKeyword + "/" + page + "/";
+        var url = baseUrl + path;
+        if (page > 1) {
+            url += "?page=" + page;
+        }
+
+        return url;
+    } catch (e) {
+        return "https://motchilliz.net/danh-sach/phim-moi";
     }
-    return url;
 }
