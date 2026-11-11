@@ -4,11 +4,11 @@
 
 function getManifest() {
     return JSON.stringify({
-        "id": "phimhdcs",
-        "name": "PhimHDCS",
-        "version": "1.1.3",
+        "id": "motchilliz",
+        "name": "MOTCHILLIZ",
+        "version": "1.0.0",
         "baseUrl": "https://motchilliz.net",
-        "iconUrl": "https://motchilliz.net/favicon.ico",
+        "iconUrl": "https://motchilliz.net/wp-content/uploads/2025/11/logo-motchill.png",
         "isEnabled": true,
         "playerType": "exoplayer",
         "type": "MOVIE"
@@ -17,9 +17,9 @@ function getManifest() {
 
 function log(msg) {
     if (typeof nativeLog !== 'undefined') {
-        nativeLog("[PhimHDCS] " + msg);
+        nativeLog("[MOTCHILLIZ] " + msg);
     } else if (typeof console !== 'undefined' && console.log) {
-        console.log("[PhimHDCS] " + msg);
+        console.log("[MOTCHILLIZ] " + msg);
     }
 }
 
@@ -492,10 +492,10 @@ function parseDetailResponse(htmlContent, pageUrl) {
                 var decodedRealObj = decodeBase64(realObjMatch[1]);
                 if (decodedRealObj) {
                     oxData = JSON.parse(decodedRealObj);
-                    log('PHIMHDCS_DEBUG Found realObj in JS code successfully');
+                    log('MOTCHILLIZ_DEBUG Found realObj in JS code successfully');
                 }
             } catch (e) {
-                log('PHIMHDCS_DEBUG realObj parse error: ' + e);
+                log('MOTCHILLIZ_DEBUG realObj parse error: ' + e);
             }
         }
 
@@ -520,7 +520,7 @@ function parseDetailResponse(htmlContent, pageUrl) {
                         log('PHIMHDCS_DEBUG Found fallback _0xData successfully');
                     }
                 } catch (e) {
-                    log('PHIMHDCS_DEBUG _0xData parse error: ' + e);
+                    log('MOTCHILLIZ_DEBUG _0xData parse error: ' + e);
                 }
             }
         }
@@ -561,16 +561,16 @@ function parseDetailResponse(htmlContent, pageUrl) {
 
             if (targetId && oxData[targetId] && Array.isArray(oxData[targetId])) {
                 var chunks = oxData[targetId];
-                log('PHIMHDCS_DEBUG decoding targetId=' + targetId + ', chunks=' + chunks.length + ', salt=' + saltString);
+                log('MOTCHILLIZ_DEBUG decoding targetId=' + targetId + ', chunks=' + chunks.length + ', salt=' + saltString);
                 var playerUrl = decodeChunksWithSalt(chunks, saltString);
-                log('PHIMHDCS_DEBUG decoded playerUrl: ' + playerUrl);
+                log('MOTCHILLIZ_DEBUG decoded playerUrl: ' + playerUrl);
 
                 // Lọc bỏ wrapper player.php?link= hoặc player.php?url= để lấy link stream trực tiếp
                 if (playerUrl && playerUrl.indexOf("player.php?") !== -1) {
                     var matchLink = /[?&](?:link|url)=([^&]+)/.exec(playerUrl);
                     if (matchLink) {
                         var decodedLink = decodeURIComponent(matchLink[1]);
-                        log('PHIMHDCS_DEBUG extracted direct link from player.php: ' + decodedLink);
+                        log('MOTCHILLIZ_DEBUG extracted direct link from player.php: ' + decodedLink);
                         playerUrl = decodedLink;
                     }
                 }
@@ -614,7 +614,7 @@ function parseDetailResponse(htmlContent, pageUrl) {
                 var matchLink = /[?&](?:link|url)=([^&]+)/.exec(embedUrl);
                 if (matchLink) {
                     var decodedLink = decodeURIComponent(matchLink[1]);
-                    log('PHIMHDCS_DEBUG extracted direct link from player.php in iframe: ' + decodedLink);
+                    log('MOTCHILLIZ_DEBUG extracted direct link from player.php in iframe: ' + decodedLink);
                     embedUrl = decodedLink;
                 }
             }
