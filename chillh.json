@@ -23,6 +23,13 @@
             "scriptUrl": "https://raw.githubusercontent.com/mangyeu/TV/refs/heads/main/dmo/sieutamphim_plugin.js",
             "iconUrl": "https://www.sieutamphim.site/wp-content/themes/sieutamphim/assets/logo.png"
         },
+         {
+            "id": "motchilliz",
+            "name": "MOTCHILLIZ",
+            "version": "1.0.0",
+            "scriptUrl": "https://raw.githubusercontent.com/mangyeu/TV/refs/heads/main/dmo/motchill_plugin.js",
+            "iconUrl": "https://motchilliz.net/wp-content/uploads/2025/11/logo-motchill.png","
+        },      
         {
             "id": "vlxx",
             "name": "VLXX",
