@@ -8,7 +8,7 @@ function getManifest() {
         "name": "PHIMVN2",
         "description": "Nguồn xem phim https://phimvn2.im ổn định",
         "version": "1.0.0",             
-        "baseUrl": "https://https://phimvn2.im.com",
+        "baseUrl": "https://phimvn2.im",
         "iconUrl": "https://www.vn2data.com/img/logo-vn2/favicon.ico", 
         "isEnabled": true,
         "type": "VIDEO",
@@ -58,16 +58,16 @@ function getUrlList(slug, filtersJson) {
         var page = filters.page || 1;
         
         if (page > 1) {
-            return "https://https://phimvn2.im.com/" + slug + "/?page=" + page;
+            return "https://phimvn2.im/" + slug + "/?page=" + page;
         }
-        return "https://https://phimvn2.im.com/" + slug;
+        return "https://phimvn2.im/" + slug;
     } catch (e) {
-        return "https://https://phimvn2.im.com/" + slug;
+        return "https://phimvn2.im/" + slug;
     }
 }
 
 function getUrlSearch(keyword, filtersJson) {
-    return "https://https://phimvn2.im.com/tim-kiem/?q=" + encodeURIComponent(keyword);
+    return "https://phimvn2.im/tim-kiem/?q=" + encodeURIComponent(keyword);
 }
 
 function getUrlDetail(slug) {
@@ -79,13 +79,13 @@ function getUrlDetail(slug) {
         if (parts.length >= 2) {
             var movieSlug = parts[0];
             var epSlug = parts[1];
-            return "https://https://phimvn2.im.com/" + movieSlug + "-" + epSlug + ".html";
+            return "https://phimvn2.im/" + movieSlug + "-" + epSlug + ".html";
         }
     }
 
     if (slug.indexOf("http") === 0) return slug;
-    if (slug.indexOf("/") === 0) return "https://https://phimvn2.im.com" + slug;
-    return "https://https://phimvn2.im.com/" + slug;
+    if (slug.indexOf("/") === 0) return "https://phimvn2.im" + slug;
+    return "https://phimvn2.im/" + slug;
 }
 
 function getUrlCategories() { return ""; }
@@ -279,8 +279,8 @@ function parseDetailResponse(html) {
         return JSON.stringify({
             "url": videoUrl,
             "headers": {
-                "Referer": "https://https://phimvn2.im.com",
-                "Origin": "https://https://phimvn2.im.com",
+                "Referer": "https://phimvn2.im",
+                "Origin": "https://phimvn2.im",
                 "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
             }
         });
@@ -293,3 +293,4 @@ function parseDetailResponse(html) {
 function parseCategoriesResponse(html) { return "[]"; }
 function parseCountriesResponse(html) { return "[]"; }
 function parseYearsResponse(html) { return "[]"; }
+
