@@ -71,7 +71,7 @@ function getUrlList(slug, filtersJson) {
         }
 
         // Handle specific Lists (Danh sách)
-        var listSlugs = ['phim-le', 'phim-bo', 'phim-dang-chieu', 'tv-shows', 'subteam'];
+        var listSlugs = ['phim-le', 'phim-bo', 'phim-dang-chieu', 'tv-shows', 'Phim-AI', 'subteam'];
         // Note: 'hoat-hinh' is sometimes a list, sometimes a category. 
         // On NguonC, 'hoat-hinh' is usually in 'the-loai' but let's check standard lists.
         // NguonC commonly puts 'phim-hoat-hinh' in lists or 'hoat-hinh' in genres.
