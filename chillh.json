@@ -28,6 +28,27 @@
             "version": "1.0.3",
             "scriptUrl": "https://raw.githubusercontent.com/mangyeu/TV/refs/heads/main/dmo/hh3d_plugin.js",
             "iconUrl": "https://hoathinh3d.pw/wp-content/uploads/2023/09/favicon.png"
-        }  
+        },
+        {
+            "id": "missav",
+            "name": "MissAV",
+            "version": "1.1.2",
+            "scriptUrl": "https://raw.githubusercontent.com/mangyeu/TV/refs/heads/main/dmo/missav_plugin.js",
+            "iconUrl": "https://raw.githubusercontent.com/mangyeu/TV/refs/heads/main/dmo/missav.ico"
+        },
+        {
+            "id": "vlxx",
+            "name": "VLXX",
+            "version": "1.0.4",
+            "scriptUrl": "https://raw.githubusercontent.com/mangyeu/TV/refs/heads/main/dmo/vlxx_plugin.js",
+            "iconUrl": "https://raw.githubusercontent.com/mangyeu/TV/refs/heads/main/dmo/vlxx.ico"
+        },
+        {
+            "id": "javhd",
+            "name": "JavHD",
+            "version": "1.0.5",
+            "scriptUrl": "https://raw.githubusercontent.com/mangyeu/TV/refs/heads/main/dmo/javhd_plugin.js",
+            "iconUrl": "https://raw.githubusercontent.com/mangyeu/TV/refs/heads/main/dmo/javhd.ico"
+        }
     ]
 }
