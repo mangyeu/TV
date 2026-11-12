@@ -20,19 +20,17 @@ function getHomeSections() {
     return JSON.stringify([
         { "slug": "phim-le", "title": "Phim Lẻ Mới", "type": "Horizontal" },
         { "slug": "phim-bo", "title": "Phim Bộ Mới", "type": "Horizontal" },
-        { "slug": "phim-18", "title": "Phim 18+", "type": "Horizontal" },
         { "slug": "phim-hai", "title": "Phim Hài", "type": "Horizontal" },
         { "slug": "hoat-hinh", "title": "Hoạt Hình", "type": "Horizontal" },
         { "slug": "hanh-dong", "title": "Hành Động", "type": "Horizontal" },
-        { "slug": "kinh-di", "title": "Kinh Dị", "type": "Grid" }
+        { "slug": "Top-Phim-TikTok", "title": "Phim Drama TikTok Youtube", "type": "Horizontal" }
     ]);
 }
 
 function getPrimaryCategories() {
     return JSON.stringify([
         { "name": "Hành Động", "slug": "hanh-dong" },
-        { "name": "Kinh Dị", "slug": "kinh-di" },
-        { "slug": "phim-18", "name": "Phim 18+"},
+        { "name": "Top-Phim-TikTok", "slug": "Top-Phim-TikTok" },
         { "slug": "phim-hai", "name": "Hài Hước"},
         { "slug": "chien-tranh", "name": "Chiến Tranh"},
         { "slug": "hoat-hinh", "name": "Hoạt Hình"},
