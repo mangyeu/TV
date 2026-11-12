@@ -1,6 +1,12 @@
 {
     "version": 1,
     "plugins": [
-       
+         {
+            "id": "hh3d",
+            "name": "HH3D - Hoạt Hình 3D",
+            "version": "1.0.3",
+            "scriptUrl": "https://raw.githubusercontent.com/mangyeu/TV/refs/heads/main/dmo/hh3d_plugin.js",
+            "iconUrl": "https://hoathinh3d.pw/wp-content/uploads/2023/09/favicon.png"
+        }  
     ]
 }
