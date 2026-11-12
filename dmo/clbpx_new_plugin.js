@@ -7,7 +7,7 @@ function getManifest() {
         "id": "clbpx",
         "name": "CLB Phim Xưa",
         "version": "1.0.6",
-        "baseUrl": "https://clbphimxua.top",
+        "baseUrl": "https://clbphimxua.com",
         "iconUrl": "https://raw.githubusercontent.com/mangyeu/TV/refs/heads/main/dmo/nguonc.ico",
         "isEnabled": true,
         "type": "MOVIE",
