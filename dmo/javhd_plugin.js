@@ -8,7 +8,7 @@ function getManifest() {
         "name": "JavHD",
         "version": "1.0.5",
         "baseUrl": "https://javhdz.today",
-        "iconUrl": "https://javhdz.today/favicon.ico",
+        "iconUrl": "https://raw.githubusercontent.com/mangyeu/TV/refs/heads/main/dmo/javhd.ico",
         "isEnabled": true,
         "isAdult": true,
         "type": "VIDEO",
