@@ -7,7 +7,7 @@ function getManifest() {
         "id": "clbpx",
         "name": "CLB Phim Xưa",
         "version": "1.0.6",
-        "baseUrl": "https://phimchillhdc.im",
+        "baseUrl": "https://phimchillh.im",
         "iconUrl": "https://raw.githubusercontent.com/mangyeu/TV/refs/heads/main/dmo/nguonc.ico",
         "isEnabled": true,
         "type": "MOVIE",
@@ -54,22 +54,22 @@ function getUrlList(slug, filtersJson) {
         var page = filters.page || 1;
         
         if (page > 1) {
-            return "https://phimchillhdc.im/" + slug + "?page=" + page;
+            return "https://phimchillh.im/" + slug + "?page=" + page;
         }
-        return "https://phimchillhdc.im/" + slug;
+        return "https://phimchillh.im/" + slug;
     } catch (e) {
-        return "https://phimchillhdc.im/" + slug;
+        return "https://phimchillh.im/" + slug;
     }
 }
 
 function getUrlSearch(keyword, filtersJson) {
-    return "https://phimchillhdc.im/?search=" + encodeURIComponent(keyword);
+    return "https://phimchillh.im/?search=" + encodeURIComponent(keyword);
 }
 
 function getUrlDetail(slug) {
     if (!slug) return "";
     if (slug.indexOf('http') === 0) return slug;
-    return "https://phimchillhdc.im/" + slug;
+    return "https://phimchillh.im/" + slug;
 }
 
 function getUrlCategories() { return ""; }
@@ -110,11 +110,11 @@ function parseListResponse(html) {
             var srcMatch = block.match(/img[\s\S]*?src="([^"]+)"/i);
             var posterUrl = srcMatch ? srcMatch[1].trim() : "https://ic-vt-nss.cdnsolutions.media/a/YjgwNDg0MGRkZWVjZjQ1ZGVhZjc5MzQ0ZWJkMDlhOTA/s(w:1280,h:720),webp/026/522/500/1280x720.17475568.jpg";
             if (posterUrl.indexOf('/') === 0 && posterUrl.indexOf('//') !== 0) {
-    			posterUrl = "https://phimchillhdc.im" + posterUrl;
+    			posterUrl = "https://phimchillh.im" + posterUrl;
 			} 
 // Nếu link ảnh là dạng tương đối không có dấu "/" ở đầu (ví dụ: uploads/abc.jpg)
 			else if (posterUrl.indexOf('http') !== 0 && posterUrl.indexOf('//') !== 0) {
-    			posterUrl = "https://phimchillhdc.im/" + posterUrl;
+    			posterUrl = "https://phimchillh.im/" + posterUrl;
 			}
             items.push({
                 "id": id,          
@@ -272,8 +272,8 @@ if (document.readyState === 'loading') {
         return JSON.stringify({
             url: streamUrl,
             headers: {
-                "Referer": "https://phimchillhdc.im",
-                "Origin": "https://phimchillhdc.im",
+                "Referer": "https://phimchillh.im",
+                "Origin": "https://phimchillh.im",
                 "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
                 "Custom-Js": customJs.trim()
             }
