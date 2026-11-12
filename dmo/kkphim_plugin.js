@@ -8,7 +8,7 @@ function getManifest() {
         "name": "KKPhim",
         "version": "1.0.1",
         "baseUrl": "https://phimapi.com",
-        "iconUrl": "https://raw.githubusercontent.com/youngbi/repo/main/plugins/kkphim.png",
+        "iconUrl": "https://raw.githubusercontent.com/mangyeu/TV/refs/heads/main/dmo/kkphim.ico",
         "isEnabled": true,
         "type": "MOVIE"
     });
