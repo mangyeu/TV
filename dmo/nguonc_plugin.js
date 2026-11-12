@@ -2,24 +2,12 @@
 // CONFIGURATION & METADATA
 // =============================================================================
 
-function getManifest() {
-    return JSON.stringify({
-        "id": "nguonc",
-        "name": "Phim NguonC",
-        "version": "1.1.5",
-        "baseUrl": "https://phim.nguonc.com",
-        "iconUrl": "https://raw.githubusercontent.com/mangyeu/TV/refs/heads/main/dmo/nguonc.ico",
-        "isEnabled": true,
-        "type": "MOVIE",
-        "playerType": "embed"
-    });
-}
-
 function getHomeSections() {
     return JSON.stringify([
         { slug: 'phim-le', title: 'Phim Lẻ', type: 'Horizontal', path: 'danh-sach' },
         { slug: 'phim-bo', title: 'Phim Bộ', type: 'Horizontal', path: 'danh-sach' },
         { slug: 'tv-shows', title: 'TV Shows', type: 'Horizontal', path: 'danh-sach' },
+		{ slug: 'Phim-AI', title: 'Phim-AI', type: 'Horizontal', path: 'danh-sach' },
         { slug: 'hoat-hinh', title: 'Hoạt Hình', type: 'Horizontal', path: 'the-loai' },
         { slug: 'phim-moi-cap-nhat', title: 'Phim Mới Cập Nhật', type: 'Grid', path: 'phim-moi-cap-nhat' }
     ]);
@@ -30,6 +18,7 @@ function getPrimaryCategories() {
         { name: 'Phim lẻ', slug: 'phim-le' },
         { name: 'Phim bộ', slug: 'phim-bo' },
         { name: 'TV Shows', slug: 'tv-shows' },
+		{ name: 'Phim AI', slug: 'Phim-AI' },
         { name: 'Hoạt hình', slug: 'hoat-hinh' }
     ]);
 }
