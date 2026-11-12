@@ -9,7 +9,7 @@ function getManifest() {
         "version": "1.1.2",
         "baseUrl": "https://missav.media",
         "referrer": "https://missav123.com/",
-        "iconUrl": "https://raw.githubusercontent.com/youngbi/repo/main/plugins/missav.ico",
+        "iconUrl": "https://raw.githubusercontent.com/mangyeu/TV/refs/heads/main/dmo/missav.ico",
         "isEnabled": true,
         "isAdult": true,
         "type": "VIDEO",
