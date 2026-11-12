@@ -16,6 +16,13 @@
             "iconUrl": "https://raw.githubusercontent.com/mangyeu/TV/refs/heads/main/dmo/nguonc.ico"
         },
         {
+            "id": "kkphim",
+            "name": "KKPhim",
+            "version": "1.0.1",
+            "scriptUrl": "https://raw.githubusercontent.com/mangyeu/TV/refs/heads/main/dmo/kkphim_plugin.js",
+            "iconUrl": "https://raw.githubusercontent.com/mangyeu/TV/refs/heads/main/dmo/kkphim.ico"
+        },
+        {
             "id": "hh3d",
             "name": "HH3D - Hoạt Hình 3D",
             "version": "1.0.3",
