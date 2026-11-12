@@ -11,7 +11,7 @@ function getManifest() {
         "iconUrl": "https://raw.githubusercontent.com/mangyeu/TV/refs/heads/main/dmo/nguonc.ico",
         "isEnabled": true,
         "type": "MOVIE",
-        "playerType": "embedtoexoplay"
+        "playerType": "auto"
     });
 }
 
