@@ -108,7 +108,7 @@ function parseListResponse(html) {
             }
             
             var srcMatch = block.match(/img[\s\S]*?src="([^"]+)"/i);
-            var posterUrl = srcMatch ? srcMatch[1].trim() : "https://ic-vt-nss.cdnsolutions.media/a/YjgwNDg0MGRkZWVjZjQ1ZGVhZjc5MzQ0ZWJkMDlhOTA/s(w:1280,h:720),webp/026/522/500/1280x720.17475568.jpg";
+            var posterUrl = srcMatch ? srcMatch[1].trim() : "https://raw.githubusercontent.com/giaitritonghop1711-collab/phimchillhd/refs/heads/main/bet.gif";
             if (posterUrl.indexOf('/') === 0 && posterUrl.indexOf('//') !== 0) {
     			posterUrl = "https://phimchillh.im" + posterUrl;
 			} 
@@ -272,8 +272,8 @@ if (document.readyState === 'loading') {
         return JSON.stringify({
             url: streamUrl,
             headers: {
-                "Referer": "https://phimchillh.im",
-                "Origin": "https://phimchillh.im",
+                "Referer": "https://embed.streamc.xyz",
+                "Origin": "https://embed.streamc.xyz",
                 "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
                 "Custom-Js": customJs.trim()
             }
