@@ -1,6 +1,18 @@
 // =============================================================================
 // CONFIGURATION & METADATA
 // =============================================================================
+function getManifest() {
+    return JSON.stringify({
+        "id": "nguonc",
+        "name": "Phim NguonC",
+        "version": "1.1.5",
+        "baseUrl": "https://phim.nguonc.com",
+        "iconUrl": "https://raw.githubusercontent.com/mangyeu/TV/refs/heads/main/dmo/nguonc.ico",
+        "isEnabled": true,
+        "type": "MOVIE",
+        "playerType": "embed"
+    });
+}
 
 function getHomeSections() {
     return JSON.stringify([
