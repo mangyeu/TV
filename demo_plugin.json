@@ -1,12 +1,12 @@
 {
     "version": 1,
     "plugins": [
-{
-            "id": "phimvn2",          
-			"name": "PHIMVN2",
-            "version": "1.0.0",
-            "scriptUrl": "https://raw.githubusercontent.com/mangyeu/TV/refs/heads/main/dmo/phimvn2.js",
-            "iconUrl": "https://www.vn2data.com/img/logo-vn2/favicon.ico"
-        } 
+		{
+            "id": "clbpx",
+            "name": "CLB Phim Xưa",
+            "version": "1.0.6",
+            "scriptUrl": "https://raw.githubusercontent.com/mangyeu/TV/refs/heads/main/dmo/clbpx_new_plugin.js",
+            "iconUrl": "https://raw.githubusercontent.com/mangyeu/TV/refs/heads/main/dmo/clbphimxua-logo.ico"
+        }
     ]
 }
