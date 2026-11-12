@@ -54,3 +54,55 @@ function getFilterConfig() {
 // =============================================================================
 // URL GENERATION (Bóc tách slug sạch theo khuôn mẫu mới)
 // =============================================================================
+
+function getUrlList(slug, filtersJson) {
+    var filters = JSON.parse(filtersJson || "{}");
+    var page = filters.page || 1;
+    var baseSlug = slug || 'phim-moi';
+    var path = filters.path || 'list';
+
+    // Nếu filter có category thì dùng category, ghi đè slug
+    if (filters.category) {
+        baseSlug = filters.category;
+    }
+
+    // Nếu slug đã chứa prefix thì không cần thêm path
+    var url = "https://phimchillh.im/";
+    if (baseSlug.indexOf('/') > -1) {
+        url += baseSlug;
+    } else {
+        url += path + "/" + baseSlug;
+    }
+
+    if (page > 1) {
+        url += "/page-" + page;
+    }
+    return url;
+}
+
+function getUrlSearch(keyword, filtersJson) {
+    var filters = JSON.parse(filtersJson || "{}");
+    var page = filters.page || 1;
+    return "https://phimchillh.im/tim-kiem/" + encodeURIComponent(keyword).replace(/%20/g, '+');
+}
+
+function getUrlDetail(slug) {
+    if (!slug) return "https://phimchillh.im/";
+    if (slug.indexOf("http") === 0) return slug;
+
+    // Xử lý slug bị lỗi do app gộp (nếu có /xem/ hoặc /info/ bên trong)
+    if (slug.indexOf("/xem/") > -1 || slug.indexOf("/info/") > -1) {
+        return "https://phimchillh.im" + (slug.indexOf("/") === 0 ? "" : "/") + slug;
+    }
+
+    // PhimMoiChill dùng /info/ cho trang chi tiết
+    return "https://phimchillh.im/info/" + slug.replace(".html", "");
+}
+
+function getUrlCategories() { return "https://phimchillh.im/"; }
+function getUrlCountries() { return "https://phimchillh.im/"; }
+function getUrlYears() { return "https://phimchillh.im/"; }
+
+// =============================================================================
+// PARSERS
+// =====================================================
