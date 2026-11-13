@@ -7,7 +7,7 @@ function getManifest() {
         "id": "missav",
         "name": "MissAV",
         "version": "1.1.2",
-        "baseUrl": "https://missav.media",
+        "baseUrl": "https://missav.mrst.one",
         "referrer": "https://missav123.com/",
         "iconUrl": "https://raw.githubusercontent.com/youngbi/repo/main/plugins/missav.ico",
         "isEnabled": true,
@@ -106,7 +106,7 @@ function getFilterConfig() {
 function getUrlList(slug, filtersJson) {
     var filters = JSON.parse(filtersJson || "{}");
     var page = filters.page || 1;
-    var baseUrl = "https://missav.media";
+    var baseUrl = "https://missav.mrst.one";
 
     // If slug is empty (default), use 'vi/new'
     var path = slug || "vi/new";
@@ -133,16 +133,16 @@ function getUrlList(slug, filtersJson) {
 function getUrlSearch(keyword, filtersJson) {
     var filters = JSON.parse(filtersJson || "{}");
     var page = filters.page || 1;
-    return "https://missav.media/vi/search/" + encodeURIComponent(keyword) + "?page=" + page;
+    return "https://missav.mrst.one/vi/search/" + encodeURIComponent(keyword) + "?page=" + page;
 }
 
 function getUrlDetail(slug) {
     if (slug.indexOf("http") === 0) return slug;
-    if (slug.indexOf("/") === 0) return "https://missav.media" + slug;
-    return "https://missav.media/vi/" + slug;
+    if (slug.indexOf("/") === 0) return "https://missav.mrst.one" + slug;
+    return "https://missav.mrst.one/vi/" + slug;
 }
 
-function getUrlCategories() { return "https://missav.media/vi/genres"; }
+function getUrlCategories() { return "https://missav.mrst.one/vi/genres"; }
 function getUrlCountries() { return ""; } // Not supported
 function getUrlYears() { return ""; } // Not supported
 
@@ -900,3 +900,4 @@ function parseCategoriesResponse(html) {
 
 function parseCountriesResponse(html) { return "[]"; }
 function parseYearsResponse(html) { return "[]"; }
+
