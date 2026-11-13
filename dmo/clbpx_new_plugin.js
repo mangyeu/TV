@@ -11,7 +11,6 @@ function getManifest() {
         "id": "clbphimxua_top",
         "name": "CLB Phim Xưa",
         "version": "1.0.0",
-        "isEnabled": true,
         "type": "MOVIE",
         "layout": "VERTICAL"
     });
