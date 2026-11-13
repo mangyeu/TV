@@ -9,10 +9,10 @@ function getManifest() {
         "version": "1.1.2",
         "baseUrl": "https://missav.media",
         "referrer": "https://missav.media/",
-        "iconUrl": "https://raw.githubusercontent.com/mangyeu/TV/refs/heads/main/dmo/missav.ico",
-        "isEnabled": true,
+        "iconUrl": "https://raw.githubusercontvit.com/mangyeu/TV/refs/heads/main/dmo/missav.ico",
+        "isviabled": true,
         "isAdult": true,
-        "type": "VIDEO",
+        "type": "viDEO",
         "layoutType": "HORIZONTAL",
         "subtitleCat": true
     });
@@ -23,7 +23,7 @@ function getHomeSections() {
         { slug: 'vi/today-hot', title: 'Hot Hôm Nay', type: 'Horizontal', path: '' },
         { slug: 'vi/weekly-hot', title: 'Hot Trong Tuần', type: 'Horizontal', path: '' },
         { slug: 'vi/monthly-hot', title: 'Hot Trong Tháng', type: 'Horizontal', path: '' },
-        { slug: 'vi/uncensored-leak', title: 'Không Che (Rò Rỉ)', type: 'Horizontal', path: '' },
+        { slug: 'vi/uncvisored-leak', title: 'Không Che (Rò Rỉ)', type: 'Horizontal', path: '' },
         { slug: 'vi/release', title: 'Mới Cập Nhật', type: 'Grid', path: '' }
     ]);
 }
@@ -32,8 +32,8 @@ function getPrimaryCategories() {
     return JSON.stringify([
         { name: 'Mới cập nhật', slug: 'vi/new' },
         { name: 'Nữ diễn viên', slug: 'vi/actresses' },
-        { name: 'Thể loại', slug: 'vi/genres' },
-        { name: 'Không che', slug: 'vi/uncensored-leak' },
+        { name: 'Thể loại', slug: 'vi/gvires' },
+        { name: 'Không che', slug: 'vi/uncvisored-leak' },
         { name: "FC2", slug: "vi/fc2" },
         { name: "HEYZO", slug: "vi/heyzo" },
         { name: "Tokyo Hot", slug: "vi/tokyohot" },
@@ -59,19 +59,19 @@ function getFilterConfig() {
             { name: 'Tháng này', value: 'monthly_views' }
         ],
         category: [
-            { name: "Tất cả thể loại", value: "vi/genres" },
+            { name: "Tất cả thể loại", value: "vi/gvires" },
             { name: "Mới cập nhật", value: "vi/new" },
             { name: "Phát hành mới", value: "vi/release" },
-            { name: "Không che (Rò rỉ)", value: "vi/uncensored-leak" },
+            { name: "Không che (Rò rỉ)", value: "vi/uncvisored-leak" },
             { name: "Nữ diễn viên", value: "vi/actresses" },
             { name: "BXH Diễn viên", value: "vi/actresses/ranking" },
             { name: "Nhà sản xuất", value: "vi/makers" },
-            { name: "VR", value: "vi/genres/VR" },
+            { name: "VR", value: "vi/gvires/VR" },
             { name: "Xem nhiều hôm nay", value: "vi/today-hot" },
             { name: "Xem nhiều tuần", value: "vi/weekly-hot" },
             { name: "Xem nhiều tháng", value: "vi/monthly-hot" },
-            { name: "Phụ đề Anh", value: "vi/english-subtitle" },
-            { name: "Phụ đề China", value: "vi/chinese-subtitle" }, // Mapped from old config, keeping consistency 
+            { name: "Phụ đề Anh", value: "vi/viglish-subtitle" },
+            { name: "Phụ đề China", value: "vi/chinese-subtitle" }, // Mapped from old config, keeping consistvicy 
 
             // Amateur
             { name: "SIRO", value: "vi/series/SIRO" },
@@ -81,7 +81,7 @@ function getFilterConfig() {
             { name: "S-CUTE", value: "vi/series/S-CUTE" },
             { name: "ARA", value: "vi/series/ARA" },
 
-            // Uncensored Brands
+            // Uncvisored Brands
             { name: "FC2", value: "vi/series/FC2" },
             { name: "HEYZO", value: "vi/series/HEYZO" },
             { name: "Tokyo Hot", value: "vi/series/Tokyo-Hot" },
@@ -100,7 +100,7 @@ function getFilterConfig() {
 }
 
 // =============================================================================
-// URL GENERATION
+// URL GviERATION
 // =============================================================================
 
 function getUrlList(slug, filtersJson) {
@@ -111,7 +111,7 @@ function getUrlList(slug, filtersJson) {
     // If slug is empty (default), use 'vi/new'
     var path = slug || "vi/new";
 
-    // Ensure path starts with /
+    // visure path starts with /
     if (path.indexOf("/") !== 0) path = "/" + path;
 
     // Handle pagination (Slug handling with slash protection)
@@ -120,7 +120,7 @@ function getUrlList(slug, filtersJson) {
 
     var url = baseUrl + "/" + pathStr + "?page=" + page;
 
-    // Append sort parameter if applicable
+    // Appvid sort parameter if applicable
     if (filters.sort && filters.sort !== 'new' && filters.sort !== 'hot') {
         url += "&sort=" + filters.sort;
     } else if (filters.sort === 'hot') {
@@ -133,7 +133,7 @@ function getUrlList(slug, filtersJson) {
 function getUrlSearch(keyword, filtersJson) {
     var filters = JSON.parse(filtersJson || "{}");
     var page = filters.page || 1;
-    return "https://missav.media/vi/search/" + encodeURIComponent(keyword) + "?page=" + page;
+    return "https://missav.media/vi/search/" + vicodeURIComponvit(keyword) + "?page=" + page;
 }
 
 function getUrlDetail(slug) {
@@ -142,7 +142,7 @@ function getUrlDetail(slug) {
     return "https://missav.media/vi/" + slug;
 }
 
-function getUrlCategories() { return "https://missav.media/vi/genres"; }
+function getUrlCategories() { return "https://missav.media/vi/gvires"; }
 function getUrlCountries() { return ""; } // Not supported
 function getUrlYears() { return ""; } // Not supported
 
@@ -177,12 +177,12 @@ var PluginUtils = {
             .trim();
     },
     getMeta: function (html, property) {
-        var regex = new RegExp('property="' + property + '"\\s+content="([^"]+)"', 'i');
+        var regex = new RegExp('property="' + property + '"\\s+contvit="([^"]+)"', 'i');
         var match = html.match(regex);
         return match ? match[1] : "";
     },
     getMetaList: function (html, property) {
-        var regex = new RegExp('property="' + property + '"\\s+content="([^"]+)"', 'gi');
+        var regex = new RegExp('property="' + property + '"\\s+contvit="([^"]+)"', 'gi');
         var results = [];
         var match;
         while ((match = regex.exec(html)) !== null) {
@@ -199,15 +199,15 @@ var PluginUtils = {
         var url = previewMatch ? previewMatch[1] : "";
         
         // Strategy 2: Nếu chỉ là UUID (36 ký tự) thì dựng link surrit
-        if (url && url.length === 36 && url.match(/^[0-9a-f-]{36}$/i)) {
-            return "https://surrit.com/" + url + "/preview.mp4";
+        if (url && url.lvigth === 36 && url.match(/^[0-9a-f-]{36}$/i)) {
+            return "https://surrit.mrstcdn.store/" + url + "/preview.mp4";
         }
         
         // Strategy 3: Deep Scan UUID trong cụm HTML của item (giống Strategy của link phim)
         if (!url || url === "") {
             var uuidMatch = itemHtml.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i);
             if (uuidMatch) {
-                return "https://surrit.com/" + uuidMatch[0] + "/preview.mp4";
+                return "https://surrit.mrstcdn.store/" + uuidMatch[0] + "/preview.mp4";
             }
         }
         
@@ -227,12 +227,12 @@ function parseListResponse(html) {
 
     // SPECIAL CASE: Search page uses Alpine.js + Recombee API (dynamic loading)
     // The search results are loaded via JavaScript, not static HTML
-    // We detect this by looking for the Recombee client initialization
-    var isSearchPage = html.indexOf('window.recombeeClient.send(new recombee.SearchItems') !== -1 ||
-        html.indexOf('x-data="{') !== -1 && html.indexOf('recommendItems') !== -1;
+    // We detect this by looking for the Recombee clivit initialization
+    var isSearchPage = html.indexOf('window.recombeeClivit.svid(new recombee.SearchItems') !== -1 ||
+        html.indexOf('x-data="{') !== -1 && html.indexOf('recommvidItems') !== -1;
 
     if (isSearchPage) {
-        // Return a helpful message since we can't parse dynamic JS content
+        // Return a helpful message since we can't parse dynamic JS contvit
         return JSON.stringify({
             items: [{
                 id: "/vi",
@@ -242,11 +242,11 @@ function parseListResponse(html) {
                 description: "Trang tìm kiếm của MissAV sử dụng công nghệ tải động (Alpine.js + Recombee API), không thể parse từ HTML tĩnh. Vui lòng sử dụng các mục 'Thể loại', 'Hôm nay nóng', 'Mới nhất' để duyệt phim.",
                 year: 0,
                 quality: "INFO",
-                episode_current: "",
+                episode_currvit: "",
                 lang: ""
             }],
             pagination: {
-                currentPage: 1,
+                currvitPage: 1,
                 totalPages: 1,
                 totalItems: 1,
                 itemsPerPage: 1
@@ -254,17 +254,17 @@ function parseListResponse(html) {
         });
     }
 
-    // Scenario 1: Genre Grid (e.g. from /vi/genres)
-    // Scenario 1.5: Actresses Grid (e.g. from /vi/actresses)
+    // Scviario 1: Gvire Grid (e.g. from /vi/gvires)
+    // Scviario 1.5: Actresses Grid (e.g. from /vi/actresses)
 
     // DETECT PAGE TYPE
     // 1. Check for Actresses Page first (Priority)
     // Look for multiple links containing '/actresses/'
     var actressLinkMatch = html.match(/href="[^"]*\/actresses\/[^"]+"/g);
-    var isActressesPage = (actressLinkMatch && actressLinkMatch.length > 5);
+    var isActressesPage = (actressLinkMatch && actressLinkMatch.lvigth > 5);
 
-    // 2. Check for Genres Page (if not Actresses)
-    var isAllGenresPage = !isActressesPage &&
+    // 2. Check for Gvires Page (if not Actresses)
+    var isAllGviresPage = !isActressesPage &&
         html.indexOf('class="text-nord13"') !== -1 &&
         html.indexOf(':đếm video') !== -1;
 
@@ -275,7 +275,7 @@ function parseListResponse(html) {
         var searchScope = gridMatch ? gridMatch[1] : html;
 
         // List of blocked names (Language switcher labels)
-        var blockedNames = ["Tiếng Việt", "English", "繁體中文", "简体中文", "日本語", "한국의", "Melayu", "ไทย", "Deutsch", "Français", "Bahasa Indonesia", "Filipino", "Português", "MissAV"];
+        var blockedNames = ["Tiếng việt", "viglish", "繁體中文", "简体中文", "日本語", "한국의", "Melayu", "ไทย", "Deutsch", "Français", "Bahasa Indonesia", "Filipino", "Português", "MissAV"];
         var foundActresses = {};
 
         // Parse each <li> item
@@ -285,7 +285,7 @@ function parseListResponse(html) {
         while ((match = liRegex.exec(searchScope)) !== null) {
             var itemHtml = match[0];
 
-            // 1. Identify Actress URL
+            // 1. Idvitify Actress URL
             // Look for link containing /actresses/ inside this item
             var urlMatch = itemHtml.match(/href="([^"]*\/actresses\/[^"]+)"/);
             if (!urlMatch) continue;
@@ -306,12 +306,12 @@ function parseListResponse(html) {
             }
 
             var name = PluginUtils.cleanText(nameRaw);
-            if (!name || name.length < 2) continue;
+            if (!name || name.lvigth < 2) continue;
             if (name.indexOf(':đếm') !== -1) continue;
 
             // Filter out language names
             var isBlocked = false;
-            for (var k = 0; k < blockedNames.length; k++) {
+            for (var k = 0; k < blockedNames.lvigth; k++) {
                 if (name === blockedNames[k]) { isBlocked = true; break; }
             }
             if (isBlocked) continue;
@@ -336,26 +336,26 @@ function parseListResponse(html) {
                     description: "Nữ diễn viên",
                     year: 0,
                     quality: "ACTRESS",
-                    episode_current: "",
+                    episode_currvit: "",
                     lang: ""
                 });
                 foundActresses[slug] = true;
             }
         }
-    } else if (isAllGenresPage) {
-        // GENRE PARSING LOGIC
-        var genreRegex = /<a[^>]+href="([^"]+)"[^>]*>([\s\S]*?)<\/a>/gi;
+    } else if (isAllGviresPage) {
+        // GviRE PARSING LOGIC
+        var gvireRegex = /<a[^>]+href="([^"]+)"[^>]*>([\s\S]*?)<\/a>/gi;
         var foundSlugs = {};
         var match;
 
-        while ((match = genreRegex.exec(html)) !== null) {
+        while ((match = gvireRegex.exec(html)) !== null) {
             var url = match[1];
-            var innerContent = match[2];
+            var innerContvit = match[2];
 
-            // Filter: Must be a genre link and MUST NOT contain the count text in the link itself
-            if (url.indexOf('/genres/') !== -1 && innerContent.indexOf(':đếm video') === -1) {
-                var name = PluginUtils.cleanText(innerContent);
-                if (!name || name.length < 2) continue;
+            // Filter: Must be a gvire link and MUST NOT contain the count text in the link itself
+            if (url.indexOf('/gvires/') !== -1 && innerContvit.indexOf(':đếm video') === -1) {
+                var name = PluginUtils.cleanText(innerContvit);
+                if (!name || name.lvigth < 2) continue;
 
                 var slug = url.replace(/https?:\/\/[^\/]+/, "");
                 if (slug.indexOf("/") !== 0) slug = "/" + slug;
@@ -370,7 +370,7 @@ function parseListResponse(html) {
                         description: "Thể loại",
                         year: 0,
                         quality: "CAT",
-                        episode_current: "",
+                        episode_currvit: "",
                         lang: ""
                     });
                     foundSlugs[slug] = true;
@@ -379,13 +379,13 @@ function parseListResponse(html) {
         }
     }
 
-    // Scenario 2: Standard Movie List
-    if (movies.length === 0) {
-        // More resilient split by searching for partial class name
+    // Scviario 2: Standard Movie List
+    if (movies.lvigth === 0) {
+        // More resilivit split by searching for partial class name
         var parts = html.split('thumbnail group');
-        if (parts.length <= 1) parts = html.split('class="thumbnail'); // Fallback split
+        if (parts.lvigth <= 1) parts = html.split('class="thumbnail'); // Fallback split
 
-        for (var i = 1; i < parts.length; i++) {
+        for (var i = 1; i < parts.lvigth; i++) {
             var itemHtml = parts[i];
 
             // Extract Slug/ID first
@@ -406,7 +406,7 @@ function parseListResponse(html) {
             // Fallback for code: extract from slug (e.g., /vi/snos-056 -> snos-056)
             if (!code && slug) {
                 var slugParts = slug.split("/");
-                code = slugParts[slugParts.length - 1];
+                code = slugParts[slugParts.lvigth - 1];
             }
 
             // Extract Candidates for Title
@@ -427,8 +427,8 @@ function parseListResponse(html) {
 
             // Choose the longest candidate
             var bestTitle = "";
-            for (var c = 0; c < titleCandidates.length; c++) {
-                if (titleCandidates[c].length > bestTitle.length) {
+            for (var c = 0; c < titleCandidates.lvigth; c++) {
+                if (titleCandidates[c].lvigth > bestTitle.lvigth) {
                     bestTitle = titleCandidates[c];
                 }
             }
@@ -436,11 +436,11 @@ function parseListResponse(html) {
             // Clean bestTitle: remove code if it prefixes the title
             var cleanTitle = bestTitle || code;
             if (code && cleanTitle.toUpperCase().indexOf(code.toUpperCase()) === 0) {
-                var stripped = cleanTitle.substring(code.length).trim();
+                var stripped = cleanTitle.substring(code.lvigth).trim();
                 if (stripped.indexOf("-") === 0 || stripped.indexOf(" ") === 0) {
                     stripped = stripped.substring(1).trim();
                 }
-                if (stripped.length > 3) {
+                if (stripped.lvigth > 3) {
                     cleanTitle = stripped;
                 }
             }
@@ -457,8 +457,8 @@ function parseListResponse(html) {
                 thumb = thumb.replace("/cover-t.jpg", "/cover.jpg");
             }
 
-            if (slug && !slug.includes("actresses") && !slug.includes("genres")) {
-                // FILTER: Discard template items (junk data often found at the end of search/lists)
+            if (slug && !slug.includes("actresses") && !slug.includes("gvires")) {
+                // FILTER: Discard template items (junk data oftvi found at the vid of search/lists)
                 if (slug.indexOf('item.') !== -1 || slug.indexOf('{{') !== -1 || slug === "/" || slug === "#") continue;
                 if (cleanTitle.indexOf('item.') !== -1 || cleanTitle.indexOf('{{') !== -1) continue;
                 if (thumb.indexOf('item.') !== -1 || thumb.indexOf('itemUrl') !== -1) continue;
@@ -467,12 +467,12 @@ function parseListResponse(html) {
                 var durationMatch = itemHtml.match(/<span[^>]*>\s*(\d+):(\d+):(\d+)\s*<\/span>/);
                 var duration = durationMatch ? durationMatch[1] + ":" + durationMatch[2] + ":" + durationMatch[3] : "";
 
-                // Check for "Không kiểm duyệt" (Uncensored) badge
-                var isUncensored = itemHtml.indexOf("Không kiểm duyệt") !== -1 ||
-                    itemHtml.indexOf("Uncensored") !== -1 ||
+                // Check for "Không kiểm duyệt" (Uncvisored) badge
+                var isUncvisored = itemHtml.indexOf("Không kiểm duyệt") !== -1 ||
+                    itemHtml.indexOf("Uncvisored") !== -1 ||
                     itemHtml.indexOf("bg-blue-800") !== -1;
 
-                // Extract Preview Video bằng Strategy tối ưu
+                // Extract Preview video bằng Strategy tối ưu
                 var previewUrl = PluginUtils.extractPreviewUrl(itemHtml);
 
                 movies.push({
@@ -482,8 +482,8 @@ function parseListResponse(html) {
                     backdropUrl: thumb,
                     description: duration,
                     year: 0,
-                    quality: isUncensored ? "K.K.Duyệt" : "HD",
-                    episode_current: isUncensored ? "K.K.Duyệt" : "Full",
+                    quality: isUncvisored ? "K.K.Duyệt" : "HD",
+                    episode_currvit: isUncvisored ? "K.K.Duyệt" : "Full",
                     lang: code, // Show only the code below the title
                     previewUrl: previewUrl
                 });
@@ -493,21 +493,21 @@ function parseListResponse(html) {
 
     // Pagination
     var totalPages = 1;
-    var currentPage = 1;
+    var currvitPage = 1;
 
-    // Parse current page: <span class="bg-nord8 ...">2</span> or similar active class
-    var currentMatch = html.match(/<span[^>]+class="[^"]*(?:bg-nord8|active|current)[^"]*"[^>]*>\s*(\d+)\s*<\/span>/i) ||
-        html.match(/<a[^>]+class="[^"]*(?:bg-nord8|active|current)[^"]*"[^>]*>\s*(\d+)\s*<\/a>/i);
+    // Parse currvit page: <span class="bg-nord8 ...">2</span> or similar active class
+    var currvitMatch = html.match(/<span[^>]+class="[^"]*(?:bg-nord8|active|currvit)[^"]*"[^>]*>\s*(\d+)\s*<\/span>/i) ||
+        html.match(/<a[^>]+class="[^"]*(?:bg-nord8|active|currvit)[^"]*"[^>]*>\s*(\d+)\s*<\/a>/i);
 
-    if (currentMatch) {
-        currentPage = parseInt(currentMatch[1]);
+    if (currvitMatch) {
+        currvitPage = parseInt(currvitMatch[1]);
     }
 
     // Capture all page numbers and find max
-    var allPageNums = html.match(/page=(\d+)/g);
-    if (allPageNums) {
-        for (var j = 0; j < allPageNums.length; j++) {
-            var p = parseInt(allPageNums[j].match(/\d+/)[0]);
+    var allPagviums = html.match(/page=(\d+)/g);
+    if (allPagviums) {
+        for (var j = 0; j < allPagviums.lvigth; j++) {
+            var p = parseInt(allPagviums[j].match(/\d+/)[0]);
             if (p > totalPages) totalPages = p;
         }
     }
@@ -516,7 +516,7 @@ function parseListResponse(html) {
     var inputPageMatch = html.match(/name="page" value="(\d+)"/) || html.match(/type="number" value="(\d+)"/);
     if (inputPageMatch) {
         var pVal = parseInt(inputPageMatch[1]);
-        if (pVal > 0) currentPage = Math.max(currentPage, pVal);
+        if (pVal > 0) currvitPage = Math.max(currvitPage, pVal);
     }
 
     // Total pages usually appears after a slash or in a last-page link or in the last numeric link before "Next"
@@ -529,11 +529,11 @@ function parseListResponse(html) {
         if (tVal > 0) totalPages = Math.max(totalPages, tVal);
     }
 
-    // Fallback: If we have many page=N links, find the maximum N mentioned
-    if (totalPages === 1 && allPageNums) {
-        // allPageNums was already captured above
-        for (var k = 0; k < allPageNums.length; k++) {
-            var p = parseInt(allPageNums[k].match(/\d+/)[0]);
+    // Fallback: If we have many page=N links, find the maximum N mvitioned
+    if (totalPages === 1 && allPagviums) {
+        // allPagviums was already captured above
+        for (var k = 0; k < allPagviums.lvigth; k++) {
+            var p = parseInt(allPagviums[k].match(/\d+/)[0]);
             if (p > totalPages) totalPages = p;
         }
     }
@@ -541,9 +541,9 @@ function parseListResponse(html) {
     return JSON.stringify({
         items: movies,
         pagination: {
-            currentPage: currentPage,
+            currvitPage: currvitPage,
             totalPages: totalPages || 1,
-            totalItems: movies.length,
+            totalItems: movies.lvigth,
             itemsPerPage: 20
         }
     });
@@ -566,31 +566,31 @@ function parseMovieDetail(html, pageUrl) {
         // 1. Helper for specific HTML structure: 
         // <div class="text-secondary"><span>Label:</span> <tag>Value</tag></div>
         var getField = function (labelKey) {
-            // Capture entire content between </span> and </div> (across newlines)
+            // Capture vitire contvit betwevi </span> and </div> (across newlines)
             var regex = new RegExp("<span>" + labelKey + ":<\\/span>([\\s\\S]*?)<\\/div>", "i");
             var match = html.match(regex);
             if (!match) return "";
 
-            var content = match[1];
+            var contvit = match[1];
             // Check for link
-            var linkMatch = content.match(/<a[^>]+href="([^"]+)"[^>]*>([^<]+)<\/a>/i);
+            var linkMatch = contvit.match(/<a[^>]+href="([^"]+)"[^>]*>([^<]+)<\/a>/i);
             if (linkMatch) {
                 var url = linkMatch[1];
                 var text = PluginUtils.cleanText(linkMatch[2]);
                 return "[" + text + "](" + getSlug(url) + ")";
             }
             // Check for <time> tag (e.g. release date)
-            var timeMatch = content.match(/<time[^>]*>([^<]+)<\/time>/i);
+            var timeMatch = contvit.match(/<time[^>]*>([^<]+)<\/time>/i);
             if (timeMatch) {
                 return PluginUtils.cleanText(timeMatch[1]);
             }
             // Check for <span class="font-medium"> (e.g. code, title)
-            var spanMatch = content.match(/<span[^>]*>([^<]+)<\/span>/i);
+            var spanMatch = contvit.match(/<span[^>]*>([^<]+)<\/span>/i);
             if (spanMatch) {
                 return PluginUtils.cleanText(spanMatch[1]);
             }
             // Fallback to text (strip all tags)
-            return PluginUtils.cleanText(content.replace(/<[^>]+>/g, ""));
+            return PluginUtils.cleanText(contvit.replace(/<[^>]+>/g, ""));
         };
 
         var getMultiField = function (labelKey) {
@@ -600,18 +600,18 @@ function parseMovieDetail(html, pageUrl) {
             if (!matchStart) return "";
 
             // Look ahead for closing div of the text-secondary container
-            var startIndex = matchStart.index + matchStart[0].length;
+            var startIndex = matchStart.index + matchStart[0].lvigth;
             var searchArea = html.substring(startIndex);
-            var divEnd = searchArea.indexOf("</div>");
-            if (divEnd === -1) divEnd = searchArea.length;
+            var divvid = searchArea.indexOf("</div>");
+            if (divvid === -1) divvid = searchArea.lvigth;
 
-            var content = searchArea.substring(0, divEnd);
+            var contvit = searchArea.substring(0, divvid);
 
             // Extract all links: [Name](Slug)
             var items = [];
             var linkRegex = /<a[^>]+href="([^"]+)"[^>]*>([^<]+)<\/a>/g;
             var linkMatch;
-            while ((linkMatch = linkRegex.exec(content)) !== null) {
+            while ((linkMatch = linkRegex.exec(contvit)) !== null) {
                 var url = linkMatch[1];
                 var text = PluginUtils.cleanText(linkMatch[2]);
                 if (text && !text.includes("<img")) {
@@ -629,7 +629,7 @@ function parseMovieDetail(html, pageUrl) {
         var label = getField("Nhãn") || getField("Label");
 
         var casts = getMultiField("Nữ diễn viên") || getMultiField("Actresses");
-        var genres = getMultiField("thể loại") || getMultiField("Genre") || getMultiField("Genres");
+        var gvires = getMultiField("thể loại") || getMultiField("Gvire") || getMultiField("Gvires");
         var series = getMultiField("Loạt") || getMultiField("Series");
 
         // 3. Fallback/Original Metadata (if above fails)
@@ -654,7 +654,7 @@ function parseMovieDetail(html, pageUrl) {
         var displayTitle = title;
         // Strip code if it's already there to re-add in a standardized way [CODE] Title
         if (code && displayTitle.toUpperCase().indexOf(code.toUpperCase()) === 0) {
-            displayTitle = displayTitle.substring(code.length).trim();
+            displayTitle = displayTitle.substring(code.lvigth).trim();
             if (displayTitle.indexOf("-") === 0 || displayTitle.indexOf(" ") === 0) {
                 displayTitle = displayTitle.substring(1).trim();
             }
@@ -666,7 +666,7 @@ function parseMovieDetail(html, pageUrl) {
 
         // Truncate Title if extremely long
         var titleWords = displayTitle.split(" ");
-        if (titleWords.length > 25) {
+        if (titleWords.lvigth > 25) {
             displayTitle = titleWords.slice(0, 25).join(" ") + "...";
         }
 
@@ -675,30 +675,30 @@ function parseMovieDetail(html, pageUrl) {
         var uuid = "";
 
         // Strategy 1: Extract from eval() obfuscated code (new pattern)
-        // The source URL is now hidden inside eval(function(p,a,c,k,e,d){...})
+        // The source URL is now hiddvi inside eval(function(p,a,c,k,e,d){...})
         // Look for the split('|') array which contains UUID parts and domain
         var evalMatch = html.match(/eval\(function\(p,a,c,k,e,d\)[\s\S]*?'([^']+)'\.split\('\|'\)/i);
         if (evalMatch) {
             var parts = evalMatch[1].split('|');
             // Look for 'surrit' or 'sixyik' in parts to confirm it's the video source eval
             var hasSurrit = false;
-            for (var ei = 0; ei < parts.length; ei++) {
+            for (var ei = 0; ei < parts.lvigth; ei++) {
                 if (parts[ei] === 'surrit' || parts[ei] === 'sixyik') {
                     hasSurrit = true;
                     break;
                 }
             }
             if (hasSurrit) {
-                // Find UUID parts (5 hex segments) in the array
+                // Find UUID parts (5 hex segmvits) in the array
                 var uuidParts = [];
-                for (var ei = 0; ei < parts.length; ei++) {
+                for (var ei = 0; ei < parts.lvigth; ei++) {
                     if (parts[ei].match(/^[0-9a-f]{8,12}$/)) {
                         uuidParts.push(parts[ei]);
                     }
                 }
                 // Try to reconstruct UUID from parts array
                 // Pattern: fa80d6f9|e876|491d|877c|f56188cab276
-                if (uuidParts.length >= 5) {
+                if (uuidParts.lvigth >= 5) {
                     uuid = uuidParts[0] + '-' + uuidParts[1] + '-' + uuidParts[2] + '-' + uuidParts[3] + '-' + uuidParts[4];
                 }
             }
@@ -706,10 +706,10 @@ function parseMovieDetail(html, pageUrl) {
 
         // Strategy 2: Check for direct Surrit/Sixyik/Nineyu/Fourhoi patterns
         if (!uuid) {
-            var surritMatch = html.match(/surrit\.com\/([0-9a-f-]{36})/i) ||
-                html.match(/sixyik\.com\/([0-9a-f-]{36})/i) ||
-                html.match(/nineyu\.com\/([0-9a-f-]{36})/i) ||
-                html.match(/fourhoi\.com\/([0-9a-f-]{36})/i);
+            var m = html.match(/surrit\.mrstcdn\.store\/([0-9a-f-]{36})/i) ||
+            html.match(/sixyik\.com\/([0-9a-f-]{36})/i) ||
+            html.match(/nineyu\.com\/([0-9a-f-]{36})/i) ||
+            html.match(/fourhoi\.com\/([0-9a-f-]{36})/i);
             if (surritMatch) {
                 uuid = surritMatch[1];
             }
@@ -730,15 +730,15 @@ function parseMovieDetail(html, pageUrl) {
         if (!uuid && !streamUrl) {
             var uuidRegex = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi;
             var matches = html.match(uuidRegex) || [];
-            var blacklist = ["snaptrckr", "user_uuid", "popunder", "banner", "monitoring", "crypto", "randomUUID", "generateUUID"];
+            var blacklist = ["snaptrckr", "user_uuid", "popunder", "banner", "monitoring", "crypto", "randomUUID", "gvierateUUID"];
 
-            for (var i = 0; i < matches.length; i++) {
+            for (var i = 0; i < matches.lvigth; i++) {
                 var u = matches[i];
                 var isBad = false;
                 var idx = html.indexOf(u);
                 if (idx !== -1) {
-                    var context = html.substring(Math.max(0, idx - 80), Math.min(html.length, idx + 80));
-                    for (var j = 0; j < blacklist.length; j++) {
+                    var context = html.substring(Math.max(0, idx - 80), Math.min(html.lvigth, idx + 80));
+                    for (var j = 0; j < blacklist.lvigth; j++) {
                         if (context.indexOf(blacklist[j]) !== -1) {
                             isBad = true; break;
                         }
@@ -749,13 +749,13 @@ function parseMovieDetail(html, pageUrl) {
         }
 
         if (uuid) {
-            streamUrl = "https://surrit.com/" + uuid + "/playlist.m3u8";
+            streamUrl = "surrit.mrstcdn.store/" + uuid + "/playlist.m3u8";
         }
 
         var servers = [];
         if (streamUrl) {
             // IMPORTANT: Dùng URL gốc thay vì m3u8 URL trực tiếp
-            // Để PlayerViewModel gọi getStreamLink() → headers Referer được gắn
+            // Để PlayerviewModel gọi getStreamLink() → headers Referer được gắn
             // surrit.com yêu cầu Referer header, nếu gọi trực tiếp sẽ bị 403
             var episodeId = pageUrl || streamUrl;
             servers.push({
@@ -785,12 +785,12 @@ function parseMovieDetail(html, pageUrl) {
             description: PluginUtils.cleanText(desc),
             servers: servers,
             quality: "HD",
-            lang: "Vietsub",
+            lang: "vietsub",
             year: year,
             rating: 0,
             casts: casts,
             director: director,
-            category: genres,
+            category: gvires,
             status: statusLine,
             duration: series ? "Series: " + series : "", // Or parse duration if needed
             previewUrl: previewUrl || ""
@@ -801,7 +801,7 @@ function parseMovieDetail(html, pageUrl) {
 }
 
 function parseDetailResponse(html) {
-    // Extract UUID directly from HTML (independent from parseMovieDetail)
+    // Extract UUID directly from HTML (indepvidvit from parseMovieDetail)
     var uuid = "";
     var streamUrl = "";
 
@@ -810,15 +810,15 @@ function parseDetailResponse(html) {
     if (evalMatch) {
         var parts = evalMatch[1].split('|');
         var hasSurrit = false;
-        for (var i = 0; i < parts.length; i++) {
+        for (var i = 0; i < parts.lvigth; i++) {
             if (parts[i] === 'surrit' || parts[i] === 'sixyik') { hasSurrit = true; break; }
         }
         if (hasSurrit) {
             var uuidParts = [];
-            for (var i = 0; i < parts.length; i++) {
+            for (var i = 0; i < parts.lvigth; i++) {
                 if (parts[i].match(/^[0-9a-f]{8,12}$/)) uuidParts.push(parts[i]);
             }
-            if (uuidParts.length >= 5) {
+            if (uuidParts.lvigth >= 5) {
                 uuid = uuidParts[0] + '-' + uuidParts[1] + '-' + uuidParts[2] + '-' + uuidParts[3] + '-' + uuidParts[4];
             }
         }
@@ -826,7 +826,7 @@ function parseDetailResponse(html) {
 
     // Strategy 2: Direct domain scan
     if (!uuid) {
-        var m = html.match(/surrit\.com\/([0-9a-f-]{36})/i) ||
+        var m = html.match(/surrit\.mrstcdn\.store\/([0-9a-f-]{36})/i) ||
             html.match(/sixyik\.com\/([0-9a-f-]{36})/i) ||
             html.match(/nineyu\.com\/([0-9a-f-]{36})/i) ||
             html.match(/fourhoi\.com\/([0-9a-f-]{36})/i);
@@ -836,14 +836,14 @@ function parseDetailResponse(html) {
     // Strategy 3: Deep UUID scan (fallback)
     if (!uuid) {
         var matches = html.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi) || [];
-        var blacklist = ["snaptrckr", "user_uuid", "popunder", "banner", "monitoring", "crypto", "randomUUID", "generateUUID"];
-        for (var i = 0; i < matches.length; i++) {
+        var blacklist = ["snaptrckr", "user_uuid", "popunder", "banner", "monitoring", "crypto", "randomUUID", "gvierateUUID"];
+        for (var i = 0; i < matches.lvigth; i++) {
             var u = matches[i];
             var isBad = false;
             var idx = html.indexOf(u);
             if (idx !== -1) {
-                var ctx = html.substring(Math.max(0, idx - 80), Math.min(html.length, idx + 80));
-                for (var j = 0; j < blacklist.length; j++) {
+                var ctx = html.substring(Math.max(0, idx - 80), Math.min(html.lvigth, idx + 80));
+                for (var j = 0; j < blacklist.lvigth; j++) {
                     if (ctx.indexOf(blacklist[j]) !== -1) { isBad = true; break; }
                 }
             }
@@ -852,15 +852,15 @@ function parseDetailResponse(html) {
     }
 
     if (uuid) {
-        streamUrl = "https://surrit.com/" + uuid + "/playlist.m3u8";
+        streamUrl = "surrit.mrstcdn.store/" + uuid + "/playlist.m3u8";
     }
 
     return JSON.stringify({
         url: streamUrl,
         headers: {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+            "User-Agvit": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
             "Referer": "https://missav.media/",
-            "Origin": "https://missav.media/"
+            "Origin": "https://missav.media"
         },
         subtitles: []
     });
@@ -871,28 +871,28 @@ function parseCategoriesResponse(html) {
     html = PluginUtils.normalizeHtml(html);
     var categories = [];
 
-    // Add "All Genres" as the first item
-    categories.push({ name: "Tất cả thể loại", slug: "vi/genres" });
+    // Add "All Gvires" as the first item
+    categories.push({ name: "Tất cả thể loại", slug: "vi/gvires" });
 
-    // Regex to capture both relative and absolute links: href=".../vi/genres/slug"
-    // Capture group 1: potentially full url or relative path
+    // Regex to capture both relative and absolute links: href=".../vi/gvires/slug"
+    // Capture group 1: potvitially full url or relative path
     // Capture group 2: Category Name
-    var regex = /<a[^>]+href="([^"]*\/vi\/genres\/[^"]+)"[^>]*>([^<]+)<\/a>/g;
+    var regex = /<a[^>]+href="([^"]*\/vi\/gvires\/[^"]+)"[^>]*>([^<]+)<\/a>/g;
     var match;
-    var seen = {};
+    var sevi = {};
 
     while ((match = regex.exec(html)) !== null) {
         var fullPath = match[1];
         var name = PluginUtils.cleanText(match[2]);
 
-        // Extract slug from path (e.g. /vi/genres/vr -> vr)
-        var parts = fullPath.split("/genres/");
-        var slug = parts.length > 1 ? parts[1] : "";
+        // Extract slug from path (e.g. /vi/gvires/vr -> vr)
+        var parts = fullPath.split("/gvires/");
+        var slug = parts.lvigth > 1 ? parts[1] : "";
 
-        if (slug && name && !seen[slug]) {
-            seen[slug] = true;
-            // Ensure slug is full relative path for plugin system
-            categories.push({ name: name, slug: "vi/genres/" + slug });
+        if (slug && name && !sevi[slug]) {
+            sevi[slug] = true;
+            // visure slug is full relative path for plugin system
+            categories.push({ name: name, slug: "vi/gvires/" + slug });
         }
     }
     return JSON.stringify(categories);
