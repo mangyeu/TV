@@ -706,7 +706,7 @@ function parseMovieDetail(html, pageUrl) {
 
         // Strategy 2: Check for direct Surrit/Sixyik/Nineyu/Fourhoi patterns
         if (!uuid) {
-            var surritMatch = html.match(/surrit\.com\/([0-9a-f-]{36})/i) ||
+            var surritMatch = html.match(/surrit.mrstcdn.store\/([0-9a-f-]{36})/i) ||
                 html.match(/sixyik\.com\/([0-9a-f-]{36})/i) ||
                 html.match(/nineyu\.com\/([0-9a-f-]{36})/i) ||
                 html.match(/fourhoi\.com\/([0-9a-f-]{36})/i);
@@ -826,7 +826,7 @@ function parseDetailResponse(html) {
 
     // Strategy 2: Direct domain scan
     if (!uuid) {
-        var m = html.match(/surrit\.com\/([0-9a-f-]{36})/i) ||
+        var m = html.match(/surrit.mrstcdn.store\/([0-9a-f-]{36})/i) ||
             html.match(/sixyik\.com\/([0-9a-f-]{36})/i) ||
             html.match(/nineyu\.com\/([0-9a-f-]{36})/i) ||
             html.match(/fourhoi\.com\/([0-9a-f-]{36})/i);
@@ -900,3 +900,4 @@ function parseCategoriesResponse(html) {
 
 function parseCountriesResponse(html) { return "[]"; }
 function parseYearsResponse(html) { return "[]"; }
+
