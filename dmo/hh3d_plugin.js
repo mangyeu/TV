@@ -106,7 +106,7 @@ function getUrlDetail(slug) {
             var postId = parts[1];
             var svId = parts[2];
             // Format for player.php direct call
-            return "https://hoathinh3d.pw/wp-content/themes/halimmovies/player.php?episode_slug=" + epSlug + "&server_id=" + svId + "&subsv_id=&post_id=" + postId;
+            return "https://hoathinh3d.pw/wp-content/themes/halimmovies/halim-ajax.php?episode_slug=" + epSlug + "&server_id=" + svId + "&subsv_id=&post_id=" + postId;
         }
     }
 
