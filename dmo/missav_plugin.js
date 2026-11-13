@@ -8,7 +8,7 @@ function getManifest() {
         "name": "MissAV",
         "version": "1.1.2",
         "baseUrl": "https://missav.mrst.one",
-        "referrer": "https://missav123.com/",
+        "referrer": "https://missav.mrst.one/",
         "iconUrl": "https://raw.githubusercontent.com/youngbi/repo/main/plugins/missav.ico",
         "isEnabled": true,
         "isAdult": true,
@@ -859,8 +859,8 @@ function parseDetailResponse(html) {
         url: streamUrl,
         headers: {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-            "Referer": "https://missav123.com/",
-            "Origin": "https://missav123.com"
+            "Referer": "https://missav.mrst.one/",
+            "Origin": "https://missav.mrst.one"
         },
         subtitles: []
     });
@@ -900,4 +900,3 @@ function parseCategoriesResponse(html) {
 
 function parseCountriesResponse(html) { return "[]"; }
 function parseYearsResponse(html) { return "[]"; }
-
