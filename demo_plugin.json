@@ -4,7 +4,7 @@
 		{
             "id": "clbphimxua_top",
             "name": "CLB Phim Xưa",
-            "version": "1.0.0",
+            "version": "1.0.1",
             "scriptUrl": "https://raw.githubusercontent.com/mangyeu/TV/refs/heads/main/dmo/clbpx_new_plugin.js",
             "iconUrl": "https://raw.githubusercontent.com/mangyeu/TV/refs/heads/main/dmo/clbphimxua-logo.ico"
         }
