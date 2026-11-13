@@ -1,43 +1,42 @@
-// =============================================================================
-// CONFIGURATION & METADATA
-// =============================================================================
-
-
 var BASE_URL = "https://clbphimxua.info";
 
-// 1. Khai báo thông tin Plugin
+// 1. Khai báo thông tin nguồn
 function getManifest() {
     return JSON.stringify({
-        "id": "clbphimxua_top",
+        "id": "clbphimxua_info",
         "name": "CLB Phim Xưa",
-        "version": "1.0.0",
+        "version": "1.0.1",
         "type": "MOVIE",
         "layout": "VERTICAL"
     });
 }
 
-// 2. Cấu hình danh mục Trang chủ
+// 2. Cấu hình danh mục Trang chủ (Khớp với giao diện thực tế của clbphimxua.info)
 function getHomeSections() {
     return JSON.stringify([
-        { "slug": "moi-cap-nhat", "title": "Phim Mới Cập Nhật", "type": "GRID", "path": "" },
-        { "slug": "phim-bo", "title": "Phim Bộ Xưa", "type": "HORIZONTAL", "path": "phim-bo" },
-        { "slug": "phim-le", "title": "Phim Lẻ Xưa", "type": "HORIZONTAL", "path": "phim-le" },
-        { "slug": "tvb", "title": "Phim TVB", "type": "HORIZONTAL", "path": "the-loai/tvb" },
-        { "slug": "kiem-hiep", "title": "Kiếm Hiệp - Cổ Trang", "type": "HORIZONTAL", "path": "the-loai/kiem-hiep" }
+        { "slug": "phim-bo", "title": "Phim Bộ", "type": "GRID", "path": "phim-bo" },
+        { "slug": "phim-le", "title": "Phim Lẻ", "type": "HORIZONTAL", "path": "phim-le" },
+        { "slug": "kiem-hiep", "title": "Kiếm Hiệp - Cổ Trang", "type": "HORIZONTAL", "path": "the-loai/kiem-hiep" },
+        { "slug": "tinh-cam", "title": "Phim Tình Cảm", "type": "HORIZONTAL", "path": "the-loai/tinh-cam" },
+        { "slug": "hoat-hinh", "title": "Phim Hoạt Họa", "type": "HORIZONTAL", "path": "the-loai/hoat-hinh" }
     ]);
 }
 
-// 3. Cấu hình bộ lọc thể loại
+// 3. Cấu hình bộ lọc Thể loại
 function getPrimaryCategories() {
     return JSON.stringify([
         { "name": "Phim Bộ", "slug": "phim-bo" },
         { "name": "Phim Lẻ", "slug": "phim-le" },
         { "name": "Kiếm Hiệp", "slug": "the-loai/kiem-hiep" },
         { "name": "Cổ Trang", "slug": "the-loai/co-trang" },
-        { "name": "TVB", "slug": "the-loai/tvb" },
         { "name": "Hành Động", "slug": "the-loai/hanh-dong" },
         { "name": "Tình Cảm", "slug": "the-loai/tinh-cam" },
-        { "name": "Kinh Dị", "slug": "the-loai/kinh-di" }
+        { "name": "Hoạt Hình", "slug": "the-loai/hoat-hinh" },
+        { "name": "Kinh Dị", "slug": "the-loai/kinh-di" },
+        { "name": "Hài Hước", "slug": "the-loai/hai-huoc" },
+        { "name": "Võ Thuật", "slug": "the-loai/vo-thuat" },
+        { "name": "Tâm Lý", "slug": "the-loai/tam-ly" },
+        { "name": "Kinh Điển", "slug": "the-loai/kinh-dien" }
     ]);
 }
 
@@ -46,7 +45,7 @@ function getUrlList(slug, filtersJson) {
     var filters = JSON.parse(filtersJson || "{}");
     var page = filters.page || 1;
     
-    if (slug === "moi-cap-nhat" || slug === "") {
+    if (!slug || slug === "moi-cap-nhat") {
         return page > 1 ? BASE_URL + "/page/" + page + "/" : BASE_URL + "/";
     }
     return page > 1 ? BASE_URL + "/" + slug + "/page/" + page + "/" : BASE_URL + "/" + slug + "/";
@@ -60,23 +59,46 @@ function getUrlSearch(keyword, filtersJson) {
     return page > 1 ? BASE_URL + "/page/" + page + "/?s=" + query : BASE_URL + "/?s=" + query;
 }
 
+// Hàm giải mã ký tự đặc biệt HTML
+function decodeHtmlEntities(str) {
+    if (!str) return "";
+    return str
+        .replace(/&#8211;/g, "-")
+        .replace(/&#8217;/g, "'")
+        .replace(/&#039;/g, "'")
+        .replace(/&amp;/g, "&")
+        .replace(/&quot;/g, '"')
+        .trim();
+}
+
 // Hàm bóc tách danh sách phim từ chuỗi HTML
 function extractMoviesFromHtml(html) {
     var items = [];
     var seenUrls = {};
     try {
-        // Quét các khối bài viết chứa link phim, tiêu đề và ảnh poster
-        var regex = /<(?:article|div|li)[^>]*class="[^"]*(?:item|movie|post|halim-item|film)[^"]*"[^>]*>[\s\S]*?<a[^>]*href="([^"]+)"[^>]*title="([^"]+)"[\s\S]*?<img[^>]*src="([^"]+)"/g;
+        // Quét các khối item chứa đường dẫn phim, tiêu đề và hình ảnh (hỗ trợ cả src và data-src lazy-load)
+        var regex = /<(?:article|div|li)[^>]*class="[^"]*(?:item|movie|post|film|card)[^"]*"[^>]*>[\s\S]*?<a[^>]*href="([^"]+)"[^>]*title="([^"]+)"[\s\S]*?<img[^>]+(?:data-src|src)="([^"]+)"/g;
         var match;
 
         while ((match = regex.exec(html)) !== null) {
-            var url = match;
-            var title = match.replace(/&#8211;/g, "-").replace(/&amp;/g, "&").replace(/&#039;/g, "'").trim();
-            var poster = match;
+            var url = match[1];
+            var title = decodeHtmlEntities(match[2]);
+            var poster = match[3];
 
-            // Lọc bỏ các link không phải phim (như actor, tag) và tránh trùng lặp
-            if (url.indexOf(BASE_URL) !== -1 && url.indexOf("/actor/") === -1 && url.indexOf("/tag/") === -1 && !seenUrls[url]) {
+            // Lọc bỏ các đường dẫn rác (tài khoản, diễn viên, thẻ tag, thể loại) và tránh trùng lặp
+            if (
+                url.indexOf(BASE_URL) !== -1 &&
+                url.indexOf("/the-loai/") === -1 &&
+                url.indexOf("/quoc-gia/") === -1 &&
+                url.indexOf("/nam/") === -1 &&
+                url.indexOf("/dien-vien/") === -1 &&
+                !seenUrls[url]
+            ) {
                 seenUrls[url] = true;
+                // Xử lý link ảnh tương đối nếu có
+                if (poster.indexOf("/") === 0) {
+                    poster = BASE_URL + poster;
+                }
                 items.push({
                     "id": url,
                     "title": title,
@@ -112,26 +134,30 @@ function getUrlDetail(slug) {
 // 9. Bóc tách thông tin chi tiết & Danh sách tập phim
 function parseMovieDetail(html) {
     var desc = "";
-    var descMatch = html.match(/<div[^>]*class="[^"]*(?:entry-content|description|film-content|content)[^"]*"[^>]*>([\s\S]*?)<\/div>/);
+    var descMatch = html.match(/<div[^>]*class="[^"]*(?:entry-content|description|film-content|content|movie-desc)[^"]*"[^>]*>([\s\S]*?)<\/div>/);
     if (descMatch) {
-        desc = descMatch.replace(/<[^>]+>/g, "").trim();
+        desc = decodeHtmlEntities(descMatch[1].replace(/<[^>]+>/g, ""));
     }
 
     var episodes = [];
-    // Khoanh vùng danh sách tập phim
-    var epSectionMatch = html.match(/<(?:ul|div)[^>]*class="[^"]*(?:halim-list-eps|list-eps|list-episode|episodes)[^"]*"[^>]*>([\s\S]*?)<\/(?:ul|div)>/);
-    var targetHtml = epSectionMatch ? epSectionMatch : html;
+    var seenEps = {};
+
+    // Khoanh vùng khu vực chứa danh sách tập phim
+    var epSectionMatch = html.match(/<(?:ul|div)[^>]*class="[^"]*(?:list-eps|list-episode|episodes|server-list|halim-list-eps)[^"]*"[^>]*>([\s\S]*?)<\/(?:ul|div)>/);
+    var targetHtml = epSectionMatch ? epSectionMatch[1] : html;
 
     var epRegex = /<a[^>]*href="([^"]+)"[^>]*>(?:<span[^>]*>)?([^<]+)(?:<\/span>)?<\/a>/g;
     var match;
-    var seenEps = {};
 
     while ((match = epRegex.exec(targetHtml)) !== null) {
-        var epUrl = match;
-        var epName = match.trim();
-        
-        // Nhận diện link tập phim
-        if ((epUrl.indexOf("tap-") !== -1 || epUrl.indexOf("episode") !== -1 || epUrl.indexOf("xem-phim") !== -1) && !seenEps[epUrl]) {
+        var epUrl = match[1];
+        var epName = decodeHtmlEntities(match[2]);
+
+        // Lọc các đường dẫn là tập phim hoặc trang xem phim
+        if (
+            (epUrl.indexOf("tap-") !== -1 || epUrl.indexOf("episode") !== -1 || epUrl.indexOf("xem-phim") !== -1) &&
+            !seenEps[epUrl]
+        ) {
             seenEps[epUrl] = true;
             episodes.push({
                 "id": epUrl,
@@ -140,14 +166,22 @@ function parseMovieDetail(html) {
         }
     }
 
-    // Nếu là phim lẻ không có danh sách tập riêng, lấy chính trang hiện tại làm bản Full
+    // Nếu là phim lẻ không chia tập, dùng nút "Xem ngay" hoặc chính URL hiện tại
     if (episodes.length === 0) {
-        var canonicalMatch = html.match(/<link[^>]*rel="canonical"[^>]*href="([^"]+)"/i);
-        if (canonicalMatch) {
+        var watchBtnMatch = html.match(/<a[^>]*href="([^"]+)"[^>]*>[\s\S]*?Xem ngay[\s\S]*?<\/a>/i);
+        if (watchBtnMatch) {
             episodes.push({
-                "id": canonicalMatch,
+                "id": watchBtnMatch[1],
                 "name": "Full"
             });
+        } else {
+            var canonicalMatch = html.match(/<link[^>]*rel="canonical"[^>]*href="([^"]+)"/i);
+            if (canonicalMatch) {
+                episodes.push({
+                    "id": canonicalMatch[1],
+                    "name": "Full"
+                });
+            }
         }
     }
 
@@ -155,7 +189,7 @@ function parseMovieDetail(html) {
         "description": desc,
         "episodes": [
             {
-                "server_name": "Server Chính",
+                "server_name": "Server CLBPhimXua",
                 "server_data": episodes
             }
         ]
@@ -166,17 +200,17 @@ function parseMovieDetail(html) {
 function parseDetailResponse(html) {
     var streamUrl = "";
 
-    // Ưu tiên 1: Tìm link trực tiếp .m3u8 hoặc .mp4
+    // Ưu tiên 1: Tìm link stream trực tiếp .m3u8 hoặc .mp4
     var m3u8Match = html.match(/(https?:\/\/[^\s'"\\]+\.(?:m3u8|mp4)[^\s'"\\]*)/);
     if (m3u8Match) {
-        streamUrl = m3u8Match.replace(/\\\//g, "/");
+        streamUrl = m3u8Match[1].replace(/\\\//g, "/");
     }
 
-    // Ưu tiên 2: Lấy link từ thẻ iframe nhúng player
+    // Ưu tiên 2: Tìm thẻ iframe nhúng trình phát video
     if (!streamUrl) {
-        var iframeMatch = html.match(/<iframe[^>]*src="([^"]+)"/i);
+        var iframeMatch = html.match(/<iframe[^>]+(?:data-src|src)="([^"]+)"/i);
         if (iframeMatch) {
-            streamUrl = iframeMatch;
+            streamUrl = iframeMatch[1];
         }
     }
 
