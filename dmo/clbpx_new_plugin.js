@@ -3,7 +3,7 @@
 // =============================================================================
 
 
-var BASE_URL = "https://clbphimxua.top";
+var BASE_URL = "https://clbphimxua.info";
 
 // 1. Khai báo thông tin Plugin
 function getManifest() {
