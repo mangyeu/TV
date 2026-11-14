@@ -453,8 +453,8 @@ function parseDetailResponse(html) {
         url: streamUrl,
         headers: {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-            "Referer": "https://missav123.com/",
-            "Origin": "https://missav123.com"
+            "Referer": "https://missav.media/",
+            "Origin": "https://missav.media"
         },
         subtitles: []
     });
