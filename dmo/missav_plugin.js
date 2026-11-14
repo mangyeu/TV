@@ -811,7 +811,7 @@ function parseDetailResponse(html) {
         var parts = evalMatch[1].split('|');
         var hasSurrit = false;
         for (var i = 0; i < parts.length; i++) {
-            if (parts[i] === 'surrit' || parts[i] === 'sixyik') { hasSurrit = true; break; }
+            if (parts[i] === 'surrit' || parts[i] === 'fourhoi' || parts[i] === 'sixyik') { hasSurrit = true; break; }
         }
         if (hasSurrit) {
             var uuidParts = [];
