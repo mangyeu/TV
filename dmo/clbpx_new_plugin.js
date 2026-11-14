@@ -330,3 +330,81 @@ async function getStream(episodeUrl) {
     }
   };
 }
+gọi danh sách phim
+const BASE_URL = "https://motchillf.im";
+
+// 1. Hàm tải mã nguồn HTML từ đường dẫn bất kỳ
+async function fetchHTML(url) {
+  const response = await fetch(url, {
+    headers: {
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+      "Referer": BASE_URL + "/"
+    }
+  });
+  return await response.text();
+}
+
+// 2. Hàm chuẩn hóa đường dẫn tương đối thành URL đầy đủ
+function toFullUrl(path) {
+  if (!path) return "";
+  if (path.startsWith("http")) return path;
+  return BASE_URL + (path.startsWith("/") ? "" : "/") + path;
+}
+
+// 3. Hàm lõi: Bóc tách danh sách phim từ chuỗi HTML
+function extractMovieList(htmlString) {
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(htmlString, "text/html");
+
+  const movies = [];
+  const addedUrls = new Set();
+
+  // Quét toàn bộ thẻ <h3> chứa tên phim trên trang
+  const h3Tags = doc.querySelectorAll("h3");
+
+  h3Tags.forEach((h3) => {
+    // Tìm phần tử cha bao trọn cả ảnh bìa, nhãn tập và tên phim
+    const card = h3.closest("li") || h3.closest("article") || h3.parentElement?.parentElement;
+    if (!card) return;
+
+    const linkTag = card.querySelector("a");
+    const imgTag = card.querySelector("img");
+    if (!linkTag) return;
+
+    const movieUrl = toFullUrl(linkTag.getAttribute("href"));
+    // Bỏ qua nếu URL rỗng hoặc đã lấy ở mục trước (tránh trùng phim)
+    if (!movieUrl || addedUrls.has(movieUrl)) return;
+    addedUrls.add(movieUrl);
+
+    const title = h3.textContent.trim();
+    const poster = toFullUrl(imgTag?.getAttribute("data-src") || imgTag?.getAttribute("src"));
+
+    // Lấy nhãn tập / chất lượng (ví dụ: "Tập 17 Vietsub" hoặc "FULL Vietsub")
+    const rawText = card.textContent.replace(/\s+/g, " ").trim();
+    const badgeMatch = rawText.match(/(Tập\s*\d+|Hoàn\s*[Tt]ất\s*\(\d+\/\d+\)|FULL|Full)[^]*?(Vietsub|Thuyết Minh|Lồng [Tt]iếng)/i);
+    const subtitle = badgeMatch ? badgeMatch.trim() : "";
+
+    movies.push({
+      title: title,
+      url: movieUrl,
+      poster: poster,
+      subtitle: subtitle
+    });
+  });
+
+  return movies;
+}
+
+// 4. Hàm gọi danh sách phim Trang Chủ cho VAX Player
+async function getHome() {
+  const html = await fetchHTML(BASE_URL);
+  return extractMovieList(html);
+}
+
+// 5. Hàm gọi danh sách phim theo Chuyên Mục & Phân Trang (Ví dụ: page = 1, 2, 3...)
+async function getListByCategory(categorySlug, page = 1) {
+  // Ví dụ categorySlug: "phim-bo", "phim-le", "phim-chieu-rap", "quoc-gia/han-quoc"
+  const targetUrl = `${BASE_URL}/${categorySlug}?page=${page}`;
+  const html = await fetchHTML(targetUrl);
+  return extractMovieList(html);
+}
