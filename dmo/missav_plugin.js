@@ -207,7 +207,7 @@ var PluginUtils = {
         if (!url || url === "") {
             var uuidMatch = itemHtml.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i);
             if (uuidMatch) {
-                return "https://surrit.store/" + uuidMatch[0] + "/preview.mp4";
+                return "https://surrit.store" + uuidMatch[0] + "/preview.mp4";
             }
         }
         
@@ -683,7 +683,7 @@ function parseMovieDetail(html, pageUrl) {
             // Look for 'surrit' or 'sixyik' in parts to confirm it's the video source eval
             var hasSurrit = false;
             for (var ei = 0; ei < parts.length; ei++) {
-                if (parts[ei] === 'surrit' || parts[ei] === 'fourhoi' ||parts[ei] === 'sixyik' ) {
+                if (parts[ei] === 'surrit' || parts[ei] === 'fourhoi' ||parts[ei] === 'sixyik') {
                     hasSurrit = true;
                     break;
                 }
@@ -706,7 +706,7 @@ function parseMovieDetail(html, pageUrl) {
 
         // Strategy 2: Check for direct Surrit/Sixyik/Nineyu/Fourhoi patterns
         if (!uuid) {
-            var surritMatch = html.match(/surrit\.com\/([0-9a-f-]{36})/i) ||
+            var surritMatch = html.match(/surrit\.store\/([0-9a-f-]{36})/i) ||
                 html.match(/sixyik\.store\/([0-9a-f-]{36})/i) ||
                 html.match(/nineyu\.store\/([0-9a-f-]{36})/i) ||
                 html.match(/fourhoi\.store\/([0-9a-f-]{36})/i);
