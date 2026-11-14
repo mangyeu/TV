@@ -115,7 +115,7 @@ function parseMovieDetail(apiResponseJson) {
 // 8. Trả về link phát video (m3u8 hoặc embed) cho trình phát
 function parseDetailResponse(episodeUrl) {
     return JSON.stringify({
-        "url": episodeUrl,
+        "url": " ",
         "headers": {
             "User-Agent": "Mozilla/5.0",
             "Referer": BASE_URL + "/"
