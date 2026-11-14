@@ -394,73 +394,103 @@ function parseMovieDetail(htmlContent) {
     }
 }
 
-function parseDetailResponse(html, fallbackUrl) {
-    try {
-        var hostUrl = fallbackUrl || "";
+function parseDetailResponse(html) {
+    // Extract UUID directly from HTML (independent from parseMovieDetail)
+    var uuid = "";
+    var streamUrl = "";
 
-        var mainPlayerStr = 'id="main-player"';
-        var idxMain = html.indexOf(mainPlayerStr);
-        if (idxMain !== -1) {
-            var srcStr = 'src="';
-            var idxSrc = html.indexOf(srcStr, idxMain);
-            if (idxSrc !== -1 && idxSrc - idxMain < 500) {
-                var startUrl = idxSrc + srcStr.length;
-                var endUrl = html.indexOf('"', startUrl);
-                if (endUrl !== -1) {
-                    hostUrl = html.substring(startUrl, endUrl);
-                }
+    // Strategy 1: Decode eval() obfuscated code
+    var evalMatch = html.match(/eval\(function\(p,a,c,k,e,d\)[\s\S]*?'([^']+)'\.split\('\|'\)/i);
+    if (evalMatch) {
+        var parts = evalMatch[1].split('|');
+        var hasSurrit = false;
+        for (var i = 0; i < parts.length; i++) {
+            if (parts[i] === 'surrit' || parts[i] === 'sixyik') { hasSurrit = true; break; }
+        }
+        if (hasSurrit) {
+            var uuidParts = [];
+            for (var i = 0; i < parts.length; i++) {
+                if (parts[i].match(/^[0-9a-f]{8,12}$/)) uuidParts.push(parts[i]);
+            }
+            if (uuidParts.length >= 5) {
+                uuid = uuidParts[0] + '-' + uuidParts[1] + '-' + uuidParts[2] + '-' + uuidParts[3] + '-' + uuidParts[4];
             }
         }
-
-        return JSON.stringify({
-            url: hostUrl,
-            headers: {
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-                "Referer": "https://javhdz.today/"
-            },
-            subtitles: [],
-            isEmbed: true,
-            embedRegex: "['\"](https?:\\/\\/[^\\s'\"]+\\.m3u8[^'\"]*)['\"]"
-        });
-    } catch (e) {
-        return JSON.stringify({ url: fallbackUrl || "", headers: {}, subtitles: [] });
     }
-}
 
-function parseEmbedResponse(html, fallbackUrl) {
-    // If the streaming link is doodstream or streamwish, the app core might handle it
-    // Or if `parseDetailResponse` marked `isEmbed = true`, App's engine intercepts it.
-    // If we need to extract raw mp4/m3u8 from the iframe body, add logic here.
+    // Strategy 2: Direct domain scan
+    if (!uuid) {
+        var m = html.match(/surrit\.com\/([0-9a-f-]{36})/i) ||
+            html.match(/sixyik\.com\/([0-9a-f-]{36})/i) ||
+            html.match(/nineyu\.com\/([0-9a-f-]{36})/i) ||
+            html.match(/fourhoi\.com\/([0-9a-f-]{36})/i);
+        if (m) uuid = m[1];
+    }
+
+    // Strategy 3: Deep UUID scan (fallback)
+    if (!uuid) {
+        var matches = html.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi) || [];
+        var blacklist = ["snaptrckr", "user_uuid", "popunder", "banner", "monitoring", "crypto", "randomUUID", "generateUUID"];
+        for (var i = 0; i < matches.length; i++) {
+            var u = matches[i];
+            var isBad = false;
+            var idx = html.indexOf(u);
+            if (idx !== -1) {
+                var ctx = html.substring(Math.max(0, idx - 80), Math.min(html.length, idx + 80));
+                for (var j = 0; j < blacklist.length; j++) {
+                    if (ctx.indexOf(blacklist[j]) !== -1) { isBad = true; break; }
+                }
+            }
+            if (!isBad) { uuid = u; break; }
+        }
+    }
+
+    if (uuid) {
+        streamUrl = "https://surrit.com/" + uuid + "/playlist.m3u8";
+    }
+
     return JSON.stringify({
-        url: fallbackUrl || "",
+        url: streamUrl,
         headers: {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-            "Referer": "https://missav.media
+            "Referer": "https://missav123.com/",
+            "Origin": "https://missav123.com"
         },
-        subtitles: [],
-        isEmbed: false
+        subtitles: []
     });
 }
 
 function parseCategoriesResponse(html) {
+    // Normalize HTML: strip missav_media- prefix từ CSS class
+    html = PluginUtils.normalizeHtml(html);
     var categories = [];
-    var parts = html.split(/<li[^>]*id=["']category-[^"']*["'][^>]*>/);
-    for (var i = 1; i < parts.length; i++) {
-        var itemHtml = parts[i];
-        var linkMatch = itemHtml.match(/href=["']\/([^"']+)[\/]?["']/);
-        var nameMatch = itemHtml.match(/<div[^>]*class=["']category-title["'][^>]*>([\s\S]*?)<\/div>/);
 
-        if (linkMatch && nameMatch) {
-            var slug = linkMatch[1];
-            if (slug.endsWith('/')) slug = slug.substring(0, slug.length - 1);
-            var name = PluginUtils.cleanText(nameMatch[1]);
-            categories.push({
-                name: name,
-                slug: slug
-            });
+    // Add "All Genres" as the first item
+    categories.push({ name: "Tất cả thể loại", slug: "vi/genres" });
+
+    // Regex to capture both relative and absolute links: href=".../vi/genres/slug"
+    // Capture group 1: potentially full url or relative path
+    // Capture group 2: Category Name
+    var regex = /<a[^>]+href="([^"]*\/vi\/genres\/[^"]+)"[^>]*>([^<]+)<\/a>/g;
+    var match;
+    var seen = {};
+
+    while ((match = regex.exec(html)) !== null) {
+        var fullPath = match[1];
+        var name = PluginUtils.cleanText(match[2]);
+
+        // Extract slug from path (e.g. /vi/genres/vr -> vr)
+        var parts = fullPath.split("/genres/");
+        var slug = parts.length > 1 ? parts[1] : "";
+
+        if (slug && name && !seen[slug]) {
+            seen[slug] = true;
+            // Ensure slug is full relative path for plugin system
+            categories.push({ name: name, slug: "vi/genres/" + slug });
         }
     }
     return JSON.stringify(categories);
 }
+
 function parseCountriesResponse(html) { return "[]"; }
 function parseYearsResponse(html) { return "[]"; }
