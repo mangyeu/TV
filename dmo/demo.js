@@ -9,7 +9,7 @@ function getManifest() {
         "name": "JavHD",
         "version": "1.0.5",
         "baseUrl": "BASE_URL",
-        "iconUrl": "https://javhdz.today/favicon.ico",
+        "iconUrl": "https://javhdz.today/logo/javhd_chris/javhd18276.png",
         "isEnabled": true,
         "isAdult": true,
         "type": "VIDEO",
