@@ -683,7 +683,7 @@ function parseMovieDetail(html, pageUrl) {
             // Look for 'surrit' or 'sixyik' in parts to confirm it's the video source eval
             var hasSurrit = false;
             for (var ei = 0; ei < parts.length; ei++) {
-                if (parts[ei] === 'surrit' || parts[ei] === 'sixyik') {
+                if (parts[ei] === 'surrit' || parts[ei] === 'fourhoi' ||parts[ei] === 'sixyik' ) {
                     hasSurrit = true;
                     break;
                 }
