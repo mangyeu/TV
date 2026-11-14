@@ -394,38 +394,73 @@ function parseMovieDetail(htmlContent) {
     }
 }
 
-function parseDetailResponse(htmlContent, pageUrl) {
-    // Return the pageUrl as is, marked as an Embed, so the app's EmbedSniffer
-    // can automatically load and intercept the m3u8 stream.
+function parseDetailResponse(html, fallbackUrl) {
+    try {
+        var hostUrl = fallbackUrl || "";
+
+        var mainPlayerStr = 'id="main-player"';
+        var idxMain = html.indexOf(mainPlayerStr);
+        if (idxMain !== -1) {
+            var srcStr = 'src="';
+            var idxSrc = html.indexOf(srcStr, idxMain);
+            if (idxSrc !== -1 && idxSrc - idxMain < 500) {
+                var startUrl = idxSrc + srcStr.length;
+                var endUrl = html.indexOf('"', startUrl);
+                if (endUrl !== -1) {
+                    hostUrl = html.substring(startUrl, endUrl);
+                }
+            }
+        }
+
+        return JSON.stringify({
+            url: hostUrl,
+            headers: {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+                "Referer": "https://javhdz.today/"
+            },
+            subtitles: [],
+            isEmbed: true,
+            embedRegex: "['\"](https?:\\/\\/[^\\s'\"]+\\.m3u8[^'\"]*)['\"]"
+        });
+    } catch (e) {
+        return JSON.stringify({ url: fallbackUrl || "", headers: {}, subtitles: [] });
+    }
+}
+
+function parseEmbedResponse(html, fallbackUrl) {
+    // If the streaming link is doodstream or streamwish, the app core might handle it
+    // Or if `parseDetailResponse` marked `isEmbed = true`, App's engine intercepts it.
+    // If we need to extract raw mp4/m3u8 from the iframe body, add logic here.
     return JSON.stringify({
-        url: " ",
-        isEmbed: true,
+        url: fallbackUrl || "",
         headers: {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-            "Referer": "https://missav.media/"
+            "Referer": "https://missav.media
         },
-        subtitles: []
+        subtitles: [],
+        isEmbed: false
     });
 }
 
 function parseCategoriesResponse(html) {
     var categories = [];
-    var genreRegex = /<a[^>]+href="([^"]*\/genres\/([^"\/]+))"[^>]*>([\s\S]*?)<\/a>/gi;
-    var foundGenres = {};
-    var match;
-    
-    while ((match = genreRegex.exec(html)) !== null) {
-        var slug = "en/genres/" + match[2];
-        var name = PluginUtils.cleanText(match[3]).replace(/\d+,\d+|\d+/g, '').trim();
-        if (!name || name.length < 2) continue;
-        
-        if (!foundGenres[slug]) {
-            categories.push({ name: name, slug: slug });
-            foundGenres[slug] = true;
+    var parts = html.split(/<li[^>]*id=["']category-[^"']*["'][^>]*>/);
+    for (var i = 1; i < parts.length; i++) {
+        var itemHtml = parts[i];
+        var linkMatch = itemHtml.match(/href=["']\/([^"']+)[\/]?["']/);
+        var nameMatch = itemHtml.match(/<div[^>]*class=["']category-title["'][^>]*>([\s\S]*?)<\/div>/);
+
+        if (linkMatch && nameMatch) {
+            var slug = linkMatch[1];
+            if (slug.endsWith('/')) slug = slug.substring(0, slug.length - 1);
+            var name = PluginUtils.cleanText(nameMatch[1]);
+            categories.push({
+                name: name,
+                slug: slug
+            });
         }
     }
     return JSON.stringify(categories);
 }
-
 function parseCountriesResponse(html) { return "[]"; }
 function parseYearsResponse(html) { return "[]"; }
