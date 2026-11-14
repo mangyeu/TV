@@ -1,10 +1,11 @@
-var BASE_URL = "https://chillhayz.pro";
+var BASE_URL = "https://phimapi.com";
+var IMG_DOMAIN = "https://phimimg.com";
 
-// 1. Thông tin nhận diện nguồn
+// 1. Khai báo thông tin Plugin
 function getManifest() {
     return JSON.stringify({
-        "id": "chillhayz_pro",
-        "name": "ChillHay (Thuyết Minh)",
+        "id": "kkphim_source",
+        "name": "KKPhim (PhimAPI)",
         "version": "1.0.0",
         "baseUrl": BASE_URL,
         "type": "MOVIE",
@@ -12,155 +13,112 @@ function getManifest() {
     });
 }
 
-// 2. Các mục hiển thị ngoài trang chủ (khớp với menu trên web)
+// 2. Cấu hình các mục ngoài Trang chủ
+function getHomeSections() {
+    return JSON.stringify([
+        { "slug": "phim-moi-cap-nhat", "title": "Phim Mới Cập Nhật", "type": "list", "path": "/danh-sach/phim-moi-cap-nhat" },
+        { "slug": "phim-le", "title": "Phim Lẻ", "type": "v1", "path": "/v1/api/danh-sach/phim-le" },
+        { "slug": "phim-bo", "title": "Phim Bộ", "type": "v1", "path": "/v1/api/danh-sach/phim-bo" }
+    ]);
+}
 
-// Hàm tải mã nguồn HTML kèm Header giả lập trình duyệt
-async function fetchHTML(url) {
-  const response = await fetch(url, {
-    headers: {
-      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
-      "Referer": BASE_URL + "/"
+// 3. Tạo URL lấy danh sách phim
+function getUrlList(slug, filtersJson) {
+    var filters = JSON.parse(filtersJson || "{}");
+    var page = filters.page || 1;
+    
+    if (slug === "phim-moi-cap-nhat") {
+        return BASE_URL + "/danh-sach/phim-moi-cap-nhat?page=" + page;
     }
-  });
-  return await response.text();
+    return BASE_URL + "/v1/api/danh-sach/" + slug + "?page=" + page;
 }
 
-// Hàm chuẩn hóa đường dẫn tương đối thành URL đầy đủ
-function toFullUrl(path) {
-  if (!path) return "";
-  if (path.startsWith("http")) return path;
-  return BASE_URL + (path.startsWith("/") ? "" : "/") + path;
+// 4. Tạo URL tìm kiếm
+function getUrlSearch(keyword, filtersJson) {
+    var filters = JSON.parse(filtersJson || "{}");
+    var page = filters.page || 1;
+    return BASE_URL + "/v1/api/tim-kiem?keyword=" + encodeURIComponent(keyword) + "&page=" + page;
 }
 
-// Hàm bóc tách danh sách phim từ đối tượng DOM của Chillhay
-function parseChillhayMovies(doc) {
-  const movies = [];
-  const seenUrls = new Set();
-
-  // Tìm tất cả các thẻ <li> hoặc khối chứa thẻ <a> có kèm hình ảnh <img>
-  const items = doc.querySelectorAll("li, .movie-item, .film-item");
-
-  items.forEach((item) => {
-    const linkTag = item.querySelector("a");
-    const imgTag = item.querySelector("img");
-
-    // Bỏ qua các mục menu hoặc bảng xếp hạng chữ không có ảnh bìa
-    if (!linkTag || !imgTag) return;
-
-    const href = linkTag.getAttribute("href") || "";
-    // Bỏ qua các đường dẫn danh mục, chỉ lấy link dẫn vào trang phim
-    if (!href || href.includes("/the-loai/") || href.includes("/quoc-gia/")) return;
-
-    const fullUrl = toFullUrl(href);
-    if (seenUrls.has(fullUrl)) return;
-    seenUrls.add(fullUrl);
-
-    // Lấy tên phim từ thuộc tính title của thẻ <a>, alt của thẻ <img> hoặc thẻ tiêu đề bên trong
-    const rawTitle =
-      linkTag.getAttribute("title") ||
-      imgTag.getAttribute("alt") ||
-      item.querySelector(".name, .title, h2, h4")?.textContent ||
-      "";
-
-    const title = rawTitle.replace(/CHILLHAY/gi, "").trim();
-    const poster = toFullUrl(imgTag.getAttribute("data-src") || imgTag.getAttribute("src"));
-
-    // Lấy thông tin tập và nhãn Thuyết Minh (VD: "23/24 Thuyết Minh")
-    const textContent = item.textContent.replace(/\s+/g, " ").trim();
-    const epMatch = textContent.match(/(\d+\/\d+|Full|Tập\s*\d+)\s*(Thuyết Minh|Lồng Tiếng|Vietsub)?/i);
-    const subtitle = epMatch ? epMatch.trim() : "Thuyết Minh";
-
-    if (title) {
-      movies.push({
-        title: title,
-        url: fullUrl,
-        poster: poster,
-        subtitle: subtitle
-      });
-    }
-  });
-
-  return movies;
+// 5. Tạo URL lấy chi tiết phim
+function getUrlDetail(slug) {
+    return BASE_URL + "/phim/" + slug;
 }
 
-// 1. Lấy danh sách phim Trang Chủ
-async function getHome() {
-  const html = await fetchHTML(BASE_URL);
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(html, "text/html");
-  return parseChillhayMovies(doc);
+// Hàm phụ trợ chuẩn hóa link ảnh
+function fixImageUrl(url) {
+    if (!url) return "";
+    if (url.indexOf("http") === 0) return url;
+    return IMG_DOMAIN + url;
 }
 
-// 2. Tìm kiếm phim theo từ khóa
-async function search(keyword) {
-  const searchUrl = `${BASE_URL}/tim-kiem/${encodeURIComponent(keyword)}`;
-  const html = await fetchHTML(searchUrl);
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(html, "text/html");
-  return parseChillhayMovies(doc);
-}
-
-// 3. Lấy thông tin chi tiết và danh sách tập phim
-async function getDetail(movieUrl) {
-  const html = await fetchHTML(movieUrl);
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(html, "text/html");
-
-  const title = doc.querySelector("h1")?.textContent.trim() || "Đang cập nhật";
-  const desc = doc.querySelector(".film-content, .content, #info-film")?.textContent.trim() || "";
-  const episodes = [];
-  const seenEp = new Set();
-
-  // Quét các thẻ <a> dẫn đến trang xem phim hoặc danh sách tập
-  const links = doc.querySelectorAll("a");
-  links.forEach((a) => {
-    const href = a.getAttribute("href") || "";
-    const text = a.textContent.trim();
-
-    if (href.includes("tap-") || href.includes("xem-phim") || /^(\d+|Full|Tập\s*\d+)$/i.test(text)) {
-      const fullUrl = toFullUrl(href);
-      if (!seenEp.has(fullUrl)) {
-        seenEp.add(fullUrl);
-        episodes.push({
-          name: text || "Xem phim",
-          url: fullUrl
+// 6. Bóc tách JSON danh sách phim (Trang chủ & Tìm kiếm)
+function parseListResponse(apiResponseJson) {
+    try {
+        var res = JSON.parse(apiResponseJson);
+        // API v1 bọc dữ liệu trong res.data.items, API thường nằm ở res.items
+        var rawItems = (res.data && res.data.items) ? res.data.items : (res.items || []);
+        
+        var movies = rawItems.map(function(item) {
+            return {
+                "id": item.slug,
+                "title": item.name,
+                "posterUrl": fixImageUrl(item.poster_url),
+                "backdropUrl": fixImageUrl(item.thumb_url),
+                "year": item.year ? String(item.year) : ""
+            };
         });
-      }
+        return JSON.stringify({ "items": movies });
+    } catch (e) {
+        return JSON.stringify({ "items": [] });
     }
-  });
-
-  return {
-    title: title,
-    description: desc,
-    episodes: episodes
-  };
 }
 
-// 4. Trích xuất link phát video (.m3u8 hoặc iframe)
-async function getStream(episodeUrl) {
-  const html = await fetchHTML(episodeUrl);
+function parseSearchResponse(apiResponseJson) {
+    return parseListResponse(apiResponseJson);
+}
 
-  // Cách 1: Quét trực tiếp link .m3u8 nằm trong mã nguồn trang
-  const m3u8Match = html.match(/https?:\/\/[^"'\s\\]+\.m3u8[^"'\s\\]*/);
-  if (m3u8Match) {
-    return {
-      url: m3u8Match.replace(/\\/g, ""),
-      headers: {
-        "Referer": BASE_URL + "/",
-        "Origin": BASE_URL
-      }
-    };
-  }
+// 7. Bóc tách JSON chi tiết phim và danh sách tập
+function parseMovieDetail(apiResponseJson) {
+    try {
+        var res = JSON.parse(apiResponseJson);
+        var movie = res.movie || {};
+        var episodesData = res.episodes || [];
+        var episodesList = [];
 
-  // Cách 2: Lấy link nhúng qua thẻ <iframe>
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(html, "text/html");
-  const iframeSrc = doc.querySelector("iframe")?.getAttribute("src");
+        episodesData.forEach(function(server) {
+            var serverName = server.server_name || "Server 1";
+            var items = server.server_data || [];
+            
+            items.forEach(function(ep) {
+                episodesList.push({
+                    "id": ep.link_m3u8 || ep.link_embed,
+                    "title": ep.name + " (" + serverName + ")",
+                    "url": ep.link_m3u8 || ep.link_embed
+                });
+            });
+        });
 
-  return {
-    url: toFullUrl(iframeSrc),
-    headers: {
-      "Referer": episodeUrl
+        return JSON.stringify({
+            "id": movie.slug,
+            "title": movie.name,
+            "description": movie.content || "",
+            "posterUrl": fixImageUrl(movie.poster_url),
+            "backdropUrl": fixImageUrl(movie.thumb_url),
+            "episodes": episodesList
+        });
+    } catch (e) {
+        return JSON.stringify({});
     }
-  };
+}
+
+// 8. Trả về link phát video (m3u8 hoặc embed) cho trình phát
+function parseDetailResponse(episodeUrl) {
+    return JSON.stringify({
+        "url": episodeUrl,
+        "headers": {
+            "User-Agent": "Mozilla/5.0",
+            "Referer": BASE_URL + "/"
+        }
+    });
 }
