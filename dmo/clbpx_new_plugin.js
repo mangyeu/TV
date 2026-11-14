@@ -222,3 +222,111 @@ function parseDetailResponse(html) {
         }
     });
 }
+
+motchill
+const BASE_URL = "https://motchillf.im";
+
+// Hàm hỗ trợ tải mã HTML của trang web
+async function fetchHTML(url) {
+  const response = await fetch(url, {
+    headers: {
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+      "Referer": BASE_URL + "/"
+    }
+  });
+  return await response.text();
+}
+
+// 1. Hàm lấy danh sách phim ở Trang Chủ (Phim Hot, Phim Mới...)
+async function getHome() {
+  const html = await fetchHTML(BASE_URL);
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(html, "text/html");
+
+  const results = [];
+  // Tìm tất cả thẻ <h3> chứa tên phim trên trang chủ
+  const titleElements = doc.querySelectorAll("h3");
+
+  titleElements.forEach((h3) => {
+    // Tìm thẻ <a> và <img> bao quanh hoặc nằm cùng khối với thẻ <h3>
+    const itemBox = h3.closest("li") || h3.closest("article") || h3.parentElement;
+    const linkTag = itemBox?.querySelector("a");
+    const imgTag = itemBox?.querySelector("img");
+
+    if (linkTag) {
+      let href = linkTag.getAttribute("href") || "";
+      if (href && !href.startsWith("http")) {
+        href = BASE_URL + (href.startsWith("/") ? "" : "/") + href;
+      }
+
+      const poster = imgTag?.getAttribute("data-src") || imgTag?.getAttribute("src") || "";
+
+      results.push({
+        title: h3.textContent.trim(),
+        url: href,
+        poster: poster
+      });
+    }
+  });
+
+  return results;
+}
+
+// 2. Hàm lấy thông tin chi tiết phim và danh sách các tập
+async function getDetail(movieUrl) {
+  const html = await fetchHTML(movieUrl);
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(html, "text/html");
+
+  const title = doc.querySelector("h1")?.textContent.trim() || "Đang cập nhật";
+  const episodes = [];
+
+  // Quét các thẻ <a> dẫn đến trang xem phim (thường chứa chữ 'tap-' hoặc nút 'Xem phim')
+  const links = doc.querySelectorAll("a");
+  links.forEach((a) => {
+    const href = a.getAttribute("href") || "";
+    const text = a.textContent.trim();
+
+    if (href.includes("tap-") || text.toLowerCase().includes("tập") || text.toLowerCase().includes("xem phim")) {
+      const fullUrl = href.startsWith("http") ? href : BASE_URL + (href.startsWith("/") ? "" : "/") + href;
+      episodes.push({
+        name: text || "Full",
+        url: fullUrl
+      });
+    }
+  });
+
+  return {
+    title: title,
+    episodes: episodes
+  };
+}
+
+// 3. Hàm bóc tách link phát trực tiếp (.m3u8 hoặc .mp4)
+async function getStream(episodeUrl) {
+  const html = await fetchHTML(episodeUrl);
+
+  // Cách 1: Quét trực tiếp link .m3u8 trong các biến cấu hình của trình phát
+  const m3u8Match = html.match(/https?:\/\/[^"'\s\\]+\.m3u8[^"'\s\\]*/);
+  if (m3u8Match) {
+    return {
+      url: m3u8Match[0].replace(/\\/g, ""),
+      headers: {
+        "Referer": BASE_URL + "/",
+        "Origin": BASE_URL
+      }
+    };
+  }
+
+  // Cách 2: Nếu web nhúng qua iframe, lấy link iframe để xử lý tiếp
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(html, "text/html");
+  const iframeSrc = doc.querySelector("iframe")?.getAttribute("src");
+
+  return {
+    url: iframeSrc || "",
+    headers: {
+      "Referer": episodeUrl
+    }
+  };
+}
