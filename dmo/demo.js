@@ -7,8 +7,10 @@ function getManifest() {
         "name": "MotchillF (HTML)",
         "version": "1.0.0",
         "baseUrl": "https://motchillf.im",
+        "isEnabled": true,
+        "isAdult": false,
         "type": "MOVIE",
-        "layout": "VERTICAL"
+        "layoutType": "VERTICAL"
     });
 }
 
