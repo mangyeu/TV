@@ -449,32 +449,51 @@ function parseMovieDetail(html) {
     }
 }
 
-function parseDetailResponse(htmlStringOrUrl) {
-    // Ở bước này, VAX sẽ tải HTML của trang xem tập phim (epUrl) và truyền vào hàm này
-    // Tìm link .m3u8 hoặc link iframe nhúng trong mã nguồn trang xem phim
-    var m3u8Match = htmlStringOrUrl.match(/["'](https?:\/\/[^"']+\.m3u8[^"']*)["']/i);
-    if (m3u8Match) {
-        return JSON.stringify({
-            "url": m3u8Match[1].replace(/\\\//g, "/"),
-            "type": "HLS",
-            "headers": {
-                "Referer": BASE_URL + "/",
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+function parseDetailResponse(html, fallbackUrl) {
+    try {
+        var hostUrl = fallbackUrl || "";
+
+        var mainPlayerStr = 'id="main-player"';
+        var idxMain = html.indexOf(mainPlayerStr);
+        if (idxMain !== -1) {
+            var srcStr = 'src="';
+            var idxSrc = html.indexOf(srcStr, idxMain);
+            if (idxSrc !== -1 && idxSrc - idxMain < 500) {
+                var startUrl = idxSrc + srcStr.length;
+                var endUrl = html.indexOf('"', startUrl);
+                if (endUrl !== -1) {
+                    hostUrl = html.substring(startUrl, endUrl);
+                }
             }
-        });
-    }
-
-    // Nếu không có .m3u8 trực tiếp, tìm thẻ <iframe> chứa trình phát
-    var iframeMatch = htmlStringOrUrl.match(/<iframe[^>]+src=["']([^"']+)["']/i);
-    var streamUrl = iframeMatch ? fixUrl(iframeMatch[1]) : htmlStringOrUrl;
-
-    return JSON.stringify({
-        "url": streamUrl,
-        "type": "EMBED",
-        "headers": {
-            "Referer": BASE_URL + "/",
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
         }
+
+        return JSON.stringify({
+            url: hostUrl,
+            headers: {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+                "Referer": "https://javhdz.today/"
+            },
+            subtitles: [],
+            isEmbed: true,
+            embedRegex: "['\"](https?:\\/\\/[^\\s'\"]+\\.m3u8[^'\"]*)['\"]"
+        });
+    } catch (e) {
+        return JSON.stringify({ url: fallbackUrl || "", headers: {}, subtitles: [] });
+    }
+}
+
+function parseEmbedResponse(html, fallbackUrl) {
+    // If the streaming link is doodstream or streamwish, the app core might handle it
+    // Or if `parseDetailResponse` marked `isEmbed = true`, App's engine intercepts it.
+    // If we need to extract raw mp4/m3u8 from the iframe body, add logic here.
+    return JSON.stringify({
+        url: fallbackUrl || "",
+        headers: {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+            "Referer": "https://javhdz.today/"
+        },
+        subtitles: [],
+        isEmbed: false
     });
 }
 
