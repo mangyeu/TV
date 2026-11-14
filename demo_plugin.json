@@ -2,9 +2,9 @@
   "version": 1,
   "plugins": [
     {
-      "id": "javhd",
-        "name": "JavHD",
-        "version": "1.0.5",
+      "id": "javhd_5",
+        "name": "JavHD_5",
+        "version": "1.0.0",
       "scriptUrl": "https://raw.githubusercontent.com/mangyeu/TV/refs/heads/main/dmo/demo.js",
       "iconUrl": "https://javhdz.today/logo/javhd_chris/javhd18276.png"
     }
