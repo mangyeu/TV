@@ -2,11 +2,11 @@
   "version": 1,
   "plugins": [
     {
-      "id": "motchillf_im_source",
-        "name": "MotchillF (HTML)",
-      "version": "1.0.0",
+      "id": "javhd",
+        "name": "JavHD",
+        "version": "1.0.5",
       "scriptUrl": "https://raw.githubusercontent.com/mangyeu/TV/refs/heads/main/dmo/demo.js",
-      "iconUrl": "https://motchillf.im/wp-content/uploads/2025/01/cropped-favicon2-270x270.png"
+      "iconUrl": "https://javhdz.today/logo/javhd_chris/javhd18276.png"
     }
   ]
 }
