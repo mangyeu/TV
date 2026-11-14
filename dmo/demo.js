@@ -12,7 +12,7 @@ function getManifest() {
         "iconUrl": "https://javhdz.today/logo/javhd_chris/javhd18276.png",
         "isEnabled": true,
         "isAdult": true,
-        "type": "VIDEO",
+        "type": "MOVIE",
         "playerType": "embedtoexoplay"
     });
 }
