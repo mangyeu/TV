@@ -474,6 +474,9 @@ function parseDetailResponse(htmlStringOrUrl) {
         "headers": {
             "Referer": BASE_URL + "/",
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+        }
+    });
+}
 
 function parseCategoriesResponse(html) {
     var categories = [];
