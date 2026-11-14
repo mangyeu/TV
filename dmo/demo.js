@@ -72,10 +72,14 @@ function parseListResponse(html) {
     var itemRegex = /<li[^>]*>[\s\S]*?<a[^>]+href="([^"]+)"[^>]+title="([^"]+)"[\s\S]*?<img[^>]+(?:data-src|src)="([^"]+)"[\s\S]*?<\/li>/gi;
     var match;
 
-    while ((match = itemRegex.exec(html)) !== null) {
-        var href = match;
-        var title = match;
-        var poster = match;
+    while ((match = regex.exec(html)) !== null) {
+        items.push({
+            "id": match[1],        // Đường dẫn chi tiết phim
+            "title": match[2],     // Tên phim
+            "posterUrl": match[3], // Link ảnh bìa
+            "year": ""
+        });
+    }
 
         // Lọc bỏ các thẻ <li> của thanh menu điều hướng
         if (href.indexOf("/the-loai/") === -1 && href.indexOf("/quoc-gia/") === -1 && poster.indexOf("http") !== -1) {
