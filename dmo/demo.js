@@ -5,9 +5,9 @@ var BASE_URL = "https://javhdz.today";
 // ==========================================
 function getManifest() {
     return JSON.stringify({
-        "id": "javhd",
-        "name": "JavHD",
-        "version": "1.0.5",
+        "id": "javhd_5",
+        "name": "JavHD_5",
+        "version": "1.0.0",
         "baseUrl": "BASE_URL",
         "iconUrl": "https://javhdz.today/logo/javhd_chris/javhd18276.png",
         "isEnabled": true,
