@@ -2,11 +2,11 @@
   "version": 1,
   "plugins": [
     {
-      "id": "tvhayd_html_source",
-        "name": "TVHay (Thuyết Minh)",
+      "id": "motchillf_im_source",
+        "name": "MotchillF (HTML)",
       "version": "1.0.0",
       "scriptUrl": "https://raw.githubusercontent.com/mangyeu/TV/refs/heads/main/dmo/demo.js",
-      "iconUrl": "https://tvhayd.pro"
+      "iconUrl": "https://motchillf.im/wp-content/uploads/2025/01/cropped-favicon2-270x270.png"
     }
   ]
 }
