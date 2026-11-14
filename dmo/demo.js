@@ -6,7 +6,7 @@ function getManifest() {
         "id": "motchillf_im_source",
         "name": "MotchillF (HTML)",
         "version": "1.0.0",
-        "baseUrl": BASE_URL,
+        "baseUrl": "https://motchillf.im",
         "type": "MOVIE",
         "layout": "VERTICAL"
     });
