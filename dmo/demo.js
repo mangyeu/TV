@@ -21,7 +21,7 @@ function getPrimaryCategories() {
         { name: 'Không Che', slug: 'uncensored-jav' },
         { name: 'Khử Che', slug: 'reducing-mosaic' },
         { name: 'Vietsub', slug: 'jav-sub' },
-        { name: 'Top Idols', slug: '/pornstar' },
+        { name: 'Top Idols', slug: 'caret' },
         { name: 'Nghiệp Dư', slug: 'amateur' }
     ]);
 }
@@ -32,6 +32,7 @@ function getHomeSections() {
         { slug: 'uncensored-jav', title: 'Jav Uncensored', type: 'Horizontal', path: '' },
         { slug: 'reducing-mosaic', title: 'Reducing Mosaic', type: 'Horizontal', path: '' },
         { slug: 'jav-sub', title: 'Jav Sub', type: 'Horizontal', path: '' },
+        { slug: 'caret', title: 'Top Idols', type: 'Horizontal', path: '' },
         { slug: 'recent', title: 'Video Mới Cập Nhật', type: 'Grid', path: '' }
     ]);
 }
