@@ -137,6 +137,18 @@ function getUrlCategories() { return "https://javhdz.today/categories/"; }
 function getUrlCountries() { return "https://javhdz.today/"; }
 function getUrlYears() { return "https://javhdz.today/"; }
 
+var PluginUtils = {
+    cleanText: function (text) {
+        if (!text) return "";
+        return text.replace(/<[^>]*>/g, "")
+            .replace(/&amp;/g, "&")
+            .replace(/&quot;/g, '"')
+            .replace(/&#039;/g, "'")
+            .replace(/\s+/g, " ")
+            .trim();
+    }
+};
+
 function parseListResponse(html) {
     var responseHtml = html || "";
     var paginationHtml = "";
