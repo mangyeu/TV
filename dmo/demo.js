@@ -21,7 +21,7 @@ function getPrimaryCategories() {
         { name: 'Không Che', slug: 'uncensored-jav' },
         { name: 'Khử Che', slug: 'reducing-mosaic' },
         { name: 'Vietsub', slug: 'jav-sub' },
-        { name: 'Top Idols', slug: '/channels' },
+        { name: 'Top Idols', slug: '/pornstar' },
         { name: 'Nghiệp Dư', slug: 'amateur' }
     ]);
 }
