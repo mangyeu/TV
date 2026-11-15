@@ -66,9 +66,7 @@ function getFilterConfig() {
     });
 }
 
-function getFilterConfig() {
-    return JSON.stringify({});
-}
+
 
 // ==========================================
 // B. NHÓM SINH ĐƯỜNG DẪN URL
