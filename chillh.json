@@ -46,7 +46,7 @@
         {
             "id": "vlxx",
             "name": "VLXX",
-            "version": "1.0.4",
+            "version": "1.0.1",
             "scriptUrl": "https://raw.githubusercontent.com/mangyeu/TV/refs/heads/main/dmo/vlxx_plugin.js",
             "iconUrl": "https://raw.githubusercontent.com/mangyeu/TV/refs/heads/main/dmo/vlxx.ico"
         },
