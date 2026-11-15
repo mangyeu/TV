@@ -1,18 +1,17 @@
-const BASE_URL = "https://motchillv.org";
-
 // ==========================================
 // A. NHÓM CONFIG & METADATA
 // ==========================================
 
 function getManifest() {
     return JSON.stringify({
-        id: "motchillv_org",
-        name: "Motchill (motchillv.org)",
-        version: "1.0.0",
-        baseUrl: BASE_URL,
-        type: "MOVIE",
-        layout: "VERTICAL"
-    });
+        "id": "motchillv_org",
+        "name": "Motchill (motchillv.org)",
+        "version": "1.0.0",
+        "baseUrl": https://motchillv.org,
+        "isEnabled": true,
+        "isAdult": false,
+        "type": "VIDEO",
+        "layoutType": "HORIZONTAL"
 }
 
 function getHomeSections() {
@@ -59,29 +58,52 @@ function getFilterConfig() {
 // ==========================================
 
 function getUrlList(slug, filtersJson) {
-    var filters = {};
-    try {
-        filters = JSON.parse(filtersJson || "{}");
-    } catch (e) {}
+    var filters = JSON.parse(filtersJson || "{}");
     var page = filters.page || 1;
-    var cleanSlug = slug.replace(/^\/+/, "");
-    return BASE_URL + "/" + cleanSlug + "?page=" + page;
+    var baseSlug = slug || 'phim-moi';
+    var path = filters.path || 'list';
+
+    // Nếu filter có category thì dùng category, ghi đè slug
+    if (filters.category) {
+        baseSlug = filters.category;
+    }
+
+    // Nếu slug đã chứa prefix thì không cần thêm path
+    var url = "https://motchillv.org/";
+    if (baseSlug.indexOf('/') > -1) {
+        url += baseSlug;
+    } else {
+        url += path + "/" + baseSlug;
+    }
+
+    if (page > 1) {
+        url += "/page-" + page;
+    }
+    return url;
 }
 
 function getUrlSearch(keyword, filtersJson) {
-    var filters = {};
-    try {
-        filters = JSON.parse(filtersJson || "{}");
-    } catch (e) {}
+    var filters = JSON.parse(filtersJson || "{}");
     var page = filters.page || 1;
-    return BASE_URL + "/tim-kiem?keyword=" + encodeURIComponent(keyword) + "&page=" + page;
+    return "https://motchillv.org/tim-kiem/" + encodeURIComponent(keyword).replace(/%20/g, '+');
 }
 
 function getUrlDetail(slug) {
-    if (slug.startsWith("http")) return slug;
-    var cleanSlug = slug.replace(/^\/+/, "");
-    return BASE_URL + "/" + cleanSlug;
+    if (!slug) return "https://motchillv.org/";
+    if (slug.indexOf("http") === 0) return slug;
+
+    // Xử lý slug bị lỗi do app gộp (nếu có /xem/ hoặc /info/ bên trong)
+    if (slug.indexOf("/xem/") > -1 || slug.indexOf("/info/") > -1) {
+        return "https://motchillv.org" + (slug.indexOf("/") === 0 ? "" : "/") + slug;
+    }
+
+    // PhimMoiChill dùng /info/ cho trang chi tiết
+    return "https://motchillv.org/info/" + slug.replace(".html", "");
 }
+
+function getUrlCategories() { return "https://motchillv.org/"; }
+function getUrlCountries() { return "https://motchillv.org/"; }
+function getUrlYears() { return "https://motchillv.org/"; }
 
 // ==========================================
 // C. NHÓM PHÂN TÍCH DỮ LIỆU HTML (PARSERS)
