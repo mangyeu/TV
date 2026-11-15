@@ -130,7 +130,7 @@ function parseListResponse(html) {
             var imgMatch = innerHtml.match(/<img[^>]+(?:data-src|data-original|src)=["']([^"']+)["']/i);
             if (!imgMatch) continue;
             var posterUrl = imgMatch;
-            if (posterUrl.startsWith("/")) posterUrl = BASE_URL + posterUrl;
+            if (posterUrl.startsWith("/")) posterUrl = https://motchillv.org + posterUrl;
 
             // Lấy tiêu đề phim từ thẻ <h4> (đặc trưng của Motchill) hoặc thuộc tính title/alt
             var title = "";
@@ -245,7 +245,7 @@ function parseDetailResponse(html) {
         type: streamType,
         headers: {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-            "Referer": BASE_URL + "/"
+            "Referer": https://motchillv.org + "/"
         }
     });
 }
