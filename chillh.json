@@ -8,13 +8,13 @@
             "scriptUrl": "https://raw.githubusercontent.com/mangyeu/TV/refs/heads/main/dmo/phimhdcs_plugin.js",
             "iconUrl": "https://motphim.hair"
         },
-    {
-      "id": "motchillv_org",
-      "name": "Motchill",
-      "version": "1.0.0",
-      "scriptUrl": "https://raw.githubusercontent.com/mangyeu/TV/refs/heads/main/dmo/clbpx_new_plugin.js",
-      "iconUrl": "https://motchillv.org"
-    },
+        {
+            "id": "phimapi_nguon",
+            "name": "Nguồn PhimAPI",
+            "version": "1.0.0",
+            "scriptUrl": "https://raw.githubusercontent.com/mangyeu/TV/refs/heads/main/dmo/clbpx_new_plugin.js",
+            "iconUrl": "https://motchillv.org"
+        },
         {
             "id": "nguonc",
             "name": "Phim NguonC",
