@@ -1,4 +1,4 @@
-const BASE_URL = "https://motphim.hair";
+const BASE_URL = "https://motchillv.org";
 
 // ==========================================
 // A. NHÓM CONFIG & METADATA
@@ -6,35 +6,41 @@ const BASE_URL = "https://motphim.hair";
 
 function getManifest() {
     return JSON.stringify({
-        "id": "motphim_hair",
-        "name": "Motphim (motphim.hair)",
-        "version": "1.0.0",
-        "baseUrl": BASE_URL,
-        "type": "MOVIE",
-        "layout": "VERTICAL"
+        id: "motchillv_org",
+        name: "Motchill (motchillv.org)",
+        version: "1.0.0",
+        baseUrl: BASE_URL,
+        type: "MOVIE",
+        layout: "VERTICAL"
     });
 }
 
 function getHomeSections() {
     return JSON.stringify([
+        { slug: "phim-moi", title: "Phim Mới Cập Nhật", type: "LIST", path: "/phim-moi" },
+        { slug: "phim-chieu-rap", title: "Phim Chiếu Rạp Mới", type: "LIST", path: "/phim-chieu-rap" },
         { slug: "phim-bo", title: "Phim Bộ Mới", type: "LIST", path: "/phim-bo" },
         { slug: "phim-le", title: "Phim Lẻ Mới", type: "LIST", path: "/phim-le" },
-        { slug: "tv-shows", title: "TV Shows", type: "LIST", path: "/tv-shows" },
-        { slug: "han-quoc", title: "Phim Hàn Quốc", type: "LIST", path: "/quoc-gia/han-quoc" },
-        { slug: "trung-quoc", title: "Phim Trung Quốc", type: "LIST", path: "/quoc-gia/trung-quoc" },
-        { slug: "au-my", title: "Phim Âu Mỹ", type: "LIST", path: "/quoc-gia/au-my" }
+        { slug: "the-loai/hoat-hinh", title: "Phim Hoạt Hình", type: "LIST", path: "/the-loai/hoat-hinh" },
+        { slug: "phim-thuyet-minh", title: "Phim Thuyết Minh", type: "LIST", path: "/phim-thuyet-minh" }
     ]);
 }
 
 function getPrimaryCategories() {
     return JSON.stringify([
+        { slug: "phim-moi", name: "Phim Mới" },
         { slug: "phim-bo", name: "Phim Bộ" },
         { slug: "phim-le", name: "Phim Lẻ" },
+        { slug: "phim-thuyet-minh", name: "Thuyết Minh" },
+        { slug: "phim-chieu-rap", name: "Chiếu Rạp" },
         { slug: "the-loai/hanh-dong", name: "Hành Động" },
         { slug: "the-loai/tinh-cam", name: "Tình Cảm" },
         { slug: "the-loai/co-trang", name: "Cổ Trang" },
-        { slug: "the-loai/bi-an", name: "Bí Ẩn" },
-        { slug: "the-loai/hai-huoc", name: "Hài Hước" }
+        { slug: "the-loai/kinh-di", name: "Kinh Dị" },
+        { slug: "the-loai/hoat-hinh", name: "Hoạt Hình" },
+        { slug: "quoc-gia/han-quoc", name: "Hàn Quốc" },
+        { slug: "quoc-gia/trung-quoc", name: "Trung Quốc" },
+        { slug: "quoc-gia/au-my", name: "Âu Mỹ" }
     ]);
 }
 
@@ -42,7 +48,7 @@ function getFilterConfig() {
     return JSON.stringify({
         sort: [
             { label: "Mới cập nhật", value: "update" },
-            { label: "Xem nhiều", value: "view" },
+            { label: "Lượt xem nhiều", value: "view" },
             { label: "Năm phát hành", value: "year" }
         ]
     });
@@ -84,30 +90,36 @@ function getUrlDetail(slug) {
 function parseListResponse(html) {
     var items = [];
     try {
-        // Bóc tách thẻ <a> chứa link phim (/phim/...) cùng ảnh poster và tiêu đề
-        var itemRegex = /<a[^>]+href=["'](\/phim\/[^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi;
+        // Bóc tách thẻ <a> bao quanh thẻ phim (thường có chứa thẻ <h4> tên phim và thẻ <img> poster)
+        var cardRegex = /<a[^>]+href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi;
         var match;
         var seen = {};
 
-        while ((match = itemRegex.exec(html)) !== null) {
+        while ((match = cardRegex.exec(html)) !== null) {
             var href = match;
             var innerHtml = match;
 
-            if (seen[href]) continue;
+            // Bỏ qua các link điều hướng menu hoặc link đã duyệt
+            if (seen[href] || href === "/" || href.includes("/the-loai/") || href.includes("/quoc-gia/")) {
+                continue;
+            }
 
-            // Lấy URL ảnh poster (ưu tiên data-src hoặc src)
-            var imgMatch = innerHtml.match(/<img[^>]+(?:data-src|src)=["']([^"']+)["']/i);
+            // Lấy ảnh poster từ data-src, data-original hoặc src
+            var imgMatch = innerHtml.match(/<img[^>]+(?:data-src|data-original|src)=["']([^"']+)["']/i);
             if (!imgMatch) continue;
             var posterUrl = imgMatch;
             if (posterUrl.startsWith("/")) posterUrl = BASE_URL + posterUrl;
 
-            // Lấy tên phim từ thuộc tính title, alt hoặc thẻ tiêu đề h3/h2
+            // Lấy tiêu đề phim từ thẻ <h4> (đặc trưng của Motchill) hoặc thuộc tính title/alt
             var title = "";
-            var titleTagMatch = innerHtml.match(/<(?:h2|h3|h4|span)[^>]*class=["'][^"']*(?:title|name)[^"']*["'][^>]*>([\s\S]*?)<\/(?:h2|h3|h4|span)>/i);
+            var h4Match = innerHtml.match(/<h4[^>]*>([\s\S]*?)<\/h4>/i);
+            var h3Match = innerHtml.match(/<h3[^>]*>([\s\S]*?)<\/h3>/i);
             var altMatch = innerHtml.match(/alt=["']([^"']+)["']/i);
 
-            if (titleTagMatch) {
-                title = titleTagMatch.replace(/<[^>]+>/g, "").trim();
+            if (h4Match) {
+                title = h4Match.replace(/<[^>]+>/g, "").trim();
+            } else if (h3Match) {
+                title = h3Match.replace(/<[^>]+>/g, "").trim();
             } else if (altMatch) {
                 title = altMatch.trim();
             }
@@ -139,7 +151,7 @@ function parseMovieDetail(html) {
     var episodes = [];
 
     try {
-        // 1. Lấy tiêu đề phim
+        // 1. Lấy tiêu đề phim từ thẻ <h1>
         var h1Match = html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i);
         if (h1Match) title = h1Match.replace(/<[^>]+>/g, "").trim();
 
@@ -147,13 +159,13 @@ function parseMovieDetail(html) {
         var ogImgMatch = html.match(/<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i);
         if (ogImgMatch) posterUrl = ogImgMatch;
 
-        // 3. Lấy mô tả nội dung phim
+        // 3. Lấy tóm tắt nội dung phim
         var descMatch = html.match(/<meta[^>]+name=["']description["'][^>]+content=["']([^"']+)["']/i);
         if (descMatch) description = descMatch;
 
-        // 4. Bóc tách danh sách tập phim (/xem-phim/...)
+        // 4. Bóc tách danh sách tập phim (thường chứa /tap- hoặc /xem-phim/)
         var epList = [];
-        var epRegex = /<a[^>]+href=["'](\/xem-phim\/[^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi;
+        var epRegex = /<a[^>]+href=["']([^"']*(?:tap-|xem-phim)[^"']*)["'][^>]*>([\s\S]*?)<\/a>/gi;
         var epMatch;
         var seenEp = {};
 
@@ -161,7 +173,7 @@ function parseMovieDetail(html) {
             var epUrl = epMatch;
             var epName = epMatch.replace(/<[^>]+>/g, "").trim();
 
-            if (!seenEp[epUrl] && epName) {
+            if (!seenEp[epUrl] && epName && epName.length < 30) {
                 seenEp[epUrl] = true;
                 epList.push({
                     id: epUrl,
@@ -172,7 +184,7 @@ function parseMovieDetail(html) {
 
         if (epList.length > 0) {
             episodes.push({
-                serverName: "Server Chính (Vietsub / Thuyết Minh)",
+                serverName: "Server Vietsub / Thuyết Minh",
                 items: epList
             });
         }
@@ -191,13 +203,13 @@ function parseDetailResponse(html) {
     var streamType = "hls";
 
     try {
-        // Tìm link luồng phát trực tiếp .m3u8 trong mã nguồn trang xem phim
+        // Ưu tiên tìm link luồng .m3u8 trực tiếp trong mã nguồn
         var m3u8Match = html.match(/["'](https?:\/\/[^"']+\.m3u8[^"']*)["']/i);
         if (m3u8Match) {
             streamUrl = m3u8Match.replace(/\\\//g, "/");
             streamType = "hls";
         } else {
-            // Nếu web nhúng trình phát qua iframe embed
+            // Dự phòng: tìm thẻ <iframe> chứa trình phát nhúng
             var iframeMatch = html.match(/<iframe[^>]+src=["']([^"']+)["']/i);
             if (iframeMatch) {
                 streamUrl = iframeMatch;
