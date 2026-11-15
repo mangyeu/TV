@@ -650,7 +650,7 @@ function parseMovieDetail(html, pageUrl) {
 
         // Strategy 1: Check for direct Surrit/Sixyik/Blob patterns
         var blobMatch = html.match(/src=["']blob:[^"']+\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})["']/i);
-        var surritMatch = html.match(/surrit\.com\/([0-9a-f-]{36})/i) || html.match(/sixyik\.com\/([0-9a-f-]{36})/i);
+        var surritMatch = html.match(/surrit\.store\/([0-9a-f-]{36})/i) || html.match(/sixyik\.com\/([0-9a-f-]{36})/i);
         var sourceMatch = html.match(/data-source=["']([^"']+)["']/i);
 
         if (blobMatch) {
@@ -684,7 +684,7 @@ function parseMovieDetail(html, pageUrl) {
         }
 
         if (uuid) {
-            streamUrl = "https://surrit.com/" + uuid + "/playlist.m3u8";
+            streamUrl = "https://surrit.store/" + uuid + "/playlist.m3u8";
         }
 
         var servers = [];
@@ -760,10 +760,10 @@ function parseDetailResponse(html) {
 
     // Strategy 2: Direct domain scan
     if (!uuid) {
-        var m = html.match(/surrit\.com\/([0-9a-f-]{36})/i) ||
-            html.match(/sixyik\.com\/([0-9a-f-]{36})/i) ||
-            html.match(/nineyu\.com\/([0-9a-f-]{36})/i) ||
-            html.match(/fourhoi\.com\/([0-9a-f-]{36})/i);
+        var m = html.match(/surrit\.store\/([0-9a-f-]{36})/i) ||
+            html.match(/sixyik\.store\/([0-9a-f-]{36})/i) ||
+            html.match(/nineyu\.store\/([0-9a-f-]{36})/i) ||
+            html.match(/fourhoi\.store\/([0-9a-f-]{36})/i);
         if (m) uuid = m[1];
     }
 
@@ -786,7 +786,7 @@ function parseDetailResponse(html) {
     }
 
     if (uuid) {
-        streamUrl = "https://surrit.com/" + uuid + "/playlist.m3u8";
+        streamUrl = "https://surrit.store/" + uuid + "/playlist.m3u8";
     }
 
     return JSON.stringify({
