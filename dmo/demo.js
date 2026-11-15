@@ -71,31 +71,71 @@ function getFilterConfig() {
 // ==========================================
 function getUrlList(slug, filtersJson) {
     var filters = JSON.parse(filtersJson || "{}");
-    var page = filters.page || 1;
-    // Cấu trúc phân trang phổ biến của Motchill: /phim-bo?page=2 hoặc /phim-bo/page/2
-    return https://javhdz.today + "/" + slug + "?page=" + page;
+    var page = parseInt(filters.page) || 1;
+    var sortPath = (filters.sort && filters.sort !== 'recent') ? (filters.sort + '/') : '';
+
+    var targetSlug = slug || 'recent';
+    if (filters.category) {
+        targetSlug = filters.category;
+    }
+
+    var isBrowse = false;
+    var browsePrefixes = ['recent', 'popular', 'rated', 'discussed', 'downloaded', 'longest', 'watched'];
+    for (var i = 0; i < browsePrefixes.length; i++) {
+        if (targetSlug.indexOf(browsePrefixes[i]) === 0) {
+            isBrowse = true;
+            break;
+        }
+    }
+
+    var finalUrl = "";
+    if (filters.category) {
+        finalUrl = "https://javhdz.today/" + filters.category + "/" + sortPath;
+    } else if (!slug || slug === 'recent') {
+        finalUrl = "https://javhdz.today/recent/";
+    } else if (slug.indexOf("http") === 0) {
+        finalUrl = slug.replace(/\/+$/, '') + '/';
+    } else {
+        if (slug.indexOf("/") === 0) {
+            slug = slug.replace(/^\/+/, '').replace(/\/+$/, '');
+        }
+        finalUrl = "https://javhdz.today/" + slug + "/" + sortPath;
+    }
+
+    var params = [];
+    if (isBrowse) {
+        params.push("ajax=browse_videos");
+    } else {
+        params.push("ajax=1");
+    }
+
+    if (page > 1) {
+        params.push("page=" + page);
+    }
+
+    var separator = (finalUrl.indexOf('?') !== -1) ? '&' : '?';
+    return finalUrl + separator + params.join('&');
 }
 
 function getUrlSearch(keyword, filtersJson) {
     var filters = JSON.parse(filtersJson || "{}");
-    var page = filters.page || 1;
-    return https://javhdz.today + "/tim-kiem?keyword=" + encodeURIComponent(keyword) + "&page=" + page;
+    var page = parseInt(filters.page) || 1;
+    var url = "https://javhdz.today/search/video/?s=" + encodeURIComponent(keyword) + "&ajax=1";
+    if (page > 1) {
+        url += "&page=" + page;
+    }
+    return url;
 }
 
 function getUrlDetail(slug) {
-    // Đảm bảo slug luôn nối đúng với BASE_URL
     if (slug.indexOf("http") === 0) return slug;
-    return https://javhdz.today + (slug.indexOf("/") === 0 ? slug : "/" + slug);
+    if (slug.indexOf("/") === 0) return "https://javhdz.today" + slug;
+    return "https://javhdz.today/" + slug;
 }
 
-// ==========================================
-// C. NHÓM BÓC TÁCH HTML (HTML PARSERS)
-// ==========================================
-function fixUrl(url) {
-    if (!url) return "";
-    if (url.indexOf("http") === 0) return url;
-    return https://javhdz.today + (url.indexOf("/") === 0 ? url : "/" + url);
-}
+function getUrlCategories() { return "https://javhdz.today/categories/"; }
+function getUrlCountries() { return "https://javhdz.today/"; }
+function getUrlYears() { return "https://javhdz.today/"; }
 
 function parseListResponse(html) {
     var responseHtml = html || "";
