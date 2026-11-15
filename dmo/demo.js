@@ -1,4 +1,4 @@
-var BASE_URL = "https://javhdz.today";
+BASE_URL = "https://javhdz.today";
 
 // ==========================================
 // A. NHÓM CONFIG & METADATA
