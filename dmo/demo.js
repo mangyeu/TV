@@ -1,5 +1,3 @@
-BASE_URL = "https://javhdz.today";
-
 // ==========================================
 // A. NHÓM CONFIG & METADATA
 // ==========================================
@@ -8,7 +6,7 @@ function getManifest() {
         "id": "javhd_5",
         "name": "JavHD_5",
         "version": "1.0.0",
-        "baseUrl": "BASE_URL",
+        "baseUrl": "https://javhdz.today",
         "iconUrl": "https://javhdz.today/logo/javhd_chris/javhd18276.png",
         "isEnabled": true,
         "isAdult": true,
@@ -75,19 +73,19 @@ function getUrlList(slug, filtersJson) {
     var filters = JSON.parse(filtersJson || "{}");
     var page = filters.page || 1;
     // Cấu trúc phân trang phổ biến của Motchill: /phim-bo?page=2 hoặc /phim-bo/page/2
-    return BASE_URL + "/" + slug + "?page=" + page;
+    return https://javhdz.today + "/" + slug + "?page=" + page;
 }
 
 function getUrlSearch(keyword, filtersJson) {
     var filters = JSON.parse(filtersJson || "{}");
     var page = filters.page || 1;
-    return BASE_URL + "/tim-kiem?keyword=" + encodeURIComponent(keyword) + "&page=" + page;
+    return https://javhdz.today + "/tim-kiem?keyword=" + encodeURIComponent(keyword) + "&page=" + page;
 }
 
 function getUrlDetail(slug) {
     // Đảm bảo slug luôn nối đúng với BASE_URL
     if (slug.indexOf("http") === 0) return slug;
-    return BASE_URL + (slug.indexOf("/") === 0 ? slug : "/" + slug);
+    return https://javhdz.today + (slug.indexOf("/") === 0 ? slug : "/" + slug);
 }
 
 // ==========================================
@@ -96,7 +94,7 @@ function getUrlDetail(slug) {
 function fixUrl(url) {
     if (!url) return "";
     if (url.indexOf("http") === 0) return url;
-    return BASE_URL + (url.indexOf("/") === 0 ? url : "/" + url);
+    return https://javhdz.today + (url.indexOf("/") === 0 ? url : "/" + url);
 }
 
 function parseListResponse(html) {
