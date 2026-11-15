@@ -21,7 +21,6 @@ function getPrimaryCategories() {
         { name: 'Không Che', slug: 'uncensored-jav' },
         { name: 'Khử Che', slug: 'reducing-mosaic' },
         { name: 'Vietsub', slug: 'jav-sub' },
-        { name: 'Top Idols', slug: '/hatano-yui' },
         { name: 'Nghiệp Dư', slug: 'amateur' }
     ]);
 }
@@ -32,7 +31,6 @@ function getHomeSections() {
         { slug: 'uncensored-jav', title: 'Jav Uncensored', type: 'Horizontal', path: '' },
         { slug: 'reducing-mosaic', title: 'Reducing Mosaic', type: 'Horizontal', path: '' },
         { slug: 'jav-sub', title: 'Jav Sub', type: 'Horizontal', path: '' },
-        { slug: '/hatano-yui', title: 'Top Idols', type: 'Horizontal', path: '' },
         { slug: 'recent', title: 'Video Mới Cập Nhật', type: 'Grid', path: '' }
     ]);
 }
@@ -61,6 +59,7 @@ function getFilterConfig() {
             { name: "Cuckold", value: "cuckold" },
             { name: "Squirting", value: "squirting" },
             { name: "Nasty", value: "nasty" },
+            { name: "All Idols Av", value: "pornstar" },
             { name: "Hardcore", value: "hardcore" }
         ]
     });
