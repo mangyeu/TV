@@ -13,7 +13,8 @@ function getManifest() {
         "isAdult": true,
         "type": "MOVIE",
         "playerType": "exoplayer",
-        "layoutType": "HORIZONTAL"
+        "layoutType": "HORIZONTAL",
+        "subtitleCat": true
     });
 }
 
