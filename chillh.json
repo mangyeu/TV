@@ -16,6 +16,13 @@
             "iconUrl": "https://raw.githubusercontent.com/mangyeu/TV/refs/heads/main/dmo/clbphimxua-logo.ico"
         },
         {
+            "id": "phimmoichill",
+            "name": "PhimMoiChill",
+            "version": "1.0.1",
+            "scriptUrl": "https://raw.githubusercontent.com/mangyeu/TV/refs/heads/main/dmo/phimmoichillz.js",
+            "iconUrl": "https://phimmoichillz.top/icon-phimmoichill.png"
+        },
+        {
             "id": "nguonc",
             "name": "Phim NguonC",
             "version": "1.1.5",
