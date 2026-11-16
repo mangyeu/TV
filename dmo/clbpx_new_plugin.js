@@ -3,7 +3,7 @@
 var BASE_URL = "https://clbphimxua.info";
 
 function getManifest() {
-  return JSON.stringify({ id: "clbphimxua", name: "CLB Phim Xưa", version: "2.1", type: "MOVIE", baseUrl: BASE_URL });
+  return JSON.stringify({ id: "clbphimxua", name: "CLB Phim Xưa", version: "2.2", type: "MOVIE", baseUrl: BASE_URL });
 }
 
 function getHomeSections() {
@@ -20,8 +20,7 @@ function getPrimaryCategories() {
   return JSON.stringify([
     { name: "Phim Mới", slug: "phim-moi" }, { name: "Kiếm Hiệp", slug: "kiem-hiep" }, { name: "Cổ Trang", slug: "co-trang" },
     { name: "Võ Thuật", slug: "vo-thuat" }, { name: "Chiếu Rạp", slug: "chieu-rap" }, { name: "Hồng Kông", slug: "country/hong-kong" },
-    { name: "Trung Quốc", slug: "country/trung-quoc" }, { name: "Đài Loan", slug: "country/dai-loan" }, { name: "Việt Nam", slug: "country/viet-nam" },
-    { name: "Hàn Quốc", slug: "country/han-quoc" }, { name: "Âu Mỹ", slug: "country/au-my" }
+    { name: "Trung Quốc", slug: "country/trung-quoc" }, { name: "Đài Loan", slug: "country/dai-loan" }, { name: "Việt Nam", slug: "country/viet-nam" }
   ]);
 }
 
@@ -30,26 +29,16 @@ function getFilterConfig() {
     countries: [
       { name: "Tất cả", value: "" }, { name: "Hồng Kông", value: "hong-kong" }, { name: "Trung Quốc", value: "trung-quoc" },
       { name: "Đài Loan", value: "dai-loan" }, { name: "Việt Nam", value: "viet-nam" }, { name: "Hàn Quốc", value: "han-quoc" },
-      { name: "Âu Mỹ", value: "au-my" }, { name: "Mỹ", value: "my" }, { name: "Anh", value: "anh" }, { name: "Pháp", value: "phap" },
-      { name: "Nhật Bản", value: "nhat-ban" }, { name: "Thái Lan", value: "thai-lan" }, { name: "Ấn Độ", value: "an-do" },
-      { name: "Nga", value: "nga" }, { name: "Đức", value: "duc" }, { name: "Úc", value: "uc" }, { name: "Ý", value: "y" },
-      { name: "Tây Ban Nha", value: "tay-ban-nha" }, { name: "Canada", value: "canada" }, { name: "Indonesia", value: "indonesia" },
-      { name: "Philippines", value: "philippines" }, { name: "Malaysia", value: "malaysia" }, { name: "Singapore", value: "singapore" }
+      { name: "Âu Mỹ", value: "au-my" }, { name: "Nhật Bản", value: "nhat-ban" }, { name: "Thái Lan", value: "thai-lan" }
     ],
     categories: [
       { name: "Tất cả", value: "" }, { name: "Kiếm Hiệp", value: "kiem-hiep" }, { name: "Cổ Trang", value: "co-trang" },
-      { name: "Võ Thuật", value: "vo-thuat" }, { name: "Võ Hiệp", value: "vo-hiep" }, { name: "Hành Động", value: "hanh-dong" },
-      { name: "Phiêu Lưu", value: "phieu-luu" }, { name: "Tâm Lý", value: "tam-ly" }, { name: "Tình Cảm", value: "tinh-cam" },
-      { name: "Lãng Mạn", value: "lang-man" }, { name: "Hình Sự", value: "hinh-su" }, { name: "Xã Hội Đen", value: "xa-hoi-den" },
-      { name: "Hài Hước", value: "hai-huoc" }, { name: "Thần Thoại", value: "than-thoai" }, { name: "Viễn Tưởng", value: "vien-tuong" },
-      { name: "Kinh Dị", value: "kinh-di" }, { name: "Bí Ẩn", value: "bi-an" }, { name: "Chiến Tranh", value: "chien-tranh" },
-      { name: "Lịch Sử", value: "lich-su" }, { name: "Kinh Điển", value: "kinh-dien" }, { name: "Chính Kịch", value: "chinh-kich" },
-      { name: "Gia Đình", value: "gia-dinh" }, { name: "Hoạt Hình", value: "hoat-hinh" }, { name: "Chiếu Rạp", value: "chieu-rap" }
+      { name: "Võ Thuật", value: "vo-thuat" }, { name: "Hành Động", value: "hanh-dong" }, { name: "Tâm Lý", value: "tam-ly" },
+      { name: "Tình Cảm", value: "tinh-cam" }, { name: "Hình Sự", value: "hinh-su" }, { name: "Hài Hước", value: "hai-huoc" }
     ],
     years: [
-      { name: "Tất cả", value: "" }, { name: "2020", value: "2020" }, { name: "2015", value: "2015" },
-      { name: "2010", value: "2010" }, { name: "2005", value: "2005" }, { name: "2000", value: "2000" },
-      { name: "1995", value: "1995" }, { name: "1990", value: "1990" }, { name: "1985", value: "1985" }, { name: "1980", value: "1980" }
+      { name: "Tất cả", value: "" }, { name: "2020", value: "2020" }, { name: "2010", value: "2010" },
+      { name: "2000", value: "2000" }, { name: "1995", value: "1995" }, { name: "1990", value: "1990" }
     ]
   });
 }
@@ -88,21 +77,37 @@ function parseListResponse(html) {
   var map = {}, items = [], totalPages = 1, currentPage = 1;
   if (!html) return JSON.stringify({ items: items });
   try {
-    var blocks = html.split(/<(?:article|div|li)[^>]*class=["'][^"']*\b(?:halim-item|post-item|item)\b[^"']*["'][^>]*>/i);
-    blocks.shift();
-    while (blocks.length > 0) {
-      var b = blocks.shift().substring(0, 2200);
-      var href = match1(b, /<a[^>]*href=["']([^"']+)["']/i);
-      if (!href || href === "#" || href.indexOf("/country/") !== -1 || href.indexOf("/release/") !== -1 || href.indexOf("/tag/") !== -1) continue;
-      var title = match1(b, /<a[^>]*title=["']([^"']+)["']/i) || match1(b, /<(?:h2|h3|p|span)[^>]*class=["'][^"']*(?:entry-title|title|name)[^"']*["'][^>]*>([\s\S]*?)<\/(?:h2|h3|p|span)>/i).replace(/<[^>]+>/g, "") || match1(b, /<img[^>]*alt=["']([^"']+)["']/i);
-      var img = match1(b, /<img[^>]*data-(?:src|original|lazy-src)=["']([^"']+)["']/i) || match1(b, /<img[^>]*src=["']([^"']+)["']/i);
-      if (img && img.indexOf("data:image") !== 0 && img.indexOf("http") !== 0) img = BASE_URL + "/" + img.replace(/^\/+/, "");
+    // Chỉ lấy vùng nội dung chính từ main-contents trở đi để bỏ qua logo và menu
+    var mainPos = html.indexOf("main-contents");
+    var mainHtml = mainPos !== -1 ? html.substring(mainPos) : html;
+
+    var aRegex = /<a\b([^>]*)>([\s\S]*?)<\/a>/gi, m;
+    while ((m = aRegex.exec(mainHtml)) !== null) {
+      var attrs = m.slice(1, 2).join("");
+      var inner = m.slice(2, 3).join("");
+      if (inner.indexOf("<img") === -1) continue;
+
+      var href = match1(attrs, /href=["']([^"']+)["']/i);
+      if (!href || href === "#" || href.indexOf("/country/") !== -1 || href.indexOf("/release/") !== -1 || href.indexOf("hflex_view") !== -1) continue;
+
+      var title = match1(attrs, /title=["']([^"']+)["']/i) ||
+                  match1(inner, /alt=["']([^"']+)["']/i) ||
+                  inner.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+
+      var img = match1(inner, /data-(?:src|original|lazy-src)=["']([^"']+)["']/i) ||
+                match1(inner, /src=["']([^"']+)["']/i);
+
+      if (img && img.indexOf("data:image") !== 0 && img.indexOf("http") !== 0) {
+        img = BASE_URL + "/" + img.replace(/^\/+/, "");
+      }
+
       var id = href.replace(BASE_URL, "").replace(/^\/+|\/+$/g, "");
       if (id && title && img && !map[id]) {
         map[id] = true;
-        items.push({ id: id, title: decodeHtml(title), posterUrl: img, backdropUrl: img, year: match1(b, /\b(19\d{2}|20\d{2})\b/) });
+        items.push({ id: id, title: decodeHtml(title), posterUrl: img, backdropUrl: img, year: match1(inner, /\b(19\d{2}|20\d{2})\b/) });
       }
     }
+
     var pageRegex = /\/page\/(\d+)/gi, pm;
     while ((pm = pageRegex.exec(html)) !== null) {
       var num = parseInt(pm.slice(1, 2).join(""), 10);
@@ -123,6 +128,7 @@ function parseMovieDetail(html) {
     poster = match1(html, /id=["']bookmark["'][^>]*data-thumbnail=["']([^"']+)["']/i) || match1(html, /<meta[^>]*property=["']og:image["'][^>]*content=["']([^"']+)["']/i);
     if (poster && poster.indexOf("http") !== 0) poster = BASE_URL + "/" + poster.replace(/^\/+/, "");
     desc = match1(html, /id=["']expand-post-content["'][^>]*>([\s\S]*?)<\/div>/i).replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim() || match1(html, /<meta[^>]*name=["']description["'][^>]*content=["']([^"']+)["']/i);
+
     var links = html.split("<a ");
     links.shift();
     while (links.length > 0) {
@@ -158,12 +164,12 @@ function parseDetailResponse(html) {
     }
     if (!url) {
       var emb = match1(html, /<iframe[^>]*src=["']((?:https?:)?\/\/[^"']+)["']/i);
-if (emb && emb.indexOf("facebook.com") === -1 && emb.indexOf("google") === -1 && emb.indexOf("al5sm.com") === -1) {
-url = emb.replace(/\//g, "/");
-if (url.indexOf("//") === 0) url = "https:" + url;
-type = "embed";
-}
-}
-} catch (e) {}
-return JSON.stringify({ url: url, type: type, headers: { "Referer": BASE_URL + "/", "Origin": BASE_URL, "User-Agent": "Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 Chrome/120.0.0.0 Mobile Safari/537.36" } });
+      if (emb && emb.indexOf("facebook.com") === -1 && emb.indexOf("google") === -1 && emb.indexOf("al5sm.com") === -1) {
+        url = emb.replace(/\\\//g, "/");
+        if (url.indexOf("//") === 0) url = "https:" + url;
+        type = "embed";
+      }
+    }
+  } catch (e) {}
+  return JSON.stringify({ url: url, type: type, headers: { "Referer": BASE_URL + "/", "Origin": BASE_URL, "User-Agent": "Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 Chrome/120.0.0.0 Mobile Safari/537.36" } });
 }
