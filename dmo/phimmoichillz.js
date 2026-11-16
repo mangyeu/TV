@@ -199,92 +199,6 @@ function getUrlYears() { return "https://phimmoichillz.top/"; }
 // PARSERS
 // =============================================================================
 
-function parseListResponse(html) {
-    var moviesMap = {};
-    // PhimMoiChill thường dùng thẻ li class="item" hoặc div class="item" 
-    var parts = html.split(/<li[^>]*class=["']item["'][^>]*>/);
-    if (parts.length <= 1) {
-        parts = html.split(/<div[^>]*class=["']item(?:[^"']*)?["'][^>]*>/);
-    }
-
-    // Nếu trang web có wrapper "halim-item" thường thấy ở theme Halim/Phimmoi
-    if (parts.length <= 1) {
-        parts = html.split(/<article[^>]*class=["'][^"']*halim-item["'][^>]*>/);
-        if (parts.length <= 1) {
-            parts = html.split(/<div[^>]*class=["'][^"']*halim-item["'][^>]*>/);
-        }
-    }
-
-    // Một cấu trúc khác phổ biến của phimmoichill
-    if (parts.length <= 1) {
-        parts = html.split(/<div[^>]*class=["']flw-item["'][^>]*>/); // flix mẫu
-    }
-
-    if (parts.length <= 1) {
-        // Fallback catch-all links if needed
-        var listItems = html.match(/<a[^>]+href="[^"]+\/phim\/[^"]+">[\s\S]*?<\/a>/g);
-        if (listItems) {
-            parts = [""];
-            for (var k = 0; k < listItems.length; k++) parts.push(listItems[k]);
-        }
-    }
-
-    for (var i = 1; i < parts.length; i++) {
-        var itemHtml = parts[i];
-
-        // Lấy link và ID/Slug
-        var linkMatch = itemHtml.match(/href="([^"]*(?:\/phim\/|\/xem\/|\/info\/)([^"\/]+)(?:\.html|))"/);
-        if (!linkMatch) linkMatch = itemHtml.match(/href="([^"]+)"/);
-
-        var fullUrl = linkMatch ? linkMatch[1] : "";
-        var slugMatch = fullUrl.match(/\/phim\/([^\/.]+)/) || fullUrl.match(/\/xem\/([^\/]+)-pm/) || fullUrl.match(/\/info\/([^\/.]+)/);
-        var slug = slugMatch ? slugMatch[1] : (linkMatch ? linkMatch[2] : "");
-
-        if (slug) {
-            slug = slug.replace(".html", "")
-                .replace("info-", "")
-                .replace(/^info\//, "")
-                .replace(/^phim\//, "");
-        }
-
-        // Lấy tiêu đề 
-        var title = "";
-        var pMatch = itemHtml.match(/<p[^>]*>([\s\S]*?)<\/p>/i);
-        if (pMatch) title = pMatch[1].replace(/<[^>]*>/g, "").trim();
-
-        if (!title) {
-            var h3Match = itemHtml.match(/<h3[^>]*>(?:<a[^>]*>)?([\s\S]*?)(?:<\/a>)?<\/h3>/i);
-            if (h3Match) title = h3Match[1].replace(/<[^>]*>/g, "").trim();
-            else {
-                var pMatch2 = itemHtml.match(/<p[^>]*class="name"[^>]*>([\s\S]*?)<\/p>/i);
-                if (pMatch2) title = pMatch2[1].replace(/<[^>]*>/g, "").trim();
-            }
-        }
-
-        if (!title && itemHtml.indexOf('title="') > -1) {
-            var maybeTitleMatch = itemHtml.match(/title="([^"]+)"/);
-            if (maybeTitleMatch) title = maybeTitleMatch[1];
-        }
-
-        // Lấy ảnh Thumbnail
-        var thumbMatch = itemHtml.match(/data-src="([^"]+)"/) || itemHtml.match(/src="([^"]+)"/);
-        var thumb = thumbMatch ? thumbMatch[1] : "";
-
-        // Dọn dẹp URL ảnh nếu là lazyload url base64
-        if (thumb.indexOf("data:image") === 0) {
-            var fallbackThumbMatch = itemHtml.match(/data-bg="([^"]+)"/) || itemHtml.match(/style=".*url\('([^']+)'/);
-            if (fallbackThumbMatch) thumb = fallbackThumbMatch[1];
-        }
-
-        // Kiểm tra xem có lấy được hay không, nếu không bỏ qua
-        if (slug && title) {
-            var rawTitle = PluginUtils.cleanText(title);
-
-            // Tìm nhãn chất lượng (VD: HD, FHD, 4K, Vietsub)
-            var labels = [];
-            var qualityMatch = itemHtml.match(/class="[^"]*(?:quality|label|status)[^"]*"[^>]*>([\s\S]*?)<\//i);
-            if (!qualityMatch) qualityMatch = itemHtml.match(/<span class="status">([^<]+)<\/span>/);
-var BASE_URL = "https://phimmoichillz.top";
 
 function parseListResponse(html) {
   var moviesMap = {};
@@ -336,7 +250,7 @@ function parseListResponse(html) {
       }
 
       if (posterUrl && posterUrl.indexOf("http") !== 0) {
-        posterUrl = BASE_URL + "/" + posterUrl.replace(/^\/+/, "");
+        posterUrl = "https://phimmoichillz.top" + posterUrl.replace(/^\/+/, "");
       }
 
       // 4. Bóc tách năm phát hành
@@ -344,7 +258,7 @@ function parseListResponse(html) {
       var year = yearMatch ? yearMatch[1] : "";
 
       // 5. Chuẩn hóa id (slug) làm khóa chính cho moviesMap
-      var id = href.replace(BASE_URL, "").replace(/^\/+|\/+$/g, "");
+      var id = href.replace("https://phimmoichillz.top", "").replace(/^\/+|\/+$/g, "");
 
       // 6. Lưu vào moviesMap để chống trùng lặp và đẩy vào mảng kết quả
       if (id && title && !moviesMap[id]) {
