@@ -3,7 +3,7 @@
 var BASE_URL = "https://phimmoichillz.top";
 
 function getManifest() {
-  return JSON.stringify({ id: "phimmoichillz", name: "PhimMoiChillZ", version: "5.3", type: "MOVIE", baseUrl: BASE_URL });
+  return JSON.stringify({ id: "phimmoichillz", name: "PhimMoiChillZ", version: "5.4", type: "MOVIE", baseUrl: BASE_URL });
 }
 
 function getHomeSections() {
@@ -16,24 +16,67 @@ function getHomeSections() {
     { slug: "quoc-gia/viet-nam", title: "Phim Việt Nam", type: "HORIZONTAL", path: "quoc-gia/viet-nam" }
   ]);
 }
-
 function getPrimaryCategories() {
   return JSON.stringify([
-    { name: "Phim Bộ", slug: "danh-sach/phim-bo" },
+    { name: "Phim Mới", slug: "phim-moi" },
     { name: "Phim Lẻ", slug: "danh-sach/phim-le" },
-    { name: "Hoạt Hình", slug: "the-loai/hoat-hinh" },
+    { name: "Phim Bộ", slug: "danh-sach/phim-bo" },
     { name: "Chiếu Rạp", slug: "danh-sach/phim-chieu-rap" },
-    { name: "Việt Nam", slug: "quoc-gia/viet-nam" }
+    { name: "Hoạt Hình", slug: "the-loai/hoat-hinh" },
+    { name: "Hành Động", slug: "the-loai/hanh-dong" },
+    { name: "Tình Cảm", slug: "the-loai/tinh-cam" },
+    { name: "Cổ Trang", slug: "the-loai/co-trang" },
+    { name: "Kinh Dị", slug: "the-loai/kinh-di" },
+    { name: "Hài Hước", slug: "the-loai/hai-huoc" },
+    { name: "Việt Nam", slug: "quoc-gia/viet-nam" },
+    { name: "Hàn Quốc", slug: "quoc-gia/han-quoc" },
+    { name: "Trung Quốc", slug: "quoc-gia/trung-quoc" },
+    { name: "Âu Mỹ", slug: "quoc-gia/au-my" },
+    { name: "Nhật Bản", slug: "quoc-gia/nhat-ban" },
+    { name: "Thái Lan", slug: "quoc-gia/thai-lan" },
+    { name: "Hồng Kông", slug: "quoc-gia/hong-kong" },
+    { name: "Ấn Độ", slug: "quoc-gia/an-do" }
   ]);
 }
 
+
 function getFilterConfig() {
   return JSON.stringify({
-    countries: [{ name: "Tất cả", value: "" }, { name: "Việt Nam", value: "viet-nam" }, { name: "Hồng Kông", value: "hong-kong" }, { name: "Ấn Độ", value: "an-do" }],
-    categories: [{ name: "Tất cả", value: "" }, { name: "Hành Động", value: "hanh-dong" }, { name: "Tình Cảm", value: "tinh-cam" }],
-    years: [{ name: "Tất cả", value: "" }, { name: "2026", value: "2026" }, { name: "2025", value: "2025" }]
+    countries: [
+      { name: "Tất cả quốc gia", value: "" },
+      { name: "Việt Nam", value: "viet-nam" }, { name: "Hàn Quốc", value: "han-quoc" }, { name: "Trung Quốc", value: "trung-quoc" },
+      { name: "Âu Mỹ", value: "au-my" }, { name: "Nhật Bản", value: "nhat-ban" }, { name: "Thái Lan", value: "thai-lan" },
+      { name: "Hồng Kông", value: "hong-kong" }, { name: "Đài Loan", value: "dai-loan" }, { name: "Ấn Độ", value: "an-do" },
+      { name: "Anh", value: "anh" }, { name: "Pháp", value: "phap" }, { name: "Nga", value: "nga" }, { name: "Đức", value: "duc" },
+      { name: "Úc", value: "uc" }, { name: "Ý", value: "y" }, { name: "Tây Ban Nha", value: "tay-ban-nha" },
+      { name: "Canada", value: "canada" }, { name: "Indonesia", value: "indonesia" }, { name: "Philippines", value: "philippines" },
+      { name: "Malaysia", value: "malaysia" }, { name: "Mexico", value: "mexico" }, { name: "Nam Phi", value: "nam-phi" },
+      { name: "Brazil", value: "brazil" }, { name: "Na Uy", value: "na-uy" }, { name: "Châu Phi", value: "chau-phi" },
+      { name: "Thụy Điển", value: "thuy-dien" }, { name: "Ba Lan", value: "ba-lan" }, { name: "Hà Lan", value: "ha-lan" },
+      { name: "Ireland", value: "ireland" }, { name: "Bỉ", value: "bi" }, { name: "Đan Mạch", value: "dan-mach" },
+      { name: "Ukraina", value: "ukraina" }, { name: "Phần Lan", value: "phan-lan" }, { name: "Thụy Sĩ", value: "thuy-si" },
+      { name: "UAE", value: "uae" }, { name: "Ả Rập Xê Út", value: "a-rap-xe-ut" }, { name: "Bồ Đào Nha", value: "bo-dao-nha" },
+      { name: "Colombia", value: "colombia" }, { name: "Chile", value: "chile" }, { name: "Hy Lạp", value: "hy-lap" },
+      { name: "Nigeria", value: "nigeria" }, { name: "Argentina", value: "argentina" }, { name: "Singapore", value: "singapore" }
+    ],
+    categories: [
+      { name: "Tất cả thể loại", value: "" },
+      { name: "Hành Động", value: "hanh-dong" }, { name: "Tình Cảm", value: "tinh-cam" }, { name: "Hài Hước", value: "hai-huoc" },
+      { name: "Cổ Trang", value: "co-trang" }, { name: "Tâm Lý", value: "tam-ly" }, { name: "Hình Sự", value: "hinh-su" },
+      { name: "Chiến Tranh", value: "chien-tranh" }, { name: "Thể Thao", value: "the-thao" }, { name: "Võ Thuật", value: "vo-thuat" },
+      { name: "Viễn Tưởng", value: "vien-tuong" }, { name: "Phiêu Lưu", value: "phieu-luu" }, { name: "Khoa Học", value: "khoa-hoc" },
+      { name: "Kinh Dị", value: "kinh-di" }, { name: "Âm Nhạc", value: "am-nhac" }, { name: "Thần Thoại", value: "than-thoai" },
+      { name: "Hoạt Hình", value: "hoat-hinh" }, { name: "Gia Đình", value: "gia-dinh" }, { name: "Chính Kịch", value: "chinh-kich" },
+      { name: "Bí Ẩn", value: "bi-an" }, { name: "Học Đường", value: "hoc-duong" }, { name: "Tài Liệu", value: "tai-lieu" }
+    ],
+    years: [
+      { name: "Tất cả năm", value: "" },
+      { name: "2026", value: "2026" }, { name: "2025", value: "2025" }, { name: "2024", value: "2024" },
+      { name: "2023", value: "2023" }, { name: "2022", value: "2022" }, { name: "2021", value: "2021" }, { name: "2020", value: "2020" }
+    ]
   });
 }
+
 function getUrlList(slug, filtersJson) {
   var f = JSON.parse(filtersJson || "{}");
   var p = Number(f.page) || 1;
