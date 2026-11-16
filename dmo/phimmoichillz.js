@@ -6,7 +6,7 @@ function getManifest() {
   return JSON.stringify({
     "id": "phimmoichill",
     "name": "PhimMoiChill",
-    "version": "1.6",
+    "version": "1.8",
     "type": "MOVIE",
     "baseUrl": BASE_URL,
     "allowedDomains": ["phimmoichillz.top", "*.phimmoichillz.top", "phimmoichill.top", "*.phimmoichill.top", "googleapis.com", "*.googleapis.com"]
@@ -17,7 +17,9 @@ function getHomeSections() {
   return JSON.stringify([
     { slug: "phim-le", title: "Phim Lẻ Mới", type: "HORIZONTAL", path: "phim-le" },
     { slug: "phim-bo", title: "Phim Bộ Mới", type: "HORIZONTAL", path: "phim-bo" },
-    { slug: "quoc-gia/viet-nam", title: "Phim Việt Nam", type: "HORIZONTAL", path: "quoc-gia/viet-nam" }
+    { slug: "quoc-gia/viet-nam", title: "Phim Việt Nam", type: "HORIZONTAL", path: "quoc-gia/viet-nam" },
+    { slug: "quoc-gia/hong-kong", title: "Phim Hồng Kông", type: "HORIZONTAL", path: "quoc-gia/hong-kong" },
+    { slug: "quoc-gia/an-do", title: "Phim Ấn Độ", type: "HORIZONTAL", path: "quoc-gia/an-do" }
   ]);
 }
 
@@ -34,18 +36,21 @@ function getPrimaryCategories() {
 function getFilterConfig() {
   return JSON.stringify({
     countries: [
-      { name: "Tất cả quốc gia", value: "" },
+      { name: "Tất cả", value: "" },
       { name: "Việt Nam", value: "viet-nam" },
       { name: "Hồng Kông", value: "hong-kong" },
-      { name: "Ấn Độ", value: "an-do" }
+      { name: "Ấn Độ", value: "an-do" },
+      { name: "Pháp", value: "phap" },
+      { name: "Nga", value: "nga" }
     ],
     categories: [
-      { name: "Tất cả thể loại", value: "" },
+      { name: "Tất cả", value: "" },
       { name: "Hành Động", value: "hanh-dong" },
-      { name: "Tình Cảm", value: "tinh-cam" }
+      { name: "Tình Cảm", value: "tinh-cam" },
+      { name: "Kinh Dị", value: "kinh-di" }
     ],
     years: [
-      { name: "Tất cả năm", value: "" },
+      { name: "Tất cả", value: "" },
       { name: "2026", value: "2026" },
       { name: "2025", value: "2025" }
     ]
@@ -55,20 +60,10 @@ function getFilterConfig() {
 function getUrlList(slug, filtersJson) {
   var filters = JSON.parse(filtersJson || "{}");
   var page = filters.page || 1;
-  
-  // Lấy slug từ tham số truyền vào hoặc từ bên trong object filters
-  var targetSlug = slug || filters.slug || filters.path || "phim-le";
-  var path = targetSlug.replace(/^\/+|\/+$/g, "");
-
-  // Chỉ ghi đè nếu người dùng chủ động chọn trong bảng Bộ lọc (Filter)
-  if (filters.country && filters.country !== "") {
-    path = "quoc-gia/" + filters.country;
-  } else if (filters.category && filters.category !== "") {
-    path = "the-loai/" + filters.category;
-  } else if (filters.year && filters.year !== "") {
-    path = "nam-phat-hanh/" + filters.year;
-  }
-
+  var path = (slug || filters.slug || filters.path || "phim-le").replace(/^\/+|\/+$/g, "");
+  if (filters.country) path = "quoc-gia/" + filters.country;
+  else if (filters.category) path = "the-loai/" + filters.category;
+  else if (filters.year) path = "nam-phat-hanh/" + filters.year;
   return BASE_URL + "/" + path + (page > 1 ? "/page/" + page : "");
 }
 
@@ -84,7 +79,6 @@ function getUrlDetail(slug) {
   return slug.indexOf("http") === 0 ? slug : BASE_URL + "/" + slug.replace(/^\/+|\/+$/g, "");
 }
 
-// Dùng .slice() thay cho .at() để chạy trên 100% thiết bị Android
 function getGroup(m, i) {
   if (!m || m.length <= i) return "";
   var val = m.slice(i, i + 1).join("");
@@ -98,54 +92,25 @@ function decodeHtml(s) {
 function parseListResponse(html) {
   var map = {}, items = [];
   if (!html) return JSON.stringify({ items: items });
-
   try {
-    // 1. Cắt bỏ phần Header (Menu) và Footer để tránh quét nhầm link quốc gia/phim đề cử
-    var mainHtml = html;
-    var bodyStart = html.indexOf("<main");
-    if (bodyStart === -1) bodyStart = html.indexOf('id="main');
-    if (bodyStart === -1) bodyStart = html.indexOf('class="main');
-    if (bodyStart !== -1) {
-      mainHtml = html.substring(bodyStart);
-    }
-
-    var sidebarStart = mainHtml.indexOf("<aside");
-    if (sidebarStart === -1) sidebarStart = mainHtml.indexOf('id="sidebar');
-    if (sidebarStart !== -1) {
-      mainHtml = mainHtml.substring(0, sidebarStart);
-    }
-
-    // 2. Quét danh sách phim bên trong vùng nội dung chính đã lọc sạch
-    var blocks = mainHtml.split(/<(?:article|li|div)[^>]*class=["'][^"']*\b(?:item|film-item|post-item|movie-item|halim-item)\b[^"']*["'][^>]*>/i);
+    var blocks = html.split(/<(?:article|li|div)[^>]*class=["'][^"']*\b(?:item|film-item|post-item|movie-item|halim-item)\b[^"']*["'][^>]*>/i);
     for (var i = 1; i < blocks.length; i++) {
-      var b = getGroup(blocks, i).substring(0, 2500);
+      var b = getGroup(blocks, i).substring(0, 2000);
       var href = getGroup(b.match(/<a[^>]*href=["']([^"']+)["']/i), 1);
-      
-      // Loại bỏ các đường dẫn chuyên mục (/quoc-gia/, /the-loai/) để không nhận nhầm menu thành phim
       if (!href || href === "#" || href.indexOf("/quoc-gia/") !== -1 || href.indexOf("/the-loai/") !== -1) continue;
-
       var title = getGroup(b.match(/<a[^>]*title=["']([^"']+)["']/i), 1) ||
                   getGroup(b.match(/<(?:h2|h3|h4|p|span)[^>]*class=["'][^"']*(?:title|name)[^"']*["'][^>]*>([\s\S]*?)<\/(?:h2|h3|h4|p|span)>/i), 1).replace(/<[^>]+>/g, "") ||
                   getGroup(b.match(/<img[^>]*alt=["']([^"']+)["']/i), 1);
-
       var img = getGroup(b.match(/<img[^>]*data-(?:src|original|lazy-src)=["']([^"']+)["']/i), 1) ||
                 getGroup(b.match(/<img[^>]*src=["']([^"']+)["']/i), 1);
       if (img && img.indexOf("data:image") !== 0 && img.indexOf("http") !== 0) img = BASE_URL + "/" + img.replace(/^\/+/, "");
-
       var id = href.replace(BASE_URL, "").replace(/^\/+|\/+$/g, "");
       if (id && title && !map[id]) {
         map[id] = true;
-        items.push({
-          id: id,
-          title: decodeHtml(title),
-          posterUrl: img,
-          backdropUrl: img,
-          year: getGroup(b.match(/\b(20\d{2}|19\d{2})\b/), 1)
-        });
+        items.push({ id: id, title: decodeHtml(title), posterUrl: img, backdropUrl: img, year: getGroup(b.match(/\b(20\d{2}|19\d{2})\b/), 1) });
       }
     }
   } catch (e) {}
-
   return JSON.stringify({ items: items });
 }
 
