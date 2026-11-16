@@ -1,5 +1,3 @@
-var BASE_URL = "https://clbphimxua.info";
-
 function getManifest() {
     return JSON.stringify({
         "id": "clbphimxua",
