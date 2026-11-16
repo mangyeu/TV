@@ -199,8 +199,6 @@ function getUrlYears() { return "https://phimmoichillz.top/"; }
 // PARSERS
 // =============================================================================
 
-var BASE_URL = "https://phimmoichillz.top";
-
 function parseListResponse(html) {
   var moviesMap = {};
   var items = [];
@@ -256,7 +254,7 @@ function parseListResponse(html) {
       var year = yearMatch ? yearMatch[1] : "";
 
       // 6. Chuẩn hóa id và lưu vào moviesMap
-      var id = href.replace(BASE_URL, "").replace(/^\/+|\/+$/g, "");
+      var id = href.replace("https://phimmoichillz.top", "").replace(/^\/+|\/+$/g, "");
 
       if (id && title && !moviesMap[id]) {
         var movieObj = {
@@ -294,9 +292,6 @@ function decodeHtmlEntities(str) {
     .trim();
 }
 
-
-var BASE_URL = "https://phimmoichillz.top";
-
 function parseMovieDetail(html) {
   if (!html) return JSON.stringify({});
 
@@ -319,7 +314,7 @@ function parseMovieDetail(html) {
       posterUrl = ogImgMatch[1];
     }
     if (posterUrl && posterUrl.indexOf("http") !== 0) {
-      posterUrl = BASE_URL + "/" + posterUrl.replace(/^\/+/, "");
+      posterUrl = "https://phimmoichillz.top" + "/" + posterUrl.replace(/^\/+/, "");
     }
 
     // 3. Lấy nội dung tóm tắt phim
@@ -373,7 +368,7 @@ function parseMovieDetail(html) {
     if (episodesList.length === 0) {
       var watchBtn = html.match(/<a[^>]*href=["']([^"']*(?:xem-phim|watch|tap-1|full)[^"']*)["'][^>]*>/i);
       if (watchBtn && watchBtn[1]) {
-        var watchSlug = watchBtn[1].replace(BASE_URL, "").replace(/^\/+|\/+$/g, "");
+        var watchSlug = watchBtn[1].replace("https://phimmoichillz.top", "").replace(/^\/+|\/+$/g, "");
         episodesList.push({
           id: watchSlug,
           name: "Full / Tập 1",
@@ -415,8 +410,6 @@ function decodeHtmlEntities(str) {
     .replace(/&gt;/g, ">")
     .trim();
 }
-
-var BASE_URL = "https://phimmoichillz.top";
 
 function parseDetailResponse(html) {
   if (!html) return JSON.stringify({ url: "" });
@@ -476,16 +469,9 @@ function parseDetailResponse(html) {
     url: streamUrl,
     type: streamType,
     headers: {
-      "Referer": BASE_URL + "/",
-      "Origin": BASE_URL,
+      "Referer": "https://phimmoichillz.top" + "/",
+      "Origin": "https://phimmoichillz.top",
       "User-Agent": "Mozilla/5.0 (Linux; Android 13; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36"
     }
   });
 }
-
-function parseCategoriesResponse(html) {
-    // Để cho dễ, trả về string rỗng hoặc menu tĩnh nếu trang không dễ parse menu
-    return "[]";
-}
-function parseCountriesResponse(html) { return "[]"; }
-function parseYearsResponse(html) { return "[]"; }
