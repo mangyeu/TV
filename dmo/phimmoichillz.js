@@ -3,7 +3,7 @@
 var BASE_URL = "https://phimmoichillz.top";
 
 function getManifest() {
-  return JSON.stringify({ id: "phimmoichillz", name: "PhimMoiChillZ", version: "5.0", type: "MOVIE", baseUrl: BASE_URL });
+  return JSON.stringify({ id: "phimmoichillz", name: "PhimMoiChillZ", version: "5.1", type: "MOVIE", baseUrl: BASE_URL });
 }
 
 function getHomeSections() {
@@ -96,48 +96,46 @@ function parseListResponse(html) {
 
 function parseSearchResponse(html) { return parseListResponse(html); }
 
-function parseMovieDetail(html) {
-  if (!html) return JSON.stringify({});
-  var title = "", poster = "", desc = "", servers = [], eps = [], epMap = {};
-  try {
-    title = (match1(html, /<h1[^>]*class=["'][^"']*Title[^"']*["'][^>]*>([\s\S]*?)<\/h1>/i) || match1(html, /<h1[^>]*>([\s\S]*?)<\/h1>/i)).replace(/<[^>]+>/g, "").trim();
-    poster = match1(html, /<meta[^>]*property=["']og:image["'][^>]*content=["']([^"']+)["']/i);
-    if (poster && poster.indexOf("http") !== 0) poster = BASE_URL + "/" + poster.replace(/^\/+/, "");
-    desc = match1(html, /<div[^>]*class=["'][^"']*Description[^"']*["'][^>]*>([\s\S]*?)<\/div>/i).replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
-
-    var links = html.split("<a ");
-    links.shift();
-    while (links.length > 0) {
-      var chunk = links.shift().substring(0, 500);
-      var h = match1(chunk, /href=["']([^"']+)["']/i);
-      var t = match1(chunk, />([\s\S]*?)<\/a>/i).replace(/<[^>]+>/g, "").trim();
-      if (h && (h.indexOf("/xem-phim") !== -1 || h.indexOf("/tap-") !== -1 || t.toLowerCase().indexOf("xem phim") !== -1)) {
-        var s = h.replace(BASE_URL, "").replace(/^\/+|\/+$/g, "");
-        if (s && !epMap[s]) { epMap[s] = true; eps.push({ id: s, name: decodeHtml(t) || "Xem Phim", slug: s }); }
-      }
-    }
-    if (eps.length === 0) {
-      var curUrl = match1(html, /<link[^>]*rel=["']canonical["'][^>]*href=["']([^"']+)["']/i);
-      var curSlug = curUrl.replace(BASE_URL, "").replace(/^\/+|\/+$/g, "");
-      if (curSlug) eps.push({ id: curSlug, name: "Full / Tập 1", slug: curSlug });
-    }
-    if (eps.length > 0) servers.push({ serverName: "Server Chính", episodes: eps });
-  } catch (e) {}
-  return JSON.stringify({ title: decodeHtml(title), posterUrl: poster, backdropUrl: poster, description: decodeHtml(desc), servers: servers });
-}
-
 function parseDetailResponse(html) {
   if (!html) return JSON.stringify({ url: "" });
   var url = "", type = "hls";
+
   try {
-    var m3u8 = match1(html, /data-type=["']m3u8["'][^>]*data-link=["']([^"']+)["']/i) ||
-               match1(html, /data-link=["'](https?:\/\/[^"']+\.m3u8[^"']*)["']/i) ||
-               match1(html, /["'](https?:\/\/[^"'\s\\]+\.m3u8[^"'\s\\]*)["']/i);
-    if (m3u8) { url = m3u8.replace(/\\\//g, "/"); type = "hls"; }
-    else {
-      var emb = match1(html, /data-link=["'](https?:\/\/[^"']+)["']/i);
-      if (emb) { url = emb; type = "embed"; }
+    // 1. Tìm bất kỳ link .m3u8 nào nằm trong thuộc tính data-link (không phụ thuộc thứ tự thẻ)
+    var linkM3u8 = match1(html, /data-link=["'](https?:\/\/[^"']+\.m3u8[^"']*)["']/i);
+    if (linkM3u8) {
+      url = linkM3u8;
+      type = "hls";
+    }
+
+    // 2. Nếu chưa thấy, tìm chuỗi .m3u8 hoặc .mp4 bất kỳ trong mã nguồn trang
+    if (!url) {
+      var anyMedia = match1(html, /["'](https?:\/\/[^"'\s\\]+\.(?:m3u8|mp4)[^"'\s\\]*)["']/i);
+      if (anyMedia) {
+        url = anyMedia.replace(/\\\//g, "/");
+        type = url.indexOf(".mp4") !== -1 ? "mp4" : "hls";
+      }
+    }
+
+    // 3. Nếu phim chỉ có server nhúng (embed), lấy link trong data-link hoặc thẻ iframe
+    if (!url) {
+      var embLink = match1(html, /data-link=["'](https?:\/\/[^"']+)["']/i) ||
+                    match1(html, /<iframe[^>]*src=["'](https?:\/\/[^"']+)["']/i);
+      if (embLink && embLink.indexOf("facebook.com") === -1 && embLink.indexOf("google") === -1) {
+        url = embLink;
+        type = "embed";
+      }
     }
   } catch (e) {}
-  return JSON.stringify({ url: url, type: type, headers: { "Referer": BASE_URL + "/", "Origin": BASE_URL, "User-Agent": "Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 Chrome/120.0.0.0 Mobile Safari/537.36" } });
+
+  return JSON.stringify({
+    url: url,
+    type: type,
+    headers: {
+      "Referer": BASE_URL + "/",
+      "Origin": BASE_URL,
+      "User-Agent": "Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 Chrome/120.0.0.0 Mobile Safari/537.36"
+    }
+  });
 }
+
