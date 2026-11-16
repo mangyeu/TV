@@ -6,6 +6,7 @@ function getManifest() {
         "name": "CLB Phim Xưa",
         "version": "1.0.0",
         "baseUrl": https://clbphimxua.info,
+        "iconUrl":
         "isEnabled": true,
         "isAdult": true,
         "type": "MOVIE",
