@@ -361,6 +361,14 @@ function parseSearchResponse(html) {
   });
 }
 
+// Hàm phụ trợ lấy nhóm kết quả Regex an toàn, tránh lỗi mất dấu ngoặc vuông
+function getGroup(match, idx) {
+  if (match && match.length > idx && match.at(idx)) {
+    return match.at(idx);
+  }
+  return "";
+}
+
 function parseMovieDetail(html) {
   if (!html) return JSON.stringify({});
 
@@ -374,30 +382,50 @@ function parseMovieDetail(html) {
   var epMap = {};
 
   try {
+    // 1. Lấy tiêu đề phim
     var h1Match = html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i);
     var ogTitleMatch = html.match(/<meta[^>]*property=["']og:title["'][^>]*content=["']([^"']+)["']/i);
-    if (h1Match && h1Match) title = h1Match.replace(/<[^>]+>/g, "").trim();
-    else if (ogTitleMatch && ogTitleMatch) title = ogTitleMatch.trim();
+    var rawTitle = getGroup(h1Match, 1) || getGroup(ogTitleMatch, 1);
+    title = rawTitle.replace(/<[^>]+>/g, "").trim();
 
+    // 2. Lấy ảnh Poster
     var ogImgMatch = html.match(/<meta[^>]*property=["']og:image["'][^>]*content=["']([^"']+)["']/i);
-    if (ogImgMatch && ogImgMatch) posterUrl = ogImgMatch;
-    if (posterUrl && posterUrl.indexOf("http") !== 0) posterUrl = BASE_URL + "/" + posterUrl.replace(/^\/+/, "");
+    posterUrl = getGroup(ogImgMatch, 1);
+    if (posterUrl && posterUrl.indexOf("http") !== 0) {
+      posterUrl = BASE_URL + "/" + posterUrl.replace(/^\/+/, "");
+    }
 
+    // 3. Lấy mô tả phim
     var descMatch = html.match(/<(?:div|p|article)[^>]*class=["'][^"']*(?:film-content|entry-content|content|description|storyline)[^"']*["'][^>]*>([\s\S]*?)<\/(?:div|p|article)>/i) ||
                     html.match(/<meta[^>]*name=["']description["'][^>]*content=["']([^"']+)["']/i);
-    if (descMatch && descMatch) description = descMatch.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+    var rawDesc = getGroup(descMatch, 1);
+    description = rawDesc.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
 
-    // Quét tất cả thẻ <a> hoặc <li> có chứa link xem phim / tập phim
+    // 4. Lấy năm phát hành
+    var yearMatch = html.match(/(?:Năm|Year)[^<]*<\/[^>]+>\s*([^<\n]+)/i) || html.match(/\b(20\d{2}|19\d{2})\b/);
+    year = getGroup(yearMatch, 1).trim();
+
+    // 5. Lấy danh sách Thể loại
+    var catRegex = /<a[^>]*href=["'][^"']*\/the-loai\/[^"']*["'][^>]*>([\s\S]*?)<\/a>/gi;
+    var catMatch;
+    while ((catMatch = catRegex.exec(html)) !== null) {
+      var catName = getGroup(catMatch, 1).replace(/<[^>]+>/g, "").trim();
+      if (catName && categories.indexOf(catName) === -1) {
+        categories.push(catName);
+      }
+    }
+
+    // 6. Quét danh sách tập phim / nút Xem phim
     var epRegex = /<a[^>]*href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi;
     var epMatch;
     while ((epMatch = epRegex.exec(html)) !== null) {
-      var epHref = epMatch;
-      var epText = epMatch.replace(/<[^>]+>/g, "").trim();
+      var epHref = getGroup(epMatch, 1);
+      var epText = getGroup(epMatch, 2).replace(/<[^>]+>/g, "").trim();
 
-      // Lọc các đường dẫn là trang xem phim hoặc nút tập (Tập 1, Full, Server...)
       if (
-        (epHref.indexOf("/xem-phim") !== -1 || epHref.indexOf("/tap-") !== -1 || epHref.indexOf("episode") !== -1) &&
-        epText.length > 0 && epText.length < 30
+        epHref &&
+        (epHref.indexOf("/xem-phim") !== -1 || epHref.indexOf("/tap-") !== -1 || epHref.indexOf("episode") !== -1 || epHref.indexOf("watch") !== -1) &&
+        epText.length > 0 && epText.length < 35
       ) {
         var epSlug = epHref.replace(BASE_URL, "").replace(/^\/+|\/+$/g, "");
         if (epSlug && !epMap[epSlug]) {
@@ -439,18 +467,20 @@ function parseDetailResponse(html) {
   var streamType = "hls";
 
   try {
-    // 1. Tìm trực tiếp file .m3u8 hoặc .mp4 trong toàn bộ mã nguồn trang
+    // 1. Tìm trực tiếp file .m3u8 hoặc .mp4
     var directMatch = html.match(/["'](https?:\/\/[^"'\s\\]+\.(?:m3u8|mp4)[^"'\s\\]*)["']/i);
-    if (directMatch && directMatch) {
-      streamUrl = directMatch.replace(/\\\//g, "/");
+    var rawDirect = getGroup(directMatch, 1);
+    if (rawDirect) {
+      streamUrl = rawDirect.replace(/\\\//g, "/");
       streamType = streamUrl.indexOf(".mp4") !== -1 ? "mp4" : "hls";
     }
 
     // 2. Tìm link nhúng trong các thuộc tính data-link, data-src, data-embed hoặc thẻ iframe
     if (!streamUrl) {
       var embedMatch = html.match(/(?:<iframe[^>]*src|data-link|data-src|data-embed|file|source)\s*[:=]\s*["']((?:https?:)?\/\/[^"'\s]+)["']/i);
-      if (embedMatch && embedMatch) {
-        streamUrl = embedMatch.replace(/\\\//g, "/");
+      var rawEmbed = getGroup(embedMatch, 1);
+      if (rawEmbed && rawEmbed.indexOf("facebook.com") === -1 && rawEmbed.indexOf("google") === -1) {
+        streamUrl = rawEmbed.replace(/\\\//g, "/");
         if (streamUrl.indexOf("//") === 0) streamUrl = "https:" + streamUrl;
         streamType = (streamUrl.indexOf(".m3u8") !== -1 || streamUrl.indexOf(".mp4") !== -1) ? "hls" : "embed";
       }
