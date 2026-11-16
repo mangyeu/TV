@@ -268,34 +268,46 @@ function parseMovieDetail(html) {
 
 // parseDetailResponse: Nhận HTML tĩnh từ detail page
 // Trích data-id + server number → trả AJAX POST config cho App
-function parseDetailResponse(html) {
-    var baseUrl = "https://vlxx.app";
-    var streamUrl = "";
-
+function parseDetailResponse(html, fetchedUrl) {
     try {
-        // Bóc tách giá trị trong thuộc tính src của thẻ iframe
-        var srcMatch = html.match(/<iframe[^>]+id="iframe-embed"[^>]+src="([^"]+)"/i)
-                    || html.match(/<iframe[^>]+src="([^"]+)"/i);
+        // Trích data-id từ HTML
+        var dataIdMatch = html.match(/data-id=["'](\d+)["']/i);
+        var videoId = dataIdMatch ? dataIdMatch[1] : "";
 
-        if (srcMatch) {
-            streamUrl = srcMatch[1].trim();
+        // Fallback: lấy ID từ URL path (ví dụ: /video/.../3105/)
+        if (!videoId && fetchedUrl) {
+            var urlIdMatch = fetchedUrl.match(/\/(\d+)\/?(?:#|$)/);
+            if (urlIdMatch) videoId = urlIdMatch[1];
+        }
 
-            // Chuẩn hóa đường dẫn đầy đủ cho VAX Player
-            if (streamUrl.indexOf("//") === 0) {
-                streamUrl = "https:" + streamUrl;
-            } else if (streamUrl.indexOf("http") !== 0) {
-                streamUrl = baseUrl + streamUrl;
+        if (!videoId) {
+            return JSON.stringify({ url: "", isEmbed: false, headers: {} });
+        }
+
+        // Trích server number từ URL fragment (#s1, #s2)
+        var serverId = "1";
+        if (fetchedUrl) {
+            var fragMatch = fetchedUrl.match(/#s(\d+)/);
+            if (fragMatch) serverId = fragMatch[1];
+        }
+
+        // Trích device type từ HTML
+        var deviceMatch = html.match(/deviceType\s*=\s*['"](\w+)['"]/i);
+        var deviceType = deviceMatch ? deviceMatch[1] : "mobile";
+        var vlxxServer = (deviceType === "desktop") ? "1" : "2";
+
+        // Trả config để App POST tới /ajax.php
+        return JSON.stringify({
+            url: "https://vlxx.moi/ajax.php",
+            isEmbed: true,
+            postBody: "vlxx_server=" + vlxxServer + "&id=" + videoId + "&server=" + serverId,
+            headers: {
+                "Referer": "https://vlxx.app/"
             }
-        }
-    } catch (e) {}
-
-    return JSON.stringify({
-        url: streamUrl,
-        headers: {
-            "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36",
-            "Referer": baseUrl + "/"
-        }
-    });
+        });
+    } catch (error) {
+        return JSON.stringify({ url: "", isEmbed: false, headers: {} });
+    }
 }
 
 // parseEmbedResponse: Xử lý 2 loại response:
