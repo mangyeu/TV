@@ -298,7 +298,7 @@ function parseDetailResponse(html, fetchedUrl) {
 
         // Trả config để App POST tới /ajax.php
         return JSON.stringify({
-            url: "https://vlxx.moi/ajax.php",
+            url: "https://vlxx.app/ajax.php",
             isEmbed: true,
             postBody: "vlxx_server=" + vlxxServer + "&id=" + videoId + "&server=" + serverId,
             headers: {
