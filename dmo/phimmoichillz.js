@@ -8,8 +8,11 @@ function getManifest() {
 
 function getHomeSections() {
   return JSON.stringify([
+    { slug: "phim-moi", title: "Phim Mới Cập Nhật", type: "HORIZONTAL", path: "phim-moi" },
     { slug: "danh-sach/phim-le", title: "Phim Lẻ Mới", type: "HORIZONTAL", path: "danh-sach/phim-le" },
     { slug: "danh-sach/phim-bo", title: "Phim Bộ Mới", type: "HORIZONTAL", path: "danh-sach/phim-bo" },
+    { slug: "danh-sach/phim-chieu-rap", title: "Phim Chiếu Rạp", type: "HORIZONTAL", path: "danh-sach/phim-chieu-rap" },
+    { slug: "the-loai/hoat-hinh", title: "Hoạt Hình", type: "HORIZONTAL", path: "the-loai/hoat-hinh" },
     { slug: "quoc-gia/viet-nam", title: "Phim Việt Nam", type: "HORIZONTAL", path: "quoc-gia/viet-nam" }
   ]);
 }
@@ -31,14 +34,24 @@ function getFilterConfig() {
     years: [{ name: "Tất cả", value: "" }, { name: "2026", value: "2026" }, { name: "2025", value: "2025" }]
   });
 }
-
 function getUrlList(slug, filtersJson) {
-  var f = JSON.parse(filtersJson || "{}"), p = f.page || 1;
-  var c = f.country || f.countries || "", g = f.category || f.categories || "", y = f.year || "";
-  var path = (slug || f.slug || f.path || "danh-sach/phim-le").replace(/^\/+|\/+$/g, "");
+  var f = JSON.parse(filtersJson || "{}");
+  var p = Number(f.page) || 1;
+  var c = f.country || f.countries || f.countryId || "";
+  var g = f.category || f.categories || f.categoryId || "";
+  var y = f.year || f.years || "";
+  
+  var path = (slug || f.slug || f.path || "phim-moi").replace(/^\/+|\/+$/g, "");
+  
   if (c && c !== "all") path = "quoc-gia/" + c.replace(/^quoc-gia\//, "");
   else if (g && g !== "all") path = "the-loai/" + g.replace(/^the-loai\//, "");
   else if (y && y !== "all") path = "nam-phat-hanh/" + y;
+
+  // Nếu chọn Phim Mới Cập Nhật thì lấy trực tiếp từ trang chủ BASE_URL
+  if (path === "phim-moi" || path === "home") {
+    return BASE_URL + (p > 1 ? "/?page=" + p : "/");
+  }
+
   return BASE_URL + "/" + path + (p > 1 ? "?page=" + p : "");
 }
 
@@ -65,8 +78,13 @@ function decodeHtml(s) {
 
 function parseListResponse(html) {
   var map = {}, items = [];
-  if (!html) return JSON.stringify({ items: items });
+  var currentPage = 1;
+  var totalPages = 1;
+
+  if (!html) return JSON.stringify({ items: items, currentPage: 1, totalPages: 1, hasNextPage: false });
+
   try {
+    // 1. Quét danh sách phim
     var blocks = html.split("TPostMv");
     blocks.shift();
     while (blocks.length > 0) {
@@ -87,11 +105,50 @@ function parseListResponse(html) {
       var id = href.replace(BASE_URL, "").replace(/^\/+|\/+$/g, "");
       if (id && title && !map[id]) {
         map[id] = true;
-        items.push({ id: id, title: decodeHtml(title), posterUrl: img, backdropUrl: img, year: match1(b, /\b(20\d{2}|19\d{2})\b/) });
+        items.push({
+          id: id,
+          title: decodeHtml(title),
+          posterUrl: img,
+          backdropUrl: img,
+          year: match1(b, /\b(20\d{2}|19\d{2})\b/)
+        });
       }
     }
+
+    // 2. Tự động nhận diện tổng số trang từ thanh phân trang HTML (?page=... hoặc /page/...)
+    var pageRegex = /[?&/]page[=/](\d+)/gi;
+    var pm;
+    while ((pm = pageRegex.exec(html)) !== null) {
+      var num = parseInt(pm.slice(1, 2).join(""), 10);
+      if (num > totalPages && num < 5000) {
+        totalPages = num;
+      }
+    }
+
+    // Dự phòng: Nếu lấy được phim (>= 10 phim) nhưng không bắt được số trang cuối, mặc định mở khóa 100 trang
+    if (totalPages === 1 && items.length >= 10) {
+      totalPages = 100;
+    }
+
+    // Lấy trang hiện tại từ thẻ active của thanh phân trang (nếu có)
+    var activePage = match1(html, /class=["'][^"']*active[^"']*["'][^>]*>\s*(?:<[^>]+>)*\s*(\d+)\s*(?:<\/[^>]+>)*\s*<\//i);
+    if (activePage) {
+      currentPage = parseInt(activePage, 10) || 1;
+    }
+
   } catch (e) {}
-  return JSON.stringify({ items: items });
+
+  // Trả về đầy đủ các trường phân trang chuẩn của VAX Player
+  return JSON.stringify({
+    items: items,
+    currentPage: currentPage,
+    totalPages: totalPages,
+    hasNextPage: items.length > 0 && currentPage < totalPages,
+    pagination: {
+      currentPage: currentPage,
+      totalPages: totalPages
+    }
+  });
 }
 
 function parseSearchResponse(html) { return parseListResponse(html); }
