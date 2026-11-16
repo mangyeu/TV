@@ -3,7 +3,7 @@
 var BASE_URL = "https://phimmoichillz.top";
 
 function getManifest() {
-  return JSON.stringify({ id: "phimmoichillz", name: "PhimMoiChillZ", version: "5.2", type: "MOVIE", baseUrl: BASE_URL });
+  return JSON.stringify({ id: "phimmoichillz", name: "PhimMoiChillZ", version: "5.3", type: "MOVIE", baseUrl: BASE_URL });
 }
 
 function getHomeSections() {
