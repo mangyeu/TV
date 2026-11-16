@@ -1,15 +1,20 @@
-// @Allowed-Domains: phimmoichillz.top, *.phimmoichillz.top, phimmoichill.top, *.phimmoichill.top, googleapis.com, *.googleapis.com
-
 var BASE_URL = "https://phimmoichillz.top";
 
 function getManifest() {
   return JSON.stringify({
-    "id": "phimmoichill",
-    "name": "PhimMoiChill",
-    "version": "1.8",
+    "id": "phimmoichillz",
+    "name": "PhimMoiChillZ",
+    "version": "3.0",
     "type": "MOVIE",
     "baseUrl": BASE_URL,
-    "allowedDomains": ["phimmoichillz.top", "*.phimmoichillz.top", "phimmoichill.top", "*.phimmoichill.top", "googleapis.com", "*.googleapis.com"]
+    "allowedDomains": [
+      "phimmoichillz.top",
+      "*.phimmoichillz.top",
+      "phimmoichill.top",
+      "*.phimmoichill.top",
+      "googleapis.com",
+      "*.googleapis.com"
+    ]
   });
 }
 
@@ -29,7 +34,11 @@ function getPrimaryCategories() {
     { name: "Phim Bộ", slug: "phim-bo" },
     { name: "Việt Nam", slug: "quoc-gia/viet-nam" },
     { name: "Hồng Kông", slug: "quoc-gia/hong-kong" },
-    { name: "Ấn Độ", slug: "quoc-gia/an-do" }
+    { name: "Ấn Độ", slug: "quoc-gia/an-do" },
+    { name: "Pháp", slug: "quoc-gia/phap" },
+    { name: "Nga", slug: "quoc-gia/nga" },
+    { name: "Đức", slug: "quoc-gia/duc" },
+    { name: "Tây Ban Nha", slug: "quoc-gia/tay-ban-nha" }
   ]);
 }
 
@@ -93,21 +102,40 @@ function parseListResponse(html) {
   var map = {}, items = [];
   if (!html) return JSON.stringify({ items: items });
   try {
-    var blocks = html.split(/<(?:article|li|div)[^>]*class=["'][^"']*\b(?:item|film-item|post-item|movie-item|halim-item)\b[^"']*["'][^>]*>/i);
+    // Bỏ qua thanh trượt Top trên cùng (MovieListTop) nếu trang có để tránh trùng phim đề cử
+    var mainHtml = html;
+    var topEnd = html.indexOf("</section>");
+    if (html.indexOf("MovieListTop") !== -1 && topEnd !== -1 && topEnd < 15000) {
+      mainHtml = html.substring(topEnd);
+    }
+
+    // Cắt chuẩn xác theo class TPostMv của giao diện ToroPlay
+    var blocks = mainHtml.split(/<div[^>]*class=["'][^"']*\bTPostMv\b[^"']*["'][^>]*>/i);
     for (var i = 1; i < blocks.length; i++) {
       var b = getGroup(blocks, i).substring(0, 2000);
       var href = getGroup(b.match(/<a[^>]*href=["']([^"']+)["']/i), 1);
-      if (!href || href === "#" || href.indexOf("/quoc-gia/") !== -1 || href.indexOf("/the-loai/") !== -1) continue;
-      var title = getGroup(b.match(/<a[^>]*title=["']([^"']+)["']/i), 1) ||
-                  getGroup(b.match(/<(?:h2|h3|h4|p|span)[^>]*class=["'][^"']*(?:title|name)[^"']*["'][^>]*>([\s\S]*?)<\/(?:h2|h3|h4|p|span)>/i), 1).replace(/<[^>]+>/g, "") ||
-                  getGroup(b.match(/<img[^>]*alt=["']([^"']+)["']/i), 1);
-      var img = getGroup(b.match(/<img[^>]*data-(?:src|original|lazy-src)=["']([^"']+)["']/i), 1) ||
+      if (!href || href.indexOf("/phim/") === -1) continue;
+
+      var title = getGroup(b.match(/<img[^>]*alt=["']([^"']+)["']/i), 1) ||
+                  getGroup(b.match(/<(?:h2|h3|div)[^>]*class=["'][^"']*Title[^"']*["'][^>]*>([\s\S]*?)<\/(?:h2|h3|div)>/i), 1).replace(/<[^>]+>/g, "");
+
+      var img = getGroup(b.match(/<img[^>]*data-src=["']([^"']+)["']/i), 1) ||
                 getGroup(b.match(/<img[^>]*src=["']([^"']+)["']/i), 1);
-      if (img && img.indexOf("data:image") !== 0 && img.indexOf("http") !== 0) img = BASE_URL + "/" + img.replace(/^\/+/, "");
+
+      if (img && img.indexOf("data:image") !== 0 && img.indexOf("http") !== 0) {
+        img = BASE_URL + "/" + img.replace(/^\/+/, "");
+      }
+
       var id = href.replace(BASE_URL, "").replace(/^\/+|\/+$/g, "");
       if (id && title && !map[id]) {
         map[id] = true;
-        items.push({ id: id, title: decodeHtml(title), posterUrl: img, backdropUrl: img, year: getGroup(b.match(/\b(20\d{2}|19\d{2})\b/), 1) });
+        items.push({
+          id: id,
+          title: decodeHtml(title),
+          posterUrl: img,
+          backdropUrl: img,
+          year: getGroup(b.match(/\b(20\d{2}|19\d{2})\b/), 1)
+        });
       }
     }
   } catch (e) {}
@@ -122,9 +150,17 @@ function parseMovieDetail(html) {
   if (!html) return JSON.stringify({});
   var title = "", poster = "", desc = "", servers = [], eps = [], epMap = {};
   try {
-    title = (getGroup(html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i), 1) || getGroup(html.match(/<meta[^>]*property=["']og:title["'][^>]*content=["']([^"']+)["']/i), 1)).replace(/<[^>]+>/g, "").trim();
+    title = (getGroup(html.match(/<h1[^>]*class=["'][^"']*Title[^"']*["'][^>]*>([\s\S]*?)<\/h1>/i), 1) ||
+             getGroup(html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i), 1) ||
+             getGroup(html.match(/<meta[^>]*property=["']og:title["'][^>]*content=["']([^"']+)["']/i), 1)).replace(/<[^>]+>/g, "").trim();
+
     poster = getGroup(html.match(/<meta[^>]*property=["']og:image["'][^>]*content=["']([^"']+)["']/i), 1);
-    desc = getGroup(html.match(/<meta[^>]*name=["']description["'][^>]*content=["']([^"']+)["']/i), 1);
+    if (poster && poster.indexOf("http") !== 0) poster = BASE_URL + "/" + poster.replace(/^\/+/, "");
+
+    desc = getGroup(html.match(/<div[^>]*class=["'][^"']*Description[^"']*["'][^>]*>([\s\S]*?)<\/div>/i), 1).replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim() ||
+           getGroup(html.match(/<meta[^>]*name=["']description["'][^>]*content=["']([^"']+)["']/i), 1);
+
+    // Quét danh sách tập / nút Xem phim đặc trưng của giao diện ToroPlay
     var epRegex = /<a[^>]*href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi, m;
     while ((m = epRegex.exec(html)) !== null) {
       var h = getGroup(m, 1), t = getGroup(m, 2).replace(/<[^>]+>/g, "").trim();
