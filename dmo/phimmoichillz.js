@@ -3,7 +3,7 @@
 var BASE_URL = "https://phimmoichillz.top";
 
 function getManifest() {
-  return JSON.stringify({ id: "phimmoichillz", name: "PhimMoiChillZ", version: "3.3", type: "MOVIE", baseUrl: BASE_URL });
+  return JSON.stringify({ id: "phimmoichillz", name: "PhimMoiChillZ", version: "3.4", type: "MOVIE", baseUrl: BASE_URL });
 }
 
 function getHomeSections() {
@@ -50,11 +50,24 @@ function getFilterConfig() {
 }
 
 function getUrlList(slug, filtersJson) {
-  var f = JSON.parse(filtersJson || "{}"), p = f.page || 1;
+  var f = JSON.parse(filtersJson || "{}");
+  var p = f.page || 1;
+  
+  // Lấy giá trị từ mọi tên biến có thể có của VAX Player
+  var country = f.country || f.countries || f.countryId || f.quocgia || "";
+  var category = f.category || f.categories || f.categoryId || f.genre || "";
+  var year = f.year || f.years || f.yearId || "";
+  
   var path = (slug || f.slug || f.path || "phim-le").replace(/^\/+|\/+$/g, "");
-  if (f.country) path = "quoc-gia/" + f.country;
-  else if (f.category) path = "the-loai/" + f.category;
-  else if (f.year) path = "nam-phat-hanh/" + f.year;
+
+  if (country !== "" && country !== "all") {
+    path = "quoc-gia/" + country.replace(/^quoc-gia\//, "");
+  } else if (category !== "" && category !== "all") {
+    path = "the-loai/" + category.replace(/^the-loai\//, "");
+  } else if (year !== "" && year !== "all") {
+    path = "nam-phat-hanh/" + year;
+  }
+
   return BASE_URL + "/" + path + (p > 1 ? "/page/" + p : "");
 }
 
