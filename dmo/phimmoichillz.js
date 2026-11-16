@@ -208,56 +208,54 @@ function parseListResponse(html) {
   if (!html) return JSON.stringify({ items: items });
 
   try {
-    // 1. Quét các khối thẻ phim
-    var itemRegex = /<(?:article|li|div)[^>]*class="[^"]*\b(?:item|film-item|post-item|movie-item|halim-item)\b[^"]*"[^>]*>([\s\S]*?)<\/(?:article|li|div)>/gi;
-    var match;
+    // 1. Cắt chuỗi HTML theo từng thẻ mở của item (an toàn 100%, không bị lỗi thẻ lồng nhau)
+    var blocks = html.split(/<(?:article|li|div)[^>]*class=["'][^"']*\b(?:item|film-item|post-item|movie-item|halim-item|tray-item)\b[^"']*["'][^>]*>/i);
 
-    while ((match = itemRegex.exec(html)) !== null) {
-      var block = match[0];
+    // Bỏ qua phần tử đầu tiên (header trước danh sách phim)
+    for (var i = 1; i < blocks.length; i++) {
+      // Giới hạn phạm vi tìm kiếm trong 2500 ký tự đầu của mỗi khối để tránh ăn sang phim kế tiếp
+      var block = blocks[i].substring(0, 2500);
 
-      // 2. Lấy đường dẫn và tiêu đề
-      var linkMatch = block.match(/<a[^>]*href="([^"]+)"[^>]*title="([^"]+)"/i) ||
-                      block.match(/<a[^>]*title="([^"]+)"[^>]*href="([^"]+)"/i);
+      // 2. Lấy đường dẫn (hỗ trợ cả nháy đơn ' và nháy kép ")
+      var hrefMatch = block.match(/<a[^>]*href=["']([^"']+)["']/i);
+      var href = hrefMatch ? hrefMatch[1] : "";
 
-      var href = "";
+      // Bỏ qua nếu không phải link phim (ví dụ link rỗng, javascript, hoặc chuyên mục)
+      if (!href || href === "#" || href.indexOf("javascript:") === 0) continue;
+
+      // 3. Lấy tiêu đề (từ thuộc tính title của <a>, alt của <img>, hoặc thẻ tiêu đề)
       var title = "";
+      var titleAttr = block.match(/<a[^>]*title=["']([^"']+)["']/i);
+      var altAttr = block.match(/<img[^>]*alt=["']([^"']+)["']/i);
+      var headingTag = block.match(/<(?:h2|h3|h4|p|span|div)[^>]*class=["'][^"']*(?:title|name)[^"']*["'][^>]*>([\s\S]*?)<\/(?:h2|h3|h4|p|span|div)>/i);
 
-      if (linkMatch) {
-        if (linkMatch[1].indexOf("http") === 0 || linkMatch[1].indexOf("/") === 0) {
-          href = linkMatch[1];
-          title = linkMatch[2];
-        } else {
-          title = linkMatch[1];
-          href = linkMatch[2];
-        }
-      } else {
-        var hrefOnly = block.match(/<a[^>]*href="([^"]+)"/i);
-        var titleOnly = block.match(/<(?:h2|h3|h4|p|span)[^>]*class="[^"]*(?:title|name)[^"]*"[^>]*>([\s\S]*?)<\/(?:h2|h3|h4|p|span)>/i);
-        if (hrefOnly) href = hrefOnly[1];
-        if (titleOnly) title = titleOnly[1].replace(/<[^>]+>/g, "").trim();
+      if (titleAttr && titleAttr[1]) {
+        title = titleAttr[1];
+      } else if (headingTag && headingTag[1]) {
+        title = headingTag[1].replace(/<[^>]+>/g, "");
+      } else if (altAttr && altAttr[1]) {
+        title = altAttr[1];
       }
 
-      // 3. Lấy ảnh Poster
-      var imgMatch = block.match(/<img[^>]*data-src="([^"]+)"/i) ||
-                     block.match(/<img[^>]*data-original="([^"]+)"/i) ||
-                     block.match(/<img[^>]*data-lazy-src="([^"]+)"/i) ||
-                     block.match(/<img[^>]*src="([^"]+)"/i);
-      var posterUrl = imgMatch ? imgMatch[1] : "";
+      // 4. Lấy ảnh Poster (hỗ trợ cả background-image trong style và thẻ img)
+      var posterUrl = "";
+      var imgMatch = block.match(/<img[^>]*data-(?:src|original|lazy-src)=["']([^"']+)["']/i) ||
+                     block.match(/<img[^>]*src=["']([^"']+)["']/i) ||
+                     block.match(/background-image\s*:\s*url\(["']?([^"')]+)["']?\)/i);
 
-      if (posterUrl.indexOf("data:image") === 0) {
-        var realImg = block.match(/data-(?:src|original|lazy-src)="([^"]+)"/i);
-        posterUrl = realImg ? realImg[1] : "";
+      if (imgMatch && imgMatch[1]) {
+        posterUrl = imgMatch[1];
       }
 
-      if (posterUrl && posterUrl.indexOf("http") !== 0) {
+      if (posterUrl && posterUrl.indexOf("data:image") !== 0 && posterUrl.indexOf("http") !== 0) {
         posterUrl = BASE_URL + "/" + posterUrl.replace(/^\/+/, "");
       }
 
-      // 4. Lấy năm phát hành
+      // 5. Lấy năm phát hành
       var yearMatch = block.match(/\b(20\d{2}|19\d{2})\b/);
       var year = yearMatch ? yearMatch[1] : "";
 
-      // 5. Chuẩn hóa id và kiểm tra trùng lặp qua moviesMap
+      // 6. Chuẩn hóa id và lưu vào moviesMap
       var id = href.replace(BASE_URL, "").replace(/^\/+|\/+$/g, "");
 
       if (id && title && !moviesMap[id]) {
@@ -295,6 +293,7 @@ function decodeHtmlEntities(str) {
     .replace(/&gt;/g, ">")
     .trim();
 }
+
 
 function parseMovieDetail(html) {
     try {
