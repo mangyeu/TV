@@ -163,3 +163,14 @@ function parseDetailResponse(html) {
       var emb = getGroup(html.match(/data-link=["'](https?:\/\/[^"']+)["']/i), 1);
       if (emb) { url = emb; type = "embed"; }
     }
+  } catch (e) {}
+return JSON.stringify({
+url: url,
+type: type,
+headers: {
+"Referer": BASE_URL + "/",
+"Origin": BASE_URL,
+"User-Agent": "Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 Chrome/120.0.0.0 Mobile Safari/537.36"
+}
+});
+}
