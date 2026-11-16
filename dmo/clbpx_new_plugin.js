@@ -1,24 +1,24 @@
-// @Allowed-Domains: clbphimxua.info, *.clbphimxua.info, phimimg.com, *.phimimg.com, kkphimplayer1.com, *.kkphimplayer1.com, kkphimplayer5.com, *.kkphimplayer5.com, kkphimplayer6.com, *.kkphimplayer6.com, kkphimplayer7.com, *.kkphimplayer7.com, kkphimplayer8.com, *.kkphimplayer8.com, phimapi.com, *.phimapi.com, googleapis.com, *.googleapis.com
+// @Allowed-Domains: clbphimxua.info, *.clbphimxua.info, phimimg.com, *.phimimg.com, img.nguonc.com, *.nguonc.com, kkphimplayer1.com, *.kkphimplayer1.com, kkphimplayer5.com, *.kkphimplayer5.com, kkphimplayer6.com, *.kkphimplayer6.com, kkphimplayer7.com, *.kkphimplayer7.com, kkphimplayer8.com, *.kkphimplayer8.com, phimapi.com, *.phimapi.com, googleapis.com, *.googleapis.com
 
 var BASE_URL = "https://clbphimxua.info";
 
 function getManifest() {
-  return JSON.stringify({ id: "clbphimxua", name: "CLB Phim Xưa", version: "2.2", type: "MOVIE", baseUrl: BASE_URL });
+  return JSON.stringify({ id: "clbphimxua", name: "CLB Phim Xưa", version: "3.0", type: "MOVIE", baseUrl: BASE_URL });
 }
 
 function getHomeSections() {
   return JSON.stringify([
     { slug: "phim-moi", title: "Phim Mới Cập Nhật", type: "HORIZONTAL", path: "phim-moi" },
+    { slug: "co-trang", title: "Phim Cổ Trang", type: "HORIZONTAL", path: "co-trang" },
+    { slug: "kiem-hiep", title: "Phim Kiếm Hiệp", type: "HORIZONTAL", path: "kiem-hiep" },
     { slug: "country/hong-kong", title: "Phim TVB - Hồng Kông", type: "HORIZONTAL", path: "country/hong-kong" },
-    { slug: "country/trung-quoc", title: "Phim Trung Quốc Xưa", type: "HORIZONTAL", path: "country/trung-quoc" },
-    { slug: "country/viet-nam", title: "Phim Việt Nam Xưa", type: "HORIZONTAL", path: "country/viet-nam" },
-    { slug: "kiem-hiep", title: "Phim Kiếm Hiệp", type: "HORIZONTAL", path: "kiem-hiep" }
+    { slug: "country/trung-quoc", title: "Phim Trung Quốc", type: "HORIZONTAL", path: "country/trung-quoc" }
   ]);
 }
 
 function getPrimaryCategories() {
   return JSON.stringify([
-    { name: "Phim Mới", slug: "phim-moi" }, { name: "Kiếm Hiệp", slug: "kiem-hiep" }, { name: "Cổ Trang", slug: "co-trang" },
+    { name: "Phim Mới", slug: "phim-moi" }, { name: "Cổ Trang", slug: "co-trang" }, { name: "Kiếm Hiệp", slug: "kiem-hiep" },
     { name: "Võ Thuật", slug: "vo-thuat" }, { name: "Chiếu Rạp", slug: "chieu-rap" }, { name: "Hồng Kông", slug: "country/hong-kong" },
     { name: "Trung Quốc", slug: "country/trung-quoc" }, { name: "Đài Loan", slug: "country/dai-loan" }, { name: "Việt Nam", slug: "country/viet-nam" }
   ]);
@@ -29,16 +29,22 @@ function getFilterConfig() {
     countries: [
       { name: "Tất cả", value: "" }, { name: "Hồng Kông", value: "hong-kong" }, { name: "Trung Quốc", value: "trung-quoc" },
       { name: "Đài Loan", value: "dai-loan" }, { name: "Việt Nam", value: "viet-nam" }, { name: "Hàn Quốc", value: "han-quoc" },
-      { name: "Âu Mỹ", value: "au-my" }, { name: "Nhật Bản", value: "nhat-ban" }, { name: "Thái Lan", value: "thai-lan" }
+      { name: "Âu Mỹ", value: "au-my" }, { name: "Nhật Bản", value: "nhat-ban" }, { name: "Thái Lan", value: "thai-lan" },
+      { name: "Ấn Độ", value: "an-do" }, { name: "Anh", value: "anh" }, { name: "Pháp", value: "phap" }, { name: "Nga", value: "nga" }
     ],
     categories: [
-      { name: "Tất cả", value: "" }, { name: "Kiếm Hiệp", value: "kiem-hiep" }, { name: "Cổ Trang", value: "co-trang" },
-      { name: "Võ Thuật", value: "vo-thuat" }, { name: "Hành Động", value: "hanh-dong" }, { name: "Tâm Lý", value: "tam-ly" },
-      { name: "Tình Cảm", value: "tinh-cam" }, { name: "Hình Sự", value: "hinh-su" }, { name: "Hài Hước", value: "hai-huoc" }
+      { name: "Tất cả", value: "" }, { name: "Cổ Trang", value: "co-trang" }, { name: "Kiếm Hiệp", value: "kiem-hiep" },
+      { name: "Võ Thuật", value: "vo-thuat" }, { name: "Võ Hiệp", value: "vo-hiep" }, { name: "Hành Động", value: "hanh-dong" },
+      { name: "Phiêu Lưu", value: "phieu-luu" }, { name: "Tâm Lý", value: "tam-ly" }, { name: "Tình Cảm", value: "tinh-cam" },
+      { name: "Lãng Mạn", value: "lang-man" }, { name: "Hình Sự", value: "hinh-su" }, { name: "Xã Hội Đen", value: "xa-hoi-den" },
+      { name: "Hài Hước", value: "hai-huoc" }, { name: "Thần Thoại", value: "than-thoai" }, { name: "Viễn Tưởng", value: "vien-tuong" },
+      { name: "Kinh Dị", value: "kinh-di" }, { name: "Bí Ẩn", value: "bi-an" }, { name: "Chiến Tranh", value: "chien-tranh" },
+      { name: "Lịch Sử", value: "lich-su" }, { name: "Kinh Điển", value: "kinh-dien" }, { name: "Chính Kịch", value: "chinh-kich" },
+      { name: "Gia Đình", value: "gia-dinh" }, { name: "Hoạt Hình", value: "hoat-hinh" }, { name: "Chiếu Rạp", value: "chieu-rap" }
     ],
     years: [
-      { name: "Tất cả", value: "" }, { name: "2020", value: "2020" }, { name: "2010", value: "2010" },
-      { name: "2000", value: "2000" }, { name: "1995", value: "1995" }, { name: "1990", value: "1990" }
+      { name: "Tất cả", value: "" }, { name: "2026", value: "2026" }, { name: "2025", value: "2025" }, { name: "2020", value: "2020" },
+      { name: "2010", value: "2010" }, { name: "2000", value: "2000" }, { name: "1995", value: "1995" }, { name: "1990", value: "1990" }
     ]
   });
 }
@@ -76,31 +82,21 @@ function decodeHtml(s) {
 function parseListResponse(html) {
   var map = {}, items = [], totalPages = 1, currentPage = 1;
   if (!html) return JSON.stringify({ items: items });
-
   try {
-    var mainPos = html.indexOf("main-contents");
-    var mainHtml = mainPos !== -1 ? html.substring(mainPos) : html;
-
-    // Cắt chuỗi theo từng thẻ mở <article hoặc <div class="...grid-item / halim-item / fx-card..."
-    var blocks = mainHtml.split(/<(?:article|div)[^>]*class=["'][^"']*\b(?:halim-item|grid-item|fx-card|fx-item|post-item|item)\b[^"']*["'][^>]*>/i);
-    
-    // Nếu không khớp class nào, cắt theo thẻ <article
-    if (blocks.length <= 1) {
-      blocks = mainHtml.split(/<article\b[^>]*>/i);
-    }
+    // Cắt chuẩn xác theo thẻ <a class="halim-thumb" của clbphimxua.info
+    var blocks = html.split(/<a[^>]*class=["'][^"']*\bhalim-thumb\b[^"']*["']/i);
     blocks.shift();
-
     while (blocks.length > 0) {
-      var b = blocks.shift().substring(0, 2500);
-      var href = match1(b, /<a[^>]*href=["']([^"']+)["']/i);
-      if (!href || href === "#" || href.indexOf("/country/") !== -1 || href.indexOf("/release/") !== -1 || href.indexOf("hflex_view") !== -1) continue;
+      var b = blocks.shift().substring(0, 1500);
+      var href = match1(b, /href=["']([^"']+)["']/i);
+      if (!href || href === "#") continue;
 
-      var title = match1(b, /<a[^>]*title=["']([^"']+)["']/i) ||
-                  match1(b, /<(?:h2|h3|h4|p|span|div)[^>]*class=["'][^"']*(?:entry-title|title|name)[^"']*["'][^>]*>([\s\S]*?)<\/(?:h2|h3|h4|p|span|div)>/i).replace(/<[^>]+>/g, "") ||
-                  match1(b, /<img[^>]*alt=["']([^"']+)["']/i);
+      var title = match1(b, /<h2[^>]*class=["'][^"']*entry-title[^"']*["'][^>]*>([\s\S]*?)<\/h2>/i).replace(/<[^>]+>/g, "") ||
+                  match1(b, /title=["']([^"']+)["']/i) ||
+                  match1(b, /alt=["']([^"']+)["']/i);
 
-      var img = match1(b, /<img[^>]*data-(?:src|original|lazy-src)=["']([^"']+)["']/i) ||
-                match1(b, /<img[^>]*src=["']([^"']+)["']/i);
+      var img = match1(b, /<img[^>]*src=["']([^"']+)["']/i) ||
+                match1(b, /<img[^>]*data-src=["']([^"']+)["']/i);
 
       if (img && img.indexOf("data:image") !== 0 && img.indexOf("http") !== 0) {
         img = BASE_URL + "/" + img.replace(/^\/+/, "");
@@ -109,16 +105,9 @@ function parseListResponse(html) {
       var id = href.replace(BASE_URL, "").replace(/^\/+|\/+$/g, "");
       if (id && title && !map[id]) {
         map[id] = true;
-        items.push({
-          id: id,
-          title: decodeHtml(title),
-          posterUrl: img,
-          backdropUrl: img,
-          year: match1(b, /\b(19\d{2}|20\d{2})\b/)
-        });
+        items.push({ id: id, title: decodeHtml(title), posterUrl: img, backdropUrl: img, year: match1(b, /\b(19\d{2}|20\d{2})\b/) });
       }
     }
-
     var pageRegex = /\/page\/(\d+)/gi, pm;
     while ((pm = pageRegex.exec(html)) !== null) {
       var num = parseInt(pm.slice(1, 2).join(""), 10);
@@ -126,15 +115,8 @@ function parseListResponse(html) {
     }
     if (totalPages === 1 && items.length >= 10) totalPages = 50;
   } catch (e) {}
-
-  return JSON.stringify({
-    items: items,
-    currentPage: currentPage,
-    totalPages: totalPages,
-    hasNextPage: items.length > 0 && currentPage < totalPages
-  });
+  return JSON.stringify({ items: items, currentPage: currentPage, totalPages: totalPages, hasNextPage: items.length > 0 && currentPage < totalPages });
 }
-
 
 function parseSearchResponse(html) { return parseListResponse(html); }
 
