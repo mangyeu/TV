@@ -1,4 +1,4 @@
-// @Allowed-Domains: phimmoichillz.top, *.phimmoichillz.top, phimmoichill.top, *.phimmoichill.top, phimimg.com, *.phimimg.com, kkphimplayer5.com, *.kkphimplayer5.com, kkphimplayer6.com, *.kkphimplayer6.com, kkphimplayer7.com, *.kkphimplayer7.com, kkphimplayer8.com, *.kkphimplayer8.com, phimapi.com, *.phimapi.com, googleapis.com, *.googleapis.com
+// @Allowed-Domains: phimmoichillz.top, *.phimmoichillz.top, phimmoichill.top, *.phimmoichill.top, phimimg.com, *.phimimg.com, kkphimplayer5.com, *.kkphimplayer5.com, kkphimplayer6.com, *.kkphimplayer6.com, kkphimplayer7.com, *.kkphimplayer7.com, kkphimplayer8.com, *.kkphimplayer8.com, phimapi.com, *.phimapi.com, googleapis.com, opstream1.com, *.opstream1.com, opstream10.com, *.opstream10.com, opstream11.com, *.opstream11.com, nguonc.com, *.nguonc.com *.googleapis.com
 
 var BASE_URL = "https://phimmoichillz.top";
 
@@ -96,33 +96,89 @@ function parseListResponse(html) {
 
 function parseSearchResponse(html) { return parseListResponse(html); }
 
+function parseMovieDetail(html) {
+  if (!html) return JSON.stringify({});
+  var title = "", poster = "", desc = "", servers = [], eps = [], epMap = {};
+
+  try {
+    title = (match1(html, /<h1[^>]*class=["'][^"']*Title[^"']*["'][^>]*>([\s\S]*?)<\/h1>/i) ||
+             match1(html, /<h1[^>]*>([\s\S]*?)<\/h1>/i) ||
+             match1(html, /<meta[^>]*property=["']og:title["'][^>]*content=["']([^"']+)["']/i)).replace(/<[^>]+>/g, "").trim();
+
+    poster = match1(html, /<meta[^>]*property=["']og:image["'][^>]*content=["']([^"']+)["']/i);
+    if (poster && poster.indexOf("http") !== 0) poster = BASE_URL + "/" + poster.replace(/^\/+/, "");
+
+    desc = match1(html, /<div[^>]*class=["'][^"']*Description[^"']*["'][^>]*>([\s\S]*?)<\/div>/i).replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim() ||
+           match1(html, /<meta[^>]*name=["']description["'][^>]*content=["']([^"']+)["']/i);
+
+    // 1. Quét tất cả thẻ <a> có thể là tập phim hoặc nút Xem Phim / Xem Ngay
+    var links = html.split("<a ");
+    links.shift();
+    while (links.length > 0) {
+      var chunk = links.shift().substring(0, 600);
+      var h = match1(chunk, /href=["']([^"']+)["']/i);
+      var t = match1(chunk, />([\s\S]*?)<\/a>/i).replace(/<[^>]+>/g, "").trim();
+      var lowerT = t.toLowerCase();
+
+      if (!h || h === "#" || h.indexOf("javascript:") === 0 || h.indexOf("/the-loai/") !== -1 || h.indexOf("/quoc-gia/") !== -1) continue;
+
+      if (
+        h.indexOf("/xem-phim") !== -1 || h.indexOf("/tap-") !== -1 || h.indexOf("/watch") !== -1 ||
+        lowerT.indexOf("xem phim") !== -1 || lowerT.indexOf("xem ngay") !== -1 ||
+        lowerT.indexOf("tập ") === 0 || lowerT === "full" || lowerT === "hd"
+      ) {
+        var s = h.replace(BASE_URL, "").replace(/^\/+|\/+$/g, "");
+        if (s && !epMap[s]) {
+          epMap[s] = true;
+          eps.push({ id: s, name: decodeHtml(t) || "Xem Phim", slug: s });
+        }
+      }
+    }
+
+    // 2. Dự phòng chống "dữ liệu rỗng": Lấy từ og:url hoặc canonical nếu trang đã có sẵn trình phát
+    if (eps.length === 0) {
+      var pageUrl = match1(html, /<meta[^>]*property=["']og:url["'][^>]*content=["']([^"']+)["']/i) ||
+                    match1(html, /<link[^>]*rel=["']canonical["'][^>]*href=["']([^"']+)["']/i);
+      var cleanSlug = pageUrl.replace(BASE_URL, "").replace(/^\/+|\/+$/g, "");
+      if (cleanSlug) {
+        eps.push({ id: cleanSlug, name: "Full / Tập 1", slug: cleanSlug });
+      }
+    }
+
+    if (eps.length > 0) {
+      servers.push({ serverName: "Server Chính", episodes: eps });
+    }
+  } catch (e) {}
+
+  return JSON.stringify({
+    title: decodeHtml(title),
+    posterUrl: poster,
+    backdropUrl: poster,
+    description: decodeHtml(desc),
+    servers: servers
+  });
+}
+
 function parseDetailResponse(html) {
   if (!html) return JSON.stringify({ url: "" });
   var url = "", type = "hls";
 
   try {
-    // 1. Tìm bất kỳ link .m3u8 nào nằm trong thuộc tính data-link (không phụ thuộc thứ tự thẻ)
-    var linkM3u8 = match1(html, /data-link=["'](https?:\/\/[^"']+\.m3u8[^"']*)["']/i);
-    if (linkM3u8) {
-      url = linkM3u8;
-      type = "hls";
+    // 1. Bắt link .m3u8 trong data-link (mọi vị trí)
+    var m3u8 = match1(html, /data-link=["'](https?:\/\/[^"']+\.m3u8[^"']*)["']/i) ||
+               match1(html, /["'](https?:\/\/[^"'\s\\]+\.(?:m3u8|mp4)[^"'\s\\]*)["']/i);
+    if (m3u8) {
+      url = m3u8.replace(/\\\//g, "/");
+      type = url.indexOf(".mp4") !== -1 ? "mp4" : "hls";
     }
 
-    // 2. Nếu chưa thấy, tìm chuỗi .m3u8 hoặc .mp4 bất kỳ trong mã nguồn trang
+    // 2. Bắt mọi link dự phòng trong data-link hoặc thẻ iframe (bỏ qua quảng cáo/MXH)
     if (!url) {
-      var anyMedia = match1(html, /["'](https?:\/\/[^"'\s\\]+\.(?:m3u8|mp4)[^"'\s\\]*)["']/i);
-      if (anyMedia) {
-        url = anyMedia.replace(/\\\//g, "/");
-        type = url.indexOf(".mp4") !== -1 ? "mp4" : "hls";
-      }
-    }
-
-    // 3. Nếu phim chỉ có server nhúng (embed), lấy link trong data-link hoặc thẻ iframe
-    if (!url) {
-      var embLink = match1(html, /data-link=["'](https?:\/\/[^"']+)["']/i) ||
-                    match1(html, /<iframe[^>]*src=["'](https?:\/\/[^"']+)["']/i);
-      if (embLink && embLink.indexOf("facebook.com") === -1 && embLink.indexOf("google") === -1) {
-        url = embLink;
+      var emb = match1(html, /data-link=["']((?:https?:)?\/\/[^"']+)["']/i) ||
+                match1(html, /<iframe[^>]*src=["']((?:https?:)?\/\/[^"']+)["']/i);
+      if (emb && emb.indexOf("facebook.com") === -1 && emb.indexOf("google") === -1 && emb.indexOf("doubleclick") === -1) {
+        url = emb.replace(/\\\//g, "/");
+        if (url.indexOf("//") === 0) url = "https:" + url;
         type = "embed";
       }
     }
@@ -138,4 +194,5 @@ function parseDetailResponse(html) {
     }
   });
 }
+
 
