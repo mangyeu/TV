@@ -18,6 +18,14 @@ function getManifest() {
 
 function getPrimaryCategories() {
   return JSON.stringify([
+    // Các danh mục chính thường có trên thanh menu
+    { name: "Phim Lẻ", slug: "phim-le" },
+    { name: "Phim Bộ", slug: "phim-bo" },
+    { name: "Phim Chiếu Rạp", slug: "phim-chieu-rap" },
+    { name: "Phim Thuyết Minh", slug: "phim-thuyet-minh" },
+    { name: "Phim Vietsub", slug: "phim-vietsub" },
+
+    // Danh sách 27 quốc gia bóc tách từ HTML của bạn
     { name: "Nga", slug: "quoc-gia/nga" },
     { name: "Ấn Độ", slug: "quoc-gia/an-do" },
     { name: "Hồng Kông", slug: "quoc-gia/hong-kong" },
@@ -50,33 +58,13 @@ function getPrimaryCategories() {
 
 function getHomeSections() {
   return JSON.stringify([
-    { slug: "quoc-gia/nga", title: "Phim Nga", type: "HORIZONTAL", path: "quoc-gia/nga" },
-    { slug: "quoc-gia/an-do", title: "Phim Ấn Độ", type: "HORIZONTAL", path: "quoc-gia/an-do" },
-    { slug: "quoc-gia/hong-kong", title: "Phim Hồng Kông", type: "HORIZONTAL", path: "quoc-gia/hong-kong" },
     { slug: "quoc-gia/viet-nam", title: "Phim Việt Nam", type: "HORIZONTAL", path: "quoc-gia/viet-nam" },
-    { slug: "quoc-gia/uc", title: "Phim Úc", type: "HORIZONTAL", path: "quoc-gia/uc" },
-    { slug: "quoc-gia/y", title: "Phim Ý", type: "HORIZONTAL", path: "quoc-gia/y" },
-    { slug: "quoc-gia/tay-ban-nha", title: "Phim Tây Ban Nha", type: "HORIZONTAL", path: "quoc-gia/tay-ban-nha" },
-    { slug: "quoc-gia/canada", title: "Phim Canada", type: "HORIZONTAL", path: "quoc-gia/canada" },
+    { slug: "quoc-gia/hong-kong", title: "Phim Hồng Kông", type: "HORIZONTAL", path: "quoc-gia/hong-kong" },
+    { slug: "quoc-gia/an-do", title: "Phim Ấn Độ", type: "HORIZONTAL", path: "quoc-gia/an-do" },
     { slug: "quoc-gia/phap", title: "Phim Pháp", type: "HORIZONTAL", path: "quoc-gia/phap" },
-    { slug: "quoc-gia/indonesia", title: "Phim Indonesia", type: "HORIZONTAL", path: "quoc-gia/indonesia" },
-    { slug: "quoc-gia/philippines", title: "Phim Philippines", type: "HORIZONTAL", path: "quoc-gia/philippines" },
+    { slug: "quoc-gia/nga", title: "Phim Nga", type: "HORIZONTAL", path: "quoc-gia/nga" },
     { slug: "quoc-gia/duc", title: "Phim Đức", type: "HORIZONTAL", path: "quoc-gia/duc" },
-    { slug: "quoc-gia/malaysia", title: "Phim Malaysia", type: "HORIZONTAL", path: "quoc-gia/malaysia" },
-    { slug: "quoc-gia/mexico", title: "Phim Mexico", type: "HORIZONTAL", path: "quoc-gia/mexico" },
-    { slug: "quoc-gia/nam-phi", title: "Phim Nam Phi", type: "HORIZONTAL", path: "quoc-gia/nam-phi" },
-    { slug: "quoc-gia/brazil", title: "Phim Brazil", type: "HORIZONTAL", path: "quoc-gia/brazil" },
-    { slug: "quoc-gia/na-uy", title: "Phim Na Uy", type: "HORIZONTAL", path: "quoc-gia/na-uy" },
-    { slug: "quoc-gia/chau-phi", title: "Phim Châu Phi", type: "HORIZONTAL", path: "quoc-gia/chau-phi" },
-    { slug: "quoc-gia/thuy-dien", title: "Phim Thụy Điển", type: "HORIZONTAL", path: "quoc-gia/thuy-dien" },
-    { slug: "quoc-gia/ba-lan", title: "Phim Ba Lan", type: "HORIZONTAL", path: "quoc-gia/ba-lan" },
-    { slug: "quoc-gia/ha-lan", title: "Phim Hà Lan", type: "HORIZONTAL", path: "quoc-gia/ha-lan" },
-    { slug: "quoc-gia/ireland", title: "Phim Ireland", type: "HORIZONTAL", path: "quoc-gia/ireland" },
-    { slug: "quoc-gia/bi", title: "Phim Bỉ", type: "HORIZONTAL", path: "quoc-gia/bi" },
-    { slug: "quoc-gia/dan-mach", title: "Phim Đan Mạch", type: "HORIZONTAL", path: "quoc-gia/dan-mach" },
-    { slug: "quoc-gia/ukraina", title: "Phim Ukraina", type: "HORIZONTAL", path: "quoc-gia/ukraina" },
-    { slug: "quoc-gia/phan-lan", title: "Phim Phần Lan", type: "HORIZONTAL", path: "quoc-gia/phan-lan" },
-    { slug: "quoc-gia/thuy-si", title: "Phim Thụy Sĩ", type: "HORIZONTAL", path: "quoc-gia/thuy-si" }
+    { slug: "quoc-gia/tay-ban-nha", title: "Phim Tây Ban Nha", type: "HORIZONTAL", path: "quoc-gia/tay-ban-nha" }
   ]);
 }
 
@@ -139,8 +127,6 @@ function getFilterConfig() {
 // URL GENERATION
 // =============================================================================
 
-var BASE_URL = "https://phimmoichillz.top";
-
 function getUrlList(slug, filtersJson) {
   var filters = JSON.parse(filtersJson || "{}");
   var page = filters.page || 1;
@@ -154,27 +140,24 @@ function getUrlList(slug, filtersJson) {
   } else if (filters.year && filters.year !== "") {
     path = "nam-phat-hanh/" + filters.year;
   } else {
-    // 2. Mặc định lấy theo slug từ getHomeSections hoặc getPrimaryCategories
-    // Xóa dấu gạch chéo ở đầu nếu có để tránh bị lặp thành //
-    path = (slug || "phim-moi").replace(/^\/+/, "");
+    // 2. Lấy theo danh mục mặc định từ Trang chủ hoặc Menu (ví dụ: "phim-le", "quoc-gia/nga")
+    path = (slug || "phim-moi").replace(/^\/+|\/+$/g, "");
   }
 
-  var url = BASE_URL + "/" + path;
+  var url = "https://phimmoichillz.top/ + path;
 
   // 3. Nối thêm phân trang chuẩn của WordPress
   if (page > 1) {
     url += "/page/" + page;
   }
 
-  // 4. Nối tham số sắp xếp (nếu có)
+  // 4. Nối tham số sắp xếp (nếu có và khác mặc định)
   if (filters.sort && filters.sort !== "" && filters.sort !== "latest") {
     url += "?sort=" + filters.sort;
   }
 
   return url;
 }
-
-var BASE_URL = "https://phimmoichillz.top";
 
 function getUrlSearch(keyword, filtersJson) {
   var filters = JSON.parse(filtersJson || "{}");
@@ -183,7 +166,7 @@ function getUrlSearch(keyword, filtersJson) {
   // Mã hóa từ khóa để xử lý tiếng Việt có dấu và khoảng trắng an toàn
   var encodedKeyword = encodeURIComponent(keyword || "").replace(/%20/g, "+");
   
-  var url = BASE_URL;
+  var url = "https://phimmoichillz.top";
 
   // Cấu trúc phân trang kết hợp tham số tìm kiếm ?s= chuẩn của WordPress
   if (page > 1) {
@@ -195,8 +178,6 @@ function getUrlSearch(keyword, filtersJson) {
   return url;
 }
 
-var BASE_URL = "https://phimmoichillz.top";
-
 function getUrlDetail(slug) {
   if (!slug) return "";
 
@@ -207,7 +188,7 @@ function getUrlDetail(slug) {
 
   // 2. Xóa dấu gạch chéo ở đầu (nếu có) rồi ghép với BASE_URL
   var cleanSlug = slug.replace(/^\/+/, "");
-  return BASE_URL + "/" + cleanSlug;
+  return "https://phimmoichillz.top/" + cleanSlug;
 }
 
 function getUrlCategories() { return "https://phimmoichillz.top/"; }
@@ -303,83 +284,107 @@ function parseListResponse(html) {
             var labels = [];
             var qualityMatch = itemHtml.match(/class="[^"]*(?:quality|label|status)[^"]*"[^>]*>([\s\S]*?)<\//i);
             if (!qualityMatch) qualityMatch = itemHtml.match(/<span class="status">([^<]+)<\/span>/);
+var BASE_URL = "https://phimmoichillz.top";
 
-            if (qualityMatch) labels.push(PluginUtils.cleanText(qualityMatch[1]));
+function parseListResponse(html) {
+  var moviesMap = {};
+  var items = [];
 
-            // Tìm 4K đặc biệt
-            if (itemHtml.indexOf("4K") !== -1 || itemHtml.indexOf("4k") !== -1) {
-                if (labels.join(" ").indexOf("4K") === -1) {
-                    labels.push("4K");
-                }
-            }
+  if (!html) return JSON.stringify({ items: items });
 
-            var episodeMatch = itemHtml.match(/class="[^"]*episode[^"]*"[^>]*>([\s\S]*?)<\//);
-            if (episodeMatch && PluginUtils.cleanText(episodeMatch[1]) !== "") labels.push(PluginUtils.cleanText(episodeMatch[1]));
+  try {
+    // 1. Quét toàn bộ khối thẻ phim phổ biến trên WordPress phim
+    var itemRegex = /<(?:article|li|div)[^>]*class="[^"]*\b(?:item|film-item|post-item|movie-item)\b[^"]*"[^>]*>([\s\S]*?)<\/(?:article|li|div)>/gi;
+    var match;
 
-            var statusText = labels.length > 0 ? labels.join(" | ") : "Full";
+    while ((match = itemRegex.exec(html)) !== null) {
+      var block = match[1];
 
-            if (!moviesMap[slug]) {
-                moviesMap[slug] = {
-                    id: slug,
-                    title: rawTitle || "Phim không tiêu đề",
-                    posterUrl: thumb,
-                    backdropUrl: thumb,
-                    year: 0,
-                    quality: (labels.join(" ").indexOf("4K") > -1) ? "4K" : "HD",
-                    episode_current: statusText,
-                    lang: "Vietsub"
-                };
-            }
+      // 2. Bóc tách đường dẫn (href) và tiêu đề (title)
+      var linkMatch = block.match(/<a[^>]*href="([^"]+)"[^>]*title="([^"]+)"/i) ||
+                      block.match(/<a[^>]*title="([^"]+)"[^>]*href="([^"]+)"/i);
+
+      var href = "";
+      var title = "";
+
+      if (linkMatch) {
+        if (linkMatch[1].indexOf("http") === 0 || linkMatch[1].indexOf("/") === 0) {
+          href = linkMatch[1];
+          title = linkMatch[2];
+        } else {
+          title = linkMatch[1];
+          href = linkMatch[2];
         }
+      } else {
+        var hrefOnly = block.match(/<a[^>]*href="([^"]+)"/i);
+        var titleOnly = block.match(/<(?:h2|h3|h4|p|span)[^>]*class="[^"]*(?:title|name)[^"]*"[^>]*>([\s\S]*?)<\/(?:h2|h3|h4|p|span)>/i);
+        if (hrefOnly) href = hrefOnly[1];
+        if (titleOnly) title = titleOnly[1].replace(/<[^>]+>/g, "").trim();
+      }
+
+      // 3. Bóc tách ảnh Poster (hỗ trợ cả ảnh tải chậm LazyLoad)
+      var imgMatch = block.match(/<img[^>]*data-src="([^"]+)"/i) ||
+                     block.match(/<img[^>]*data-original="([^"]+)"/i) ||
+                     block.match(/<img[^>]*data-lazy-src="([^"]+)"/i) ||
+                     block.match(/<img[^>]*src="([^"]+)"/i);
+      var posterUrl = imgMatch ? imgMatch[1] : "";
+
+      // Bỏ qua ảnh placeholder dạng base64 rỗng nếu có
+      if (posterUrl.indexOf("data:image") === 0) {
+        var realImg = block.match(/data-(?:src|original|lazy-src)="([^"]+)"/i);
+        posterUrl = realImg ? realImg[1] : "";
+      }
+
+      if (posterUrl && posterUrl.indexOf("http") !== 0) {
+        posterUrl = BASE_URL + "/" + posterUrl.replace(/^\/+/, "");
+      }
+
+      // 4. Bóc tách năm phát hành
+      var yearMatch = block.match(/\b(20\d{2}|19\d{2})\b/);
+      var year = yearMatch ? yearMatch[1] : "";
+
+      // 5. Chuẩn hóa id (slug) làm khóa chính cho moviesMap
+      var id = href.replace(BASE_URL, "").replace(/^\/+|\/+$/g, "");
+
+      // 6. Lưu vào moviesMap để chống trùng lặp và đẩy vào mảng kết quả
+      if (id && title && !moviesMap[id]) {
+        var movieObj = {
+          id: id,
+          title: decodeHtmlEntities(title),
+          posterUrl: posterUrl,
+          backdropUrl: posterUrl,
+          year: year
+        };
+
+        moviesMap[id] = movieObj;
+        items.push(movieObj);
+      }
     }
+  } catch (e) {
+    // Bỏ qua lỗi nếu HTML không hợp lệ
+  }
 
-    var movies = [];
-    for (var key in moviesMap) {
-        if (moviesMap.hasOwnProperty(key)) {
-            movies.push(moviesMap[key]);
-        }
-    }
-
-    // Lấy số trang
-    var totalPages = 1;
-    var pagesMatch = html.match(/href="[^"]*page-(\d+)[^"]*"/g);
-    if (!pagesMatch) pagesMatch = html.match(/page=(\d+)/g);
-    if (pagesMatch) {
-        for (var j = 0; j < pagesMatch.length; j++) {
-            var pMatch = pagesMatch[j].match(/page-(\d+)/) || pagesMatch[j].match(/page=(\d+)/);
-            if (pMatch) {
-                var p = parseInt(pMatch[1]);
-                if (p > totalPages) totalPages = p;
-            }
-        }
-    }
-
-    return JSON.stringify({
-        items: movies,
-        pagination: {
-            currentPage: 1,
-            totalPages: totalPages || 1,
-            totalItems: movies.length,
-            itemsPerPage: 20
-        }
-    });
+  return JSON.stringify({ items: items });
 }
 
+// Hàm dùng chung cho kết quả tìm kiếm
 function parseSearchResponse(html) {
-    return parseListResponse(html);
+  return parseListResponse(html);
 }
 
-var PluginUtils = {
-    cleanText: function (text) {
-        if (!text) return "";
-        return text.replace(/<[^>]*>/g, "")
-            .replace(/&amp;/g, "&")
-            .replace(/&quot;/g, '"')
-            .replace(/&#039;/g, "'")
-            .replace(/\s+/g, " ")
-            .trim();
-    }
-};
+// Hàm giải mã ký tự HTML đặc biệt
+function decodeHtmlEntities(str) {
+  if (!str) return "";
+  return str
+    .replace(/&#038;|&amp;/g, "&")
+    .replace(/&#8211;|&#8212;/g, "-")
+    .replace(/&#039;|&apos;/g, "'")
+    .replace(/&quot;/g, '"')
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .trim();
+}
+
 
 function parseMovieDetail(html) {
     try {
