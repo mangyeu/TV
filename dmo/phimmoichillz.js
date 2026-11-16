@@ -6,7 +6,7 @@ function getManifest() {
   return JSON.stringify({
     "id": "phimmoichill",
     "name": "PhimMoiChill",
-    "version": "1.0",
+    "version": "1.5",
     "type": "MOVIE",
     "baseUrl": BASE_URL,
     "allowedDomains": ["phimmoichillz.top", "*.phimmoichillz.top", "phimmoichill.top", "*.phimmoichill.top", "googleapis.com", "*.googleapis.com"]
