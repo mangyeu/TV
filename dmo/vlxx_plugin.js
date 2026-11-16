@@ -269,34 +269,52 @@ function parseMovieDetail(html) {
 // parseDetailResponse: Nhận HTML tĩnh từ detail page
 // Trích data-id + server number → trả AJAX POST config cho App
 function parseDetailResponse(html, fetchedUrl) {
+    function parseServers(html) {
     var baseUrl = "https://vlxx.net";
-    var streamUrl = "";
+    var servers = [];
 
     try {
-        // Bóc tách giá trị trong thuộc tính src của thẻ iframe
-        var srcMatch = html.match(/<iframe[^>]+id="iframe-embed"[^>]+src="([^"]+)"/i)
-                    || html.match(/<iframe[^>]+src="([^"]+)"/i);
+        // Khoanh vùng khối chứa các nút server
+        var optionBlock = html;
+        if (html.indexOf('id="ploption"') !== -1) {
+            optionBlock = html.split('id="ploption"')[1].split('</div>')[0];
+        }
 
-        if (srcMatch) {
-            streamUrl = srcMatch[1].trim();
+        // Quét từng thẻ <a ... class="button link-item...">
+        var btnRegex = /<a[^>]+class="[^"]*link-item[^"]*"[^>]*>([\s\S]*?)<\/a>/gi;
+        var match;
+        var serverIndex = 1;
 
-            // Chuẩn hóa đường dẫn đầy đủ cho VAX Player
-            if (streamUrl.indexOf("//") === 0) {
-                streamUrl = "https:" + streamUrl;
-            } else if (streamUrl.indexOf("http") !== 0) {
+        while ((match = btnRegex.exec(optionBlock)) !== null) {
+            var fullTag = match[0];
+            var serverName = match[1].replace(/<[^>]+>/g, "").trim(); // VD: "T.PRO", "R.PRO"
+
+            // Lấy data-linkid (hoặc data-id)
+            var idMatch = fullTag.match(/data-(?:link)?id="([^"]+)"/i);
+            var dataId = idMatch ? idMatch[1].trim() : "";
+
+            // Lấy data-link (Base64) và giải mã thành URL (/tvc?id=935464)
+            var linkMatch = fullTag.match(/data-link="([^"]+)"/i);
+            var streamUrl = linkMatch ? base64Decode(linkMatch[1].trim()) : "";
+
+            if (streamUrl && streamUrl.indexOf("http") !== 0) {
                 streamUrl = baseUrl + streamUrl;
+            }
+
+            if (dataId || streamUrl) {
+                servers.push({
+                    serverNumber: serverIndex++,     // Số thứ tự server: 1, 2, 3...
+                    serverName: serverName,          // Tên server: "T.PRO", "R.PRO"...
+                    dataId: dataId,                  // Mã ID: "935464"
+                    url: streamUrl                   // Link phát: "https://chillhayz.pro"
+                });
             }
         }
     } catch (e) {}
 
-    return JSON.stringify({
-        url: streamUrl,
-        headers: {
-            "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36",
-            "Referer": baseUrl + "/"
-        }
-    });
+    return JSON.stringify(servers);
 }
+
 
 
 // parseEmbedResponse: Xử lý 2 loại response:
