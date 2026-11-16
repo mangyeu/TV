@@ -1,8 +1,9 @@
+
 function getManifest() {
     return JSON.stringify({
         "id": "clbphimxua",
         "name": "CLB Phim Xưa",
-        "version": "1.0.0",
+        "version": "1.0.1",
         "baseUrl": https://clbphimxua.info,
         "iconUrl": https://raw.githubusercontent.com/mangyeu/TV/refs/heads/main/dmo/clbphimxua-logo.ico,
         "isEnabled": true,
