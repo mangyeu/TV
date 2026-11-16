@@ -2,10 +2,6 @@
 
 var BASE_URL = "https://phimmoichillz.top";
 
-// ==========================================
-// 1. NHÓM CONFIG & METADATA
-// ==========================================
-
 function getManifest() {
   return JSON.stringify({
     "id": "phimmoichill",
@@ -13,14 +9,7 @@ function getManifest() {
     "version": "1.0",
     "type": "MOVIE",
     "baseUrl": BASE_URL,
-    "allowedDomains": [
-      "phimmoichillz.top",
-      "*.phimmoichillz.top",
-      "phimmoichill.top",
-      "*.phimmoichill.top",
-      "googleapis.com",
-      "*.googleapis.com"
-    ]
+    "allowedDomains": ["phimmoichillz.top", "*.phimmoichillz.top", "phimmoichill.top", "*.phimmoichill.top", "googleapis.com", "*.googleapis.com"]
   });
 }
 
@@ -30,9 +19,7 @@ function getHomeSections() {
     { slug: "phim-bo", title: "Phim Bộ Mới", type: "HORIZONTAL", path: "phim-bo" },
     { slug: "quoc-gia/viet-nam", title: "Phim Việt Nam", type: "HORIZONTAL", path: "quoc-gia/viet-nam" },
     { slug: "quoc-gia/hong-kong", title: "Phim Hồng Kông", type: "HORIZONTAL", path: "quoc-gia/hong-kong" },
-    { slug: "quoc-gia/an-do", title: "Phim Ấn Độ", type: "HORIZONTAL", path: "quoc-gia/an-do" },
-    { slug: "quoc-gia/phap", title: "Phim Pháp", type: "HORIZONTAL", path: "quoc-gia/phap" },
-    { slug: "quoc-gia/nga", title: "Phim Nga", type: "HORIZONTAL", path: "quoc-gia/nga" }
+    { slug: "quoc-gia/an-do", title: "Phim Ấn Độ", type: "HORIZONTAL", path: "quoc-gia/an-do" }
   ]);
 }
 
@@ -40,33 +27,13 @@ function getPrimaryCategories() {
   return JSON.stringify([
     { name: "Phim Lẻ", slug: "phim-le" },
     { name: "Phim Bộ", slug: "phim-bo" },
-    { name: "Nga", slug: "quoc-gia/nga" },
-    { name: "Ấn Độ", slug: "quoc-gia/an-do" },
-    { name: "Hồng Kông", slug: "quoc-gia/hong-kong" },
     { name: "Việt Nam", slug: "quoc-gia/viet-nam" },
-    { name: "Úc", slug: "quoc-gia/uc" },
-    { name: "Ý", slug: "quoc-gia/y" },
-    { name: "Tây Ban Nha", slug: "quoc-gia/tay-ban-nha" },
-    { name: "Canada", slug: "quoc-gia/canada" },
+    { name: "Hồng Kông", slug: "quoc-gia/hong-kong" },
+    { name: "Ấn Độ", slug: "quoc-gia/an-do" },
     { name: "Pháp", slug: "quoc-gia/phap" },
-    { name: "Indonesia", slug: "quoc-gia/indonesia" },
-    { name: "Philippines", slug: "quoc-gia/philippines" },
+    { name: "Nga", slug: "quoc-gia/nga" },
     { name: "Đức", slug: "quoc-gia/duc" },
-    { name: "Malaysia", slug: "quoc-gia/malaysia" },
-    { name: "Mexico", slug: "quoc-gia/mexico" },
-    { name: "Nam Phi", slug: "quoc-gia/nam-phi" },
-    { name: "Brazil", slug: "quoc-gia/brazil" },
-    { name: "Na Uy", slug: "quoc-gia/na-uy" },
-    { name: "Châu Phi", slug: "quoc-gia/chau-phi" },
-    { name: "Thụy Điển", slug: "quoc-gia/thuy-dien" },
-    { name: "Ba Lan", slug: "quoc-gia/ba-lan" },
-    { name: "Hà Lan", slug: "quoc-gia/ha-lan" },
-    { name: "Ireland", slug: "quoc-gia/ireland" },
-    { name: "Bỉ", slug: "quoc-gia/bi" },
-    { name: "Đan Mạch", slug: "quoc-gia/dan-mach" },
-    { name: "Ukraina", slug: "quoc-gia/ukraina" },
-    { name: "Phần Lan", slug: "quoc-gia/phan-lan" },
-    { name: "Thụy Sĩ", slug: "quoc-gia/thuy-si" }
+    { name: "Tây Ban Nha", slug: "quoc-gia/tay-ban-nha" }
   ]);
 }
 
@@ -74,188 +41,82 @@ function getFilterConfig() {
   return JSON.stringify({
     countries: [
       { name: "Tất cả quốc gia", value: "" },
-      { name: "Nga", value: "nga" },
-      { name: "Ấn Độ", value: "an-do" },
-      { name: "Hồng Kông", value: "hong-kong" },
       { name: "Việt Nam", value: "viet-nam" },
-      { name: "Úc", value: "uc" },
-      { name: "Ý", value: "y" },
-      { name: "Tây Ban Nha", value: "tay-ban-nha" },
-      { name: "Canada", value: "canada" },
+      { name: "Hồng Kông", value: "hong-kong" },
+      { name: "Ấn Độ", value: "an-do" },
       { name: "Pháp", value: "phap" },
-      { name: "Indonesia", value: "indonesia" },
-      { name: "Philippines", value: "philippines" },
-      { name: "Đức", value: "duc" },
-      { name: "Malaysia", value: "malaysia" },
-      { name: "Mexico", value: "mexico" },
-      { name: "Nam Phi", value: "nam-phi" },
-      { name: "Brazil", value: "brazil" },
-      { name: "Na Uy", value: "na-uy" },
-      { name: "Châu Phi", value: "chau-phi" },
-      { name: "Thụy Điển", value: "thuy-dien" },
-      { name: "Ba Lan", value: "ba-lan" },
-      { name: "Hà Lan", value: "ha-lan" },
-      { name: "Ireland", value: "ireland" },
-      { name: "Bỉ", value: "bi" },
-      { name: "Đan Mạch", value: "dan-mach" },
-      { name: "Ukraina", value: "ukraina" },
-      { name: "Phần Lan", value: "phan-lan" },
-      { name: "Thụy Sĩ", value: "thuy-si" }
+      { name: "Nga", value: "nga" },
+      { name: "Đức", value: "duc" }
     ],
     categories: [
       { name: "Tất cả thể loại", value: "" },
       { name: "Hành Động", value: "hanh-dong" },
       { name: "Tình Cảm", value: "tinh-cam" },
       { name: "Hài Hước", value: "hai-huoc" },
-      { name: "Cổ Trang", value: "co-trang" },
-      { name: "Tâm Lý", value: "tam-ly" },
-      { name: "Hình Sự", value: "hinh-su" },
-      { name: "Chiến Tranh", value: "chien-tranh" },
-      { name: "Võ Thuật", value: "vo-thuat" },
-      { name: "Viễn Tưởng", value: "vien-tuong" },
-      { name: "Phiêu Lưu", value: "phieu-luu" },
-      { name: "Khoa Học", value: "khoa-hoc" },
-      { name: "Ma - Kinh Dị", value: "kinh-di" },
-      { name: "Hoạt Hình", value: "hoat-hinh" },
-      { name: "Gia Đình", value: "gia-dinh" },
-      { name: "Bí Ẩn", value: "bi-an" }
+      { name: "Kinh Dị", value: "kinh-di" },
+      { name: "Hoạt Hình", value: "hoat-hinh" }
     ],
     years: [
       { name: "Tất cả năm", value: "" },
       { name: "2026", value: "2026" },
       { name: "2025", value: "2025" },
-      { name: "2024", value: "2024" },
-      { name: "2023", value: "2023" },
-      { name: "2022", value: "2022" },
-      { name: "2021", value: "2021" },
-      { name: "2020", value: "2020" }
-    ],
-    sorts: [
-      { name: "Mới cập nhật", value: "latest" },
-      { name: "Xem nhiều nhất", value: "views" },
-      { name: "Năm phát hành", value: "year" }
+      { name: "2024", value: "2024" }
     ]
   });
 }
 
-// ==========================================
-// 2. NHÓM SINH ĐƯỜNG DẪN URL
-// ==========================================
-
 function getUrlList(slug, filtersJson) {
   var filters = JSON.parse(filtersJson || "{}");
   var page = filters.page || 1;
-  var path = "";
-
-  if (filters.country && filters.country !== "") {
-    path = "quoc-gia/" + filters.country;
-  } else if (filters.category && filters.category !== "") {
-    path = "the-loai/" + filters.category;
-  } else if (filters.year && filters.year !== "") {
-    path = "nam-phat-hanh/" + filters.year;
-  } else {
-    path = (slug || "phim-le").replace(/^\/+|\/+$/g, "");
-  }
-
-  var url = BASE_URL + "/" + path;
-
-  if (page > 1) {
-    url += "/page/" + page;
-  }
-
-  if (filters.sort && filters.sort !== "" && filters.sort !== "latest") {
-    url += "?sort=" + filters.sort;
-  }
-
-  return url;
+  var path = (slug || "phim-le").replace(/^\/+|\/+$/g, "");
+  if (filters.country) path = "quoc-gia/" + filters.country;
+  else if (filters.category) path = "the-loai/" + filters.category;
+  else if (filters.year) path = "nam-phat-hanh/" + filters.year;
+  return BASE_URL + "/" + path + (page > 1 ? "/page/" + page : "");
 }
 
 function getUrlSearch(keyword, filtersJson) {
   var filters = JSON.parse(filtersJson || "{}");
   var page = filters.page || 1;
-  var encodedKeyword = encodeURIComponent(keyword || "").replace(/%20/g, "+");
-
-  if (page > 1) {
-    return BASE_URL + "/page/" + page + "/?s=" + encodedKeyword;
-  }
-  return BASE_URL + "/?s=" + encodedKeyword;
+  var q = encodeURIComponent(keyword || "").replace(/%20/g, "+");
+  return BASE_URL + (page > 1 ? "/page/" + page : "") + "/?s=" + q;
 }
 
 function getUrlDetail(slug) {
   if (!slug) return "";
-  if (slug.indexOf("http://") === 0 || slug.indexOf("https://") === 0) {
-    return slug;
-  }
-  return BASE_URL + "/" + slug.replace(/^\/+|\/+$/g, "");
+  return slug.indexOf("http") === 0 ? slug : BASE_URL + "/" + slug.replace(/^\/+|\/+$/g, "");
 }
 
-// ==========================================
-// 3. NHÓM PHÂN TÍCH DỮ LIỆU (PARSERS)
-// ==========================================
+function getGroup(m, i) {
+  return (m && m.length > i && m.at(i)) ? m.at(i) : "";
+}
+
+function decodeHtml(s) {
+  return (s || "").replace(/&#038;|&amp;/g, "&").replace(/&#8211;|&#8212;/g, "-").replace(/&#039;|&apos;/g, "'").replace(/&quot;/g, '"').trim();
+}
 
 function parseListResponse(html) {
-  var moviesMap = {};
-  var items = [];
-
+  var map = {}, items = [];
   if (!html) return JSON.stringify({ items: items });
-
   try {
-    var blocks = html.split(/<(?:article|li|div)[^>]*class=["'][^"']*\b(?:item|film-item|post-item|movie-item|halim-item|tray-item)\b[^"']*["'][^>]*>/i);
-
+    var blocks = html.split(/<(?:article|li|div)[^>]*class=["'][^"']*\b(?:item|film-item|post-item|movie-item|halim-item)\b[^"']*["'][^>]*>/i);
     for (var i = 1; i < blocks.length; i++) {
-      var block = blocks[i].substring(0, 2500);
-
-      var hrefMatch = block.match(/<a[^>]*href=["']([^"']+)["']/i);
-      var href = hrefMatch ? hrefMatch[1] : "";
-
+      var b = blocks.at(i).substring(0, 2500);
+      var href = getGroup(b.match(/<a[^>]*href=["']([^"']+)["']/i), 1);
       if (!href || href === "#" || href.indexOf("javascript:") === 0) continue;
-
-      var title = "";
-      var titleAttr = block.match(/<a[^>]*title=["']([^"']+)["']/i);
-      var altAttr = block.match(/<img[^>]*alt=["']([^"']+)["']/i);
-      var headingTag = block.match(/<(?:h2|h3|h4|p|span|div)[^>]*class=["'][^"']*(?:title|name)[^"']*["'][^>]*>([\s\S]*?)<\/(?:h2|h3|h4|p|span|div)>/i);
-
-      if (titleAttr && titleAttr[1]) {
-        title = titleAttr[1];
-      } else if (headingTag && headingTag[1]) {
-        title = headingTag[1].replace(/<[^>]+>/g, "");
-      } else if (altAttr && altAttr[1]) {
-        title = altAttr[1];
-      }
-
-      var posterUrl = "";
-      var imgMatch = block.match(/<img[^>]*data-(?:src|original|lazy-src)=["']([^"']+)["']/i) ||
-                     block.match(/<img[^>]*src=["']([^"']+)["']/i) ||
-                     block.match(/background-image\s*:\s*url\(["']?([^"')]+)["']?\)/i);
-
-      if (imgMatch && imgMatch[1]) {
-        posterUrl = imgMatch[1];
-      }
-
-      if (posterUrl && posterUrl.indexOf("data:image") !== 0 && posterUrl.indexOf("http") !== 0) {
-        posterUrl = BASE_URL + "/" + posterUrl.replace(/^\/+/, "");
-      }
-
-      var yearMatch = block.match(/\b(20\d{2}|19\d{2})\b/);
-      var year = yearMatch ? yearMatch[1] : "";
-
+      var title = getGroup(b.match(/<a[^>]*title=["']([^"']+)["']/i), 1) ||
+                  getGroup(b.match(/<(?:h2|h3|h4|p|span)[^>]*class=["'][^"']*(?:title|name)[^"']*["'][^>]*>([\s\S]*?)<\/(?:h2|h3|h4|p|span)>/i), 1).replace(/<[^>]+>/g, "") ||
+                  getGroup(b.match(/<img[^>]*alt=["']([^"']+)["']/i), 1);
+      var img = getGroup(b.match(/<img[^>]*data-(?:src|original|lazy-src)=["']([^"']+)["']/i), 1) ||
+                getGroup(b.match(/<img[^>]*src=["']([^"']+)["']/i), 1);
+      if (img && img.indexOf("data:image") !== 0 && img.indexOf("http") !== 0) img = BASE_URL + "/" + img.replace(/^\/+/, "");
       var id = href.replace(BASE_URL, "").replace(/^\/+|\/+$/g, "");
-
-      if (id && title && !moviesMap[id]) {
-        var movieObj = {
-          id: id,
-          title: decodeHtmlEntities(title),
-          posterUrl: posterUrl,
-          backdropUrl: posterUrl,
-          year: year
-        };
-
-        moviesMap[id] = movieObj;
-        items.push(movieObj);
+      if (id && title && !map[id]) {
+        map[id] = true;
+        items.push({ id: id, title: decodeHtml(title), posterUrl: img, backdropUrl: img, year: getGroup(b.match(/\b(20\d{2}|19\d{2})\b/), 1) });
       }
     }
   } catch (e) {}
-
   return JSON.stringify({ items: items });
 }
 
@@ -263,253 +124,40 @@ function parseSearchResponse(html) {
   return parseListResponse(html);
 }
 
-    if (h1Match && h1Match[1]) {
-      title = h1Match[1].replace(/<[^>]+>/g, "").trim();
-    } else if (ogTitleMatch && ogTitleMatch[1]) {
-      title = ogTitleMatch[1].trim();
-    }
-
-    var ogImgMatch = html.match(/<meta[^>]*property=["']og:image["'][^>]*content=["']([^"']+)["']/i);
-    if (ogImgMatch && ogImgMatch[1]) {
-      posterUrl = ogImgMatch[1];
-    }
-    if (posterUrl && posterUrl.indexOf("http") !== 0) {
-      posterUrl = BASE_URL + "/" + posterUrl.replace(/^\/+/, "");
-    }
-
-    var descMatch = html.match(/<(?:div|p|article)[^>]*class=["'][^"']*(?:film-content|entry-content|content|description|storyline)[^"']*["'][^>]*>([\s\S]*?)<\/(?:div|p|article)>/i) ||
-                    html.match(/<meta[^>]*name=["']description["'][^>]*content=["']([^"']+)["']/i);
-    if (descMatch && descMatch[1]) {
-      description = descMatch[1].replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
-    }
-
-    var yearMatch = html.match(/(?:Năm|Year)[^<]*<\/[^>]+>\s*([^<\n]+)/i) || html.match(/\b(20\d{2}|19\d{2})\b/);
-    if (yearMatch && yearMatch[1]) {
-      year = yearMatch[1].trim();
-    }
-
-    var catRegex = /<a[^>]*href=["'][^"']*\/the-loai\/[^"']*["'][^>]*>([\s\S]*?)<\/a>/gi;
-    var catMatch;
-    while ((catMatch = catRegex.exec(html)) !== null) {
-      var catName = catMatch[1].replace(/<[^>]+>/g, "").trim();
-      if (catName && categories.indexOf(catName) === -1) {
-        categories.push(catName);
-      }
-    }
-
-    var epRegex = /<a[^>]*href=["']([^"']+)["'][^>]*(?:class=["'][^"']*(?:episode|halim-btn|btn-ep|server)[^"']*["']|data-episode|data-slug)[^>]*>([\s\S]*?)<\/a>/gi;
-    var epMatch;
-
-    while ((epMatch = epRegex.exec(html)) !== null) {
-      var epHref = epMatch[1];
-      var epName = epMatch[2].replace(/<[^>]+>/g, "").trim();
-      var epSlug = epHref.replace(BASE_URL, "").replace(/^\/+|\/+$/g, "");
-
-      if (epSlug && epName && !epMap[epSlug]) {
-        epMap[epSlug] = true;
-        episodesList.push({
-          id: epSlug,
-          name: decodeHtmlEntities(epName),
-          slug: epSlug
-        });
-      }
-    }
-
-    if (episodesList.length === 0) {
-      var watchBtn = html.match(/<a[^>]*href=["']([^"']*(?:xem-phim|watch|tap-1|full)[^"']*)["'][^>]*>/i);
-      if (watchBtn && watchBtn[1]) {
-        var watchSlug = watchBtn[1].replace(BASE_URL, "").replace(/^\/+|\/+$/g, "");
-        episodesList.push({
-          id: watchSlug,
-          name: "Full / Tập 1",
-          slug: watchSlug
-        });
-      }
-    }
-
-    if (episodesList.length > 0) {
-      servers.push({
-        serverName: "Vietsub / Thuyết Minh",
-        episodes: episodesList
-      });
-    }
-
-    var directMatch = html.match(/["'](https?:\/\/[^"'\s\\]+\.(?:m3u8|mp4)[^"'\s\\]*)["']/i);
-    if (directMatch && directMatch[1]) {
-      streamUrl = directMatch[1].replace(/\\\//g, "/");
-      streamType = streamUrl.indexOf(".mp4") !== -1 ? "mp4" : "hls";
-    } else {
-      var iframeMatch = html.match(/<iframe[^>]*src=["']([^"']+)["'][^>]*>/i);
-      if (iframeMatch && iframeMatch[1] && iframeMatch[1].indexOf("facebook.com") === -1) {
-        streamUrl = iframeMatch[1];
-        streamType = "embed";
-      }
-    }
-  } catch (e) {}
-
-  return JSON.stringify({
-    title: decodeHtmlEntities(title),
-    posterUrl: posterUrl,
-    backdropUrl: posterUrl,
-    description: decodeHtmlEntities(description),
-    year: year,
-    categories: categories,
-    servers: servers,
-    url: streamUrl,
-    streamUrl: streamUrl,
-    type: streamType
-  });
-}
-
-// Hàm phụ trợ lấy nhóm kết quả Regex an toàn, tránh lỗi mất dấu ngoặc vuông
-function getGroup(match, idx) {
-  if (match && match.length > idx && match.at(idx)) {
-    return match.at(idx);
-  }
-  return "";
-}
-
 function parseMovieDetail(html) {
   if (!html) return JSON.stringify({});
-
-  var title = "";
-  var posterUrl = "";
-  var description = "";
-  var year = "";
-  var categories = [];
-  var servers = [];
-  var episodesList = [];
-  var epMap = {};
-
+  var title = "", poster = "", desc = "", servers = [], eps = [], epMap = {};
   try {
-    // 1. Lấy tiêu đề phim
-    var h1Match = html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i);
-    var ogTitleMatch = html.match(/<meta[^>]*property=["']og:title["'][^>]*content=["']([^"']+)["']/i);
-    var rawTitle = getGroup(h1Match, 1) || getGroup(ogTitleMatch, 1);
-    title = rawTitle.replace(/<[^>]+>/g, "").trim();
-
-    // 2. Lấy ảnh Poster
-    var ogImgMatch = html.match(/<meta[^>]*property=["']og:image["'][^>]*content=["']([^"']+)["']/i);
-    posterUrl = getGroup(ogImgMatch, 1);
-    if (posterUrl && posterUrl.indexOf("http") !== 0) {
-      posterUrl = BASE_URL + "/" + posterUrl.replace(/^\/+/, "");
-    }
-
-    // 3. Lấy mô tả phim
-    var descMatch = html.match(/<(?:div|p|article)[^>]*class=["'][^"']*(?:film-content|entry-content|content|description|storyline)[^"']*["'][^>]*>([\s\S]*?)<\/(?:div|p|article)>/i) ||
-                    html.match(/<meta[^>]*name=["']description["'][^>]*content=["']([^"']+)["']/i);
-    var rawDesc = getGroup(descMatch, 1);
-    description = rawDesc.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
-
-    // 4. Lấy năm phát hành
-    var yearMatch = html.match(/(?:Năm|Year)[^<]*<\/[^>]+>\s*([^<\n]+)/i) || html.match(/\b(20\d{2}|19\d{2})\b/);
-    year = getGroup(yearMatch, 1).trim();
-
-    // 5. Lấy danh sách Thể loại
-    var catRegex = /<a[^>]*href=["'][^"']*\/the-loai\/[^"']*["'][^>]*>([\s\S]*?)<\/a>/gi;
-    var catMatch;
-    while ((catMatch = catRegex.exec(html)) !== null) {
-      var catName = getGroup(catMatch, 1).replace(/<[^>]+>/g, "").trim();
-      if (catName && categories.indexOf(catName) === -1) {
-        categories.push(catName);
+    title = (getGroup(html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i), 1) || getGroup(html.match(/<meta[^>]*property=["']og:title["'][^>]*content=["']([^"']+)["']/i), 1)).replace(/<[^>]+>/g, "").trim();
+    poster = getGroup(html.match(/<meta[^>]*property=["']og:image["'][^>]*content=["']([^"']+)["']/i), 1);
+    desc = getGroup(html.match(/<meta[^>]*name=["']description["'][^>]*content=["']([^"']+)["']/i), 1);
+    var epRegex = /<a[^>]*href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi, m;
+    while ((m = epRegex.exec(html)) !== null) {
+      var h = getGroup(m, 1), t = getGroup(m, 2).replace(/<[^>]+>/g, "").trim();
+      if (h && (h.indexOf("/xem-phim") !== -1 || h.indexOf("/tap-") !== -1 || h.indexOf("episode") !== -1 || h.indexOf("watch") !== -1) && t.length > 0 && t.length < 30) {
+        var s = h.replace(BASE_URL, "").replace(/^\/+|\/+$/g, "");
+        if (s && !epMap[s]) { epMap[s] = true; eps.push({ id: s, name: decodeHtml(t), slug: s }); }
       }
     }
-
-    // 6. Quét danh sách tập phim / nút Xem phim
-    var epRegex = /<a[^>]*href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi;
-    var epMatch;
-    while ((epMatch = epRegex.exec(html)) !== null) {
-      var epHref = getGroup(epMatch, 1);
-      var epText = getGroup(epMatch, 2).replace(/<[^>]+>/g, "").trim();
-
-      if (
-        epHref &&
-        (epHref.indexOf("/xem-phim") !== -1 || epHref.indexOf("/tap-") !== -1 || epHref.indexOf("episode") !== -1 || epHref.indexOf("watch") !== -1) &&
-        epText.length > 0 && epText.length < 35
-      ) {
-        var epSlug = epHref.replace(BASE_URL, "").replace(/^\/+|\/+$/g, "");
-        if (epSlug && !epMap[epSlug]) {
-          epMap[epSlug] = true;
-          episodesList.push({
-            id: epSlug,
-            name: decodeHtmlEntities(epText),
-            slug: epSlug
-          });
-        }
-      }
-    }
-
-    if (episodesList.length > 0) {
-      servers.push({
-        serverName: "Server Chính",
-        episodes: episodesList
-      });
-    }
-
-    return JSON.stringify({
-      title: decodeHtmlEntities(title),
-      posterUrl: posterUrl,
-      backdropUrl: posterUrl,
-      description: decodeHtmlEntities(description),
-      year: year,
-      categories: categories,
-      servers: servers
-    });
-  } catch (e) {
-    return JSON.stringify({});
-  }
+    if (eps.length > 0) servers.push({ serverName: "Server Chính", episodes: eps });
+  } catch (e) {}
+  return JSON.stringify({ title: decodeHtml(title), posterUrl: poster, backdropUrl: poster, description: decodeHtml(desc), servers: servers });
 }
 
 function parseDetailResponse(html) {
   if (!html) return JSON.stringify({ url: "" });
-
-  var streamUrl = "";
-  var streamType = "hls";
-
+  var url = "", type = "hls";
   try {
-    // 1. Tìm trực tiếp file .m3u8 hoặc .mp4
-    var directMatch = html.match(/["'](https?:\/\/[^"'\s\\]+\.(?:m3u8|mp4)[^"'\s\\]*)["']/i);
-    var rawDirect = getGroup(directMatch, 1);
-    if (rawDirect) {
-      streamUrl = rawDirect.replace(/\\\//g, "/");
-      streamType = streamUrl.indexOf(".mp4") !== -1 ? "mp4" : "hls";
-    }
-
-    // 2. Tìm link nhúng trong các thuộc tính data-link, data-src, data-embed hoặc thẻ iframe
-    if (!streamUrl) {
-      var embedMatch = html.match(/(?:<iframe[^>]*src|data-link|data-src|data-embed|file|source)\s*[:=]\s*["']((?:https?:)?\/\/[^"'\s]+)["']/i);
-      var rawEmbed = getGroup(embedMatch, 1);
-      if (rawEmbed && rawEmbed.indexOf("facebook.com") === -1 && rawEmbed.indexOf("google") === -1) {
-        streamUrl = rawEmbed.replace(/\\\//g, "/");
-        if (streamUrl.indexOf("//") === 0) streamUrl = "https:" + streamUrl;
-        streamType = (streamUrl.indexOf(".m3u8") !== -1 || streamUrl.indexOf(".mp4") !== -1) ? "hls" : "embed";
+    var m3u8 = getGroup(html.match(/["'](https?:\/\/[^"'\s\\]+\.(?:m3u8|mp4)[^"'\s\\]*)["']/i), 1);
+    if (m3u8) { url = m3u8.replace(/\\\//g, "/"); type = url.indexOf(".mp4") !== -1 ? "mp4" : "hls"; }
+    else {
+      var emb = getGroup(html.match(/(?:<iframe[^>]*src|data-link|data-src|data-embed|file|source)\s*[:=]\s*["']((?:https?:)?\/\/[^"'\s]+)["']/i), 1);
+      if (emb && emb.indexOf("facebook.com") === -1 && emb.indexOf("google") === -1) {
+        url = emb.replace(/\\\//g, "/");
+        if (url.indexOf("//") === 0) url = "https:" + url;
+        type = "embed";
       }
     }
   } catch (e) {}
-
-  return JSON.stringify({
-    url: streamUrl,
-    type: streamType,
-    headers: {
-      "Referer": BASE_URL + "/",
-      "Origin": BASE_URL,
-      "User-Agent": "Mozilla/5.0 (Linux; Android 13; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36"
-    }
-  });
-}
-
-// ==========================================
-// HÀM PHỤ TRỢ (HELPERS)
-// ==========================================
-
-function decodeHtmlEntities(str) {
-  if (!str) return "";
-  return str
-    .replace(/&#038;|&amp;/g, "&")
-    .replace(/&#8211;|&#8212;/g, "-")
-    .replace(/&#039;|&apos;/g, "'")
-    .replace(/&quot;/g, '"')
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .trim();
+  return JSON.stringify({ url: url, type: type, headers: { "Referer": BASE_URL + "/", "Origin": BASE_URL, "User-Agent": "Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 Chrome/120.0.0.0 Mobile Safari/537.36" } });
 }
