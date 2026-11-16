@@ -6,7 +6,7 @@ function getManifest() {
   return JSON.stringify({
     "id": "phimmoichill",
     "name": "PhimMoiChill",
-    "version": "1.5",
+    "version": "1.6",
     "type": "MOVIE",
     "baseUrl": BASE_URL,
     "allowedDomains": ["phimmoichillz.top", "*.phimmoichillz.top", "phimmoichill.top", "*.phimmoichill.top", "googleapis.com", "*.googleapis.com"]
@@ -17,9 +17,7 @@ function getHomeSections() {
   return JSON.stringify([
     { slug: "phim-le", title: "Phim Lẻ Mới", type: "HORIZONTAL", path: "phim-le" },
     { slug: "phim-bo", title: "Phim Bộ Mới", type: "HORIZONTAL", path: "phim-bo" },
-    { slug: "quoc-gia/viet-nam", title: "Phim Việt Nam", type: "HORIZONTAL", path: "quoc-gia/viet-nam" },
-    { slug: "quoc-gia/hong-kong", title: "Phim Hồng Kông", type: "HORIZONTAL", path: "quoc-gia/hong-kong" },
-    { slug: "quoc-gia/an-do", title: "Phim Ấn Độ", type: "HORIZONTAL", path: "quoc-gia/an-do" }
+    { slug: "quoc-gia/viet-nam", title: "Phim Việt Nam", type: "HORIZONTAL", path: "quoc-gia/viet-nam" }
   ]);
 }
 
@@ -29,11 +27,7 @@ function getPrimaryCategories() {
     { name: "Phim Bộ", slug: "phim-bo" },
     { name: "Việt Nam", slug: "quoc-gia/viet-nam" },
     { name: "Hồng Kông", slug: "quoc-gia/hong-kong" },
-    { name: "Ấn Độ", slug: "quoc-gia/an-do" },
-    { name: "Pháp", slug: "quoc-gia/phap" },
-    { name: "Nga", slug: "quoc-gia/nga" },
-    { name: "Đức", slug: "quoc-gia/duc" },
-    { name: "Tây Ban Nha", slug: "quoc-gia/tay-ban-nha" }
+    { name: "Ấn Độ", slug: "quoc-gia/an-do" }
   ]);
 }
 
@@ -43,24 +37,17 @@ function getFilterConfig() {
       { name: "Tất cả quốc gia", value: "" },
       { name: "Việt Nam", value: "viet-nam" },
       { name: "Hồng Kông", value: "hong-kong" },
-      { name: "Ấn Độ", value: "an-do" },
-      { name: "Pháp", value: "phap" },
-      { name: "Nga", value: "nga" },
-      { name: "Đức", value: "duc" }
+      { name: "Ấn Độ", value: "an-do" }
     ],
     categories: [
       { name: "Tất cả thể loại", value: "" },
       { name: "Hành Động", value: "hanh-dong" },
-      { name: "Tình Cảm", value: "tinh-cam" },
-      { name: "Hài Hước", value: "hai-huoc" },
-      { name: "Kinh Dị", value: "kinh-di" },
-      { name: "Hoạt Hình", value: "hoat-hinh" }
+      { name: "Tình Cảm", value: "tinh-cam" }
     ],
     years: [
       { name: "Tất cả năm", value: "" },
       { name: "2026", value: "2026" },
-      { name: "2025", value: "2025" },
-      { name: "2024", value: "2024" }
+      { name: "2025", value: "2025" }
     ]
   });
 }
@@ -87,8 +74,11 @@ function getUrlDetail(slug) {
   return slug.indexOf("http") === 0 ? slug : BASE_URL + "/" + slug.replace(/^\/+|\/+$/g, "");
 }
 
+// Dùng .slice() thay cho .at() để chạy trên 100% thiết bị Android
 function getGroup(m, i) {
-  return (m && m.length > i && m.at(i)) ? m.at(i) : "";
+  if (!m || m.length <= i) return "";
+  var val = m.slice(i, i + 1).join("");
+  return val ? val : "";
 }
 
 function decodeHtml(s) {
@@ -101,7 +91,7 @@ function parseListResponse(html) {
   try {
     var blocks = html.split(/<(?:article|li|div)[^>]*class=["'][^"']*\b(?:item|film-item|post-item|movie-item|halim-item)\b[^"']*["'][^>]*>/i);
     for (var i = 1; i < blocks.length; i++) {
-      var b = blocks.at(i).substring(0, 2500);
+      var b = getGroup(blocks, i).substring(0, 2500);
       var href = getGroup(b.match(/<a[^>]*href=["']([^"']+)["']/i), 1);
       if (!href || href === "#" || href.indexOf("javascript:") === 0) continue;
       var title = getGroup(b.match(/<a[^>]*title=["']([^"']+)["']/i), 1) ||
