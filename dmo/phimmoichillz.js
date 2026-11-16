@@ -263,33 +263,12 @@ function parseSearchResponse(html) {
   return parseListResponse(html);
 }
 
-function parseMovieDetail(html) {
-  if (!html) return JSON.stringify({});
-
-  // Khai báo đầy đủ tất cả biến ở đầu hàm để tránh lỗi "is not defined"
-  var title = "";
-  var posterUrl = "";
-  var description = "";
-  var year = "";
-  var categories = [];
-  var servers = [];
-  var episodesList = [];
-  var epMap = {};
-  var streamUrl = "";
-  var streamType = "hls";
-
-  try {
-    // 1. Lấy tiêu đề phim
-    var h1Match = html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i);
-    var ogTitleMatch = html.match(/<meta[^>]*property=["']og:title["'][^>]*content=["']([^"']+)["']/i);
-    
     if (h1Match && h1Match[1]) {
       title = h1Match[1].replace(/<[^>]+>/g, "").trim();
     } else if (ogTitleMatch && ogTitleMatch[1]) {
       title = ogTitleMatch[1].trim();
     }
 
-    // 2. Lấy ảnh Poster
     var ogImgMatch = html.match(/<meta[^>]*property=["']og:image["'][^>]*content=["']([^"']+)["']/i);
     if (ogImgMatch && ogImgMatch[1]) {
       posterUrl = ogImgMatch[1];
@@ -298,20 +277,17 @@ function parseMovieDetail(html) {
       posterUrl = BASE_URL + "/" + posterUrl.replace(/^\/+/, "");
     }
 
-    // 3. Lấy mô tả phim
     var descMatch = html.match(/<(?:div|p|article)[^>]*class=["'][^"']*(?:film-content|entry-content|content|description|storyline)[^"']*["'][^>]*>([\s\S]*?)<\/(?:div|p|article)>/i) ||
                     html.match(/<meta[^>]*name=["']description["'][^>]*content=["']([^"']+)["']/i);
     if (descMatch && descMatch[1]) {
       description = descMatch[1].replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
     }
 
-    // 4. Lấy năm phát hành
     var yearMatch = html.match(/(?:Năm|Year)[^<]*<\/[^>]+>\s*([^<\n]+)/i) || html.match(/\b(20\d{2}|19\d{2})\b/);
     if (yearMatch && yearMatch[1]) {
       year = yearMatch[1].trim();
     }
 
-    // 5. Lấy danh sách Thể loại
     var catRegex = /<a[^>]*href=["'][^"']*\/the-loai\/[^"']*["'][^>]*>([\s\S]*?)<\/a>/gi;
     var catMatch;
     while ((catMatch = catRegex.exec(html)) !== null) {
@@ -321,7 +297,6 @@ function parseMovieDetail(html) {
       }
     }
 
-    // 6. Bóc tách danh sách tập phim
     var epRegex = /<a[^>]*href=["']([^"']+)["'][^>]*(?:class=["'][^"']*(?:episode|halim-btn|btn-ep|server)[^"']*["']|data-episode|data-slug)[^>]*>([\s\S]*?)<\/a>/gi;
     var epMatch;
 
@@ -359,7 +334,6 @@ function parseMovieDetail(html) {
       });
     }
 
-    // 7. Bóc tách dự phòng link video trực tiếp (nếu trang chi tiết nhúng sẵn trình phát)
     var directMatch = html.match(/["'](https?:\/\/[^"'\s\\]+\.(?:m3u8|mp4)[^"'\s\\]*)["']/i);
     if (directMatch && directMatch[1]) {
       streamUrl = directMatch[1].replace(/\\\//g, "/");
@@ -371,10 +345,7 @@ function parseMovieDetail(html) {
         streamType = "embed";
       }
     }
-
-  } catch (e) {
-    // Bỏ qua lỗi cú pháp HTML nếu có
-  }
+  } catch (e) {}
 
   return JSON.stringify({
     title: decodeHtmlEntities(title),
@@ -390,17 +361,74 @@ function parseMovieDetail(html) {
   });
 }
 
+function parseDetailResponse(html) {
+  if (!html) return JSON.stringify({ url: "" });
+
+  var streamUrl = "";
+  var streamType = "hls";
+
+  try {
+    var directMatch = html.match(/["'](https?:\/\/[^"'\s\\]+\.(?:m3u8|mp4)[^"'\s\\]*)["']/i);
+    if (directMatch && directMatch[1]) {
+      streamUrl = directMatch[1].replace(/\\\//g, "/");
+      streamType = streamUrl.indexOf(".mp4") !== -1 ? "mp4" : "hls";
+    }
+
+    if (!streamUrl) {
+      var playerVarMatch = html.match(/(?:file|source|link_play|url_play|stream_url)\s*[:=]\s*["'](https?:\/\/[^"'\s]+)["']/i);
+      if (playerVarMatch && playerVarMatch[1]) {
+        streamUrl = playerVarMatch[1].replace(/\\\//g, "/");
+        streamType = (streamUrl.indexOf(".m3u8") !== -1 || streamUrl.indexOf(".mp4") !== -1) ? "hls" : "embed";
+      }
+    }
+
+    if (!streamUrl) {
+      var iframeRegex = /<iframe[^>]*src=["']([^"']+)["'][^>]*>/gi;
+      var iframeMatch;
+      while ((iframeMatch = iframeRegex.exec(html)) !== null) {
+        var src = iframeMatch[1];
+        if (
+          src &&
+          src.indexOf("facebook.com") === -1 &&
+          src.indexOf("google") === -1 &&
+          src.indexOf("doubleclick") === -1 &&
+          src.indexOf("about:blank") === -1
+        ) {
+          streamUrl = src;
+          streamType = "embed";
+          break;
+        }
+      }
+    }
+
+    if (streamUrl && streamUrl.indexOf("//") === 0) {
+      streamUrl = "https:" + streamUrl;
+    }
+  } catch (e) {}
+
+  return JSON.stringify({
+    url: streamUrl,
+    type: streamType,
+    headers: {
+      "Referer": BASE_URL + "/",
+      "Origin": BASE_URL,
+      "User-Agent": "Mozilla/5.0 (Linux; Android 13; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36"
+    }
+  });
+}
+
 // ==========================================
 // HÀM PHỤ TRỢ (HELPERS)
 // ==========================================
+
 function decodeHtmlEntities(str) {
-if (!str) return "";
-return str
-.replace(/&|&/g, "&")
-.replace(/–|—/g, "-")
-.replace(/'|'/g, "'")
-.replace(/"/g, '"')
-.replace(/</g, "<")
-.replace(/>/g, ">")
-.trim();
+  if (!str) return "";
+  return str
+    .replace(/&#038;|&amp;/g, "&")
+    .replace(/&#8211;|&#8212;/g, "-")
+    .replace(/&#039;|&apos;/g, "'")
+    .replace(/&quot;/g, '"')
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .trim();
 }
