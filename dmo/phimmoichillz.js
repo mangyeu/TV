@@ -1,18 +1,16 @@
-// @Allowed-Domains: phimmoichillz.top, *.phimmoichillz.top, phimmoichill.top, *.phimmoichill.top, phimimg.com, *.phimimg.com, *.kkphimplayer7.com, *.kkphimplayer6.com, *.kkphimplayer5.com, *.kkphimplayer8.com, *.phimapi.com, googleapis.com, *.googleapis.com
+// @Allowed-Domains: phimmoichillz.top, *.phimmoichillz.top, phimmoichill.top, *.phimmoichill.top, phimimg.com, *.phimimg.com, kkphimplayer5.com, *.kkphimplayer5.com, kkphimplayer6.com, *.kkphimplayer6.com, kkphimplayer7.com, *.kkphimplayer7.com, kkphimplayer8.com, *.kkphimplayer8.com, phimapi.com, *.phimapi.com, googleapis.com, *.googleapis.com
 
 var BASE_URL = "https://phimmoichillz.top";
 
 function getManifest() {
-  return JSON.stringify({ id: "phimmoichillz", name: "PhimMoiChillZ", version: "4.0", type: "MOVIE", baseUrl: BASE_URL });
+  return JSON.stringify({ id: "phimmoichillz", name: "PhimMoiChillZ", version: "4.5", type: "MOVIE", baseUrl: BASE_URL });
 }
 
 function getHomeSections() {
   return JSON.stringify([
     { slug: "danh-sach/phim-le", title: "Phim Lẻ Mới", type: "HORIZONTAL", path: "danh-sach/phim-le" },
     { slug: "danh-sach/phim-bo", title: "Phim Bộ Mới", type: "HORIZONTAL", path: "danh-sach/phim-bo" },
-    { slug: "danh-sach/phim-chieu-rap", title: "Chiếu Rạp", type: "HORIZONTAL", path: "danh-sach/phim-chieu-rap" },
-    { slug: "the-loai/hoat-hinh", title: "Hoạt Hình", type: "HORIZONTAL", path: "the-loai/hoat-hinh" },
-    { slug: "quoc-gia/viet-nam", title: "Việt Nam", type: "HORIZONTAL", path: "quoc-gia/viet-nam" }
+    { slug: "quoc-gia/viet-nam", title: "Phim Việt Nam", type: "HORIZONTAL", path: "quoc-gia/viet-nam" }
   ]);
 }
 
@@ -20,45 +18,27 @@ function getPrimaryCategories() {
   return JSON.stringify([
     { name: "Phim Bộ", slug: "danh-sach/phim-bo" }, { name: "Phim Lẻ", slug: "danh-sach/phim-le" },
     { name: "Hoạt Hình", slug: "the-loai/hoat-hinh" }, { name: "Chiếu Rạp", slug: "danh-sach/phim-chieu-rap" },
-    { name: "Việt Nam", slug: "quoc-gia/viet-nam" }, { name: "Hồng Kông", slug: "quoc-gia/hong-kong" },
-    { name: "Ấn Độ", slug: "quoc-gia/an-do" }, { name: "Pháp", slug: "quoc-gia/phap" },
-    { name: "Nga", slug: "quoc-gia/nga" }, { name: "Singapore", slug: "quoc-gia/singapore" }
+    { name: "Việt Nam", slug: "quoc-gia/viet-nam" }, { name: "Hồng Kông", slug: "quoc-gia/hong-kong" }
   ]);
 }
 
 function getFilterConfig() {
   return JSON.stringify({
     countries: [
-      { name: "Tất cả", value: "" }, { name: "Việt Nam", value: "viet-nam" }, { name: "Hồng Kông", value: "hong-kong" },
-      { name: "Ấn Độ", value: "an-do" }, { name: "Nga", value: "nga" }, { name: "Pháp", value: "phap" },
-      { name: "Đức", value: "duc" }, { name: "Úc", value: "uc" }, { name: "Ý", value: "y" },
-      { name: "Tây Ban Nha", value: "tay-ban-nha" }, { name: "Canada", value: "canada" }, { name: "Indonesia", value: "indonesia" },
-      { name: "Philippines", value: "philippines" }, { name: "Malaysia", value: "malaysia" }, { name: "Mexico", value: "mexico" },
-      { name: "Nam Phi", value: "nam-phi" }, { name: "Brazil", value: "brazil" }, { name: "Na Uy", value: "na-uy" },
-      { name: "Thụy Điển", value: "thuy-dien" }, { name: "Ba Lan", value: "ba-lan" }, { name: "Hà Lan", value: "ha-lan" },
-      { name: "Ireland", value: "ireland" }, { name: "Bỉ", value: "bi" }, { name: "Đan Mạch", value: "dan-mach" },
-      { name: "Ukraina", value: "ukraina" }, { name: "Phần Lan", value: "phan-lan" }, { name: "Thụy Sĩ", value: "thuy-si" },
-      { name: "UAE", value: "uae" }, { name: "Ả Rập Xê Út", value: "a-rap-xe-ut" }, { name: "Bồ Đào Nha", value: "bo-dao-nha" },
-      { name: "Colombia", value: "colombia" }, { name: "Chile", value: "chile" }, { name: "Hy Lạp", value: "hy-lap" },
-      { name: "Nigeria", value: "nigeria" }, { name: "Argentina", value: "argentina" }, { name: "Singapore", value: "singapore" }
+      { name: "Tất cả", value: "" }, { name: "Việt Nam", value: "viet-nam" },
+      { name: "Hồng Kông", value: "hong-kong" }, { name: "Ấn Độ", value: "an-do" }
     ],
     categories: [
-      { name: "Tất cả", value: "" }, { name: "Chính Kịch", value: "chinh-kich" }, { name: "Tình Cảm", value: "tinh-cam" },
-      { name: "Tâm Lý", value: "tam-ly" }, { name: "Học Đường", value: "hoc-duong" }, { name: "Hành Động", value: "hanh-dong" },
-      { name: "Phiêu Lưu", value: "phieu-luu" }, { name: "Hài Hước", value: "hai-huoc" }, { name: "Hoạt Hình", value: "hoat-hinh" },
-      { name: "Gia Đình", value: "gia-dinh" }, { name: "Bí Ẩn", value: "bi-an" }, { name: "Cổ Trang", value: "co-trang" },
-      { name: "Khoa Học", value: "khoa-hoc" }, { name: "Tài Liệu", value: "tai-lieu" }, { name: "Kinh Dị", value: "kinh-di" },
-      { name: "Viễn Tưởng", value: "vien-tuong" }
+      { name: "Tất cả", value: "" }, { name: "Hành Động", value: "hanh-dong" },
+      { name: "Tình Cảm", value: "tinh-cam" }, { name: "Kinh Dị", value: "kinh-di" }
     ],
-    years: [{ name: "Tất cả", value: "" }, { name: "2026", value: "2026" }, { name: "2025", value: "2025" }, { name: "2024", value: "2024" }]
+    years: [{ name: "Tất cả", value: "" }, { name: "2026", value: "2026" }, { name: "2025", value: "2025" }]
   });
 }
 
 function getUrlList(slug, filtersJson) {
   var f = JSON.parse(filtersJson || "{}"), p = f.page || 1;
-  var c = f.country || f.countries || f.countryId || "";
-  var g = f.category || f.categories || f.categoryId || "";
-  var y = f.year || f.years || "";
+  var c = f.country || f.countries || "", g = f.category || f.categories || "", y = f.year || "";
   var path = (slug || f.slug || f.path || "danh-sach/phim-le").replace(/^\/+|\/+$/g, "");
   if (c && c !== "all") path = "quoc-gia/" + c.replace(/^quoc-gia\//, "");
   else if (g && g !== "all") path = "the-loai/" + g.replace(/^the-loai\//, "");
@@ -120,22 +100,34 @@ function parseMovieDetail(html) {
     title = (getGroup(html.match(/<h1[^>]*class=["'][^"']*Title[^"']*["'][^>]*>([\s\S]*?)<\/h1>/i), 1) || getGroup(html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i), 1)).replace(/<[^>]+>/g, "").trim();
     poster = getGroup(html.match(/<meta[^>]*property=["']og:image["'][^>]*content=["']([^"']+)["']/i), 1);
     if (poster && poster.indexOf("http") !== 0) poster = BASE_URL + "/" + poster.replace(/^\/+/, "");
-    desc = getGroup(html.match(/<div[^>]*class=["'][^"']*Description[^"']*["'][^>]*>([\s\S]*?)<\/div>/i), 1).replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim() || getGroup(html.match(/<meta[^>]*name=["']description["'][^>]*content=["']([^"']+)["']/i), 1);
-    
-    // Quét danh sách tập phim (thường có link dạng /xem-phim/..., /tap-..., hoặc thẻ <a> trong danh sách tập)
+    desc = getGroup(html.match(/<div[^>]*class=["'][^"']*Description[^"']*["'][^>]*>([\s\S]*?)<\/div>/i), 1).replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+
+    // 1. Tìm tất cả các nút tập phim (thường có class Button hoặc nằm trong danh sách tập)
     var epRegex = /<a[^>]*href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi, m;
     while ((m = epRegex.exec(html)) !== null) {
       var h = getGroup(m, 1), t = getGroup(m, 2).replace(/<[^>]+>/g, "").trim();
-      if (h && (h.indexOf("/xem-phim") !== -1 || h.indexOf("/tap-") !== -1 || h.indexOf("episode") !== -1 || h.indexOf("watch") !== -1) && t.length > 0 && t.length < 30) {
-                var s = h.replace(BASE_URL, "").replace(/^\/+|\/+$/g, "");
-        if (s && !epMap[s]) { epMap[s] = true; eps.push({ id: s, name: decodeHtml(t), slug: s }); }
+      if (!h || h === "#" || h.indexOf("javascript:") === 0) continue;
+      // Bắt link xem phim hoặc nút tập (Tập 1, Full, Xem phim...)
+      if (
+        h.indexOf("/xem-phim") !== -1 || h.indexOf("/tap-") !== -1 || h.indexOf("episode") !== -1 ||
+        t.toLowerCase().indexOf("xem phim") !== -1 || t.toLowerCase().indexOf("tập ") === 0
+      ) {
+        var s = h.replace(BASE_URL, "").replace(/^\/+|\/+$/g, "");
+        if (s && !epMap[s]) {
+          epMap[s] = true;
+          eps.push({ id: s, name: decodeHtml(t) || "Xem Phim", slug: s });
+        }
       }
     }
-    if (eps.length === 0 && html.indexOf("data-link=") !== -1) {
-      var curUrl = getGroup(html.match(/<link[^>]*rel=["']canonical["'][^>]*href=["']([^"']+)["']/i), 1);
-      var curSlug = curUrl.replace(BASE_URL, "").replace(/^\/+|\/+$/g, "");
-      if (curSlug) eps.push({ id: curSlug, name: "Tập 1 / Full", slug: curSlug });
+
+    // 2. Nếu trang này chính là trang xem phim (đã có sẵn data-link), lấy URL hiện tại làm tập phát
+    if (eps.length === 0) {
+      var canUrl = getGroup(html.match(/<link[^>]*rel=["']canonical["'][^>]*href=["']([^"']+)["']/i), 1) ||
+                   getGroup(html.match(/<meta[^>]*property=["']og:url["'][^>]*content=["']([^"']+)["']/i), 1);
+      var curSlug = canUrl.replace(BASE_URL, "").replace(/^\/+|\/+$/g, "");
+      if (curSlug) eps.push({ id: curSlug, name: "Full / Tập 1", slug: curSlug });
     }
+
     if (eps.length > 0) servers.push({ serverName: "Server Chính", episodes: eps });
   } catch (e) {}
   return JSON.stringify({ title: decodeHtml(title), posterUrl: poster, backdropUrl: poster, description: decodeHtml(desc), servers: servers });
@@ -145,17 +137,14 @@ function parseDetailResponse(html) {
   if (!html) return JSON.stringify({ url: "" });
   var url = "", type = "hls";
   try {
-    var dataLink = getGroup(html.match(/data-type=["']m3u8["'][^>]*data-link=["']([^"']+)["']/i), 1) ||
-                   getGroup(html.match(/data-link=["'](https?:\/\/[^"']+\.m3u8[^"']*)["']/i), 1);
-    if (dataLink) {
-      url = dataLink;
+    // Ưu tiên link m3u8 trực tiếp từ nút server
+    var m3u8 = getGroup(html.match(/data-type=["']m3u8["'][^>]*data-link=["']([^"']+)["']/i), 1) ||
+               getGroup(html.match(/data-link=["'](https?:\/\/[^"']+\.m3u8[^"']*)["']/i), 1) ||
+               getGroup(html.match(/["'](https?:\/\/[^"'\s\\]+\.m3u8[^"'\s\\]*)["']/i), 1);
+    if (m3u8) {
+      url = m3u8.replace(/\\\//g, "/");
       type = "hls";
-    }
-    if (!url) {
-      var m3u8 = getGroup(html.match(/["'](https?:\/\/[^"'\s\\]+\.(?:m3u8|mp4)[^"'\s\\]*)["']/i), 1);
-      if (m3u8) { url = m3u8.replace(/\\\//g, "/"); type = url.indexOf(".mp4") !== -1 ? "mp4" : "hls"; }
-    }
-    if (!url) {
+    } else {
       var emb = getGroup(html.match(/data-link=["'](https?:\/\/[^"']+)["']/i), 1);
       if (emb) { url = emb; type = "embed"; }
     }
@@ -170,4 +159,3 @@ function parseDetailResponse(html) {
     }
   });
 }
-
