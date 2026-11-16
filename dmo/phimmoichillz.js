@@ -361,6 +361,77 @@ function parseSearchResponse(html) {
   });
 }
 
+function parseMovieDetail(html) {
+  if (!html) return JSON.stringify({});
+
+  var title = "";
+  var posterUrl = "";
+  var description = "";
+  var year = "";
+  var categories = [];
+  var servers = [];
+  var episodesList = [];
+  var epMap = {};
+
+  try {
+    var h1Match = html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i);
+    var ogTitleMatch = html.match(/<meta[^>]*property=["']og:title["'][^>]*content=["']([^"']+)["']/i);
+    if (h1Match && h1Match) title = h1Match.replace(/<[^>]+>/g, "").trim();
+    else if (ogTitleMatch && ogTitleMatch) title = ogTitleMatch.trim();
+
+    var ogImgMatch = html.match(/<meta[^>]*property=["']og:image["'][^>]*content=["']([^"']+)["']/i);
+    if (ogImgMatch && ogImgMatch) posterUrl = ogImgMatch;
+    if (posterUrl && posterUrl.indexOf("http") !== 0) posterUrl = BASE_URL + "/" + posterUrl.replace(/^\/+/, "");
+
+    var descMatch = html.match(/<(?:div|p|article)[^>]*class=["'][^"']*(?:film-content|entry-content|content|description|storyline)[^"']*["'][^>]*>([\s\S]*?)<\/(?:div|p|article)>/i) ||
+                    html.match(/<meta[^>]*name=["']description["'][^>]*content=["']([^"']+)["']/i);
+    if (descMatch && descMatch) description = descMatch.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+
+    // Quét tất cả thẻ <a> hoặc <li> có chứa link xem phim / tập phim
+    var epRegex = /<a[^>]*href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi;
+    var epMatch;
+    while ((epMatch = epRegex.exec(html)) !== null) {
+      var epHref = epMatch;
+      var epText = epMatch.replace(/<[^>]+>/g, "").trim();
+
+      // Lọc các đường dẫn là trang xem phim hoặc nút tập (Tập 1, Full, Server...)
+      if (
+        (epHref.indexOf("/xem-phim") !== -1 || epHref.indexOf("/tap-") !== -1 || epHref.indexOf("episode") !== -1) &&
+        epText.length > 0 && epText.length < 30
+      ) {
+        var epSlug = epHref.replace(BASE_URL, "").replace(/^\/+|\/+$/g, "");
+        if (epSlug && !epMap[epSlug]) {
+          epMap[epSlug] = true;
+          episodesList.push({
+            id: epSlug,
+            name: decodeHtmlEntities(epText),
+            slug: epSlug
+          });
+        }
+      }
+    }
+
+    if (episodesList.length > 0) {
+      servers.push({
+        serverName: "Server Chính",
+        episodes: episodesList
+      });
+    }
+
+    return JSON.stringify({
+      title: decodeHtmlEntities(title),
+      posterUrl: posterUrl,
+      backdropUrl: posterUrl,
+      description: decodeHtmlEntities(description),
+      year: year,
+      categories: categories,
+      servers: servers
+    });
+  } catch (e) {
+    return JSON.stringify({});
+  }
+}
+
 function parseDetailResponse(html) {
   if (!html) return JSON.stringify({ url: "" });
 
@@ -368,41 +439,21 @@ function parseDetailResponse(html) {
   var streamType = "hls";
 
   try {
+    // 1. Tìm trực tiếp file .m3u8 hoặc .mp4 trong toàn bộ mã nguồn trang
     var directMatch = html.match(/["'](https?:\/\/[^"'\s\\]+\.(?:m3u8|mp4)[^"'\s\\]*)["']/i);
-    if (directMatch && directMatch[1]) {
-      streamUrl = directMatch[1].replace(/\\\//g, "/");
+    if (directMatch && directMatch) {
+      streamUrl = directMatch.replace(/\\\//g, "/");
       streamType = streamUrl.indexOf(".mp4") !== -1 ? "mp4" : "hls";
     }
 
+    // 2. Tìm link nhúng trong các thuộc tính data-link, data-src, data-embed hoặc thẻ iframe
     if (!streamUrl) {
-      var playerVarMatch = html.match(/(?:file|source|link_play|url_play|stream_url)\s*[:=]\s*["'](https?:\/\/[^"'\s]+)["']/i);
-      if (playerVarMatch && playerVarMatch[1]) {
-        streamUrl = playerVarMatch[1].replace(/\\\//g, "/");
+      var embedMatch = html.match(/(?:<iframe[^>]*src|data-link|data-src|data-embed|file|source)\s*[:=]\s*["']((?:https?:)?\/\/[^"'\s]+)["']/i);
+      if (embedMatch && embedMatch) {
+        streamUrl = embedMatch.replace(/\\\//g, "/");
+        if (streamUrl.indexOf("//") === 0) streamUrl = "https:" + streamUrl;
         streamType = (streamUrl.indexOf(".m3u8") !== -1 || streamUrl.indexOf(".mp4") !== -1) ? "hls" : "embed";
       }
-    }
-
-    if (!streamUrl) {
-      var iframeRegex = /<iframe[^>]*src=["']([^"']+)["'][^>]*>/gi;
-      var iframeMatch;
-      while ((iframeMatch = iframeRegex.exec(html)) !== null) {
-        var src = iframeMatch[1];
-        if (
-          src &&
-          src.indexOf("facebook.com") === -1 &&
-          src.indexOf("google") === -1 &&
-          src.indexOf("doubleclick") === -1 &&
-          src.indexOf("about:blank") === -1
-        ) {
-          streamUrl = src;
-          streamType = "embed";
-          break;
-        }
-      }
-    }
-
-    if (streamUrl && streamUrl.indexOf("//") === 0) {
-      streamUrl = "https:" + streamUrl;
     }
   } catch (e) {}
 
