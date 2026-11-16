@@ -139,48 +139,75 @@ function getFilterConfig() {
 // URL GENERATION
 // =============================================================================
 
+var BASE_URL = "https://phimmoichillz.top";
+
 function getUrlList(slug, filtersJson) {
-    var filters = JSON.parse(filtersJson || "{}");
-    var page = filters.page || 1;
-    var baseSlug = slug || 'phim-moi';
-    var path = filters.path || 'list';
+  var filters = JSON.parse(filtersJson || "{}");
+  var page = filters.page || 1;
+  var path = "";
 
-    // Nếu filter có category thì dùng category, ghi đè slug
-    if (filters.category) {
-        baseSlug = filters.category;
-    }
+  // 1. Ưu tiên xử lý nếu người dùng đang chọn trong Bộ lọc (Filter)
+  if (filters.country && filters.country !== "") {
+    path = "quoc-gia/" + filters.country;
+  } else if (filters.category && filters.category !== "") {
+    path = "the-loai/" + filters.category;
+  } else if (filters.year && filters.year !== "") {
+    path = "nam-phat-hanh/" + filters.year;
+  } else {
+    // 2. Mặc định lấy theo slug từ getHomeSections hoặc getPrimaryCategories
+    // Xóa dấu gạch chéo ở đầu nếu có để tránh bị lặp thành //
+    path = (slug || "phim-moi").replace(/^\/+/, "");
+  }
 
-    // Nếu slug đã chứa prefix thì không cần thêm path
-    var url = "https://phimmoichillz.top/";
-    if (baseSlug.indexOf('/') > -1) {
-        url += baseSlug;
-    } else {
-        url += path + "/" + baseSlug;
-    }
+  var url = BASE_URL + "/" + path;
 
-    if (page > 1) {
-        url += "/page-" + page;
-    }
-    return url;
+  // 3. Nối thêm phân trang chuẩn của WordPress
+  if (page > 1) {
+    url += "/page/" + page;
+  }
+
+  // 4. Nối tham số sắp xếp (nếu có)
+  if (filters.sort && filters.sort !== "" && filters.sort !== "latest") {
+    url += "?sort=" + filters.sort;
+  }
+
+  return url;
 }
+
+var BASE_URL = "https://phimmoichillz.top";
 
 function getUrlSearch(keyword, filtersJson) {
-    var filters = JSON.parse(filtersJson || "{}");
-    var page = filters.page || 1;
-    return "https://phimmoichillz.top/tim-kiem/" + encodeURIComponent(keyword).replace(/%20/g, '+');
+  var filters = JSON.parse(filtersJson || "{}");
+  var page = filters.page || 1;
+  
+  // Mã hóa từ khóa để xử lý tiếng Việt có dấu và khoảng trắng an toàn
+  var encodedKeyword = encodeURIComponent(keyword || "").replace(/%20/g, "+");
+  
+  var url = BASE_URL;
+
+  // Cấu trúc phân trang kết hợp tham số tìm kiếm ?s= chuẩn của WordPress
+  if (page > 1) {
+    url += "/page/" + page + "/?s=" + encodedKeyword;
+  } else {
+    url += "/?s=" + encodedKeyword;
+  }
+
+  return url;
 }
 
+var BASE_URL = "https://phimmoichillz.top";
+
 function getUrlDetail(slug) {
-    if (!slug) return "https://phimmoichillz.top/";
-    if (slug.indexOf("http") === 0) return slug;
+  if (!slug) return "";
 
-    // Xử lý slug bị lỗi do app gộp (nếu có /xem/ hoặc /info/ bên trong)
-    if (slug.indexOf("/xem/") > -1 || slug.indexOf("/info/") > -1) {
-        return "https://phimmoichillz.top" + (slug.indexOf("/") === 0 ? "" : "/") + slug;
-    }
+  // 1. Nếu slug bóc tách từ HTML đã là đường dẫn đầy đủ (http/https) thì giữ nguyên
+  if (slug.indexOf("http://") === 0 || slug.indexOf("https://") === 0) {
+    return slug;
+  }
 
-    // PhimMoiChill dùng /info/ cho trang chi tiết
-    return "https://phimmoichillz.top/info/" + slug.replace(".html", "");
+  // 2. Xóa dấu gạch chéo ở đầu (nếu có) rồi ghép với BASE_URL
+  var cleanSlug = slug.replace(/^\/+/, "");
+  return BASE_URL + "/" + cleanSlug;
 }
 
 function getUrlCategories() { return "https://phimmoichillz.top/"; }
