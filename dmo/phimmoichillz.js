@@ -3,7 +3,7 @@
 var BASE_URL = "https://phimmoichillz.top";
 
 function getManifest() {
-  return JSON.stringify({ id: "phimmoichillz", name: "PhimMoiChillZ", version: "4.5", type: "MOVIE", baseUrl: BASE_URL });
+  return JSON.stringify({ id: "phimmoichillz", name: "PhimMoiChillZ", version: "4.6", type: "MOVIE", baseUrl: BASE_URL });
 }
 
 function getHomeSections() {
@@ -67,24 +67,33 @@ function parseListResponse(html) {
   var map = {}, items = [];
   if (!html) return JSON.stringify({ items: items });
   try {
-    var topPos = html.indexOf("MovieListTop"), main = html;
-    if (topPos !== -1) {
-      var listStart = html.indexOf("<ul", topPos);
-      if (listStart === -1) listStart = html.indexOf("<section", topPos);
-      if (listStart !== -1) main = html.substring(listStart);
-    }
-    var blocks = main.split(/<div[^>]*class=["'][^"']*\bTPostMv\b[^"']*["'][^>]*>/i);
+    // Quét trực tiếp tất cả các khối thẻ phim TPostMv trên trang (không cắt chuỗi mù)
+    var blocks = html.split(/<div[^>]*class=["'][^"']*\bTPostMv\b[^"']*["'][^>]*>/i);
     for (var i = 1; i < blocks.length; i++) {
       var b = getGroup(blocks, i).substring(0, 2000);
       var href = getGroup(b.match(/<a[^>]*href=["']([^"']+)["']/i), 1);
       if (!href || href.indexOf("/phim/") === -1) continue;
-      var title = getGroup(b.match(/<h2[^>]*class=["'][^"']*Title[^"']*["'][^>]*>([\s\S]*?)<\/h2>/i), 1).replace(/<[^>]+>/g, "") || getGroup(b.match(/<img[^>]*alt=["']([^"']+)["']/i), 1);
-      var img = getGroup(b.match(/<img[^>]*data-src=["']([^"']+)["']/i), 1) || getGroup(b.match(/<img[^>]*src=["']([^"']+)["']/i), 1);
-      if (img && img.indexOf("data:image") !== 0 && img.indexOf("http") !== 0) img = BASE_URL + "/" + img.replace(/^\/+/, "");
+
+      var title = getGroup(b.match(/<h2[^>]*class=["'][^"']*Title[^"']*["'][^>]*>([\s\S]*?)<\/h2>/i), 1).replace(/<[^>]+>/g, "") ||
+                  getGroup(b.match(/<img[^>]*alt=["']([^"']+)["']/i), 1);
+
+      var img = getGroup(b.match(/<img[^>]*data-src=["']([^"']+)["']/i), 1) ||
+                getGroup(b.match(/<img[^>]*src=["']([^"']+)["']/i), 1);
+
+      if (img && img.indexOf("data:image") !== 0 && img.indexOf("http") !== 0) {
+        img = BASE_URL + "/" + img.replace(/^\/+/, "");
+      }
+
       var id = href.replace(BASE_URL, "").replace(/^\/+|\/+$/g, "");
       if (id && title && !map[id]) {
         map[id] = true;
-        items.push({ id: id, title: decodeHtml(title), posterUrl: img, backdropUrl: img, year: getGroup(b.match(/\b(20\d{2}|19\d{2})\b/), 1) });
+        items.push({
+          id: id,
+          title: decodeHtml(title),
+          posterUrl: img,
+          backdropUrl: img,
+          year: getGroup(b.match(/\b(20\d{2}|19\d{2})\b/), 1)
+        });
       }
     }
   } catch (e) {}
@@ -102,12 +111,10 @@ function parseMovieDetail(html) {
     if (poster && poster.indexOf("http") !== 0) poster = BASE_URL + "/" + poster.replace(/^\/+/, "");
     desc = getGroup(html.match(/<div[^>]*class=["'][^"']*Description[^"']*["'][^>]*>([\s\S]*?)<\/div>/i), 1).replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
 
-    // 1. Tìm tất cả các nút tập phim (thường có class Button hoặc nằm trong danh sách tập)
     var epRegex = /<a[^>]*href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi, m;
     while ((m = epRegex.exec(html)) !== null) {
       var h = getGroup(m, 1), t = getGroup(m, 2).replace(/<[^>]+>/g, "").trim();
       if (!h || h === "#" || h.indexOf("javascript:") === 0) continue;
-      // Bắt link xem phim hoặc nút tập (Tập 1, Full, Xem phim...)
       if (
         h.indexOf("/xem-phim") !== -1 || h.indexOf("/tap-") !== -1 || h.indexOf("episode") !== -1 ||
         t.toLowerCase().indexOf("xem phim") !== -1 || t.toLowerCase().indexOf("tập ") === 0
@@ -120,7 +127,6 @@ function parseMovieDetail(html) {
       }
     }
 
-    // 2. Nếu trang này chính là trang xem phim (đã có sẵn data-link), lấy URL hiện tại làm tập phát
     if (eps.length === 0) {
       var canUrl = getGroup(html.match(/<link[^>]*rel=["']canonical["'][^>]*href=["']([^"']+)["']/i), 1) ||
                    getGroup(html.match(/<meta[^>]*property=["']og:url["'][^>]*content=["']([^"']+)["']/i), 1);
@@ -137,7 +143,6 @@ function parseDetailResponse(html) {
   if (!html) return JSON.stringify({ url: "" });
   var url = "", type = "hls";
   try {
-    // Ưu tiên link m3u8 trực tiếp từ nút server
     var m3u8 = getGroup(html.match(/data-type=["']m3u8["'][^>]*data-link=["']([^"']+)["']/i), 1) ||
                getGroup(html.match(/data-link=["'](https?:\/\/[^"']+\.m3u8[^"']*)["']/i), 1) ||
                getGroup(html.match(/["'](https?:\/\/[^"'\s\\]+\.m3u8[^"'\s\\]*)["']/i), 1);
