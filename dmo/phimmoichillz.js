@@ -295,207 +295,192 @@ function decodeHtmlEntities(str) {
 }
 
 
+var BASE_URL = "https://phimmoichillz.top";
+
 function parseMovieDetail(html) {
-    try {
-        // Tên phim
-        var titleMatch = html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/);
-        if (!titleMatch) titleMatch = html.match(/<h2[^>]*class="title[^"]*"[^>]*>([\s\S]*?)<\/h2>/);
-        var title = titleMatch ? titleMatch[1].trim() : "";
+  if (!html) return JSON.stringify({});
 
-        // ID phim (Slug) - Cần cực kỳ cẩn thận với regex để không lấy nhầm tag html
-        var id = "";
-        var idMatch = html.match(/<link rel="canonical" href="[^"]+\/(?:phim|info)\/([^"\/?>\s]+)/) ||
-            html.match(/<meta property="og:url" content="[^"]+\/(?:phim|info)\/([^"\/?>\s]+)/);
-        if (idMatch) id = idMatch[1];
-
-        if (!id) {
-            // Fallback từ các link trên trang, ưu tiên /info/ hoặc /phim/
-            var pathMatch = html.match(/\/(?:phim|info)\/([^"\/?>\s.]+)(?:\.html|)/);
-            id = pathMatch ? pathMatch[1] : "";
-        }
-
-        // Final check để đảm bảo id không chứa ký tự lạ của HTML
-        if (id) {
-            id = id.split('"')[0].split("'")[0].split('>')[0].split(' ')[0];
-        }
-
-        // Mô tả
-        var descMatch = html.match(/<div[^>]*class="[^"]*film-content[^"]*"[^>]*>([\s\S]*?)<\/div>/i) ||
-            html.match(/<div[^>]*class="[^"]*description[^"]*"[^>]*>([\s\S]*?)<\/div>/i) ||
-            html.match(/id="info-film"[^>]*>([\s\S]*?)<\/div>/i);
-        var description = descMatch ? descMatch[1].replace(/<[^>]*>/g, "").trim() : "";
-
-        // URL Ảnh Thumbnail
-        var thumbMatch = html.match(/<meta[^>]*property="og:image"[^>]*content="([^"]+)"/) ||
-            html.match(/<img[^>]*class="[^"]*poster[^"]*"[^>]*src="([^"]+)"/);
-        var thumb = thumbMatch ? thumbMatch[1] : "";
-
-        // Servers và Episodes
-        var serversMap = {};
-        serversMap["Server 1"] = [];
-        var defaultServerName = "PhimMoi";
-
-        // PhimMoiChill thường có list tập dạng <li><a href="...xem/slug-tap-1...">...
-        // Hoặc có thể nằm rải rác trong các nút "Xem phim"
-        var epsArr = [];
-        var epRegex = /<a[^>]+href="([^"]*(?:\/xem\/)[^"]*)"[^>]*>(?:<span[^>]*>)?([\s\S]*?)(?:<\/span>)?<\/a>/gi;
-        var epMatch;
-        var seenUrls = {};
-
-        // Tìm trong toàn bộ HTML trang info
-        while ((epMatch = epRegex.exec(html)) !== null) {
-            var epUrl = epMatch[1];
-            var epName = PluginUtils.cleanText(epMatch[2]);
-
-            // Nếu là icon-play hoặc không có text rõ ràng, đặt là "Xem Phim"
-            if (!epName || epName === "" || epMatch[0].indexOf("icon-play") > -1) {
-                epName = "Xem Phim";
-            }
-
-            if (!seenUrls[epUrl]) {
-                var fullEpUrl = (epUrl.indexOf("http") === 0) ? epUrl : ("https://phimmoichillz.top" + epUrl);
-                epsArr.push({
-                    id: fullEpUrl, // Dùng FULL URL để tránh bị app prefix /info/ khi fetch stream
-                    name: epName,
-                    slug: epName
-                });
-                seenUrls[epUrl] = true;
-            }
-        }
-
-        if (epsArr.length > 0) {
-            // Sắp xếp lại nếu cần, hoặc lọc các mảng rác
-            // Thường thì danh sách tập sẽ có tên là "Tập 1", "Tập 2"...
-            // Ưu tiên các link có text là số
-            serversMap[defaultServerName] = epsArr;
-        }
-
-        // Nếu vẫn không có mảng tập nào
-        if (!serversMap[defaultServerName] || serversMap[defaultServerName].length === 0) {
-            serversMap[defaultServerName] = [{
-                id: "",
-                name: "Trailer",
-                slug: "trailer"
-            }];
-        }
-
-        var parsedServers = [];
-        for (var serverName in serversMap) {
-            if (serversMap.hasOwnProperty(serverName) && serversMap[serverName].length > 0) {
-                parsedServers.push({
-                    name: serverName,
-                    episodes: serversMap[serverName]
-                });
-            }
-        }
-
-        // Status text 
-        var labels = [];
-        var qualityMatch = html.match(/<span[^>]*class="quality"[^>]*>([\s\S]*?)<\/span>/i);
-        if (qualityMatch) labels.push(PluginUtils.cleanText(qualityMatch[1]));
-
-        if (html.indexOf("4K") !== -1) {
-            if (labels.join(" ").indexOf("4K") === -1) {
-                labels.push("4K");
-            }
-        }
-
-        var statusMatch = html.match(/<span[^>]*class="status"[^>]*>([\s\S]*?)<\/span>/i);
-        if (statusMatch) labels.push(PluginUtils.cleanText(statusMatch[1]));
-
-        return JSON.stringify({
-            id: id,
-            title: PluginUtils.cleanText(title),
-            posterUrl: thumb,
-            backdropUrl: thumb,
-            description: PluginUtils.cleanText(description),
-            servers: parsedServers,
-            quality: (labels.join(" ").indexOf("4K") > -1) ? "4K" : "HD",
-            lang: "Vietsub",
-            year: 0,
-            rating: 0,
-            casts: "",
-            director: "",
-            country: "",
-            category: "",
-            status: labels.length > 0 ? labels.join(" | ") : "Full"
-        });
-    } catch (e) {
-        return "null";
+  try {
+    // 1. Lấy tiêu đề phim (ưu tiên thẻ h1 hoặc meta og:title)
+    var title = "";
+    var h1Match = html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i);
+    var ogTitleMatch = html.match(/<meta[^>]*property=["']og:title["'][^>]*content=["']([^"']+)["']/i);
+    
+    if (h1Match && h1Match[1]) {
+      title = h1Match[1].replace(/<[^>]+>/g, "").trim();
+    } else if (ogTitleMatch && ogTitleMatch[1]) {
+      title = ogTitleMatch[1].trim();
     }
+
+    // 2. Lấy ảnh Poster / Backdrop (từ meta og:image hoặc thẻ img chính)
+    var posterUrl = "";
+    var ogImgMatch = html.match(/<meta[^>]*property=["']og:image["'][^>]*content=["']([^"']+)["']/i);
+    if (ogImgMatch && ogImgMatch[1]) {
+      posterUrl = ogImgMatch[1];
+    }
+    if (posterUrl && posterUrl.indexOf("http") !== 0) {
+      posterUrl = BASE_URL + "/" + posterUrl.replace(/^\/+/, "");
+    }
+
+    // 3. Lấy nội dung tóm tắt phim
+    var description = "";
+    var descMatch = html.match(/<(?:div|p|article)[^>]*class=["'][^"']*(?:film-content|entry-content|content|description|storyline)[^"']*["'][^>]*>([\s\S]*?)<\/(?:div|p|article)>/i) ||
+                    html.match(/<meta[^>]*name=["']description["'][^>]*content=["']([^"']+)["']/i);
+    if (descMatch && descMatch[1]) {
+      description = descMatch[1].replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+    }
+
+    // 4. Lấy năm phát hành
+    var yearMatch = html.match(/(?:Năm|Year)[^<]*<\/[^>]+>\s*([^<\n]+)/i) || html.match(/\b(20\d{2}|19\d{2})\b/);
+    var year = yearMatch ? yearMatch[1].trim() : "";
+
+    // 5. Lấy danh sách Thể loại & Quốc gia
+    var categories = [];
+    var catRegex = /<a[^>]*href=["'][^"']*\/the-loai\/[^"']*["'][^>]*>([\s\S]*?)<\/a>/gi;
+    var catMatch;
+    while ((catMatch = catRegex.exec(html)) !== null) {
+      var catName = catMatch[1].replace(/<[^>]+>/g, "").trim();
+      if (catName && categories.indexOf(catName) === -1) {
+        categories.push(catName);
+      }
+    }
+
+    // 6. Bóc tách danh sách Server và Tập phim (Episodes)
+    var servers = [];
+    var episodesList = [];
+    var epMap = {};
+
+    // Quét các thẻ <a> nằm trong khu vực danh sách tập (thường chứa class halim-btn, btn-episode, hoặc link xem-phim)
+    var epRegex = /<a[^>]*href=["']([^"']+)["'][^>]*(?:class=["'][^"']*(?:episode|halim-btn|btn-ep|server)[^"']*["']|data-episode|data-slug)[^>]*>([\s\S]*?)<\/a>/gi;
+    var epMatch;
+
+    while ((epMatch = epRegex.exec(html)) !== null) {
+      var epHref = epMatch[1];
+      var epName = epMatch[2].replace(/<[^>]+>/g, "").trim();
+      var epSlug = epHref.replace(BASE_URL, "").replace(/^\/+|\/+$/g, "");
+
+      if (epSlug && epName && !epMap[epSlug]) {
+        epMap[epSlug] = true;
+        episodesList.push({
+          id: epSlug,
+          name: decodeHtmlEntities(epName),
+          slug: epSlug
+        });
+      }
+    }
+
+    // Dự phòng: Nếu trang chi tiết chỉ có nút "Xem Phim" (phim lẻ 1 tập) mà chưa hiện danh sách tập
+    if (episodesList.length === 0) {
+      var watchBtn = html.match(/<a[^>]*href=["']([^"']*(?:xem-phim|watch|tap-1|full)[^"']*)["'][^>]*>/i);
+      if (watchBtn && watchBtn[1]) {
+        var watchSlug = watchBtn[1].replace(BASE_URL, "").replace(/^\/+|\/+$/g, "");
+        episodesList.push({
+          id: watchSlug,
+          name: "Full / Tập 1",
+          slug: watchSlug
+        });
+      }
+    }
+
+    if (episodesList.length > 0) {
+      servers.push({
+        serverName: "Vietsub / Thuyết Minh",
+        episodes: episodesList
+      });
+    }
+
+    return JSON.stringify({
+      title: decodeHtmlEntities(title),
+      posterUrl: posterUrl,
+      backdropUrl: posterUrl,
+      description: decodeHtmlEntities(description),
+      year: year,
+      categories: categories,
+      servers: servers
+    });
+
+  } catch (e) {
+    return JSON.stringify({});
+  }
 }
 
-function parseDetailResponse(html, fallbackUrl) {
-    try {
-        // Trên trang xem phim PhimMoiChill, frame phim thường được nhúng vào hoặc gọi ajax 
-        // 1. Kiểm tra iframe trực tiếp
-        var iframeMatch = html.match(/<iframe[^>]*src="([^"]+)"/);
-        if (iframeMatch) {
-            var url = iframeMatch[1];
-            // Bỏ qua các iframe rác như facebook, youtube trailer
-            if (url.indexOf("facebook") === -1 && url.indexOf("youtube") === -1 && url.indexOf("google") === -1) {
-                // Nếu iframe là src dạng //domain.com thì thêm https:
-                if (url.indexOf("//") === 0) {
-                    url = "https:" + url;
-                }
-                return JSON.stringify({
-                    url: url,
-                    headers: {
-                        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-                        "Referer": "https://phimmoichillz.top/",
-                        "Custom-Js": "(function() { var s = document.createElement('style'); s.textContent = '#header, #footer, .header, .footer, .sidebar, .sidebar-content, .comment-box, .film-note, .breadcrumb, div[id^=\"ads-\"], div[id*=\"banner\"], div[class*=\"ads-top\"], div[class*=\"ads-bottom\"] { display:none !important; }'; document.head.appendChild(s); })();"
-                    },
-                    subtitles: []
-                });
-            }
-        }
+function decodeHtmlEntities(str) {
+  if (!str) return "";
+  return str
+    .replace(/&#038;|&amp;/g, "&")
+    .replace(/&#8211;|&#8212;/g, "-")
+    .replace(/&#039;|&apos;/g, "'")
+    .replace(/&quot;/g, '"')
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .trim();
+}
 
-        // 2. Thử tìm script chứa link m3u8 hoặc nguồn embed (nếu có player trực tiếp)
-        var sourceMatch = html.match(/sources:\s*\[\s*{\s*file:\s*["']([^"']+)["']/i) ||
-            html.match(/source\s*src\s*=\s*["']([^"']+)["']/i);
-        if (sourceMatch) {
-            return JSON.stringify({
-                url: sourceMatch[1],
-                headers: {
-                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-                    "Referer": "https://phimmoichillz.top/"
-                },
-                subtitles: []
-            });
-        }
+var BASE_URL = "https://phimmoichillz.top";
 
-        // 3. Fallback: Cố gắng bóc tách div bọc ngoài trình embed thay vì load cả website
-        var playerDivMatch = html.match(/<div[^>]+(?:id|class)=["'](?:player|box-player|player-content|video-container|streaming-container)["'][^>]*>[\s\S]*?<\/div>/i);
-        if (playerDivMatch) {
-            var playerHtml = '<html><head><meta name="viewport" content="width=device-width, initial-scale=1.0"><style>body{margin:0;padding:0;background:#000;overflow:hidden;display:flex;justify-content:center;align-items:center;height:100vh;} .player-container{width:100%;height:100%;}</style></head><body><div class="player-container">' + playerDivMatch[0] + '</div></body></html>';
-            return JSON.stringify({
-                url: playerHtml,
-                headers: {
-                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-                    "Referer": "https://phimmoichillz.top/",
-                    "Custom-Js": "(function() { var s = document.createElement('style'); s.textContent = '#header, #footer, .header, .footer, .sidebar, .sidebar-content, .comment-box, .film-note, .breadcrumb, div[id^=\"ads-\"], div[id*=\"banner\"], div[class*=\"ads-top\"], div[class*=\"ads-bottom\"] { display:none !important; }'; document.head.appendChild(s); })();"
-                },
-                subtitles: []
-            });
-        }
+function parseDetailResponse(html) {
+  if (!html) return JSON.stringify({ url: "" });
 
-        var fullWebUrl = (fallbackUrl && fallbackUrl.indexOf("http") === 0) ? fallbackUrl : ("https://phimmoichillz.top" + (fallbackUrl || ""));
-        return JSON.stringify({
-            url: fullWebUrl,
-            headers: {
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-                "Referer": "https://phimmoichillz.top/",
-                "Allowed-Domains": "phimmoichill.my, googleapis.com",
-                "Custom-Js": "(function() { var s = document.createElement('style'); s.textContent = '#header, #footer, .header, .footer, .sidebar, .sidebar-content, .comment-box, .film-note, .breadcrumb, div[id^=\"ads-\"], div[id*=\"banner\"], div[class*=\"ads-top\"], div[class*=\"ads-bottom\"] { display:none !important; }'; document.head.appendChild(s); })();"
-            },
-            subtitles: []
-        });
+  var streamUrl = "";
+  var streamType = "hls"; // Mặc định ưu tiên luồng trực tiếp m3u8/mp4
 
-
-
-    } catch (e) {
-        return JSON.stringify({ url: "https://phimmoichillz.top" + fallbackUrl, headers: {}, subtitles: [] });
+  try {
+    // 1. Ưu tiên tìm link phát trực tiếp .m3u8 hoặc .mp4 ẩn trong mã nguồn / biến JavaScript
+    var directMatch = html.match(/["'](https?:\/\/[^"'\s\\]+\.(?:m3u8|mp4)[^"'\s\\]*)["']/i);
+    if (directMatch && directMatch) {
+      streamUrl = directMatch.replace(/\\\//g, "/");
+      streamType = streamUrl.indexOf(".mp4") !== -1 ? "mp4" : "hls";
     }
+
+    // 2. Tìm các biến cấu hình trình phát phổ biến của giao diện Halim/JWPlayer (ví dụ: file: "...", source: "...", link_play: "...")
+    if (!streamUrl) {
+      var playerVarMatch = html.match(/(?:file|source|link_play|url_play|stream_url)\s*[:=]\s*["'](https?:\/\/[^"'\s]+)["']/i);
+      if (playerVarMatch && playerVarMatch) {
+        streamUrl = playerVarMatch.replace(/\\\//g, "/");
+        streamType = (streamUrl.indexOf(".m3u8") !== -1 || streamUrl.indexOf(".mp4") !== -1) ? "hls" : "embed";
+      }
+    }
+
+    // 3. Dự phòng: Lấy đường dẫn trình phát nhúng từ thẻ <iframe>
+    if (!streamUrl) {
+      var iframeRegex = /<iframe[^>]*src=["']([^"']+)["'][^>]*>/gi;
+      var iframeMatch;
+      while ((iframeMatch = iframeRegex.exec(html)) !== null) {
+        var src = iframeMatch;
+        // Bỏ qua các iframe quảng cáo, nút like Facebook hoặc Google Tag Manager
+        if (
+          src &&
+          src.indexOf("facebook.com") === -1 &&
+          src.indexOf("google") === -1 &&
+          src.indexOf("doubleclick") === -1 &&
+          src.indexOf("about:blank") === -1
+        ) {
+          streamUrl = src;
+          streamType = "embed";
+          break;
+        }
+      }
+    }
+
+    // Chuẩn hóa URL nếu đường dẫn bắt đầu bằng // (ví dụ: //vip.opstream...)
+    if (streamUrl && streamUrl.indexOf("//") === 0) {
+      streamUrl = "https:" + streamUrl;
+    }
+
+  } catch (e) {
+    // Bỏ qua lỗi cú pháp nếu có
+  }
+
+  // 4. Trả về link phát kèm Headers bắt buộc để server video không chặn (lỗi 403 Forbidden)
+  return JSON.stringify({
+    url: streamUrl,
+    type: streamType,
+    headers: {
+      "Referer": BASE_URL + "/",
+      "Origin": BASE_URL,
+      "User-Agent": "Mozilla/5.0 (Linux; Android 13; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36"
+    }
+  });
 }
 
 function parseCategoriesResponse(html) {
