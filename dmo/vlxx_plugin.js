@@ -7,7 +7,7 @@ function getManifest() {
         "id": "vlxx",
         "name": "VLXX",
         "version": "1.0.1",
-        "baseUrl": "https://vlxx.app",
+        "baseUrl": "https://vlxx.net",
         "iconUrl": "https://raw.githubusercontent.com/mangyeu/TV/refs/heads/main/dmo/vlxx.ico",
         "isEnabled": true,
         "isAdult": true,
@@ -55,7 +55,7 @@ function getFilterConfig() {
 function getUrlList(slug, filtersJson) {
     var filters = JSON.parse(filtersJson || "{}");
     var page = filters.page || 1;
-    var baseUrl = "https://vlxx.app";
+    var baseUrl = "https://vlxx.net";
 
     if (slug === '' || slug === 'home') {
         if (page > 1) {
@@ -74,9 +74,9 @@ function getUrlSearch(keyword, filtersJson) {
     var filters = JSON.parse(filtersJson || "{}");
     var page = filters.page || 1;
     var safeKeyword = encodeURIComponent(keyword.replace(/\s+/g, '-'));
-    var url = "https://vlxx.app/search/" + safeKeyword + "/";
+    var url = "https://vlxx.net/search/" + safeKeyword + "/";
     if (page > 1) {
-        url = "https://vlxx.app/search/" + safeKeyword + "/" + page + "/";
+        url = "https://vlxx.net/search/" + safeKeyword + "/" + page + "/";
     }
     return url;
 }
@@ -88,7 +88,7 @@ function getUrlDetail(slug) {
     if (!slug) return "";
     if (slug.indexOf("http") === 0) return slug;
     if (slug.charAt(0) !== '/') slug = '/' + slug;
-    return "https://vlxx.app" + slug;
+    return "https://vlxx.net" + slug;
 }
 
 function getUrlCategories() { return ""; }
@@ -298,11 +298,11 @@ function parseDetailResponse(html, fetchedUrl) {
 
         // Trả config để App POST tới /ajax.php
         return JSON.stringify({
-            url: "https://vlxx.app/ajax.php",
+            url: "https://vlxx.net/ajax.php",
             isEmbed: true,
             postBody: "vlxx_server=" + vlxxServer + "&id=" + videoId + "&server=" + serverId,
             headers: {
-                "Referer": "https://vlxx.app/"
+                "Referer": "https://vlxx.net"
             }
         });
     } catch (error) {
@@ -330,7 +330,7 @@ function parseEmbedResponse(html, url) {
                             url: srcMatch[1],
                             isEmbed: true,
                             headers: {
-                                "Referer": "https://vlxx.app/"
+                                "Referer": "https://vlxx.net"
                             }
                         });
                     }
