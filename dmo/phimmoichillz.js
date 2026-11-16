@@ -1,20 +1,14 @@
+// @Allowed-Domains: phimmoichillz.top, *.phimmoichillz.top, phimmoichill.top, *.phimmoichill.top, googleapis.com, *.googleapis.com
+
 var BASE_URL = "https://phimmoichillz.top";
 
 function getManifest() {
   return JSON.stringify({
     "id": "phimmoichillz",
     "name": "PhimMoiChillZ",
-    "version": "3.0",
+    "version": "3.1",
     "type": "MOVIE",
-    "baseUrl": BASE_URL,
-    "allowedDomains": [
-      "phimmoichillz.top",
-      "*.phimmoichillz.top",
-      "phimmoichill.top",
-      "*.phimmoichill.top",
-      "googleapis.com",
-      "*.googleapis.com"
-    ]
+    "baseUrl": BASE_URL
   });
 }
 
@@ -102,14 +96,12 @@ function parseListResponse(html) {
   var map = {}, items = [];
   if (!html) return JSON.stringify({ items: items });
   try {
-    // Bỏ qua thanh trượt Top trên cùng (MovieListTop) nếu trang có để tránh trùng phim đề cử
     var mainHtml = html;
     var topEnd = html.indexOf("</section>");
     if (html.indexOf("MovieListTop") !== -1 && topEnd !== -1 && topEnd < 15000) {
       mainHtml = html.substring(topEnd);
     }
 
-    // Cắt chuẩn xác theo class TPostMv của giao diện ToroPlay
     var blocks = mainHtml.split(/<div[^>]*class=["'][^"']*\bTPostMv\b[^"']*["'][^>]*>/i);
     for (var i = 1; i < blocks.length; i++) {
       var b = getGroup(blocks, i).substring(0, 2000);
@@ -160,7 +152,6 @@ function parseMovieDetail(html) {
     desc = getGroup(html.match(/<div[^>]*class=["'][^"']*Description[^"']*["'][^>]*>([\s\S]*?)<\/div>/i), 1).replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim() ||
            getGroup(html.match(/<meta[^>]*name=["']description["'][^>]*content=["']([^"']+)["']/i), 1);
 
-    // Quét danh sách tập / nút Xem phim đặc trưng của giao diện ToroPlay
     var epRegex = /<a[^>]*href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi, m;
     while ((m = epRegex.exec(html)) !== null) {
       var h = getGroup(m, 1), t = getGroup(m, 2).replace(/<[^>]+>/g, "").trim();
