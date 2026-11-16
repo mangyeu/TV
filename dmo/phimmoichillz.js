@@ -17,38 +17,123 @@ function getManifest() {
 }
 
 function getPrimaryCategories() {
-    return JSON.stringify([
-        { name: 'Phim Mới', slug: 'phim-moi' },
-        { name: 'Phim Lẻ', slug: 'phim-le' },
-        { name: 'Phim Bộ', slug: 'phim-bo' },
-        { name: 'Hành Động', slug: 'genre/phim-hanh-dong' },
-        { name: 'Chiếu Rạp', slug: 'genre/phim-chieu-rap' }
-    ]);
+  return JSON.stringify([
+    { name: "Nga", slug: "quoc-gia/nga" },
+    { name: "Ấn Độ", slug: "quoc-gia/an-do" },
+    { name: "Hồng Kông", slug: "quoc-gia/hong-kong" },
+    { name: "Việt Nam", slug: "quoc-gia/viet-nam" },
+    { name: "Úc", slug: "quoc-gia/uc" },
+    { name: "Ý", slug: "quoc-gia/y" },
+    { name: "Tây Ban Nha", slug: "quoc-gia/tay-ban-nha" },
+    { name: "Canada", slug: "quoc-gia/canada" },
+    { name: "Pháp", slug: "quoc-gia/phap" },
+    { name: "Indonesia", slug: "quoc-gia/indonesia" },
+    { name: "Philippines", slug: "quoc-gia/philippines" },
+    { name: "Đức", slug: "quoc-gia/duc" },
+    { name: "Malaysia", slug: "quoc-gia/malaysia" },
+    { name: "Mexico", slug: "quoc-gia/mexico" },
+    { name: "Nam Phi", slug: "quoc-gia/nam-phi" },
+    { name: "Brazil", slug: "quoc-gia/brazil" },
+    { name: "Na Uy", slug: "quoc-gia/na-uy" },
+    { name: "Châu Phi", slug: "quoc-gia/chau-phi" },
+    { name: "Thụy Điển", slug: "quoc-gia/thuy-dien" },
+    { name: "Ba Lan", slug: "quoc-gia/ba-lan" },
+    { name: "Hà Lan", slug: "quoc-gia/ha-lan" },
+    { name: "Ireland", slug: "quoc-gia/ireland" },
+    { name: "Bỉ", slug: "quoc-gia/bi" },
+    { name: "Đan Mạch", slug: "quoc-gia/dan-mach" },
+    { name: "Ukraina", slug: "quoc-gia/ukraina" },
+    { name: "Phần Lan", slug: "quoc-gia/phan-lan" },
+    { name: "Thụy Sĩ", slug: "quoc-gia/thuy-si" }
+  ]);
 }
 
 function getHomeSections() {
-    return JSON.stringify([
-        { slug: 'list/phim-moi', title: 'Phim Mới Cập Nhật', type: 'Horizontal' },
-        { slug: 'list/phim-le', title: 'Phim Lẻ', type: 'Horizontal' },
-        { slug: 'list/phim-bo', title: 'Phim Bộ', type: 'Horizontal' },
-        { slug: 'genre/phim-hanh-dong', title: 'Hành Động', type: 'Horizontal' },
-        { slug: 'genre/phim-tinh-cam', title: 'Tình Cảm', type: 'Grid' }
-    ]);
+  return JSON.stringify([
+    { slug: "quoc-gia/nga", title: "Phim Nga", type: "HORIZONTAL", path: "quoc-gia/nga" },
+    { slug: "quoc-gia/an-do", title: "Phim Ấn Độ", type: "HORIZONTAL", path: "quoc-gia/an-do" },
+    { slug: "quoc-gia/hong-kong", title: "Phim Hồng Kông", type: "HORIZONTAL", path: "quoc-gia/hong-kong" },
+    { slug: "quoc-gia/viet-nam", title: "Phim Việt Nam", type: "HORIZONTAL", path: "quoc-gia/viet-nam" },
+    { slug: "quoc-gia/uc", title: "Phim Úc", type: "HORIZONTAL", path: "quoc-gia/uc" },
+    { slug: "quoc-gia/y", title: "Phim Ý", type: "HORIZONTAL", path: "quoc-gia/y" },
+    { slug: "quoc-gia/tay-ban-nha", title: "Phim Tây Ban Nha", type: "HORIZONTAL", path: "quoc-gia/tay-ban-nha" },
+    { slug: "quoc-gia/canada", title: "Phim Canada", type: "HORIZONTAL", path: "quoc-gia/canada" },
+    { slug: "quoc-gia/phap", title: "Phim Pháp", type: "HORIZONTAL", path: "quoc-gia/phap" },
+    { slug: "quoc-gia/indonesia", title: "Phim Indonesia", type: "HORIZONTAL", path: "quoc-gia/indonesia" },
+    { slug: "quoc-gia/philippines", title: "Phim Philippines", type: "HORIZONTAL", path: "quoc-gia/philippines" },
+    { slug: "quoc-gia/duc", title: "Phim Đức", type: "HORIZONTAL", path: "quoc-gia/duc" },
+    { slug: "quoc-gia/malaysia", title: "Phim Malaysia", type: "HORIZONTAL", path: "quoc-gia/malaysia" },
+    { slug: "quoc-gia/mexico", title: "Phim Mexico", type: "HORIZONTAL", path: "quoc-gia/mexico" },
+    { slug: "quoc-gia/nam-phi", title: "Phim Nam Phi", type: "HORIZONTAL", path: "quoc-gia/nam-phi" },
+    { slug: "quoc-gia/brazil", title: "Phim Brazil", type: "HORIZONTAL", path: "quoc-gia/brazil" },
+    { slug: "quoc-gia/na-uy", title: "Phim Na Uy", type: "HORIZONTAL", path: "quoc-gia/na-uy" },
+    { slug: "quoc-gia/chau-phi", title: "Phim Châu Phi", type: "HORIZONTAL", path: "quoc-gia/chau-phi" },
+    { slug: "quoc-gia/thuy-dien", title: "Phim Thụy Điển", type: "HORIZONTAL", path: "quoc-gia/thuy-dien" },
+    { slug: "quoc-gia/ba-lan", title: "Phim Ba Lan", type: "HORIZONTAL", path: "quoc-gia/ba-lan" },
+    { slug: "quoc-gia/ha-lan", title: "Phim Hà Lan", type: "HORIZONTAL", path: "quoc-gia/ha-lan" },
+    { slug: "quoc-gia/ireland", title: "Phim Ireland", type: "HORIZONTAL", path: "quoc-gia/ireland" },
+    { slug: "quoc-gia/bi", title: "Phim Bỉ", type: "HORIZONTAL", path: "quoc-gia/bi" },
+    { slug: "quoc-gia/dan-mach", title: "Phim Đan Mạch", type: "HORIZONTAL", path: "quoc-gia/dan-mach" },
+    { slug: "quoc-gia/ukraina", title: "Phim Ukraina", type: "HORIZONTAL", path: "quoc-gia/ukraina" },
+    { slug: "quoc-gia/phan-lan", title: "Phim Phần Lan", type: "HORIZONTAL", path: "quoc-gia/phan-lan" },
+    { slug: "quoc-gia/thuy-si", title: "Phim Thụy Sĩ", type: "HORIZONTAL", path: "quoc-gia/thuy-si" }
+  ]);
 }
 
 function getFilterConfig() {
-    return JSON.stringify({
-        sort: [],
-        category: [
-            { name: "Hành Động", value: "genre/phim-hanh-dong" },
-            { name: "Võ Thuật", value: "genre/phim-vo-thuat" },
-            { name: "Tình Cảm", value: "genre/phim-tinh-cam" },
-            { name: "Hài Hước", value: "genre/phim-hai-huoc" },
-            { name: "Hoạt Hình", value: "genre/phim-hoat-hinh" },
-            { name: "Chiếu Rạp", value: "genre/phim-chieu-rap" }
-        ]
-    });
+  return JSON.stringify({
+    countries: [
+      { name: "Tất cả quốc gia", value: "" },
+      { name: "Nga", value: "nga" },
+      { name: "Ấn Độ", value: "an-do" },
+      { name: "Hồng Kông", value: "hong-kong" },
+      { name: "Việt Nam", value: "viet-nam" },
+      { name: "Úc", value: "uc" },
+      { name: "Ý", value: "y" },
+      { name: "Tây Ban Nha", value: "tay-ban-nha" },
+      { name: "Canada", value: "canada" },
+      { name: "Pháp", value: "phap" },
+      { name: "Indonesia", value: "indonesia" },
+      { name: "Philippines", value: "philippines" },
+      { name: "Đức", value: "duc" },
+      { name: "Malaysia", value: "malaysia" },
+      { name: "Mexico", value: "mexico" },
+      { name: "Nam Phi", value: "nam-phi" },
+      { name: "Brazil", value: "brazil" },
+      { name: "Na Uy", value: "na-uy" },
+      { name: "Châu Phi", value: "chau-phi" },
+      { name: "Thụy Điển", value: "thuy-dien" },
+      { name: "Ba Lan", value: "ba-lan" },
+      { name: "Hà Lan", value: "ha-lan" },
+      { name: "Ireland", value: "ireland" },
+      { name: "Bỉ", value: "bi" },
+      { name: "Đan Mạch", value: "dan-mach" },
+      { name: "Ukraina", value: "ukraina" },
+      { name: "Phần Lan", value: "phan-lan" },
+      { name: "Thụy Sĩ", value: "thuy-si" }
+    ],
+    categories: [
+      { name: "Tất cả thể loại", value: "" }
+      // Dán thêm danh sách thể loại từ HTML của web vào đây (ví dụ: { name: "Hành Động", value: "hanh-dong" })
+    ],
+    years: [
+      { name: "Tất cả năm", value: "" },
+      { name: "2026", value: "2026" },
+      { name: "2025", value: "2025" },
+      { name: "2024", value: "2024" },
+      { name: "2023", value: "2023" },
+      { name: "2022", value: "2022" },
+      { name: "2021", value: "2021" },
+      { name: "2020", value: "2020" }
+    ],
+    sorts: [
+      { name: "Mới cập nhật", value: "latest" },
+      { name: "Xem nhiều nhất", value: "views" },
+      { name: "Năm phát hành", value: "year" }
+    ]
+  });
 }
+
 
 // =============================================================================
 // URL GENERATION
