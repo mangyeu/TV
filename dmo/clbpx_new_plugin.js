@@ -76,35 +76,46 @@ function decodeHtml(s) {
 function parseListResponse(html) {
   var map = {}, items = [], totalPages = 1, currentPage = 1;
   if (!html) return JSON.stringify({ items: items });
+
   try {
-    // Chỉ lấy vùng nội dung chính từ main-contents trở đi để bỏ qua logo và menu
     var mainPos = html.indexOf("main-contents");
     var mainHtml = mainPos !== -1 ? html.substring(mainPos) : html;
 
-    var aRegex = /<a\b([^>]*)>([\s\S]*?)<\/a>/gi, m;
-    while ((m = aRegex.exec(mainHtml)) !== null) {
-      var attrs = m.slice(1, 2).join("");
-      var inner = m.slice(2, 3).join("");
-      if (inner.indexOf("<img") === -1) continue;
+    // Cắt chuỗi theo từng thẻ mở <article hoặc <div class="...grid-item / halim-item / fx-card..."
+    var blocks = mainHtml.split(/<(?:article|div)[^>]*class=["'][^"']*\b(?:halim-item|grid-item|fx-card|fx-item|post-item|item)\b[^"']*["'][^>]*>/i);
+    
+    // Nếu không khớp class nào, cắt theo thẻ <article
+    if (blocks.length <= 1) {
+      blocks = mainHtml.split(/<article\b[^>]*>/i);
+    }
+    blocks.shift();
 
-      var href = match1(attrs, /href=["']([^"']+)["']/i);
+    while (blocks.length > 0) {
+      var b = blocks.shift().substring(0, 2500);
+      var href = match1(b, /<a[^>]*href=["']([^"']+)["']/i);
       if (!href || href === "#" || href.indexOf("/country/") !== -1 || href.indexOf("/release/") !== -1 || href.indexOf("hflex_view") !== -1) continue;
 
-      var title = match1(attrs, /title=["']([^"']+)["']/i) ||
-                  match1(inner, /alt=["']([^"']+)["']/i) ||
-                  inner.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+      var title = match1(b, /<a[^>]*title=["']([^"']+)["']/i) ||
+                  match1(b, /<(?:h2|h3|h4|p|span|div)[^>]*class=["'][^"']*(?:entry-title|title|name)[^"']*["'][^>]*>([\s\S]*?)<\/(?:h2|h3|h4|p|span|div)>/i).replace(/<[^>]+>/g, "") ||
+                  match1(b, /<img[^>]*alt=["']([^"']+)["']/i);
 
-      var img = match1(inner, /data-(?:src|original|lazy-src)=["']([^"']+)["']/i) ||
-                match1(inner, /src=["']([^"']+)["']/i);
+      var img = match1(b, /<img[^>]*data-(?:src|original|lazy-src)=["']([^"']+)["']/i) ||
+                match1(b, /<img[^>]*src=["']([^"']+)["']/i);
 
       if (img && img.indexOf("data:image") !== 0 && img.indexOf("http") !== 0) {
         img = BASE_URL + "/" + img.replace(/^\/+/, "");
       }
 
       var id = href.replace(BASE_URL, "").replace(/^\/+|\/+$/g, "");
-      if (id && title && img && !map[id]) {
+      if (id && title && !map[id]) {
         map[id] = true;
-        items.push({ id: id, title: decodeHtml(title), posterUrl: img, backdropUrl: img, year: match1(inner, /\b(19\d{2}|20\d{2})\b/) });
+        items.push({
+          id: id,
+          title: decodeHtml(title),
+          posterUrl: img,
+          backdropUrl: img,
+          year: match1(b, /\b(19\d{2}|20\d{2})\b/)
+        });
       }
     }
 
@@ -115,8 +126,15 @@ function parseListResponse(html) {
     }
     if (totalPages === 1 && items.length >= 10) totalPages = 50;
   } catch (e) {}
-  return JSON.stringify({ items: items, currentPage: currentPage, totalPages: totalPages, hasNextPage: items.length > 0 && currentPage < totalPages });
+
+  return JSON.stringify({
+    items: items,
+    currentPage: currentPage,
+    totalPages: totalPages,
+    hasNextPage: items.length > 0 && currentPage < totalPages
+  });
 }
+
 
 function parseSearchResponse(html) { return parseListResponse(html); }
 
