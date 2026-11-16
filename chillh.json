@@ -9,11 +9,11 @@
             "iconUrl": "https://motphim.hair"
         },
         {
-            "id": "phimapi_nguon",
-            "name": "Nguồn PhimAPI",
+            "id": "clbphimxua",
+            "name": "CLB Phim Xưa",
             "version": "1.0.0",
             "scriptUrl": "https://raw.githubusercontent.com/mangyeu/TV/refs/heads/main/dmo/clbpx_new_plugin.js",
-            "iconUrl": "https://motchillv.org"
+            "iconUrl": "https://raw.githubusercontent.com/mangyeu/TV/refs/heads/main/dmo/clbphimxua-logo.ico"
         },
         {
             "id": "nguonc",
