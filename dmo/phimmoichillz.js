@@ -127,11 +127,10 @@ function parseMovieDetail(html) {
     while ((m = epRegex.exec(html)) !== null) {
       var h = getGroup(m, 1), t = getGroup(m, 2).replace(/<[^>]+>/g, "").trim();
       if (h && (h.indexOf("/xem-phim") !== -1 || h.indexOf("/tap-") !== -1 || h.indexOf("episode") !== -1 || h.indexOf("watch") !== -1) && t.length > 0 && t.length < 30) {
-        var s = h.replace(BASE_URL, "").replace(/^\/+|\/+$/g, "");
+                var s = h.replace(BASE_URL, "").replace(/^\/+|\/+$/g, "");
         if (s && !epMap[s]) { epMap[s] = true; eps.push({ id: s, name: decodeHtml(t), slug: s }); }
       }
     }
-    // Nếu đang ở sẵn trang xem phim (có data-link) mà chưa thấy nút tập, tự tạo Tập 1
     if (eps.length === 0 && html.indexOf("data-link=") !== -1) {
       var curUrl = getGroup(html.match(/<link[^>]*rel=["']canonical["'][^>]*href=["']([^"']+)["']/i), 1);
       var curSlug = curUrl.replace(BASE_URL, "").replace(/^\/+|\/+$/g, "");
@@ -146,31 +145,29 @@ function parseDetailResponse(html) {
   if (!html) return JSON.stringify({ url: "" });
   var url = "", type = "hls";
   try {
-    // 1. Bắt chuẩn link .m3u8 từ thuộc tính data-link của nút server (chooseStreamingServer)
     var dataLink = getGroup(html.match(/data-type=["']m3u8["'][^>]*data-link=["']([^"']+)["']/i), 1) ||
                    getGroup(html.match(/data-link=["'](https?:\/\/[^"']+\.m3u8[^"']*)["']/i), 1);
     if (dataLink) {
       url = dataLink;
       type = "hls";
     }
-    // 2. Dự phòng tìm chuỗi .m3u8 hoặc .mp4 bất kỳ trong mã nguồn
     if (!url) {
       var m3u8 = getGroup(html.match(/["'](https?:\/\/[^"'\s\\]+\.(?:m3u8|mp4)[^"'\s\\]*)["']/i), 1);
       if (m3u8) { url = m3u8.replace(/\\\//g, "/"); type = url.indexOf(".mp4") !== -1 ? "mp4" : "hls"; }
     }
-    // 3. Dự phòng lấy link embed từ data-link
     if (!url) {
       var emb = getGroup(html.match(/data-link=["'](https?:\/\/[^"']+)["']/i), 1);
       if (emb) { url = emb; type = "embed"; }
     }
   } catch (e) {}
-return JSON.stringify({
-url: url,
-type: type,
-headers: {
-"Referer": BASE_URL + "/",
-"Origin": BASE_URL,
-"User-Agent": "Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 Chrome/120.0.0.0 Mobile Safari/537.36"
+  return JSON.stringify({
+    url: url,
+    type: type,
+    headers: {
+      "Referer": BASE_URL + "/",
+      "Origin": BASE_URL,
+      "User-Agent": "Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 Chrome/120.0.0.0 Mobile Safari/537.36"
+    }
+  });
 }
-});
-}
+
