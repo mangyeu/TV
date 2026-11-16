@@ -55,10 +55,20 @@ function getFilterConfig() {
 function getUrlList(slug, filtersJson) {
   var filters = JSON.parse(filtersJson || "{}");
   var page = filters.page || 1;
-  var path = (slug || "phim-le").replace(/^\/+|\/+$/g, "");
-  if (filters.country) path = "quoc-gia/" + filters.country;
-  else if (filters.category) path = "the-loai/" + filters.category;
-  else if (filters.year) path = "nam-phat-hanh/" + filters.year;
+  
+  // Lấy slug từ tham số truyền vào hoặc từ bên trong object filters
+  var targetSlug = slug || filters.slug || filters.path || "phim-le";
+  var path = targetSlug.replace(/^\/+|\/+$/g, "");
+
+  // Chỉ ghi đè nếu người dùng chủ động chọn trong bảng Bộ lọc (Filter)
+  if (filters.country && filters.country !== "") {
+    path = "quoc-gia/" + filters.country;
+  } else if (filters.category && filters.category !== "") {
+    path = "the-loai/" + filters.category;
+  } else if (filters.year && filters.year !== "") {
+    path = "nam-phat-hanh/" + filters.year;
+  }
+
   return BASE_URL + "/" + path + (page > 1 ? "/page/" + page : "");
 }
 
@@ -88,25 +98,54 @@ function decodeHtml(s) {
 function parseListResponse(html) {
   var map = {}, items = [];
   if (!html) return JSON.stringify({ items: items });
+
   try {
-    var blocks = html.split(/<(?:article|li|div)[^>]*class=["'][^"']*\b(?:item|film-item|post-item|movie-item|halim-item)\b[^"']*["'][^>]*>/i);
+    // 1. Cắt bỏ phần Header (Menu) và Footer để tránh quét nhầm link quốc gia/phim đề cử
+    var mainHtml = html;
+    var bodyStart = html.indexOf("<main");
+    if (bodyStart === -1) bodyStart = html.indexOf('id="main');
+    if (bodyStart === -1) bodyStart = html.indexOf('class="main');
+    if (bodyStart !== -1) {
+      mainHtml = html.substring(bodyStart);
+    }
+
+    var sidebarStart = mainHtml.indexOf("<aside");
+    if (sidebarStart === -1) sidebarStart = mainHtml.indexOf('id="sidebar');
+    if (sidebarStart !== -1) {
+      mainHtml = mainHtml.substring(0, sidebarStart);
+    }
+
+    // 2. Quét danh sách phim bên trong vùng nội dung chính đã lọc sạch
+    var blocks = mainHtml.split(/<(?:article|li|div)[^>]*class=["'][^"']*\b(?:item|film-item|post-item|movie-item|halim-item)\b[^"']*["'][^>]*>/i);
     for (var i = 1; i < blocks.length; i++) {
       var b = getGroup(blocks, i).substring(0, 2500);
       var href = getGroup(b.match(/<a[^>]*href=["']([^"']+)["']/i), 1);
-      if (!href || href === "#" || href.indexOf("javascript:") === 0) continue;
+      
+      // Loại bỏ các đường dẫn chuyên mục (/quoc-gia/, /the-loai/) để không nhận nhầm menu thành phim
+      if (!href || href === "#" || href.indexOf("/quoc-gia/") !== -1 || href.indexOf("/the-loai/") !== -1) continue;
+
       var title = getGroup(b.match(/<a[^>]*title=["']([^"']+)["']/i), 1) ||
                   getGroup(b.match(/<(?:h2|h3|h4|p|span)[^>]*class=["'][^"']*(?:title|name)[^"']*["'][^>]*>([\s\S]*?)<\/(?:h2|h3|h4|p|span)>/i), 1).replace(/<[^>]+>/g, "") ||
                   getGroup(b.match(/<img[^>]*alt=["']([^"']+)["']/i), 1);
+
       var img = getGroup(b.match(/<img[^>]*data-(?:src|original|lazy-src)=["']([^"']+)["']/i), 1) ||
                 getGroup(b.match(/<img[^>]*src=["']([^"']+)["']/i), 1);
       if (img && img.indexOf("data:image") !== 0 && img.indexOf("http") !== 0) img = BASE_URL + "/" + img.replace(/^\/+/, "");
+
       var id = href.replace(BASE_URL, "").replace(/^\/+|\/+$/g, "");
       if (id && title && !map[id]) {
         map[id] = true;
-        items.push({ id: id, title: decodeHtml(title), posterUrl: img, backdropUrl: img, year: getGroup(b.match(/\b(20\d{2}|19\d{2})\b/), 1) });
+        items.push({
+          id: id,
+          title: decodeHtml(title),
+          posterUrl: img,
+          backdropUrl: img,
+          year: getGroup(b.match(/\b(20\d{2}|19\d{2})\b/), 1)
+        });
       }
     }
   } catch (e) {}
+
   return JSON.stringify({ items: items });
 }
 
