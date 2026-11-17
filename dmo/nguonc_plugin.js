@@ -6,7 +6,7 @@ function getManifest() {
   return JSON.stringify({
     id: "phim_nguonc",
     name: "Nguồn C",
-    version: "3.4",
+    version: "3.5",
     type: "MOVIE",
     baseUrl: BASE_URL,
     headers: {
