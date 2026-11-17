@@ -1,45 +1,45 @@
-// @Allowed-Domains: clbphimxua.info, *.clbphimxua.info, phimimg.com, *.phimimg.com, nguonc.com, *.nguonc.com, kkphimplayer1.com, *.kkphimplayer1.com, kkphimplayer5.com, *.kkphimplayer5.com, kkphimplayer6.com, *.kkphimplayer6.com, kkphimplayer7.com, *.kkphimplayer7.com, kkphimplayer8.com, *.kkphimplayer8.com, phimapi.com, *.phimapi.com, googleapis.com, *.googleapis.com
+// @Allowed-Domains: clbphimxua.info, *.clbphimxua.info, phimimg.com, *.phimimg.com, vsmov.com, *.vsmov.com, nguonc.com, *.nguonc.com, kkphimplayer1.com, *.kkphimplayer1.com, kkphimplayer5.com, *.kkphimplayer5.com, kkphimplayer6.com, *.kkphimplayer6.com, kkphimplayer7.com, *.kkphimplayer7.com, kkphimplayer8.com, *.kkphimplayer8.com, phimapi.com, *.phimapi.com, googleapis.com, *.googleapis.com
 
 var BASE_URL = "https://clbphimxua.info";
 
 function getManifest() {
-  return JSON.stringify({ id: "clbphimxua", name: "CLB Phim Xưa", version: "4.2", type: "MOVIE", baseUrl: BASE_URL });
+  return JSON.stringify({ id: "clbphimxua", name: "CLB Phim Xưa", version: "4.3", type: "MOVIE", baseUrl: BASE_URL });
 }
 
 function getHomeSections() {
-  return JSON.stringify([
+  return JSON.stringify(new Array(
     { slug: "phim-moi", title: "Phim Mới Cập Nhật", type: "HORIZONTAL", path: "phim-moi" },
     { slug: "co-trang", title: "Phim Cổ Trang", type: "HORIZONTAL", path: "co-trang" },
     { slug: "kiem-hiep", title: "Phim Kiếm Hiệp", type: "HORIZONTAL", path: "kiem-hiep" },
     { slug: "country/hong-kong", title: "Phim TVB - Hồng Kông", type: "HORIZONTAL", path: "country/hong-kong" },
     { slug: "country/trung-quoc", title: "Phim Trung Quốc", type: "HORIZONTAL", path: "country/trung-quoc" }
-  ]);
+  ));
 }
 
 function getPrimaryCategories() {
-  return JSON.stringify([
+  return JSON.stringify(new Array(
     { name: "Phim Mới", slug: "phim-moi" }, { name: "Cổ Trang", slug: "co-trang" }, { name: "Kiếm Hiệp", slug: "kiem-hiep" },
     { name: "Võ Thuật", slug: "vo-thuat" }, { name: "Hồng Kông", slug: "country/hong-kong" }, { name: "Trung Quốc", slug: "country/trung-quoc" },
     { name: "Đài Loan", slug: "country/dai-loan" }, { name: "Việt Nam", slug: "country/viet-nam" }
-  ]);
+  ));
 }
 
 function getFilterConfig() {
   return JSON.stringify({
-    countries: [
+    countries: new Array(
       { name: "Tất cả", value: "" }, { name: "Hồng Kông", value: "hong-kong" }, { name: "Trung Quốc", value: "trung-quoc" },
       { name: "Đài Loan", value: "dai-loan" }, { name: "Việt Nam", value: "viet-nam" }, { name: "Hàn Quốc", value: "han-quoc" }, { name: "Âu Mỹ", value: "au-my" }
-    ],
-    categories: [
+    ),
+    categories: new Array(
       { name: "Tất cả", value: "" }, { name: "Cổ Trang", value: "co-trang" }, { name: "Kiếm Hiệp", value: "kiem-hiep" },
       { name: "Võ Thuật", value: "vo-thuat" }, { name: "Hành Động", value: "hanh-dong" }, { name: "Tâm Lý", value: "tam-ly" }, { name: "Tình Cảm", value: "tinh-cam" }
-    ],
-    years: [
+    ),
+    years: new Array(
       { name: "Tất cả", value: "" }, { name: "2026", value: "2026" }, { name: "2020", value: "2020" }, { name: "2010", value: "2010" }, { name: "2000", value: "2000" }, { name: "1995", value: "1995" }
-    ],
-    sorts: [
+    ),
+    sorts: new Array(
       { name: "Mới cập nhật", value: "updatetime" }, { name: "Mới đăng", value: "posttime" }, { name: "Xem nhiều", value: "viewcount" }
-    ]
+    )
   });
 }
 
@@ -47,7 +47,7 @@ function getUrlList(slug, filtersJson) {
   var f = JSON.parse(filtersJson || "{}"), p = Number(f.page) || 1;
   var c = f.country || f.countries || "", g = f.category || f.categories || "", y = f.year || "", s = f.sort || "";
   if ((c && c !== "all") || (y && y !== "all") || (s && s !== "latest" && s !== "updatetime")) {
-    var q = [];
+    var q = new Array();
     if (s && s !== "latest") q.push("sort=" + s);
     if (c && c !== "all") q.push("country=" + c.replace(/^country\//, ""));
     if (y && y !== "all") q.push("release=" + y);
@@ -81,7 +81,7 @@ function decodeHtml(s) {
 }
 
 function parseListResponse(html) {
-  var map = {}, items = [], totalPages = 1, currentPage = 1;
+  var map = {}, items = new Array(), totalPages = 1, currentPage = 1;
   if (!html) return JSON.stringify({ items: items });
   try {
     var mainEnd = html.indexOf("</main>");
@@ -115,7 +115,7 @@ function parseSearchResponse(html) { return parseListResponse(html); }
 
 function parseMovieDetail(html) {
   if (!html) return JSON.stringify({});
-  var title = "", poster = "", desc = "", servers = [];
+  var title = "", poster = "", desc = "", servers = new Array();
   try {
     title = match1(html, /id=["']bookmark["'][^>]*data-title=["']([^"']+)["']/i) || match1(html, /<h1[^>]*class=["'][^"']*entry-title[^"']*["'][^>]*>([\s\S]*?)<\/h1>/i).replace(/<[^>]+>/g, "").trim();
     poster = match1(html, /id=["']bookmark["'][^>]*data-thumbnail=["']([^"']+)["']/i) || match1(html, /<meta[^>]*property=["']og:image["'][^>]*content=["']([^"']+)["']/i);
@@ -126,7 +126,7 @@ function parseMovieDetail(html) {
     if (jsonStr) {
       var svGroups = JSON.parse(jsonStr);
       while (svGroups.length > 0) {
-        var group = svGroups.shift() || [], eps = [];
+        var group = svGroups.shift() || new Array(), eps = new Array();
         while (group.length > 0) {
           var ep = group.shift();
           if (ep && ep.postUrl) {
@@ -141,7 +141,7 @@ function parseMovieDetail(html) {
       var ldUrl = match1(html, /"url"\s*:\s*"(https?:\/\/[^"]+\/xem-phim-[^"]+)"/i);
       if (ldUrl) {
         var ldSlug = ldUrl.replace(BASE_URL, "").replace(/^\/+|\/+$/g, "");
-        servers.push({ serverName: "Server Chính", episodes: [{ id: ldSlug, name: "Xem Phim", slug: ldSlug }] });
+        servers.push({ serverName: "Server Chính", episodes: new Array({ id: ldSlug, name: "Xem Phim", slug: ldSlug }) });
       }
     }
   } catch (e) {}
