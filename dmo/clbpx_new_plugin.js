@@ -1,9 +1,9 @@
-// @Allowed-Domains: clbphimxua.info, *.clbphimxua.info, phimimg.com, *.phimimg.com, ://nguonc.com, *.nguonc.com, kkphimplayer1.com, *.kkphimplayer1.com, kkphimplayer5.com, *.kkphimplayer5.com, kkphimplayer6.com, *.kkphimplayer6.com, kkphimplayer7.com, *.kkphimplayer7.com, kkphimplayer8.com, *.kkphimplayer8.com, phimapi.com, *.phimapi.com, googleapis.com, *.googleapis.com
+// @Allowed-Domains: clbphimxua.info, *.clbphimxua.info, phimimg.com, *.phimimg.com, nguonc.com, *.nguonc.com, kkphimplayer1.com, *.kkphimplayer1.com, kkphimplayer5.com, *.kkphimplayer5.com, kkphimplayer6.com, *.kkphimplayer6.com, kkphimplayer7.com, *.kkphimplayer7.com, kkphimplayer8.com, *.kkphimplayer8.com, phimapi.com, *.phimapi.com, googleapis.com, *.googleapis.com
 
 var BASE_URL = "https://clbphimxua.info";
 
 function getManifest() {
-  return JSON.stringify({ id: "clbphimxua", name: "CLB Phim Xưa", version: "4.0", type: "MOVIE", baseUrl: BASE_URL });
+  return JSON.stringify({ id: "clbphimxua", name: "CLB Phim Xưa", version: "4.2", type: "MOVIE", baseUrl: BASE_URL });
 }
 
 function getHomeSections() {
@@ -19,8 +19,8 @@ function getHomeSections() {
 function getPrimaryCategories() {
   return JSON.stringify([
     { name: "Phim Mới", slug: "phim-moi" }, { name: "Cổ Trang", slug: "co-trang" }, { name: "Kiếm Hiệp", slug: "kiem-hiep" },
-    { name: "Võ Thuật", slug: "vo-thuat" }, { name: "Chiếu Rạp", slug: "chieu-rap" }, { name: "Hồng Kông", slug: "country/hong-kong" },
-    { name: "Trung Quốc", slug: "country/trung-quoc" }, { name: "Đài Loan", slug: "country/dai-loan" }, { name: "Việt Nam", slug: "country/viet-nam" }
+    { name: "Võ Thuật", slug: "vo-thuat" }, { name: "Hồng Kông", slug: "country/hong-kong" }, { name: "Trung Quốc", slug: "country/trung-quoc" },
+    { name: "Đài Loan", slug: "country/dai-loan" }, { name: "Việt Nam", slug: "country/viet-nam" }
   ]);
 }
 
@@ -28,21 +28,14 @@ function getFilterConfig() {
   return JSON.stringify({
     countries: [
       { name: "Tất cả", value: "" }, { name: "Hồng Kông", value: "hong-kong" }, { name: "Trung Quốc", value: "trung-quoc" },
-      { name: "Đài Loan", value: "dai-loan" }, { name: "Việt Nam", value: "viet-nam" }, { name: "Hàn Quốc", value: "han-quoc" },
-      { name: "Âu Mỹ", value: "au-my" }, { name: "Nhật Bản", value: "nhat-ban" }, { name: "Thái Lan", value: "thai-lan" },
-      { name: "Ấn Độ", value: "an-do" }, { name: "Anh", value: "anh" }, { name: "Pháp", value: "phap" }, { name: "Nga", value: "nga" }
+      { name: "Đài Loan", value: "dai-loan" }, { name: "Việt Nam", value: "viet-nam" }, { name: "Hàn Quốc", value: "han-quoc" }, { name: "Âu Mỹ", value: "au-my" }
     ],
     categories: [
       { name: "Tất cả", value: "" }, { name: "Cổ Trang", value: "co-trang" }, { name: "Kiếm Hiệp", value: "kiem-hiep" },
-      { name: "Võ Thuật", value: "vo-thuat" }, { name: "Hành Động", value: "hanh-dong" }, { name: "Phiêu Lưu", value: "phieu-luu" },
-      { name: "Tâm Lý", value: "tam-ly" }, { name: "Tình Cảm", value: "tinh-cam" }, { name: "Hình Sự", value: "hinh-su" },
-      { name: "Hài Hước", value: "hai-huoc" }, { name: "Thần Thoại", value: "than-thoai" }, { name: "Kinh Dị", value: "kinh-di" },
-      { name: "Chiến Tranh", value: "chien-tranh" }, { name: "Lịch Sử", value: "lich-su" }, { name: "Kinh Điển", value: "kinh-dien" },
-      { name: "Chính Kịch", value: "chinh-kich" }, { name: "Gia Đình", value: "gia-dinh" }, { name: "Hoạt Hình", value: "hoat-hinh" }
+      { name: "Võ Thuật", value: "vo-thuat" }, { name: "Hành Động", value: "hanh-dong" }, { name: "Tâm Lý", value: "tam-ly" }, { name: "Tình Cảm", value: "tinh-cam" }
     ],
     years: [
-      { name: "Tất cả", value: "" }, { name: "2026", value: "2026" }, { name: "2025", value: "2025" }, { name: "2020", value: "2020" },
-      { name: "2010", value: "2010" }, { name: "2000", value: "2000" }, { name: "1995", value: "1995" }, { name: "1990", value: "1990" }
+      { name: "Tất cả", value: "" }, { name: "2026", value: "2026" }, { name: "2020", value: "2020" }, { name: "2010", value: "2010" }, { name: "2000", value: "2000" }, { name: "1995", value: "1995" }
     ],
     sorts: [
       { name: "Mới cập nhật", value: "updatetime" }, { name: "Mới đăng", value: "posttime" }, { name: "Xem nhiều", value: "viewcount" }
@@ -129,27 +122,21 @@ function parseMovieDetail(html) {
     if (poster && poster.indexOf("http") !== 0) poster = BASE_URL + "/" + poster.replace(/^\/+/, "");
     desc = match1(html, /id=["']expand-post-content["'][^>]*>([\s\S]*?)<\/div>/i).replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim() || match1(html, /<meta[^>]*name=["']description["'][^>]*content=["']([^"']+)["']/i);
 
-    // 1. Giải mã trực tiếp biến var jsonEpisodes = [[...]] của clbphimxua.info
     var jsonStr = match1(html, /var\s+jsonEpisodes\s*=\s*(\[\s*\[[\s\S]*?\]\s*\])\s*;/i);
     if (jsonStr) {
       var svGroups = JSON.parse(jsonStr);
-      for (var i = 0; i < svGroups.length; i++) {
-        var group = svGroups.slice(i, i + 1).shift() || [];
-        var eps = [];
-        for (var j = 0; j < group.length; j++) {
-          var ep = group.slice(j, j + 1).shift();
+      while (svGroups.length > 0) {
+        var group = svGroups.shift() || [], eps = [];
+        while (group.length > 0) {
+          var ep = group.shift();
           if (ep && ep.postUrl) {
             var epSlug = ep.postUrl.replace(BASE_URL, "").replace(/^\/+|\/+$/g, "");
-            eps.push({ id: epSlug, name: ep.episodeName || ("Tập " + (j + 1)), slug: epSlug });
+            eps.push({ id: epSlug, name: ep.episodeName || "Tập", slug: epSlug });
           }
         }
-        if (eps.length > 0) {
-          servers.push({ serverName: "Server #" + (i + 1), episodes: eps });
-        }
+        if (eps.length > 0) servers.push({ serverName: "Server #" + (servers.length + 1), episodes: eps });
       }
     }
-
-    // 2. Dự phòng nếu đang ở trang giới thiệu (chưa có jsonEpisodes)
     if (servers.length === 0) {
       var ldUrl = match1(html, /"url"\s*:\s*"(https?:\/\/[^"]+\/xem-phim-[^"]+)"/i);
       if (ldUrl) {
@@ -176,5 +163,5 @@ function parseDetailResponse(html) {
       }
     }
   } catch (e) {}
-return JSON.stringify({ url: url, type: type, headers: { "Referer": BASE_URL + "/", "Origin": BASE_URL, "User-Agent": "Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 Chrome/120.0.0.0 Mobile Safari/537.36" } });
+  return JSON.stringify({ url: url, type: type, headers: { "Referer": BASE_URL + "/", "Origin": BASE_URL, "User-Agent": "Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 Chrome/120.0.0.0 Mobile Safari/537.36" } });
 }
