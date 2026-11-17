@@ -1,12 +1,13 @@
 /**
  * ============================================================================
- * VAAPP COMPREHENSIVE PARSER SCRIPT CHO PHIMHDCSS (phimhdcss.com)
+ * VAAPP COMPREHENSIVE PARSER SCRIPT CHO PHIMHDCSS (phimhdcss.com) - OPTIMIZED
  * ============================================================================
  */
+
 function getManifest() {
     return JSON.stringify({
-        "id": "phimhdcss",
-        "name": "PhimHDCSS",
+        "id": "phimhdcs",
+        "name": "PhimHDCS",
         "version": "1.1",
         "baseUrl": "https://phimhdcss.com",
         "iconUrl": "https://phimhdcss.com/favicon.ico",
@@ -16,7 +17,7 @@ function getManifest() {
     });
 }
 
-// --- CÁC HÀM TIỆN ÍCH CƠ BẢN ---
+// --- CÁC HÀM TIỆN ÍCH AN TOÀN ---
 
 function decodeBase64(str) {
     try {
@@ -38,10 +39,14 @@ function decodeBase64(str) {
 }
 
 function decodeChunksWithSalt(chunks, saltString) {
-    var revBase64 = chunks.join('');
-    var base64 = revBase64.split('').reverse().join('');
-    if (saltString) base64 = base64.replace(saltString, '');
-    return decodeBase64(base64);
+    try {
+        var revBase64 = chunks.join('');
+        var base64 = revBase64.split('').reverse().join('');
+        if (saltString) base64 = base64.replace(saltString, '');
+        return decodeBase64(base64);
+    } catch (e) {
+        return null;
+    }
 }
 
 function parseDynamicFilters(htmlContent) {
@@ -67,13 +72,13 @@ function parseDynamicFilters(htmlContent) {
 }
 
 // ============================================================================
-// 1. CÁC HÀM XÂY DỰNG URL (URL BUILDERS)
+// URL BUILDERS
 // ============================================================================
 
 function getUrlList(page, type, category, country, year) {
     var baseUrl = "https://phimhdcss.com";
     if (type && type !== 'all' && type !== '') {
-        baseUrl += "/" + type; // ví dụ: /phim-le, /phim-bo
+        baseUrl += "/" + type;
     } else {
         baseUrl += "/phim-moi";
     }
@@ -98,24 +103,13 @@ function getUrlSearch(keyword, page) {
     return url;
 }
 
-function getUrlDetail(url) {
-    return url;
-}
-
-function getUrlCategories() {
-    return "https://phimhdcss.com/";
-}
-
-function getUrlCountries() {
-    return "https://phimhdcss.com/";
-}
-
-function getUrlYears() {
-    return "https://phimhdcss.com/";
-}
+function getUrlDetail(url) { return url; }
+function getUrlCategories() { return "https://phimhdcss.com/"; }
+function getUrlCountries() { return "https://phimhdcss.com/"; }
+function getUrlYears() { return "https://phimhdcss.com/"; }
 
 // ============================================================================
-// 2. CÁC HÀM XỬ LÝ TRANG CHỦ & DANH MỤC CHÍNH
+// HOME & SECTIONS
 // ============================================================================
 
 function getPrimaryCategories() {
@@ -147,97 +141,62 @@ function getFilterConfig() {
 }
 
 // ============================================================================
-// 3. GET MANIFEST & GIẢI MÃ LUỒNG PHIM
+// PARSE DETAIL RESPONSE (Cải tiến cơ chế bắt lỗi & trích xuất)
 // ============================================================================
-
-function getManifest(pageUrl, htmlContent) {
-    try {
-        var logMsg = typeof log === 'function' ? log : function(m) { console.log('[getManifest]', m); };
-        logMsg("=== BẮT ĐẦU GET MANIFEST ===");
-        logMsg("Page URL: " + pageUrl);
-
-        if (!htmlContent) {
-            logMsg("Lỗi: htmlContent trống.");
-            return JSON.stringify({ url: "", isEmbed: false, headers: {}, subtitles: [] });
-        }
-
-        var detailResultStr = parseDetailResponse(htmlContent, pageUrl);
-        var detailConfig;
-        
-        try {
-            detailConfig = JSON.parse(detailResultStr);
-        } catch (e) {
-            logMsg("Lỗi parse JSON từ parseDetailResponse: " + e);
-            return detailResultStr;
-        }
-
-        if (!detailConfig || !detailConfig.url) {
-            logMsg("Không tìm thấy URL hợp lệ từ parseDetailResponse.");
-            return JSON.stringify({ url: "", isEmbed: false, headers: {}, subtitles: [] });
-        }
-
-        if (!detailConfig.isEmbed) {
-            logMsg("Thành công! Đã lấy được link stream trực tiếp: " + detailConfig.url);
-            return JSON.stringify(detailConfig);
-        }
-
-        logMsg("Phát hiện link dạng Embed / trung gian: " + detailConfig.url);
-        return JSON.stringify({
-            url: detailConfig.url,
-            isEmbed: true,
-            postBody: detailConfig.postBody || null,
-            headers: detailConfig.headers || {
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-                "Referer": "https://phimhdcss.com/"
-            },
-            subtitles: detailConfig.subtitles || []
-        });
-
-    } catch (error) {
-        var logErr = typeof log === 'function' ? log : function(m) {};
-        logErr("getManifest exception: " + error);
-        return JSON.stringify({ url: "", isEmbed: false, headers: {}, subtitles: [] });
-    }
-}
 
 function parseDetailResponse(htmlContent, pageUrl) {
     try {
+        var logMsg = typeof log === 'function' ? log : function(m) {};
+        logMsg("parseDetailResponse: Bắt đầu phân tích trang...");
+
+        if (!htmlContent) {
+            logMsg("parseDetailResponse Lỗi: HTML trống");
+            return JSON.stringify({ url: "", isEmbed: false, headers: {}, subtitles: [] });
+        }
+
         var saltMatch = /(?:const|let|var)\s+_0xS\s*=\s*["']([^"']+)["']/.exec(htmlContent);
         var saltString = saltMatch ? saltMatch[1] : "";
 
         var oxData = null;
         
+        // 1. Quét realObj
         var realObjMatch = /(?:const|let|var)\s+realObj\s*=\s*JSON\.parse\(\s*atob\(\s*["']([^"']+)["']\s*\)\s*\)/i.exec(htmlContent);
         if (realObjMatch) {
             try {
                 var decodedRealObj = decodeBase64(realObjMatch[1]);
                 if (decodedRealObj) {
                     oxData = JSON.parse(decodedRealObj);
-                    if (typeof log === 'function') log('PHIMHDCS_DEBUG Found realObj successfully');
+                    logMsg('Tìm thấy realObj thành công.');
                 }
-            } catch (e) {}
+            } catch (e) { logMsg('Lỗi parse realObj: ' + e); }
         }
 
+        // 2. Quét _0xData (Cải tiến biểu thức quét object an toàn hơn)
         if (!oxData) {
-            var dataMatch = /(?:const|let|var)\s+_0xData\s*=\s*(\{[\s\S]*?\})\s*;/.exec(htmlContent);
+            var dataMatch = /(?:const|let|var)\s+_0xData\s*=\s*(\{[\s\S]*?\})\s*(?:;|<\/script>)/.exec(htmlContent);
             if (dataMatch) {
                 try {
-                    var startIdx = dataMatch.index + dataMatch[0].indexOf('{');
-                    var braceCount = 0;
-                    var jsonEnd = -1;
-                    for (var j = startIdx; j < htmlContent.length && j < startIdx + 100000; j++) {
-                        if (htmlContent[j] === '{') braceCount++;
-                        else if (htmlContent[j] === '}') {
-                            braceCount--;
-                            if (braceCount === 0) { jsonEnd = j + 1; break; }
+                    oxData = JSON.parse(dataMatch[1]);
+                    logMsg('Tìm thấy _0xData thành công.');
+                } catch (e) {
+                    // Fallback đếm ngoặc nhọn nếu JSON bị lỗi bọc
+                    try {
+                        var startIdx = dataMatch.index + dataMatch[0].indexOf('{');
+                        var braceCount = 0;
+                        var jsonEnd = -1;
+                        for (var j = startIdx; j < htmlContent.length && j < startIdx + 150000; j++) {
+                            if (htmlContent[j] === '{') braceCount++;
+                            else if (htmlContent[j] === '}') {
+                                braceCount--;
+                                if (braceCount === 0) { jsonEnd = j + 1; break; }
+                            }
                         }
-                    }
-                    if (jsonEnd > 0) {
-                        var jsonStr = htmlContent.substring(startIdx, jsonEnd);
-                        oxData = JSON.parse(jsonStr);
-                        if (typeof log === 'function') log('PHIMHDCS_DEBUG Found fallback _0xData successfully');
-                    }
-                } catch (e) {}
+                        if (jsonEnd > 0) {
+                            oxData = JSON.parse(htmlContent.substring(startIdx, jsonEnd));
+                            logMsg('Tìm thấy _0xData bằng cơ chế đếm ngoặc.');
+                        }
+                    } catch (err2) { logMsg('Lỗi _0xData fallback: ' + err2); }
+                }
             }
         }
 
@@ -249,7 +208,8 @@ function parseDetailResponse(htmlContent, pageUrl) {
                 /(?:const|let|var)\s+episode_id\s*=\s*['"]?(\d+)['"]?/,
                 /(?:const|let|var)\s+currentEpisodeId\s*=\s*['"]?(\d+)['"]?/,
                 /data-id="(\d+)"[^>]*class="[^"]*active[^"]*streaming-server/i,
-                /class="[^"]*active[^"]*streaming-server[^"]*"[^>]*data-id="(\d+)"/i
+                /class="[^"]*active[^"]*streaming-server[^"]*"[^>]*data-id="(\d+)"/i,
+                /data-episode-id="(\d+)"/i
             ];
             for (var pi = 0; pi < curIdPatterns.length; pi++) {
                 var m = curIdPatterns[pi].exec(htmlContent);
@@ -268,12 +228,13 @@ function parseDetailResponse(htmlContent, pageUrl) {
 
             if (!targetId) {
                 var keys = [];
-                for (var k in oxData) { if (oxData.hasOwnProperty(k)) keys.push(k); }
+                for (var k in oxData) { if (Object.prototype.hasOwnProperty.call(oxData, k)) keys.push(k); }
                 if (keys.length > 0) targetId = keys[0];
             }
 
             if (targetId && oxData[targetId] && Array.isArray(oxData[targetId])) {
                 var chunks = oxData[targetId];
+                logMsg('Đang giải mã targetId=' + targetId + ', tổng chunks=' + chunks.length);
                 var playerUrl = decodeChunksWithSalt(chunks, saltString);
 
                 if (playerUrl && playerUrl.indexOf("player.php?") !== -1) {
@@ -299,6 +260,7 @@ function parseDetailResponse(htmlContent, pageUrl) {
             }
         }
 
+        // 3. Fallback tìm trực tiếp qua thẻ iframe nếu oxData không khớp
         var iframeMatch = htmlContent.match(/<iframe[^>]*src="([^"]+)"/i);
         if (iframeMatch) {
             var embedUrl = iframeMatch[1];
@@ -326,11 +288,16 @@ function parseDetailResponse(htmlContent, pageUrl) {
             }
         }
 
+        logMsg("Không tìm thấy dữ liệu nguồn phù hợp trong trang chi tiết.");
         return JSON.stringify({ url: "", isEmbed: false, headers: {}, subtitles: [] });
     } catch (error) {
         return JSON.stringify({ url: "", isEmbed: false, headers: {}, subtitles: [] });
     }
 }
+
+// ============================================================================
+// PARSE EMBED RESPONSE
+// ============================================================================
 
 function parseEmbedResponse(htmlContent, url) {
     try {
@@ -364,8 +331,6 @@ function parseEmbedResponse(htmlContent, url) {
                     },
                     subtitles: subtitles
                 });
-            } else {
-                return JSON.stringify({ url: "", isEmbed: false, headers: {}, subtitles: [] });
             }
         }
 
@@ -376,7 +341,7 @@ function parseEmbedResponse(htmlContent, url) {
         }
         
         var subtitles = [];
-        var match = htmlContent.match(/eval\((function\(p,a,c,k,e,d\)[\s\S]+?split\('\|'\),0,\{\}\))\)/);
+        var match = htmlContent.match(/eval\((function\(p,a,c,k,e,d\)[\s\S]+?split\('\Vert{}'\),0,\{\}\))\)/);
         if (match) {
             var innerCode = match[1];
             try {
@@ -432,7 +397,7 @@ function parseEmbedResponse(htmlContent, url) {
 }
 
 // ============================================================================
-// 4. PARSER BỘ LỌC & DANH MỤC
+// PARSER BỘ LỌC
 // ============================================================================
 
 function parseCategoriesResponse(htmlContent) {
