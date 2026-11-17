@@ -5,8 +5,8 @@
  */
 function getManifest() {
     return JSON.stringify({
-        "id": "phimhdcs",
-        "name": "PhimHDCS",
+        "id": "phimhdcss",
+        "name": "PhimHDCSS",
         "version": "1.1",
         "baseUrl": "https://phimhdcss.com",
         "iconUrl": "https://phimhdcss.com/favicon.ico",
