@@ -1,4 +1,4 @@
-// @Allowed-Domains: ophim1.com, *.ophim1.com, img.ophim.live, *.ophim.live, *.opstream10.com, *.opstream11.com, *.opstream12.com, *.opstream13.com, *.opstream14.com, *.opstream15.com, *.opstream16.com, googleapis.com, *.googleapis.com
+// @Allowed-Domains: ophim1.com, *.ophim1.com, img.ophim.live, *.ophim.live, *.ophim.cc, *.opstream10.com, *.opstream11.com, *.opstream12.com, *.opstream13.com, *.opstream14.com, *.opstream15.com, *.opstream16.com, googleapis.com, *.googleapis.com
 
 var BASE_URL = "https://ophim1.com";
 var CDN_IMG = "https://img" + ".ophim.live";
@@ -6,8 +6,8 @@ var CDN_IMG = "https://img" + ".ophim.live";
 function getManifest() {
   return JSON.stringify({
     id: "ophim_clbphimxua",
-    name: "Kho Phim Xưa & Tổng Hợp",
-    version: "2.2",
+    name: "Kho Phim Xưa & Tổng Hợp (OPhim)",
+    version: "2.3",
     type: "MOVIE",
     baseUrl: BASE_URL
   });
@@ -15,17 +15,17 @@ function getManifest() {
 
 function getHomeSections() {
   return JSON.stringify(new Array(
-    { slug: "danh-sach/phim-moi-cap-nhat", title: "Phim Mới Cập Nhật", type: "HORIZONTAL", path: "danh-sach/phim-moi-cap-nhat" },
-    { slug: "v1/api/danh-sach/phim-bo", title: "Phim Bộ Mới", type: "HORIZONTAL", path: "v1/api/danh-sach/phim-bo" },
-    { slug: "v1/api/danh-sach/phim-le", title: "Phim Lẻ Mới", type: "HORIZONTAL", path: "v1/api/danh-sach/phim-le" },
+    { slug: "v1/api/home", title: "Phim Mới Cập Nhật", type: "HORIZONTAL", path: "v1/api/home" },
     { slug: "v1/api/quoc-gia/hong-kong", title: "Phim TVB - Hồng Kông", type: "HORIZONTAL", path: "v1/api/quoc-gia/hong-kong" },
-    { slug: "v1/api/quoc-gia/dai-loan", title: "Phim Đài Loan Xưa", type: "HORIZONTAL", path: "v1/api/quoc-gia/dai-loan" }
+    { slug: "v1/api/quoc-gia/dai-loan", title: "Phim Đài Loan Xưa", type: "HORIZONTAL", path: "v1/api/quoc-gia/dai-loan" },
+    { slug: "v1/api/the-loai/co-trang", title: "Phim Cổ Trang", type: "HORIZONTAL", path: "v1/api/the-loai/co-trang" },
+    { slug: "v1/api/the-loai/vo-thuat", title: "Phim Kiếm Hiệp - Võ Thuật", type: "HORIZONTAL", path: "v1/api/the-loai/vo-thuat" }
   ));
 }
 
 function getPrimaryCategories() {
   return JSON.stringify(new Array(
-    { name: "Phim Mới", slug: "danh-sach/phim-moi-cap-nhat" },
+    { name: "Phim Mới", slug: "v1/api/home" },
     { name: "Phim Bộ", slug: "v1/api/danh-sach/phim-bo" },
     { name: "Phim Lẻ", slug: "v1/api/danh-sach/phim-le" },
     { name: "Hồng Kông", slug: "v1/api/quoc-gia/hong-kong" },
@@ -58,11 +58,15 @@ function getFilterConfig() {
 function getUrlList(slug, filtersJson) {
   var f = JSON.parse(filtersJson || "{}"), p = Number(f.page) || 1;
   var c = f.country || f.countries || "", g = f.category || f.categories || "", y = f.year || "";
-  var path = (slug || f.slug || f.path || "danh-sach/phim-moi-cap-nhat").replace(/^\/+|\/+$/g, "");
+  var path = (slug || f.slug || f.path || "v1/api/home").replace(/^\/+|\/+$/g, "");
 
   if (c && c !== "all") path = "v1/api/quoc-gia/" + c;
   else if (g && g !== "all") path = "v1/api/the-loai/" + g;
   else if (y && y !== "all") path = "v1/api/nam/" + y;
+
+  if (path === "v1/api/home" && p > 1) {
+    path = "v1/api/danh-sach/phim-moi-cap-nhat";
+  }
 
   return BASE_URL + "/" + path + "?page=" + p;
 }
@@ -79,7 +83,7 @@ function getUrlDetail(s) {
   return BASE_URL + "/phim/" + clean;
 }
 
-function fixImg(url, cdn) {
+function buildImg(url, cdn) {
   if (!url) return "";
   if (url.indexOf("http") === 0) return url;
   var base = (cdn || CDN_IMG).replace(/\/+$/, "");
@@ -102,8 +106,8 @@ function parseListResponse(jsonStr) {
       items.push({
         id: m.slug,
         title: m.name || m.origin_name || "",
-        posterUrl: fixImg(m.thumb_url || m.poster_url, cdn),
-        backdropUrl: fixImg(m.poster_url || m.thumb_url, cdn),
+        posterUrl: buildImg(m.thumb_url || m.poster_url, cdn),
+        backdropUrl: buildImg(m.poster_url || m.thumb_url, cdn),
         year: m.year ? String(m.year) : ""
       });
     }
@@ -134,7 +138,7 @@ function parseMovieDetail(jsonStr) {
     var data = JSON.parse(jsonStr || "{}");
     var movie = data.movie || {};
     title = movie.name || "";
-    poster = fixImg(movie.thumb_url || movie.poster_url, CDN_IMG);
+    poster = buildImg(movie.thumb_url || movie.poster_url, CDN_IMG);
     desc = (movie.content || "").replace(/<[^>]+>/g, " ").trim();
 
     var epGroups = data.episodes || new Array();
