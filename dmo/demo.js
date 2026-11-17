@@ -303,33 +303,27 @@ function parseMovieDetail(html, pageUrl) {
 }
 
 function parseDetailResponse(html, pageUrl) {
-    if (html && html.indexOf("http") === 0 && html.indexOf(".m3u8") !== -1) {
-        return JSON.stringify({
-            url: html,
-            headers: {
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
-                "Referer": "https://missav.media/",
-                "Origin": "https://missav.media"
-            },
-            subtitles: []
-        });
-    }
-
+    var targetUrl = pageUrl;
+    
+    // Nếu tìm thấy link m3u8 trực tiếp, thử ép kiểu sang định dạng phát qua Intent/External player nếu VAAPP hỗ trợ,
+    // hoặc trả về chính đường dẫn trang web chi tiết để app tự bật trình duyệt nhúng (WebView) bên trong.
     var streamUrl = extractStreamUrl(html);
-    if (!streamUrl && pageUrl && pageUrl.indexOf(".m3u8") !== -1) {
-        streamUrl = pageUrl;
+    if (streamUrl) {
+        targetUrl = streamUrl;
     }
 
     return JSON.stringify({
-        url: streamUrl || pageUrl,
+        url: targetUrl,
         headers: {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
             "Referer": "https://missav.media/",
-            "Origin": "https://missav.media"
+            "Origin": "https://missav.media",
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8"
         },
         subtitles: []
     });
 }
+
 
 // Bóc tách link stream tích hợp hệ thống CDN mới (fourhoi / mrstcdn / surrit)
 function extractStreamUrl(html) {
