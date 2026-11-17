@@ -6,7 +6,7 @@ function getManifest() {
   return JSON.stringify({
     id: "phim_nguonc",
     name: "Nguồn C",
-    version: "4.2",
+    version: "4.3",
     type: "MOVIE",
     baseUrl: BASE_URL,
     headers: {
@@ -75,17 +75,11 @@ function getUrlSearch(k, filtersJson) {
 
 function getUrlDetail(s) {
   if (!s) return "";
-  // 1. Nếu là link phát video trực tiếp của tập phim (https://embed...) -> Trả về nguyên vẹn
-  if (s.indexOf("http") === 0) {
-    return s;
-  }
-  // 2. Nếu là slug của bộ phim -> Cắt lấy phần tên cuối cùng và gọi API chi tiết
+  if (s.indexOf("http") === 0) return s;
   var parts = s.replace(/^\/+|\/+$/g, "").split("/");
   var cleanSlug = parts.pop() || "";
   return BASE_URL + "/api/film/" + cleanSlug;
 }
-
-
 
 function match1(str, regex) {
   var m = str.match(regex);
@@ -98,45 +92,52 @@ function decodeHtml(s) {
   return (s || "").replace(/&#038;|&amp;/g, "&").replace(/&#8211;|&#8212;/g, "-").replace(/&#039;|&apos;/g, "'").replace(/&quot;/g, '"').trim();
 }
 
-function parseDetailResponse(input) {
-  var raw = (input || "").trim();
-  if (!raw) return JSON.stringify({ url: "" });
+function parseListResponse(html) {
+  var seen = "|", items = new Array(), totalPages = 1, currentPage = 1;
+  if (!html) return JSON.stringify({ items: items });
 
-  // Trường hợp 1: Truyền thẳng URL (https://embed...)
-  if (raw.indexOf("http") === 0 && raw.indexOf("<") === -1) {
-    var type = (raw.indexOf(".m3u8") !== -1 || raw.indexOf(".mp4") !== -1) ? "hls" : "embed";
-    return JSON.stringify({
-      url: raw,
-      type: type,
-      headers: { "Referer": BASE_URL + "/", "Origin": BASE_URL }
-    });
-  }
-
-  // Trường hợp 2: VAX Player đã tải sẵn HTML của trang streamc.xyz -> Bóc lấy link .m3u8 bên trong
-  var url = "", vType = "hls";
   try {
-    var m3u8 = match1(raw, /["'](https?:\/\/[^"'\s\\]+\.(?:m3u8|mp4)[^"'\s\\]*)["']/i);
-    if (m3u8) {
-      url = m3u8.replace(/\\\//g, "/");
-      vType = url.indexOf(".mp4") !== -1 ? "mp4" : "hls";
-    }
-    if (!url) {
-      var emb = match1(raw, /<iframe[^>]*src=["']((?:https?:)?\/\/[^"']+)["']/i);
-      if (emb) {
-        url = emb.replace(/\\\//g, "/");
-        if (url.indexOf("//") === 0) url = "https:" + url;
-        vType = "embed";
+    var rows = html.split("<tr");
+    rows.shift();
+
+    while (rows.length > 0) {
+      var r = rows.shift().substring(0, 2200);
+      if (r.indexOf("nc-movie-identity") === -1) continue;
+
+      var href = match1(r, /href=["']([^"']+)["']/i);
+      if (!href || href === "#") continue;
+
+      var title = match1(r, /<strong>([\s\S]*?)<\/strong>/i).replace(/<[^>]+>/g, "") || match1(r, /alt=["']([^"']+)["']/i);
+      var img = match1(r, /<img[^>]*data-src=["']([^"']+)["']/i) || match1(r, /<img[^>]*src=["']([^"']+)["']/i);
+      if (img && img.indexOf("data:image") !== 0 && img.indexOf("http") !== 0) img = BASE_URL + "/" + img.replace(/^\/+/, "");
+
+      var id = href.replace(BASE_URL, "").replace(/^\/+|\/+$/g, "");
+      if (id && title && seen.indexOf("|" + id + "|") === -1) {
+        seen += id + "|";
+        items.push({ id: id, title: decodeHtml(title), posterUrl: img, backdropUrl: img, year: match1(r, /\b(19\d{2}|20\d{2})\b/) });
       }
     }
+
+    var curMatch = match1(html, /aria-current=["']page["'][^>]*>\s*(\d+)\s*</i);
+    if (curMatch) currentPage = parseInt(curMatch, 10) || 1;
+
+    var pageRegex = /[?&]page=(\d+)/gi, pm;
+    while ((pm = pageRegex.exec(html)) !== null) {
+      var num = parseInt(pm.slice(1, 2).join(""), 10);
+      if (num > totalPages && num < 5000) totalPages = num;
+    }
+    if (items.length >= 10 && totalPages <= currentPage) totalPages = currentPage + 5;
   } catch (e) {}
 
   return JSON.stringify({
-    url: url,
-    type: vType,
-    headers: { "Referer": "https://streamc.xyz", "Origin": "https://streamc.xyz" }
+    items: items,
+    currentPage: currentPage,
+    totalPages: totalPages,
+    totalItems: totalPages * 24,
+    hasNextPage: items.length > 0 && currentPage < totalPages,
+    pagination: { currentPage: currentPage, totalPages: totalPages }
   });
 }
-
 
 function parseSearchResponse(html) { return parseListResponse(html); }
 
@@ -199,21 +200,38 @@ function parseMovieDetail(jsonStr) {
 }
 
 function parseDetailResponse(input) {
-  var url = (input || "").trim();
-  if (url.indexOf("{") === 0) {
-    try {
-      var d = JSON.parse(url);
-      var firstEp = d.movie.episodes.shift().items.shift();
-      url = firstEp.m3u8 || firstEp.embed || "";
-    } catch (e) {}
+  var raw = (input || "").trim();
+  if (!raw) return JSON.stringify({ url: "" });
+
+  if (raw.indexOf("http") === 0 && raw.indexOf("<") === -1) {
+    var type = (raw.indexOf(".m3u8") !== -1 || raw.indexOf(".mp4") !== -1) ? "hls" : "embed";
+    return JSON.stringify({
+      url: raw,
+      type: type,
+      headers: { "Referer": BASE_URL + "/", "Origin": BASE_URL }
+    });
   }
-  var type = (url.indexOf(".m3u8") !== -1 || url.indexOf(".mp4") !== -1) ? "hls" : "embed";
+
+  var url = "", vType = "hls";
+  try {
+    var m3u8 = match1(raw, /["'](https?:\/\/[^"'\s\\]+\.(?:m3u8|mp4)[^"'\s\\]*)["']/i);
+    if (m3u8) {
+      url = m3u8.replace(/\\\//g, "/");
+      vType = url.indexOf(".mp4") !== -1 ? "mp4" : "hls";
+    }
+    if (!url) {
+      var emb = match1(raw, /<iframe[^>]*src=["']((?:https?:)?\/\/[^"']+)["']/i);
+      if (emb) {
+        url = emb.replace(/\\\//g, "/");
+        if (url.indexOf("//") === 0) url = "https:" + url;
+        vType = "embed";
+      }
+    }
+  } catch (e) {}
+
   return JSON.stringify({
     url: url,
-    type: type,
-    headers: {
-      "Referer": BASE_URL + "/",
-      "Origin": BASE_URL
-    }
+    type: vType,
+    headers: { "Referer": "https://streamc.xyz", "Origin": "https://streamc.xyz" }
   });
 }
