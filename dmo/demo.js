@@ -12,7 +12,7 @@ function getManifest() {
         author: "Custom",
         version: 1,
         baseUrl: BASE_URL,
-        icon: "https://ngontv.com",
+        icon: "https://m3.ngontv.com/media/images/1/logo/logo16012018.png",
         description: "Xem phim từ NguonPhim1",
         type: "video",
         locale: "vi_VN",
