@@ -303,27 +303,42 @@ function parseMovieDetail(html, pageUrl) {
 }
 
 function parseDetailResponse(html, pageUrl) {
-    var targetUrl = pageUrl;
-    
-    // Nếu tìm thấy link m3u8 trực tiếp, thử ép kiểu sang định dạng phát qua Intent/External player nếu VAAPP hỗ trợ,
-    // hoặc trả về chính đường dẫn trang web chi tiết để app tự bật trình duyệt nhúng (WebView) bên trong.
+    // 1. Cố gắng quét tìm UUID hoặc link m3u8 sạch nhất từ HTML
     var streamUrl = extractStreamUrl(html);
-    if (streamUrl) {
-        targetUrl = streamUrl;
-    }
+    
+    // Nếu không tìm thấy, sử dụng trực tiếp pageUrl làm nguồn
+    var finalUrl = streamUrl ? streamUrl : pageUrl;
 
     return JSON.stringify({
-        url: targetUrl,
+        url: finalUrl,
         headers: {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
             "Referer": "https://missav.media/",
             "Origin": "https://missav.media",
-            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8"
+            "Accept": "*/*",
+            "Accept-Language": "vi-VN,vi;q=0.9,en-US;q=0.8,en;q=0.7"
         },
         subtitles: []
     });
 }
 
+function extractStreamUrl(html) {
+    if (!html) return "";
+    
+    // Quét tìm trực tiếp file m3u8 trong mã nguồn
+    var directM3u8 = html.match(/https?:\/\/[^"'\s<>]+\.m3u8(?:\?[^"'\s<>]*)?/i);
+    if (directM3u8) {
+        return directM3u8[0].replace(/\\\//g, "/");
+    }
+
+    // Quét mã UUID chuẩn (36 ký tự) để dựng lại link CDN chuẩn xác của hệ thống
+    var uuidMatch = html.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i);
+    if (uuidMatch) {
+        return "https://surrit.com/" + uuidMatch[0] + "/playlist.m3u8";
+    }
+
+    return "";
+}
 
 // Bóc tách link stream tích hợp hệ thống CDN mới (fourhoi / mrstcdn / surrit)
 function extractStreamUrl(html) {
