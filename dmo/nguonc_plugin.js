@@ -88,13 +88,12 @@ function match1(str, regex) {
 function decodeHtml(s) {
   return (s || "").replace(/&#038;|&amp;/g, "&").replace(/&#8211;|&#8212;/g, "-").replace(/&#039;|&apos;/g, "'").replace(/&quot;/g, '"').trim();
 }
-
 function parseListResponse(html) {
   var seen = "|", items = new Array(), totalPages = 1, currentPage = 1;
   if (!html) return JSON.stringify({ items: items });
 
   try {
-    // Tách theo từng hàng <tr> trong bảng danh sách phim của ://nguonc.com
+    // 1. Quét danh sách phim theo từng hàng <tr>
     var rows = html.split("<tr");
     rows.shift();
 
@@ -128,21 +127,38 @@ function parseListResponse(html) {
       }
     }
 
+    // 2. Lấy chính xác trang hiện tại từ thuộc tính aria-current="page" trên ://nguonc.com
+    var curMatch = match1(html, /aria-current=["']page["'][^>]*>\s*(\d+)\s*</i);
+    if (curMatch) {
+      currentPage = parseInt(curMatch, 10) || 1;
+    }
+
+    // 3. Quét tổng số trang từ tất cả các nút ?page=...
     var pageRegex = /[?&]page=(\d+)/gi, pm;
     while ((pm = pageRegex.exec(html)) !== null) {
       var num = parseInt(pm.slice(1, 2).join(""), 10);
       if (num > totalPages && num < 5000) totalPages = num;
     }
-    if (totalPages === 1 && items.length >= 10) totalPages = 1405;
+
+    // Dự phòng: Nếu trang hiện tại >= totalPages mà vẫn còn đủ phim, tự mở thêm trang kế tiếp
+    if (items.length >= 10 && totalPages <= currentPage) {
+      totalPages = currentPage + 5;
+    }
   } catch (e) {}
 
   return JSON.stringify({
     items: items,
     currentPage: currentPage,
     totalPages: totalPages,
-    hasNextPage: items.length > 0 && currentPage < totalPages
+    totalItems: totalPages * 24,
+    hasNextPage: items.length > 0 && currentPage < totalPages,
+    pagination: {
+      currentPage: currentPage,
+      totalPages: totalPages
+    }
   });
 }
+
 
 
 function parseSearchResponse(html) { return parseListResponse(html); }
