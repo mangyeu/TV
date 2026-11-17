@@ -1,1 +1,19 @@
-
+{
+    "version": 1,
+    "plugins": [
+        {
+        "id": "phimhdcs",
+        "name": "PhimHDCS",
+        "version": "1.0",
+            "scriptUrl": "https://raw.githubusercontent.com/mangyeu/TV/refs/heads/main/plugin_film/phimhdcss.js",
+            "iconUrl": "https://raw.githubusercontent.com/mangyeu/TV/refs/heads/main/plugin_film/favicon.ico"
+        },
+        {
+        "id": "phimmoichillz",
+        "name": "phimmoichillz",
+        "version": "1.0",
+            "scriptUrl": "https://raw.githubusercontent.com/mangyeu/TV/refs/heads/main/plugin_film/phimmoichillz.js",
+            "iconUrl": "https://raw.githubusercontent.com/mangyeu/TV/refs/heads/main/plugin_film/icon-phimmoichill.ico"
+        }
+    ]
+}
