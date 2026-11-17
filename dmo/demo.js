@@ -6,7 +6,7 @@ function getManifest() {
     return JSON.stringify({
         "id": "missav",
         "name": "MissAV",
-        "version": "2.5.0",
+        "version": "2.6.0",
         "baseUrl": "https://missav.media",
         "referrer": "https://missav.media/",
         "iconUrl": "https://raw.githubusercontent.com/youngbi/repo/main/plugins/missav.ico",
@@ -169,52 +169,54 @@ var PluginUtils = {
 function parseListResponse(html) {
     html = PluginUtils.normalizeHtml(html);
     var movies = [];
+    var seenUrls = {};
 
-    var parts = html.split('class="group relative"');
-    if (parts.length <= 1) parts = html.split('thumbnail group');
-    if (parts.length <= 1) parts = html.split('<div class="group">');
+    // Dùng Regex quét toàn bộ các thẻ div bọc video hoặc các block item thay vì split cứng
+    // Bắt các khối chứa đường dẫn video chuẩn của MissAV (có dạng /vi/[dvd_id] hoặc /dm[0-9]+/[dvd_id])
+    var itemRegex = /<div[^>]*>[\s\S]*?<a[^>]+href="([^"]+)"[^>]*>([\s\S]*?)<\/a>([\s\S]*?)<\/div>/gi;
+    
+    // Fallback: Nếu cấu trúc block div phức tạp, quét qua thẻ a trực tiếp chứa ảnh poster
+    var cardRegex = /<a[^>]+href="([^"]+\/[a-zA-Z0-9\-]+)"[^>]*>([\s\S]*?<img[\s\S]*?>[\s\S]*?)<\/a>/gi;
+    
+    var match;
+    while ((match = cardRegex.exec(html)) !== null) {
+        var fullUrl = match[1];
+        var innerHtml = match[2];
 
-    for (var i = 1; i < parts.length; i++) {
-        var itemHtml = parts[i];
-        
-        var linkMatch = itemHtml.match(/<a[^>]+href="([^"]+)"/);
-        if (!linkMatch) continue;
+        // Lọc bỏ các link không phải video (genres, actresses, search, login...)
+        if (fullUrl.indexOf("/genres") !== -1 || fullUrl.indexOf("/actresses") !== -1 || fullUrl.indexOf("/search") !== -1 || fullUrl.indexOf("/login") !== -1 || fullUrl.indexOf("/history") !== -1) {
+            continue;
+        }
 
-        var fullUrl = linkMatch[1];
         var slug = fullUrl.replace(/https?:\/\/[^\/]+/, "");
         if (slug.indexOf("/") !== 0) slug = "/" + slug;
 
-        if (slug.indexOf("/genres") !== -1 || slug.indexOf("/actresses") !== -1 || slug.indexOf("/search") !== -1) continue;
+        if (seenUrls[slug]) continue;
+        seenUrls[slug] = true;
 
-        var codeMatch = itemHtml.match(/class="[^"]*text-nord13[^"]*"[^>]*>([\s\S]*?)<\/a>/);
-        var code = codeMatch ? PluginUtils.cleanText(codeMatch[1]) : "";
-        if (!code) {
-            var partsSlug = slug.split("/");
-            code = partsSlug[partsSlug.length - 1];
-        }
-
-        // Tối ưu hóa quét poster: ưu tiên lấy data-src, src từ thẻ img hoặc source
+        // Trích xuất Poster (Quét mọi thuộc tính data-src, src, srcset bên trong khối)
         var thumb = "";
-        var dataSrcMatch = itemHtml.match(/data-src="([^"]+)"/i);
-        var srcMatch = itemHtml.match(/src="([^"]+)"/i);
-        
-        if (dataSrcMatch && dataSrcMatch[1].indexOf('http') === 0) {
-            thumb = dataSrcMatch[1];
-        } else if (srcMatch && srcMatch[1].indexOf('http') === 0 && srcMatch[1].indexOf('svg') === -1) {
-            thumb = srcMatch[1];
-        } else if (dataSrcMatch) {
-            thumb = dataSrcMatch[1];
-        } else if (srcMatch) {
-            thumb = srcMatch[1];
+        var imgMatch = innerHtml.match(/<img[^>]+(?:data-src|src)="([^"]+)"/i);
+        if (imgMatch) {
+            thumb = imgMatch[1];
         }
 
         if (thumb && thumb.indexOf("//") === 0) thumb = "https:" + thumb;
         if (thumb && thumb.indexOf("cover-t.jpg") !== -1) {
             thumb = thumb.replace("/cover-t.jpg", "/cover.jpg");
         }
+        // Nếu poster là ảnh SVG hoặc placeholder rỗng, bỏ qua
+        if (thumb.indexOf("data:image") !== -1 || thumb.indexOf("svg") !== -1) {
+            thumb = "";
+        }
 
-        var titleMatch = itemHtml.match(/title="([^"]+)"/i) || itemHtml.match(/alt="([^"]+)"/i);
-        var title = titleMatch ? PluginUtils.cleanText(titleMatch[1]) : code;
+        // Lấy tiêu đề / mã phim
+        var titleMatch = innerHtml.match(/title="([^"]+)"/i) || innerHtml.match(/alt="([^"]+)"/i);
+        var title = titleMatch ? PluginUtils.cleanText(titleMatch[1]) : "";
+        
+        var partsSlug = slug.split("/");
+        var code = partsSlug[partsSlug.length - 1].toUpperCase();
+        if (!title) title = code;
 
         movies.push({
             id: slug,
@@ -295,17 +297,17 @@ function parseDetailResponse(html) {
     });
 }
 
-// Hàm trích xuất link stream tối ưu, bóc tách nhiều lớp CDN (surrit, sixyik, fourhoi, v.v.)
+// Hàm trích xuất link stream tối ưu (hỗ trợ toàn bộ các định dạng CDN của MissAV)
 function extractStreamUrl(html) {
     var uuid = "";
     
-    // 1. Quét tìm trực tiếp file m3u8 trong mã nguồn
+    // 1. Quét tìm trực tiếp file m3u8
     var directM3u8 = html.match(/https?:\/\/[^"'\s<>]+\.m3u8(?:\?[^"'\s<>]*)?/i);
     if (directM3u8) {
         return directM3u8[0].replace(/\\\//g, "/");
     }
 
-    // 2. Quét qua cấu trúc eval bọc mã
+    // 2. Quét qua chuỗi eval mã hóa
     var evalMatch = html.match(/eval\(function\(p,a,c,k,e,d\)[\s\S]*?'([^']+)'\.split\('\|'\)/i);
     if (evalMatch) {
         var parts = evalMatch[1].split('|');
@@ -318,17 +320,23 @@ function extractStreamUrl(html) {
         }
     }
 
-    // 3. Quét domain CDN phổ biến
+    // 3. Quét domain CDN
     if (!uuid) {
-        var domainMatch = html.match(/(?:surrit|sixyik|nineyu|fourhoi|apidata)\.com\/([0-9a-f-]{36})/i);
+        var domainMatch = html.match(/(?:surrit|sixyik|nineyu|fourhoi|apidata|m3u8)\.com\/([0-9a-f-]{36})/i);
         if (domainMatch) uuid = domainMatch[1];
     }
 
-    // 4. Quét sâu toàn bộ chuỗi UUID tiêu chuẩn trong trang
+    // 4. Quét tổng quát định dạng UUID trong toàn trang
     if (!uuid) {
         var allUuids = html.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi);
         if (allUuids && allUuids.length > 0) {
-            uuid = allUuids[0];
+            // Lọc bỏ các UUID trùng lặp hoặc không phải của video stream
+            for (var u = 0; u < allUuids.length; u++) {
+                if (allUuids[u].length === 36) {
+                    uuid = allUuids[u];
+                    break;
+                }
+            }
         }
     }
 
