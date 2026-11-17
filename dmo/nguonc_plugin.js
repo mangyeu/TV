@@ -1,12 +1,12 @@
-// @Allowed-Domains: phim.nguonc.com, *.nguonc.com, img.nguonc.com, streamc.xyz, *.streamc.xyz, googleapis.com, *.googleapis.com
+// @Allowed-Domains: ://nguonc.com, *.nguonc.com, ://nguonc.com, streamc.xyz, *.streamc.xyz, googleapis.com, *.googleapis.com
 
-var BASE_URL = "https://nguonc.com";
+var BASE_URL = "https://://nguonc.com";
 
 function getManifest() {
   return JSON.stringify({
     id: "phim_nguonc",
     name: "Nguồn C",
-    version: "3.2",
+    version: "3.3",
     type: "MOVIE",
     baseUrl: BASE_URL
   });
@@ -84,7 +84,7 @@ function decodeHtml(s) {
 }
 
 function parseListResponse(html) {
-  var map = new Object(), items = new Array(), totalPages = 1, currentPage = 1;
+  var seen = "|", items = new Array(), totalPages = 1, currentPage = 1;
   if (!html) return JSON.stringify({ items: items });
   try {
     var blocks = html.split("nc-movie-identity");
@@ -97,8 +97,8 @@ function parseListResponse(html) {
       var img = match1(b, /<img[^>]*data-src=["']([^"']+)["']/i) || match1(b, /<img[^>]*src=["']([^"']+)["']/i);
       if (img && img.indexOf("data:image") !== 0 && img.indexOf("http") !== 0) img = BASE_URL + "/" + img.replace(/^\/+/, "");
       var id = href.replace(BASE_URL, "").replace(/^\/+|\/+$/g, "");
-      if (id && title && !map[id]) {
-        map[id] = true;
+      if (id && title && seen.indexOf("|" + id + "|") === -1) {
+        seen += id + "|";
         items.push({ id: id, title: decodeHtml(title), posterUrl: img, backdropUrl: img, year: "" });
       }
     }
@@ -125,7 +125,7 @@ function parseMovieDetail(html) {
     var svBlocks = html.split("nc-player-episodes__grid");
     svBlocks.shift();
     while (svBlocks.length > 0) {
-      var sb = svBlocks.shift().substring(0, 15000), eps = new Array(), epMap = new Object();
+      var sb = svBlocks.shift().substring(0, 15000), eps = new Array(), epSeen = "|";
       var links = sb.split("<a ");
       links.shift();
       while (links.length > 0) {
@@ -134,7 +134,10 @@ function parseMovieDetail(html) {
         var t = match1(chunk, />([\s\S]*?)<\/a>/i).replace(/<[^>]+>/g, "").trim();
         if (h && h !== "#" && t.length > 0 && t.length < 30) {
           var s = h.replace(BASE_URL, "").replace(/^\/+|\/+$/g, "");
-          if (s && !epMap[s]) { epMap[s] = true; eps.push({ id: s, name: decodeHtml(t), slug: s }); }
+          if (s && epSeen.indexOf("|" + s + "|") === -1) {
+            epSeen += s + "|";
+            eps.push({ id: s, name: decodeHtml(t), slug: s });
+          }
         }
       }
       if (eps.length > 0) servers.push({ serverName: "Server #" + (servers.length + 1), episodes: eps });
