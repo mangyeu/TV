@@ -23,9 +23,9 @@
             "iconUrl": "https://phimmoichillz.top/icon-phimmoichill.png"
         },
         {
-            "id": "phim_nguonc",
-            "name": "Nguồn C",
-            "version": "4.7",
+            "id": "clbphimxua_top",
+            "name": "CLB Phim Xưa",
+            "version": "5.0",
             "scriptUrl": "https://raw.githubusercontent.com/mangyeu/TV/refs/heads/main/dmo/nguonc_plugin.js",
             "iconUrl": "https://raw.githubusercontent.com/mangyeu/TV/refs/heads/main/dmo/nguonc.ico"
         },
