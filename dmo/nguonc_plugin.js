@@ -166,50 +166,96 @@ function parseSearchResponse(html) { return parseListResponse(html); }
 function parseMovieDetail(html) {
   if (!html) return JSON.stringify({});
   var title = "", poster = "", desc = "", servers = new Array();
+
   try {
     title = match1(html, /<h1[^>]*>([\s\S]*?)<\/h1>/i).replace(/<[^>]+>/g, "").trim();
     poster = match1(html, /<meta[^>]*property=["']og:image["'][^>]*content=["']([^"']+)["']/i);
     if (poster && poster.indexOf("http") !== 0) poster = BASE_URL + "/" + poster.replace(/^\/+/, "");
     desc = match1(html, /class=["'][^"']*nc-film-description[^"']*["'][^>]*>([\s\S]*?)<\/div>/i).replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+
+    // 1. Quét theo từng khối Server (.nc-player-episodes) của ://nguonc.com
     var svBlocks = html.split("nc-player-episodes__grid");
     svBlocks.shift();
+
     while (svBlocks.length > 0) {
-      var sb = svBlocks.shift().substring(0, 15000), eps = new Array(), epSeen = "|";
-      var links = sb.split("<a ");
-      links.shift();
-      while (links.length > 0) {
-        var chunk = links.shift().substring(0, 500);
-        var h = match1(chunk, /href=["']([^"']+)["']/i);
-        var t = match1(chunk, />([\s\S]*?)<\/a>/i).replace(/<[^>]+>/g, "").trim();
-        if (h && h !== "#" && t.length > 0 && t.length < 30) {
-          var s = h.replace(BASE_URL, "").replace(/^\/+|\/+$/g, "");
-          if (s && epSeen.indexOf("|" + s + "|") === -1) {
-            epSeen += s + "|";
-            eps.push({ id: s, name: decodeHtml(t), slug: s });
+      var sb = svBlocks.shift().substring(0, 25000);
+      var endGrid = sb.indexOf("</div>");
+      if (endGrid !== -1) sb = sb.substring(0, endGrid);
+
+      var eps = new Array(), epSeen = "|";
+      // Bắt cả thẻ <button> lẫn thẻ <a> có class nc-player-episode
+      var btnBlocks = sb.split("nc-player-episode");
+      btnBlocks.shift();
+
+      while (btnBlocks.length > 0) {
+        var b = btnBlocks.shift().substring(0, 500);
+        var link = match1(b, /data-(?:link|embed|url|src)=["']([^"']+)["']/i) ||
+                   match1(b, /href=["']([^"']+)["']/i);
+        var name = match1(b, />([\s\S]*?)<\/(?:button|a)>/i).replace(/<[^>]+>/g, "").trim();
+
+        if (link && link !== "#" && link.indexOf("javascript:") !== 0) {
+          var cleanId = link.indexOf("http") === 0 ? link : link.replace(BASE_URL, "").replace(/^\/+|\/+$/g, "");
+          if (cleanId && epSeen.indexOf("|" + cleanId + "|") === -1) {
+            epSeen += cleanId + "|";
+            eps.push({ id: cleanId, name: decodeHtml(name) || ("Tập " + (eps.length + 1)), slug: cleanId });
           }
         }
       }
-      if (eps.length > 0) servers.push({ serverName: "Server #" + (servers.length + 1), episodes: eps });
+
+      if (eps.length > 0) {
+        servers.push({ serverName: "Server #" + (servers.length + 1), episodes: eps });
+      }
     }
+
+    // 2. Dự phòng nếu link video nằm trực tiếp trong thẻ iframe hoặc thẻ <textarea id="area_embed">
     if (servers.length === 0) {
-      var watchLink = match1(html, /href=["']([^"']*\/xem-phim\/[^"']+)["']/i);
-      if (watchLink) {
-        var wSlug = watchLink.replace(BASE_URL, "").replace(/^\/+|\/+$/g, "");
-        servers.push({ serverName: "Server Chính", episodes: new Array({ id: wSlug, name: "Xem Phim", slug: wSlug }) });
+      var iframeSrc = match1(html, /<iframe[^>]*src=["'](https?:\/\/[^"']+)["']/i) ||
+                      match1(html, /id=["']area_embed["'][^>]*>([\s\S]*?)<\/textarea>/i);
+      var directLink = match1(iframeSrc, /(https?:\/\/[^\s"'<>]+)/i) || iframeSrc.trim();
+      if (directLink && directLink.indexOf("http") === 0) {
+        servers.push({
+          serverName: "Server Chính",
+          episodes: new Array({ id: directLink, name: "Full / Tập 1", slug: directLink })
+        });
       }
     }
   } catch (e) {}
-  return JSON.stringify({ title: decodeHtml(title), posterUrl: poster, backdropUrl: poster, description: decodeHtml(desc), servers: servers });
+
+  return JSON.stringify({
+    title: decodeHtml(title),
+    posterUrl: poster,
+    backdropUrl: poster,
+    description: decodeHtml(desc),
+    servers: servers
+  });
 }
 
-function parseDetailResponse(html) {
-  if (!html) return JSON.stringify({ url: "" });
-  var url = "", type = "hls";
+function parseDetailResponse(input) {
+  if (!input) return JSON.stringify({ url: "" });
+  var raw = input.trim();
+  var url = "", type = "embed";
+
+  // Trường hợp 1: VAX Player truyền thẳng URL của tập phim từ slug/id
+  if (raw.indexOf("http") === 0 && raw.indexOf("<") === -1) {
+    url = raw;
+    type = (url.indexOf(".m3u8") !== -1 || url.indexOf(".mp4") !== -1) ? "hls" : "embed";
+    return JSON.stringify({
+      url: url,
+      type: type,
+      headers: { "Referer": BASE_URL + "/", "Origin": BASE_URL }
+    });
+  }
+
+  // Trường hợp 2: VAX Player truyền vào mã HTML của trang
   try {
-    var m3u8 = match1(html, /["'](https?:\/\/[^"'\s\\]+\.(?:m3u8|mp4)[^"'\s\\]*)["']/i);
-    if (m3u8) { url = m3u8.replace(/\\\//g, "/"); type = url.indexOf(".mp4") !== -1 ? "mp4" : "hls"; }
+    var m3u8 = match1(raw, /["'](https?:\/\/[^"'\s\\]+\.(?:m3u8|mp4)[^"'\s\\]*)["']/i);
+    if (m3u8) {
+      url = m3u8.replace(/\\\//g, "/");
+      type = url.indexOf(".mp4") !== -1 ? "mp4" : "hls";
+    }
     if (!url) {
-      var emb = match1(html, /<iframe[^>]*src=["']((?:https?:)?\/\/[^"']+)["']/i);
+      var emb = match1(raw, /data-(?:link|embed|url|src)=["'](https?:\/\/[^"']+)["']/i) ||
+                match1(raw, /<iframe[^>]*src=["']((?:https?:)?\/\/[^"']+)["']/i);
       if (emb && emb.indexOf("facebook.com") === -1 && emb.indexOf("google") === -1) {
         url = emb.replace(/\\\//g, "/");
         if (url.indexOf("//") === 0) url = "https:" + url;
@@ -217,5 +263,11 @@ function parseDetailResponse(html) {
       }
     }
   } catch (e) {}
-  return JSON.stringify({ url: url, type: type, headers: { "Referer": BASE_URL + "/", "Origin": BASE_URL } });
+
+  return JSON.stringify({
+    url: url,
+    type: type,
+    headers: { "Referer": BASE_URL + "/", "Origin": BASE_URL }
+  });
 }
+
