@@ -1,19 +1,20 @@
 var BASE_URL = "https://nguonphim1.site";
 var HEADERS = {
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
-    "Referer": BASE_URL + "/"
+    "User-Agent": "Mozilla/5.0 (Linux; Android 11; TV Box) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+    "Referer": BASE_URL + "/",
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
 };
 
-// 0. KHAI BÁO MANIFEST CHO VAXPLAYER
+// 0. KHAI BÁO MANIFEST
 function getManifest() {
     return {
         id: "nguonphim1",
         name: "Nguồn Phim 1",
         author: "Custom",
-        version: 1,
+        version: 2,
         baseUrl: BASE_URL,
-        icon: "https://m3.ngontv.com/media/images/1/logo/logo16012018.png",
-        description: "Xem phim từ NguonPhim1",
+        icon: "https://ngontv.com",
+        description: "Nguồn Phim 1 (Đã hỗ trợ vượt NP Checker)",
         type: "video",
         locale: "vi_VN",
         tabs: [
@@ -25,7 +26,6 @@ function getManifest() {
     };
 }
 
-// Hàm chuẩn hóa đường dẫn
 function fixUrl(url) {
     if (!url) return "";
     if (url.indexOf("//") === 0) return "https:" + url;
@@ -34,80 +34,102 @@ function fixUrl(url) {
     return url;
 }
 
-// Hàm bóc tách danh sách phim
-function parseMovieList(doc) {
+// HÀM TẢI HTML CÓ XỬ LÝ VƯỢT TƯỜNG LỬA NP CHECKER
+function loadHtml(url) {
+    var res = fetch(url, { headers: HEADERS });
+    var html = res.text();
+
+    // Kiểm tra xem có bị dính trang trung gian NP Checker không
+    if (html.indexOf("NP Checker") !== -1 || html.indexOf("chuyển trang") !== -1) {
+        // Thử phương án 1: Dùng trình duyệt ẩn (Engine/WebView) của VaxPlayer nếu có hỗ trợ
+        if (typeof Engine !== "undefined") {
+            var browser = Engine.newBrowser();
+            browser.launch(url, 5000); // Đợi 5 giây để JS tự chuyển trang
+            var realHtml = browser.html();
+            browser.close();
+            return realHtml;
+        }
+
+        // Phương án 2: Bắt link chuyển hướng hoặc cookie tự sinh trong mã JS của NP Checker
+        var redirectMatch = html.match(/window\.location(?:\.href)?\s*=\s*["']([^"']+)["']/i);
+        if (redirectMatch && redirectMatch[1]) {
+            var nextUrl = fixUrl(redirectMatch[1]);
+            var res2 = fetch(nextUrl, { headers: HEADERS });
+            return res2.text();
+        }
+    }
+    return html;
+}
+
+// BÓC TÁCH DANH SÁCH PHIM TỪ CHUỖI HTML
+function parseMoviesFromHtml(html) {
     var list = [];
     var seen = {};
+    var doc = Html.parse(html);
 
-    doc.select("a[href*='/xem-phim/']").forEach(function(el) {
+    // Quét tất cả thẻ <a> có chứa link phim
+    var links = doc.select("a[href*='/xem-phim/'], a[href*='/phim/']");
+    for (var i = 0; i < links.size(); i++) {
+        var el = links.get(i);
         var href = fixUrl(el.attr("href"));
-        if (!href || seen[href]) return;
+        if (!href || seen[href]) continue;
 
         var img = el.select("img").first();
-        if (!img) {
-            var parent = el.parent();
-            if (parent) img = parent.select("img").first();
+        if (!img && el.parent()) {
+            img = el.parent().select("img").first();
         }
-        if (!img) return;
+        if (!img) continue;
 
         var name = el.attr("title") || img.attr("alt") || el.text();
         name = name.replace(/^Phim\s+/i, "").trim();
-        if (!name) return;
+        if (!name) continue;
 
         var cover = img.attr("data-src") || img.attr("data-original") || img.attr("src");
         seen[href] = true;
 
         list.push({
+            id: href,
+            title: name,
             name: name,
+            url: href,
             link: href,
+            poster: fixUrl(cover),
             cover: fixUrl(cover),
-            description: "",
-            host: BASE_URL
+            description: ""
         });
-    });
+    }
 
     return list;
 }
 
-// 1. LẤY DANH SÁCH PHIM TRANG CHỦ / DANH MỤC
-function getHome(url, page) {
-    var targetUrl = url ? fixUrl(url) : BASE_URL + "/";
+// 1. TRANG CHỦ / DANH MỤC
+function getHome(tabUrl, page) {
+    var targetUrl = tabUrl ? fixUrl(tabUrl) : BASE_URL + "/";
     if (page && page > 1) {
         targetUrl = targetUrl.replace(/\/$/, "") + "/page/" + page;
     }
 
-    var res = fetch(targetUrl, { headers: HEADERS });
-    if (res.ok) {
-        return Response.success(parseMovieList(res.html()));
-    }
-    return Response.error("Không thể tải danh sách phim");
+    var html = loadHtml(targetUrl);
+    var items = parseMoviesFromHtml(html);
+
+    // Trả về mảng trực tiếp (chuẩn VaxPlayer dùng getManifest)
+    return items;
 }
 
-// 2. TÌM KIẾM PHIM
+// 2. TÌM KIẾM
 function getSearch(keyword, page) {
     var p = page || 1;
-    var res = fetch(BASE_URL + "/tim-kiem.html", {
-        method: "GET",
-        headers: HEADERS,
-        queries: {
-            q: keyword,
-            page: String(p)
-        }
-    });
-
-    if (res.ok) {
-        return Response.success(parseMovieList(res.html()));
-    }
-    return Response.error("Lỗi tìm kiếm phim");
+    var searchUrl = BASE_URL + "/tim-kiem.html?q=" + encodeURIComponent(keyword) + "&page=" + p;
+    var html = loadHtml(searchUrl);
+    return parseMoviesFromHtml(html);
 }
 
-// 3. CHI TIẾT PHIM VÀ TẬP PHIM
+// 3. CHI TIẾT PHIM
 function getDetail(url) {
     var targetUrl = fixUrl(url);
-    var res = fetch(targetUrl, { headers: HEADERS });
-    if (!res.ok) return Response.error("Không thể tải thông tin phim");
+    var html = loadHtml(targetUrl);
+    var doc = Html.parse(html);
 
-    var doc = res.html();
     var name = doc.select('meta[name="title"]').attr("content")
             || doc.select('meta[property="og:title"]').attr("content")
             || doc.select("h1").text();
@@ -118,89 +140,68 @@ function getDetail(url) {
 
     var episodes = [];
     var epSeen = {};
+    var epLinks = doc.select("a[href*='/xem-phim/']");
 
-    doc.select("a[href*='/xem-phim/']").forEach(function(el) {
+    for (var i = 0; i < epLinks.size(); i++) {
+        var el = epLinks.get(i);
         var epHref = fixUrl(el.attr("href"));
         var epName = el.text().trim();
 
         if (epName && !epSeen[epHref] && (/^(Tập\s*)?\d+/i.test(epName) || /^(Full|HD|Thuyết minh|Vietsub)/i.test(epName))) {
             epSeen[epHref] = true;
             episodes.push({
+                id: epHref,
                 name: epName,
-                url: epHref,
-                host: BASE_URL
+                title: epName,
+                url: epHref
             });
         }
-    });
+    }
 
     if (episodes.length === 0) {
         episodes.push({
+            id: targetUrl,
             name: "Full",
-            url: targetUrl,
-            host: BASE_URL
+            title: "Full",
+            url: targetUrl
         });
     }
 
-    return Response.success({
+    return {
+        id: targetUrl,
+        title: name,
         name: name,
+        poster: cover,
         cover: cover,
         description: description,
-        ongoing: true,
-        episodes: episodes,
-        host: BASE_URL
-    });
+        episodes: episodes
+    };
 }
 
-// 4. LẤY LINK PHÁT VIDEO
+// 4. LẤY LINK STREAM VIDEO
 function getStream(url) {
     var targetUrl = fixUrl(url);
-    var res = fetch(targetUrl, { headers: HEADERS });
-    if (!res.ok) return Response.error("Không thể tải trang phát video");
-
-    var html = res.text();
+    var html = loadHtml(targetUrl);
 
     var jwMatch = html.match(/["']?file["']?\s*:\s*["'](https?:\/\/[^"']+\.(?:m3u8|mp4)[^"']*)["']/i);
     if (jwMatch && jwMatch[1]) {
-        var streamUrl1 = jwMatch[1].replace(/\\\//g, "/");
-        return Response.success({
-            url: streamUrl1,
-            type: streamUrl1.indexOf(".mp4") !== -1 ? "mp4" : "hls",
+        var s1 = jwMatch[1].replace(/\\\//g, "/");
+        return {
+            url: s1,
+            type: s1.indexOf(".mp4") !== -1 ? "mp4" : "hls",
             headers: HEADERS
-        });
+        };
     }
 
     var rawMatch = html.match(/(https?:\/\/[^"'\s\\]+\.(?:m3u8|mp4)[^"'\s\\]*)/i);
     if (rawMatch && rawMatch[1]) {
-        var streamUrl2 = rawMatch[1].replace(/\\\//g, "/");
-        return Response.success({
-            url: streamUrl2,
-            type: streamUrl2.indexOf(".mp4") !== -1 ? "mp4" : "hls",
+        var s2 = rawMatch[1].replace(/\\\//g, "/");
+        return {
+            url: s2,
+            type: s2.indexOf(".mp4") !== -1 ? "mp4" : "hls",
             headers: HEADERS
-        });
+        };
     }
 
-    var iframeMatch = html.match(/<iframe[^>]+src=["']([^"']+)["']/i);
-    if (iframeMatch && iframeMatch[1]) {
-        var iframeUrl = fixUrl(iframeMatch[1]);
-        var iframeRes = fetch(iframeUrl, {
-            headers: {
-                "User-Agent": HEADERS["User-Agent"],
-                "Referer": targetUrl
-            }
-        });
-        if (iframeRes.ok) {
-            var iframeHtml = iframeRes.text();
-            var subStream = iframeHtml.match(/(https?:\/\/[^"'\s\\]+\.(?:m3u8|mp4)[^"'\s\\]*)/i);
-            if (subStream && subStream[1]) {
-                var streamUrl3 = subStream[1].replace(/\\\//g, "/");
-                return Response.success({
-                    url: streamUrl3,
-                    type: streamUrl3.indexOf(".mp4") !== -1 ? "mp4" : "hls",
-                    headers: { "Referer": iframeUrl }
-                });
-            }
-        }
-    }
-
-    return Response.error("Không tìm thấy luồng phát video");
+    return null;
 }
