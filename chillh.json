@@ -23,9 +23,9 @@
             "iconUrl": "https://phimmoichillz.top/icon-phimmoichill.png"
         },
         {
-            "id": "clbphimxua_top",
-            "name": "CLB Phim Xưa",
-            "version": "5.0",
+            "id": "ophim_clbphimxua",
+            "name": "Kho Phim Xưa & Tổng Hợp (M3U8)",
+            "version": "2.0",
             "scriptUrl": "https://raw.githubusercontent.com/mangyeu/TV/refs/heads/main/dmo/nguonc_plugin.js",
             "iconUrl": "https://raw.githubusercontent.com/mangyeu/TV/refs/heads/main/dmo/nguonc.ico"
         },
