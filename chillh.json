@@ -9,9 +9,9 @@
             "iconUrl": "https://motphim.hair"
         },
         {
-            "id": "clbphimxua",
-            "name": "CLB Phim Xưa",
-            "version": "4.4",
+            "id": "kkphim_full",
+            "name": "KKPhim (Kho Phim Tổng Hợp)",
+            "version": "1.0",
             "scriptUrl": "https://raw.githubusercontent.com/mangyeu/TV/refs/heads/main/dmo/clbpx_new_plugin.js",
             "iconUrl": "https://raw.githubusercontent.com/mangyeu/TV/refs/heads/main/dmo/clbphimxua-logo.ico"
         },
