@@ -1,14 +1,12 @@
-/**
- * ============================================================================
- * VAAPP PARSER SCRIPT HOÀN CHỈNH CHO MISSAV (missav.media) - FIXED
- * ============================================================================
- */
+// =============================================================================
+// CONFIGURATION & METADATA
+// =============================================================================
 
 function getManifest() {
     return JSON.stringify({
         "id": "missav",
         "name": "MissAV",
-        "version": "2.1.1",
+        "version": "2.3.0",
         "baseUrl": "https://missav.media",
         "referrer": "https://missav.media/",
         "iconUrl": "https://raw.githubusercontent.com/youngbi/repo/main/plugins/missav.ico",
@@ -20,304 +18,372 @@ function getManifest() {
     });
 }
 
-// ============================================================================
-// 1. URL BUILDERS
-// ============================================================================
-
-function getUrlList(page, type, category, country, year) {
-    var baseUrl = "https://missav.media/vi";
-    
-    if (category && category !== '') {
-        if (category.indexOf("actor-") === 0) {
-            baseUrl = "https://missav.media/vi/actors/" + encodeURIComponent(category.replace("actor-", ""));
-        } else {
-            baseUrl = "https://missav.media/vi/genres/" + encodeURIComponent(category);
-        }
-    } else if (type && type !== 'all' && type !== '') {
-        baseUrl = "https://missav.media/vi/" + type;
-    } else {
-        baseUrl = "https://missav.media/vi/new";
-    }
-
-    if (page && page > 1) {
-        baseUrl += "?page=" + page;
-    }
-
-    return baseUrl;
-}
-
-function getUrlSearch(keyword, page) {
-    var url = "https://missav.media/vi/search/" + encodeURIComponent(keyword);
-    if (page && page > 1) {
-        url += "?page=" + page;
-    }
-    return url;
-}
-
-function getUrlDetail(url) {
-    return url;
-}
-
-function getUrlCategories() {
-    return "https://missav.media/vi/genres";
-}
-
-function getUrlCountries() {
-    return "https://missav.media/vi/actors";
-}
-
-function getUrlYears() {
-    return "https://missav.media/vi/";
-}
-
-// ============================================================================
-// 2. HOME SECTIONS & CONFIG
-// ============================================================================
-
-function getPrimaryCategories() {
+function getHomeSections() {
     return JSON.stringify([
-        { name: "Mới Nhất", value: "new" },
-        { name: "Phổ Biến", value: "popular" },
-        { name: "Thịnh Hành", value: "trending" },
-        { name: "Uncensored", value: "uncensored-leak" },
-        { name: "Diễn Viên", value: "actors-list" }
+        { slug: 'vi/today-hot', title: 'Hot Hôm Nay', type: 'Horizontal', path: '' },
+        { slug: 'vi/weekly-hot', title: 'Hot Trong Tuần', type: 'Horizontal', path: '' },
+        { slug: 'vi/monthly-hot', title: 'Hot Trong Tháng', type: 'Horizontal', path: '' },
+        { slug: 'vi/uncensored-leak', title: 'Không Che (Rò Rỉ)', type: 'Horizontal', path: '' },
+        { slug: 'vi/new', title: 'Mới Cập Nhật', type: 'Grid', path: '' }
     ]);
 }
 
-function getHomeSections() {
+function getPrimaryCategories() {
     return JSON.stringify([
-        { title: "Video Mới Cập Nhật", url: "https://missav.media/vi/new" },
-        { title: "Xem Nhiều Nhất", url: "https://missav.media/vi/popular" },
-        { title: "Thịnh Hành", url: "https://missav.media/vi/trending" },
-        { title: "Diễn Viên Hàng Đầu", url: "https://missav.media/vi/actors" }
+        { name: 'Mới cập nhật', slug: 'vi/new' },
+        { name: 'Nữ diễn viên', slug: 'vi/actresses' },
+        { name: 'Thể loại', slug: 'vi/genres' },
+        { name: 'Không che', slug: 'vi/uncensored-leak' },
+        { name: "FC2", slug: "vi/series/FC2" },
+        { name: "HEYZO", slug: "vi/series/HEYZO" },
+        { name: "Tokyo Hot", slug: "vi/series/Tokyo-Hot" },
+        { name: "1pondo", slug: "vi/series/1pondo" },
+        { name: "Caribbeancom", slug: "vi/series/Caribbeancom" },
+        { name: "10musume", slug: "vi/series/10musume" }
     ]);
 }
 
 function getFilterConfig() {
     return JSON.stringify({
-        supportCategories: true,
-        supportCountries: true,
-        supportYears: false,
-        supportTypes: true
+        sort: [
+            { name: 'Mới nhất', value: 'new' },
+            { name: 'Xem nhiều', value: 'views' },
+            { name: 'Hôm nay', value: 'today_views' },
+            { name: 'Tuần này', value: 'weekly_views' },
+            { name: 'Tháng này', value: 'monthly_views' }
+        ],
+        category: [
+            { name: "Tất cả thể loại", value: "vi/genres" },
+            { name: "Mới cập nhật", value: "vi/new" },
+            { name: "Không che (Rò rỉ)", value: "vi/uncensored-leak" },
+            { name: "Nữ diễn viên", value: "vi/actresses" },
+            { name: "Xem nhiều hôm nay", value: "vi/today-hot" },
+            { name: "Phụ đề Anh", value: "vi/english-subtitle" },
+            { name: "Phụ đề China", value: "vi/chinese-subtitle" }
+        ]
     });
 }
 
-// ============================================================================
-// 3. PARSE LIST RESPONSE
-// ============================================================================
+// =============================================================================
+// URL GENERATION (Tương thích cả 2 chuẩn tham số của VAAPP)
+// =============================================================================
 
-function parseListResponse(htmlContent) {
-    try {
-        var items = [];
-        if (!htmlContent) return "[]";
+function getUrlList(slugOrPage, filtersJsonOrType, category, country, year) {
+    var page = 1;
+    var path = "vi/new";
+    var sort = "";
 
-        if (htmlContent.indexOf("/actors/") !== -1 || htmlContent.indexOf("object-cover rounded-full") !== -1) {
-            var actorRegex = /<a[^>]+href=["']https?:\/\/missav\.media\/[^"']*actors\/([^/"']+)\/?["'][^>]*>([\s\S]*?)<\/a>/gi;
-            var matchActor;
-            while ((matchActor = actorRegex.exec(htmlContent)) !== null) {
-                var actorSlug = matchActor[1].trim();
-                var innerHtml = matchActor[2];
-                
-                var imgMatch = /src=["']([^"']+)["']/i.exec(innerHtml);
-                var avatar = imgMatch ? imgMatch[1] : "";
-                if (avatar.indexOf("//") === 0) avatar = "https:" + avatar;
+    // Trường hợp app gọi theo chuẩn mới: (slug, filtersJson)
+    if (typeof filtersJsonOrType === "string" && filtersJsonOrType.indexOf("{") !== -1) {
+        try {
+            var filters = JSON.parse(filtersJsonOrType);
+            page = filters.page || 1;
+            sort = filters.sort || "";
+        } catch (e) {}
+        path = slugOrPage || "vi/new";
+    } 
+    // Trường hợp app gọi theo chuẩn cũ: (page, type, category, country, year)
+    else if (typeof slugOrPage === "number" || typeof slugOrPage === "string" && !isNaN(slugOrPage)) {
+        page = parseInt(slugOrPage) || 1;
+        if (category && category !== "") {
+            path = category;
+        } else if (filtersJsonOrType && filtersJsonOrType !== "all" && filtersJsonOrType !== "") {
+            path = "vi/" + filtersJsonOrType;
+        } else {
+            path = "vi/new";
+        }
+    } else if (slugOrPage) {
+        path = slugOrPage;
+    }
 
-                var nameMatch = /<span[^>]*>([^<]+)<\/span>/i.exec(innerHtml);
-                var actorName = nameMatch ? nameMatch[1].trim() : actorSlug;
+    if (path.indexOf("/") === 0) path = path.substring(1);
+    if (path.indexOf("vi/") !== 0) path = "vi/" + path;
 
-                var exists = items.some(function(i) { return i.url === "actor-" + actorSlug; });
-                if (!exists && actorSlug && actorSlug !== "actors") {
-                    items.push({
-                        title: decodeHtmlEntities(actorName),
-                        url: "https://missav.media/vi/genres/actor-" + actorSlug,
-                        posterUrl: avatar,
-                        subTitle: "Diễn viên"
+    var url = "https://missav.media/" + path;
+    
+    // Xử lý phân trang
+    if (url.indexOf("?") === -1) {
+        url += "?page=" + page;
+    } else {
+        url += "&page=" + page;
+    }
+
+    if (sort && sort !== 'new') {
+        if (sort === 'hot') {
+            url += "&sort=views";
+        } else {
+            url += "&sort=" + sort;
+        }
+    }
+
+    return url;
+}
+
+function getUrlSearch(keyword, pageOrFilters) {
+    var page = 1;
+    if (typeof pageOrFilters === "object" && pageOrFilters !== null) {
+        page = pageOrFilters.page || 1;
+    } else if (typeof pageOrFilters === "number") {
+        page = pageOrFilters;
+    }
+    return "https://missav.media/vi/search/" + encodeURIComponent(keyword) + "?page=" + page;
+}
+
+function getUrlDetail(slug) {
+    if (!slug) return "https://missav.media/vi";
+    if (slug.indexOf("http") === 0) return slug;
+    if (slug.indexOf("/") === 0) return "https://missav.media" + slug;
+    return "https://missav.media/vi/" + slug;
+}
+
+function getUrlCategories() { return "https://missav.media/vi/genres"; }
+function getUrlCountries() { return "https://missav.media/vi/actresses"; }
+function getUrlYears() { return ""; }
+
+// =============================================================================
+// PARSERS UTILS & CORE
+// =============================================================================
+
+var PluginUtils = {
+    normalizeHtml: function (html) {
+        if (!html) return "";
+        return html.replace(/class="([^"]*)"/g, function (fullMatch, classValue) {
+            var normalized = classValue.replace(/missav_media-/g, '');
+            return 'class="' + normalized + '"';
+        });
+    },
+    cleanText: function (text) {
+        if (!text) return "";
+        return text.replace(/<[^>]*>/g, "")
+            .replace(/&amp;/g, "&")
+            .replace(/&quot;/g, '"')
+            .replace(/&#039;/g, "'")
+            .replace(/&lt;/g, "<")
+            .replace(/&gt;/g, ">")
+            .replace(/\s+/g, " ")
+            .trim();
+    },
+    getMeta: function (html, property) {
+        var regex = new RegExp('property="' + property + '"\\s+content="([^"]+)"', 'i');
+        var match = html.match(regex);
+        return match ? match[1] : "";
+    }
+};
+
+function parseListResponse(html) {
+    html = PluginUtils.normalizeHtml(html);
+    var movies = [];
+
+    var actressLinkMatch = html.match(/href="[^"]*\/actresses\/[^"]+"/g);
+    var isActressesPage = (actressLinkMatch && actressLinkMatch.length > 5);
+    var isAllGenresPage = !isActressesPage && html.indexOf('/genres/') !== -1;
+
+    if (isActressesPage) {
+        var liRegex = /<li[\s\S]*?<\/li>/gi;
+        var match;
+        while ((match = liRegex.exec(html)) !== null) {
+            var itemHtml = match[0];
+            var urlMatch = itemHtml.match(/href="([^"]*\/actresses\/[^"]+)"/);
+            if (!urlMatch || urlMatch[1].indexOf('?') !== -1) continue;
+
+            var url = urlMatch[1];
+            var nameMatch = itemHtml.match(/<h4[^>]*>([\s\S]*?)<\/h4>/) || itemHtml.match(/<img[^>]+alt="([^"]+)"/);
+            var name = PluginUtils.cleanText(nameMatch ? nameMatch[1] : "");
+            if (!name || name.length < 2) continue;
+
+            var imgMatch = itemHtml.match(/<img[^>]+src="([^"]+)"/);
+            var img = imgMatch ? imgMatch[1] : "";
+
+            var slug = url.replace(/https?:\/\/[^\/]+/, "");
+            if (slug.indexOf("/") !== 0) slug = "/" + slug;
+
+            movies.push({
+                id: slug,
+                title: name,
+                posterUrl: img,
+                backdropUrl: img,
+                description: "Nữ diễn viên",
+                year: 0,
+                quality: "ACTRESS",
+                episode_current: "",
+                lang: ""
+            });
+        }
+    } else if (isAllGenresPage) {
+        var genreRegex = /<a[^>]+href="([^"]+)"[^>]*>([\s\S]*?)<\/a>/gi;
+        var foundSlugs = {};
+        var match;
+        while ((match = genreRegex.exec(html)) !== null) {
+            var url = match[1];
+            var innerContent = match[2];
+            if (url.indexOf('/genres/') !== -1) {
+                var name = PluginUtils.cleanText(innerContent);
+                if (!name || name.length < 2) continue;
+                var slug = url.replace(/https?:\/\/[^\/]+/, "");
+                if (slug.indexOf("/") !== 0) slug = "/" + slug;
+
+                if (!foundSlugs[slug]) {
+                    movies.push({
+                        id: slug,
+                        title: name,
+                        posterUrl: "",
+                        backdropUrl: "",
+                        description: "Thể loại",
+                        year: 0,
+                        quality: "CAT",
+                        episode_current: "",
+                        lang: ""
                     });
+                    foundSlugs[slug] = true;
                 }
             }
-            if (items.length > 0) return JSON.stringify(items);
         }
-
-        var standardRegex = /<a[^>]+href=["'](https?:\/\/missav\.media\/[^"']+|\/[^"']+)["'][^>]*>[\s\S]*?<img[^>]+(?:data-src|src)=["']([^"']+)["'][\s\S]*?(?:<span[^>]*>([^<]+)<\/span>)?[\s\S]*?<\/a>/gi;
-        var match;
-
-        while ((match = standardRegex.exec(htmlContent)) !== null) {
-            var rawUrl = match[1];
-            var poster = match[2];
-            var duration = match[3] ? match[3].trim() : "";
-
-            var url = rawUrl.indexOf("http") === 0 ? rawUrl : "https://missav.media" + rawUrl;
-            
-            if (url.indexOf("/genres") !== -1 || url.indexOf("/search") !== -1 || url.indexOf("/tags") !== -1 || url.indexOf("/actors") !== -1 || url.indexOf("/login") !== -1) {
-                continue;
-            }
-
-            if (poster.indexOf("//") === 0) poster = "https:" + poster;
-
-            var titleMatch = new RegExp('<a[^>]+href=["\']' + rawUrl.replace(/[\/\.]/g, '\\$&') + '["\'][^>]*title=["\']([^\'"]+)["\']', 'i').exec(htmlContent);
-            var title = titleMatch ? titleMatch[1] : "Video MissAV";
-
-            var exists = items.some(function(i) { return i.url === url; });
-            if (!exists && url.length > 20) {
-                items.push({
-                    title: decodeHtmlEntities(title.trim()),
-                    url: url,
-                    posterUrl: poster,
-                    subTitle: duration
-                });
-            }
-        }
-
-        return JSON.stringify(items);
-    } catch (e) {
-        return "[]";
     }
+
+    if (movies.length === 0) {
+        var parts = html.split('thumbnail group');
+        if (parts.length <= 1) parts = html.split('class="thumbnail');
+
+        for (var i = 1; i < parts.length; i++) {
+            var itemHtml = parts[i];
+            var linkMatch = itemHtml.match(/<a[^>]+href="([^"]+)"/);
+            if (!linkMatch) continue;
+
+            var fullUrl = linkMatch[1];
+            var slug = fullUrl.replace(/https?:\/\/[^\/]+/, "");
+            if (slug.indexOf("/") !== 0) slug = "/" + slug;
+
+            if (slug.indexOf("/genres") !== -1 || slug.indexOf("/actresses") !== -1 || slug.indexOf("/search") !== -1) continue;
+
+            var codeMatch = itemHtml.match(/class="[^"]*text-nord13[^"]*"[^>]*>([\s\S]*?)<\/a>/);
+            var code = codeMatch ? PluginUtils.cleanText(codeMatch[1]) : "";
+            if (!code) {
+                var partsSlug = slug.split("/");
+                code = partsSlug[partsSlug.length - 1];
+            }
+
+            var imgMatch = itemHtml.match(/<img[^>]+(?:data-src|src)="([^"]+)"/);
+            var thumb = imgMatch ? imgMatch[1] : "";
+            if (thumb && thumb.indexOf("cover-t.jpg") !== -1) {
+                thumb = thumb.replace("/cover-t.jpg", "/cover.jpg");
+            }
+
+            var titleMatch = itemHtml.match(/title="([^"]+)"/) || itemHtml.match(/alt="([^"]+)"/);
+            var title = titleMatch ? PluginUtils.cleanText(titleMatch[1]) : code;
+
+            movies.push({
+                id: slug,
+                title: title,
+                posterUrl: thumb,
+                backdropUrl: thumb,
+                description: "",
+                year: 0,
+                quality: "HD",
+                episode_current: "Full",
+                lang: code
+            });
+        }
+    }
+
+    return JSON.stringify({
+        items: movies,
+        pagination: { currentPage: 1, totalPages: 10, totalItems: movies.length, itemsPerPage: 20 }
+    });
 }
 
-// ============================================================================
-// 4. PARSE DETAIL RESPONSE (CẢI TIẾN ĐỂ BẮT LUỒNG HOẶC IFRAME CHUẨN XÁC)
-// ============================================================================
+function parseSearchResponse(html) {
+    return parseListResponse(html);
+}
 
-function parseDetailResponse(htmlContent, pageUrl) {
+function parseMovieDetail(html, pageUrl) {
+    html = PluginUtils.normalizeHtml(html);
     try {
-        if (!htmlContent) {
-            return JSON.stringify({ url: "", isEmbed: false, headers: {}, subtitles: [] });
-        }
+        var title = PluginUtils.getMeta(html, "og:title") || "MissAV Video";
+        var thumb = PluginUtils.getMeta(html, "og:image");
+        var desc = PluginUtils.getMeta(html, "og:description");
 
-        // 1. Quét tìm kiếm trực tiếp link HLS (.m3u8) từ mã nguồn trang chi tiết
-        var m3u8Regex = /https?:\/\/[^"'\s<>]+\.m3u8(?:\?[^"'\s<>]*)?/gi;
-        var match;
-        var bestUrl = "";
-
-        while ((match = m3u8Regex.exec(htmlContent)) !== null) {
-            var found = match[0].replace(/\\\//g, "/");
-            if (found.indexOf("playlist.m3u8") !== -1 || found.indexOf("index.m3u8") !== -1 || found.indexOf("master.m3u8") !== -1) {
-                bestUrl = found;
-                break;
-            } else if (!bestUrl) {
-                bestUrl = found;
+        var uuid = "";
+        var evalMatch = html.match(/eval\(function\(p,a,c,k,e,d\)[\s\S]*?'([^']+)'\.split\('\|'\)/i);
+        if (evalMatch) {
+            var parts = evalMatch[1].split('|');
+            var uuidParts = [];
+            for (var i = 0; i < parts.length; i++) {
+                if (parts[i].match(/^[0-9a-f]{8,12}$/)) uuidParts.push(parts[i]);
+            }
+            if (uuidParts.length >= 5) {
+                uuid = uuidParts[0] + '-' + uuidParts[1] + '-' + uuidParts[2] + '-' + uuidParts[3] + '-' + uuidParts[4];
             }
         }
 
-        if (bestUrl) {
-            return JSON.stringify({
-                url: bestUrl,
-                isEmbed: false,
-                mimeType: "application/x-mpegURL",
-                headers: {
-                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
-                    "Referer": pageUrl || "https://missav.media/"
-                },
-                subtitles: []
+        if (!uuid) {
+            var surritMatch = html.match(/(?:surrit|sixyik|nineyu|fourhoi)\.com\/([0-9a-f-]{36})/i);
+            if (surritMatch) uuid = surritMatch[1];
+        }
+
+        var streamUrl = uuid ? "https://surrit.com/" + uuid + "/playlist.m3u8" : "";
+        var servers = [];
+        if (streamUrl) {
+            servers.push({
+                name: "Stream HD",
+                episodes: [{ id: pageUrl || streamUrl, name: "Full", slug: "full" }]
             });
         }
 
-        // 2. Quét tìm thẻ iframe nhúng bên trong trang chi tiết
-        var iframeMatch = /<iframe[^>]+(?:data-src|src)=["']([^"']+)["']/i.exec(htmlContent);
-        if (iframeMatch) {
-            var embedUrl = iframeMatch[1].trim();
-            if (embedUrl.indexOf("//") === 0) embedUrl = "https:" + embedUrl;
-            
-            return JSON.stringify({
-                url: embedUrl,
-                isEmbed: true,
-                headers: {
-                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-                    "Referer": pageUrl
-                },
-                subtitles: []
-            });
-        }
-
-        // 3. Nếu không tìm thấy, trả về url rỗng kèm cờ false thay vì pageUrl để tránh lỗi parse của app
         return JSON.stringify({
-            url: "",
-            isEmbed: false,
-            headers: {},
-            subtitles: []
+            id: "",
+            title: title,
+            posterUrl: thumb,
+            backdropUrl: thumb,
+            description: desc,
+            servers: servers,
+            quality: "HD",
+            lang: "Vietsub",
+            year: 2026,
+            rating: 5.0
         });
-
     } catch (e) {
-        return JSON.stringify({ url: "", isEmbed: false, headers: {}, subtitles: [] });
+        return "null";
     }
 }
 
-function parseEmbedResponse(htmlContent, url) {
-    try {
-        var streamMatch = /https?:\/\/[^"'\s<>\\]+\.m3u8(?:\?[^"'\s<>\\]*)?/i.exec(htmlContent);
-        if (streamMatch) {
-            var cleanUrl = streamMatch[0].replace(/\\\//g, "/");
-            return JSON.stringify({
-                url: cleanUrl,
-                isEmbed: false,
-                mimeType: "application/x-mpegURL",
-                headers: {
-                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-                    "Referer": url
-                },
-                subtitles: []
-            });
+function parseDetailResponse(html) {
+    var uuid = "";
+    var surritMatch = html.match(/(?:surrit|sixyik|nineyu|fourhoi)\.com\/([0-9a-f-]{36})/i);
+    if (surritMatch) uuid = surritMatch[1];
+
+    var streamUrl = uuid ? "https://surrit.com/" + uuid + "/playlist.m3u8" : "";
+
+    return JSON.stringify({
+        url: streamUrl,
+        headers: {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+            "Referer": "https://missav123.com/",
+            "Origin": "https://missav123.com"
+        },
+        subtitles: []
+    });
+}
+
+function parseCategoriesResponse(html) {
+    html = PluginUtils.normalizeHtml(html);
+    var categories = [{ name: "Tất cả thể loại", slug: "vi/genres" }];
+    var regex = /<a[^>]+href="([^"]*\/vi\/genres\/[^"]+)"[^>]*>([^<]+)<\/a>/g;
+    var match;
+    var seen = {};
+
+    while ((match = regex.exec(html)) !== null) {
+        var fullPath = match[1];
+        var name = PluginUtils.cleanText(match[2]);
+        var parts = fullPath.split("/genres/");
+        var slug = parts.length > 1 ? parts[1] : "";
+
+        if (slug && name && !seen[slug]) {
+            seen[slug] = true;
+            categories.push({ name: name, slug: "vi/genres/" + slug });
         }
-        return JSON.stringify({ url: "", isEmbed: false, headers: {}, subtitles: [] });
-    } catch (e) {
-        return JSON.stringify({ url: "", isEmbed: false, headers: {}, subtitles: [] });
     }
+    return JSON.stringify(categories);
 }
 
-// ============================================================================
-// 5. CATEGORIES, ACTORS & UTILS
-// ============================================================================
-
-function parseCategoriesResponse(htmlContent) {
-    try {
-        var categories = [];
-        var catRegex = /<a[^>]+href=["']https?:\/\/missav\.media\/[^"']*genres\/([^/"']+)\/?["'][^>]*>([\s\S]*?)<\/a>/gi;
-        var match;
-
-        while ((match = catRegex.exec(htmlContent)) !== null) {
-            var slug = match[1].trim();
-            var rawName = match[2].replace(/<[^>]+>/g, "").trim();
-            var exists = categories.some(function(c) { return c.value === slug; });
-            if (!exists && rawName) {
-                categories.push({ name: decodeHtmlEntities(rawName), value: slug });
-            }
-        }
-        return JSON.stringify(categories);
-    } catch (e) {
-        return "[]";
-    }
-}
-
-function parseCountriesResponse(htmlContent) {
-    try {
-        var actors = [];
-        var actorRegex = /<a[^>]+href=["']https?:\/\/missav\.media\/[^"']*actors\/([^/"']+)\/?["'][^>]*>([\s\S]*?)<\/a>/gi;
-        var match;
-
-        while ((match = actorRegex.exec(htmlContent)) !== null) {
-            var slug = match[1].trim();
-            var rawName = match[2].replace(/<[^>]+>/g, "").trim();
-            var exists = actors.some(function(a) { return a.value === "actor-" + slug; });
-            if (!exists && rawName && slug !== "actors") {
-                actors.push({ name: decodeHtmlEntities(rawName), value: "actor-" + slug });
-            }
-        }
-        return JSON.stringify(actors);
-    } catch (e) {
-        return "[]";
-    }
-}
-
-function parseYearsResponse(htmlContent) {
-    return "[]";
-}
-
-function decodeHtmlEntities(str) {
-    if (!str) return "";
-    return str
-        .replace(/&amp;/g, "&")
-        .replace(/&quot;/g, '"')
-        .replace(/&#039;/g, "'")
-        .replace(/&lt;/g, "<")
-        .replace(/&gt;/g, ">");
-}
+function parseCountriesResponse(html) { return "[]"; }
+function parseYearsResponse(html) { return "[]"; }
