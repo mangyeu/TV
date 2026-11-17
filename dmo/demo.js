@@ -6,7 +6,7 @@ function getManifest() {
     return JSON.stringify({
         "id": "missav",
         "name": "MissAV",
-        "version": "3.1.0",
+        "version": "3.2.0",
         "baseUrl": "https://missav.media",
         "referrer": "https://missav.media/",
         "iconUrl": "https://raw.githubusercontent.com/youngbi/repo/main/plugins/missav.ico",
@@ -182,7 +182,6 @@ function parseListResponse(html) {
         if (seenUrls[slug]) continue;
         seenUrls[slug] = true;
 
-        // Quét lấy link ảnh poster từ các thuộc tính data-src, src hoặc srcset
         var thumb = "";
         var imgMatches = innerHtml.match(/<img[^>]+(?:data-src|src|srcset)="([^"]+)"/gi);
         if (imgMatches) {
@@ -264,12 +263,16 @@ function parseMovieDetail(html, pageUrl) {
 
         var streamUrl = extractStreamUrl(html);
         var servers = [];
-        if (streamUrl) {
-            servers.push({
-                name: "Stream HD",
-                episodes: [{ id: pageUrl || streamUrl, name: "Full", slug: "full" }]
-            });
-        }
+        
+        // Cung cấp episode ID là chính link trang chi tiết để VAAPP kích hoạt lại parseDetailResponse chuẩn xác
+        servers.push({
+            name: "Stream HD",
+            episodes: [{ 
+                id: pageUrl || streamUrl, 
+                name: "Full", 
+                slug: "full" 
+            }]
+        });
 
         return JSON.stringify({
             id: "",
@@ -291,11 +294,12 @@ function parseMovieDetail(html, pageUrl) {
 }
 
 function parseDetailResponse(html, pageUrl) {
+    // Nếu đầu vào là một chuỗi m3u8 trực tiếp, trả về luôn kèm Header định danh
     if (html && html.indexOf("http") === 0 && html.indexOf(".m3u8") !== -1) {
         return JSON.stringify({
             url: html,
             headers: {
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
                 "Referer": "https://missav.media/",
                 "Origin": "https://missav.media"
             },
@@ -303,15 +307,17 @@ function parseDetailResponse(html, pageUrl) {
         });
     }
 
+    // Trích xuất link stream m3u8 từ nội dung HTML trang chi tiết
     var streamUrl = extractStreamUrl(html);
+    
     if (!streamUrl && pageUrl && pageUrl.indexOf(".m3u8") !== -1) {
         streamUrl = pageUrl;
     }
 
     return JSON.stringify({
-        url: streamUrl,
+        url: streamUrl || pageUrl,
         headers: {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
             "Referer": "https://missav.media/",
             "Origin": "https://missav.media"
         },
@@ -319,25 +325,23 @@ function parseDetailResponse(html, pageUrl) {
     });
 }
 
-// Trích xuất link stream hỗ trợ chuẩn CDN mới (`mrstcdn.store`, `surrit.com`, v.v.)
 function extractStreamUrl(html) {
     if (!html) return "";
     
-    // 1. Quét tìm trực tiếp đường dẫn .m3u8 trong source (bao gồm các tên miền kho lưu trữ mới như mrstcdn.store)
+    // 1. Quét tìm trực tiếp đường dẫn .m3u8 hoàn chỉnh trong source
     var directM3u8 = html.match(/https?:\/\/[^"'\s<>]+\.m3u8(?:\?[^"'\s<>]*)?/i);
     if (directM3u8) {
         return directM3u8[0].replace(/\\\//g, "/");
     }
 
-    // 2. Quét cấu trúc chứa mã định danh UUID kèm tên miền CDN
+    // 2. Quét cấu trúc chứa mã định danh UUID kèm domain CDN mới
     var cdnMatch = html.match(/(?:surrit|sixyik|nineyu|fourhoi|mrstcdn|apidata|m3u8)\.[a-z]+\/[^"'\s<>]+([0-9a-f-]{36})[^"'\s<>]*playlist\.m3u8/i);
     if (cdnMatch) {
-        // Nếu tìm thấy chuỗi URL hoàn chỉnh chứa UUID
         var fullStreamMatch = html.match(new RegExp("https?://[^\"'\\s<>]+/" + cdnMatch[1] + "/[^\"'\\s<>]+\\.m3u8", "i"));
         if (fullStreamMatch) return fullStreamMatch[0].replace(/\\\//g, "/");
     }
 
-    // 3. Quét UUID và fallback dựng lại link stream chuẩn qua surrit.com
+    // 3. Quét UUID chuẩn và dựng lại link stream qua surrit.com
     var uuidMatch = html.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i);
     if (uuidMatch) {
         return "https://surrit.com/" + uuidMatch[0] + "/playlist.m3u8";
@@ -360,7 +364,6 @@ function parseCategoriesResponse(html) {
 
         if (slug && name && !seen[slug]) {
             seen[slug] = true;
-            categories.path_slug = slug;
             categories.push({ name: name, slug: "vi/genres/" + slug });
         }
     }
