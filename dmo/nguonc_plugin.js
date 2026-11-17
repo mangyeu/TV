@@ -6,11 +6,17 @@ function getManifest() {
   return JSON.stringify({
     id: "phim_nguonc",
     name: "Nguồn C",
-    version: "3.3",
+    version: "3.4",
     type: "MOVIE",
-    baseUrl: BASE_URL
+    baseUrl: BASE_URL,
+    headers: {
+      "User-Agent": "Mozilla/5.0 (Linux; Android 13; SM-S918B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36",
+      "Referer": BASE_URL + "/",
+      "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    }
   });
 }
+
 
 function getHomeSections() {
   return JSON.stringify(new Array(
@@ -86,22 +92,42 @@ function decodeHtml(s) {
 function parseListResponse(html) {
   var seen = "|", items = new Array(), totalPages = 1, currentPage = 1;
   if (!html) return JSON.stringify({ items: items });
+
   try {
-    var blocks = html.split("nc-movie-identity");
-    blocks.shift();
-    while (blocks.length > 0) {
-      var b = blocks.shift().substring(0, 1800);
-      var href = match1(b, /href=["']([^"']+)["']/i);
+    // Tách theo từng hàng <tr> trong bảng danh sách phim của ://nguonc.com
+    var rows = html.split("<tr");
+    rows.shift();
+
+    while (rows.length > 0) {
+      var r = rows.shift().substring(0, 2200);
+      if (r.indexOf("nc-movie-identity") === -1) continue;
+
+      var href = match1(r, /href=["']([^"']+)["']/i);
       if (!href || href === "#") continue;
-      var title = match1(b, /<strong>([\s\S]*?)<\/strong>/i).replace(/<[^>]+>/g, "") || match1(b, /alt=["']([^"']+)["']/i);
-      var img = match1(b, /<img[^>]*data-src=["']([^"']+)["']/i) || match1(b, /<img[^>]*src=["']([^"']+)["']/i);
-      if (img && img.indexOf("data:image") !== 0 && img.indexOf("http") !== 0) img = BASE_URL + "/" + img.replace(/^\/+/, "");
+
+      var title = match1(r, /<strong>([\s\S]*?)<\/strong>/i).replace(/<[^>]+>/g, "") ||
+                  match1(r, /alt=["']([^"']+)["']/i);
+
+      var img = match1(r, /<img[^>]*data-src=["']([^"']+)["']/i) ||
+                match1(r, /<img[^>]*src=["']([^"']+)["']/i);
+
+      if (img && img.indexOf("data:image") !== 0 && img.indexOf("http") !== 0) {
+        img = BASE_URL + "/" + img.replace(/^\/+/, "");
+      }
+
       var id = href.replace(BASE_URL, "").replace(/^\/+|\/+$/g, "");
       if (id && title && seen.indexOf("|" + id + "|") === -1) {
         seen += id + "|";
-        items.push({ id: id, title: decodeHtml(title), posterUrl: img, backdropUrl: img, year: "" });
+        items.push({
+          id: id,
+          title: decodeHtml(title),
+          posterUrl: img,
+          backdropUrl: img,
+          year: match1(r, /\b(19\d{2}|20\d{2})\b/)
+        });
       }
     }
+
     var pageRegex = /[?&]page=(\d+)/gi, pm;
     while ((pm = pageRegex.exec(html)) !== null) {
       var num = parseInt(pm.slice(1, 2).join(""), 10);
@@ -109,8 +135,15 @@ function parseListResponse(html) {
     }
     if (totalPages === 1 && items.length >= 10) totalPages = 1405;
   } catch (e) {}
-  return JSON.stringify({ items: items, currentPage: currentPage, totalPages: totalPages, hasNextPage: items.length > 0 && currentPage < totalPages });
+
+  return JSON.stringify({
+    items: items,
+    currentPage: currentPage,
+    totalPages: totalPages,
+    hasNextPage: items.length > 0 && currentPage < totalPages
+  });
 }
+
 
 function parseSearchResponse(html) { return parseListResponse(html); }
 
