@@ -6,8 +6,8 @@ var CDN_IMG = "https://img" + ".ophim.live";
 function getManifest() {
   return JSON.stringify({
     id: "ophim_clbphimxua",
-    name: "Kho Phim Xưa & Tổng Hợp (OPhim)",
-    version: "2.3",
+    name: "Kho Phim Xưa & Tổng Hợp",
+    version: "2.5",
     type: "MOVIE",
     baseUrl: BASE_URL
   });
@@ -15,7 +15,7 @@ function getManifest() {
 
 function getHomeSections() {
   return JSON.stringify(new Array(
-    { slug: "v1/api/home", title: "Phim Mới Cập Nhật", type: "HORIZONTAL", path: "v1/api/home" },
+    { slug: "danh-sach/phim-moi-cap-nhat", title: "Phim Mới Cập Nhật", type: "HORIZONTAL", path: "danh-sach/phim-moi-cap-nhat" },
     { slug: "v1/api/quoc-gia/hong-kong", title: "Phim TVB - Hồng Kông", type: "HORIZONTAL", path: "v1/api/quoc-gia/hong-kong" },
     { slug: "v1/api/quoc-gia/dai-loan", title: "Phim Đài Loan Xưa", type: "HORIZONTAL", path: "v1/api/quoc-gia/dai-loan" },
     { slug: "v1/api/the-loai/co-trang", title: "Phim Cổ Trang", type: "HORIZONTAL", path: "v1/api/the-loai/co-trang" },
@@ -25,7 +25,7 @@ function getHomeSections() {
 
 function getPrimaryCategories() {
   return JSON.stringify(new Array(
-    { name: "Phim Mới", slug: "v1/api/home" },
+    { name: "Phim Mới", slug: "danh-sach/phim-moi-cap-nhat" },
     { name: "Phim Bộ", slug: "v1/api/danh-sach/phim-bo" },
     { name: "Phim Lẻ", slug: "v1/api/danh-sach/phim-le" },
     { name: "Hồng Kông", slug: "v1/api/quoc-gia/hong-kong" },
@@ -58,15 +58,11 @@ function getFilterConfig() {
 function getUrlList(slug, filtersJson) {
   var f = JSON.parse(filtersJson || "{}"), p = Number(f.page) || 1;
   var c = f.country || f.countries || "", g = f.category || f.categories || "", y = f.year || "";
-  var path = (slug || f.slug || f.path || "v1/api/home").replace(/^\/+|\/+$/g, "");
+  var path = (slug || f.slug || f.path || "danh-sach/phim-moi-cap-nhat").replace(/^\/+|\/+$/g, "");
 
   if (c && c !== "all") path = "v1/api/quoc-gia/" + c;
   else if (g && g !== "all") path = "v1/api/the-loai/" + g;
   else if (y && y !== "all") path = "v1/api/nam/" + y;
-
-  if (path === "v1/api/home" && p > 1) {
-    path = "v1/api/danh-sach/phim-moi-cap-nhat";
-  }
 
   return BASE_URL + "/" + path + "?page=" + p;
 }
