@@ -6,7 +6,7 @@ function getManifest() {
   return JSON.stringify({
     id: "kkphim_full",
     name: "KKPhim (Kho Phim Tổng Hợp)",
-    version: "1.1",
+    version: "1.2",
     type: "MOVIE",
     baseUrl: BASE_URL
   });
@@ -47,20 +47,29 @@ function getUrlList(slug, filtersJson) {
   return BASE_URL + "/" + path + "?page=" + p + "&limit=24";
 }
 
+function fixImg(url, cdn) {
+  if (!url) return "";
+  if (url.indexOf("http") === 0) return url;
+  var base = (cdn || "https://phimimg.com").replace(/\/+$/, "");
+  return base + "/" + url.replace(/^\/+/, "");
+}
+
 function parseListResponse(jsonStr) {
   var items = new Array(), currentPage = 1, totalPages = 1, totalItems = 0;
   try {
     var raw = JSON.parse(jsonStr || "{}");
     var data = raw.data ? raw.data : raw;
+    var cdn = data.APP_DOMAIN_CDN_IMAGE || raw.APP_DOMAIN_CDN_IMAGE || "https://phimimg.com";
     var list = data.items || new Array();
+
     while (list.length > 0) {
       var m = list.shift();
       if (!m || !m.slug) continue;
       items.push({
         id: m.slug,
         title: m.name || m.origin_name || "",
-        posterUrl: fixImg(m.poster_url || m.thumb_url),
-        backdropUrl: fixImg(m.thumb_url || m.poster_url),
+        posterUrl: fixImg(m.poster_url || m.thumb_url, cdn),
+        backdropUrl: fixImg(m.thumb_url || m.poster_url, cdn),
         year: m.year ? String(m.year) : ""
       });
     }
@@ -69,14 +78,8 @@ function parseListResponse(jsonStr) {
     currentPage = Number(pag.currentPage) || 1;
     totalItems = Number(pag.totalItems) || 0;
     var perPage = Number(pag.totalItemsPerPage) || 24;
-
-    totalPages = Number(pag.totalPages) || 0;
-    if (totalPages <= 1 && totalItems > 0) {
-      totalPages = Math.ceil(totalItems / perPage);
-    }
-    if (totalPages <= 1 && items.length >= 10) {
-      totalPages = currentPage + 10;
-    }
+    totalPages = Number(pag.totalPages) || (totalItems > 0 ? Math.ceil(totalItems / perPage) : 1);
+    if (totalPages <= 1 && items.length >= 10) totalPages = currentPage + 10;
   } catch (e) {}
 
   return JSON.stringify({
@@ -85,12 +88,10 @@ function parseListResponse(jsonStr) {
     totalPages: totalPages,
     totalItems: totalItems || (totalPages * 24),
     hasNextPage: items.length > 0 && currentPage < totalPages,
-    pagination: {
-      currentPage: currentPage,
-      totalPages: totalPages
-    }
+    pagination: { currentPage: currentPage, totalPages: totalPages }
   });
 }
+
 
 
 function getUrlSearch(k, filtersJson) {
