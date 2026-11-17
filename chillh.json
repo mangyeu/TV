@@ -25,7 +25,7 @@
         {
             "id": "nguonc_vax",
             "name": "Nguồn C",
-            "version": "3.3",
+            "version": "3.4",
             "scriptUrl": "https://raw.githubusercontent.com/mangyeu/TV/refs/heads/main/dmo/nguonc_plugin.js",
             "iconUrl": "https://raw.githubusercontent.com/mangyeu/TV/refs/heads/main/dmo/nguonc.ico"
         },
