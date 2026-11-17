@@ -6,7 +6,7 @@ function getManifest() {
   return JSON.stringify({
     id: "kkphim_full",
     name: "KKPhim (Kho Phim Tổng Hợp)",
-    version: "1.0",
+    version: "1.1",
     type: "MOVIE",
     baseUrl: BASE_URL
   });
