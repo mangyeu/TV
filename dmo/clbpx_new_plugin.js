@@ -3,7 +3,19 @@
 var BASE_URL = "https://clbphimxua.info";
 
 function getManifest() {
-  return JSON.stringify({ id: "clbphimxua", name: "CLB Phim Xưa", version: "4.3", type: "MOVIE", baseUrl: BASE_URL });
+  return JSON.stringify({
+    id: "clbphimxua",
+    name: "CLB Phim Xưa",
+    version: "4.4",
+    type: "MOVIE",
+    baseUrl: BASE_URL,
+    headers: {
+      "User-Agent": "Mozilla/5.0 (Linux; Android 13; SM-S918B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36",
+      "Referer": BASE_URL + "/",
+      "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+      "Accept-Language": "vi-VN,vi;q=0.9,en-US;q=0.8,en;q=0.7"
+    }
+  });
 }
 
 function getHomeSections() {
