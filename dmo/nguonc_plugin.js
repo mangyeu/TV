@@ -75,10 +75,12 @@ function getUrlSearch(k, filtersJson) {
 
 function getUrlDetail(s) {
   if (!s) return "";
-  // Chuyển mọi đường dẫn phim thành API JSON chuẩn: https://phim.nguonc.com/api/film/{slug}
-  var cleanSlug = s.replace(/^.*\/phim\//, "").replace(/^.*\/film\//, "").replace(/^\/+|\/+$/g, "");
+  // Cắt bỏ mọi tiền tố thư mục phía trước, chỉ giữ lại đúng slug cuối cùng của phim
+  var parts = s.replace(/^\/+|\/+$/g, "").split("/");
+  var cleanSlug = parts.pop() || "";
   return BASE_URL + "/api/film/" + cleanSlug;
 }
+
 
 function match1(str, regex) {
   var m = str.match(regex);
