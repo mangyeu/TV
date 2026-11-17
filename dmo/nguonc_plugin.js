@@ -6,7 +6,7 @@ function getManifest() {
   return JSON.stringify({
     id: "nguonc_vax",
     name: "Nguồn C",
-    version: "2.0",
+    version: "2.1",
     type: "MOVIE",
     baseUrl: BASE_URL
   });
@@ -65,15 +65,34 @@ function getFilterConfig() {
 
 function getUrlList(slug, filtersJson) {
   var f = JSON.parse(filtersJson || "{}"), p = Number(f.page) || 1;
-  var c = f.country || f.countries || "", g = f.category || f.categories || "", y = f.year || "";
+  var c = f.country || f.countries || "";
+  var g = f.category || f.categories || "";
+  var y = f.year || f.years || "";
+  
   var path = (slug || f.slug || f.path || "danh-sach/phim-moi-cap-nhat").replace(/^\/+|\/+$/g, "");
 
-  if (c && c !== "all") path = "quoc-gia/" + c;
-  else if (g && g !== "all") path = "the-loai/" + g;
-  else if (y && y !== "all") path = "nam-phat-hanh/" + y;
+  // 1. Ánh xạ chuẩn cho Bộ lọc (Quốc gia, Thể loại, Năm)
+  if (c && c !== "all") {
+    path = "quoc-gia/" + c.replace(/^quoc-gia\//, "");
+  } else if (g && g !== "all") {
+    path = "the-loai/" + g.replace(/^the-loai\//, "");
+  } else if (y && y !== "all") {
+    path = "nam-phat-hanh/" + y;
+  }
+
+  // 2. Đảm bảo đường dẫn luôn bắt đầu bằng đúng 1 trong 4 nhóm của API Nguồn C
+  if (
+    path.indexOf("danh-sach/") !== 0 &&
+    path.indexOf("the-loai/") !== 0 &&
+    path.indexOf("quoc-gia/") !== 0 &&
+    path.indexOf("nam-phat-hanh/") !== 0
+  ) {
+    path = "danh-sach/" + path;
+  }
 
   return BASE_URL + "/films/" + path + "?page=" + p;
 }
+
 
 function getUrlSearch(k, filtersJson) {
   var p = (JSON.parse(filtersJson || "{}")).page || 1;
