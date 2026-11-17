@@ -1,6 +1,7 @@
 /**
  * ============================================================================
- * VAAPP PARSER SCRIPT CHO MISSAV - DIRECT API & ID RESOLVER MODE
+ * VAAPP PARSER SCRIPT HOÀN CHỈNH CHO MISSAV (missav.media)
+ * Dựa trên cấu trúc HTML/Alpine.js chuẩn xác của trang web
  * ============================================================================
  */
 
@@ -8,7 +9,7 @@ function getManifest() {
     return JSON.stringify({
         "id": "missav",
         "name": "MissAV",
-        "version": "1.2",
+        "version": "2.1.0",
         "baseUrl": "https://missav.media",
         "referrer": "https://missav.media/",
         "iconUrl": "https://raw.githubusercontent.com/youngbi/repo/main/plugins/missav.ico",
@@ -25,27 +26,32 @@ function getManifest() {
 // ============================================================================
 
 function getUrlList(page, type, category, country, year) {
-    var baseUrl = "https://missav.media";
+    var baseUrl = "https://missav.media/vi";
+    
     if (category && category !== '') {
         if (category.indexOf("actor-") === 0) {
-            baseUrl += "/actors/" + encodeURIComponent(category.replace("actor-", ""));
+            baseUrl = "https://missav.media/vi/actors/" + encodeURIComponent(category.replace("actor-", ""));
         } else {
-            baseUrl += "/genres/" + encodeURIComponent(category);
+            baseUrl = "https://missav.media/vi/genres/" + encodeURIComponent(category);
         }
     } else if (type && type !== 'all' && type !== '') {
-        baseUrl += "/" + type;
+        baseUrl = "https://missav.media/vi/" + type;
     } else {
-        baseUrl += "/new";
+        baseUrl = "https://missav.media/vi/new";
     }
+
     if (page && page > 1) {
         baseUrl += "?page=" + page;
     }
+
     return baseUrl;
 }
 
 function getUrlSearch(keyword, page) {
-    var url = "https://missav.media/search/" + encodeURIComponent(keyword);
-    if (page && page > 1) url += "?page=" + page;
+    var url = "https://missav.media/vi/search/" + encodeURIComponent(keyword);
+    if (page && page > 1) {
+        url += "?page=" + page;
+    }
     return url;
 }
 
@@ -53,9 +59,22 @@ function getUrlDetail(url) {
     return url;
 }
 
-function getUrlCategories() { return "https://missav.media/genres"; }
-function getUrlCountries() { return "https://missav.media/actors"; }
-function getUrlYears() { return "https://missav.media/"; }
+function getUrlCategories() {
+    return "https://missav.media/vi/genres";
+}
+
+function getUrlCountries() {
+    // Trả về endpoint danh sách diễn viên để tương thích với bộ lọc quốc gia/diễn viên trong VAAPP
+    return "https://missav.media/vi/actors";
+}
+
+function getUrlYears() {
+    return "https://missav.media/vi/";
+}
+
+// ============================================================================
+// 2. HOME SECTIONS & CONFIG
+// ============================================================================
 
 function getPrimaryCategories() {
     return JSON.stringify([
@@ -69,18 +88,24 @@ function getPrimaryCategories() {
 
 function getHomeSections() {
     return JSON.stringify([
-        { title: "Video Mới Cập Nhật", url: "https://missav.media/new" },
-        { title: "Xem Nhiều Nhất", url: "https://missav.media/popular" },
-        { title: "Thịnh Hành", url: "https://missav.media/trending" }
+        { title: "Video Mới Cập Nhật", url: "https://missav.media/vi/new" },
+        { title: "Xem Nhiều Nhất", url: "https://missav.media/vi/popular" },
+        { title: "Thịnh Hành", url: "https://missav.media/vi/trending" },
+        { title: "Diễn Viên Hàng Đầu", url: "https://missav.media/vi/actors" }
     ]);
 }
 
 function getFilterConfig() {
-    return JSON.stringify({ supportCategories: true, supportCountries: true, supportYears: false, supportTypes: true });
+    return JSON.stringify({
+        supportCategories: true,
+        supportCountries: true, // Kích hoạt để hiển thị danh sách Diễn viên
+        supportYears: false,
+        supportTypes: true
+    });
 }
 
 // ============================================================================
-// 2. PARSE LIST RESPONSE
+// 3. PARSE LIST RESPONSE (BÓC TÁCH DANH SÁCH VIDEO & DIỄN VIÊN)
 // ============================================================================
 
 function parseListResponse(htmlContent) {
@@ -88,41 +113,53 @@ function parseListResponse(htmlContent) {
         var items = [];
         if (!htmlContent) return "[]";
 
+        // Trường hợp đang ở trang danh sách Diễn viên (/actors)
         if (htmlContent.indexOf("/actors/") !== -1 || htmlContent.indexOf("object-cover rounded-full") !== -1) {
-            var actorRegex = /<a[^>]+href=["']https?:\/\/missav\.media\/actors\/([^/"']+)\/?["'][^>]*>([\s\S]*?)<\/a>/gi;
+            var actorRegex = /<a[^>]+href=["']https?:\/\/missav\.media\/[^"']*actors\/([^/"']+)\/?["'][^>]*>([\s\S]*?)<\/a>/gi;
             var matchActor;
             while ((matchActor = actorRegex.exec(htmlContent)) !== null) {
                 var actorSlug = matchActor[1].trim();
                 var innerHtml = matchActor[2];
+                
                 var imgMatch = /src=["']([^"']+)["']/i.exec(innerHtml);
                 var avatar = imgMatch ? imgMatch[1] : "";
                 if (avatar.indexOf("//") === 0) avatar = "https:" + avatar;
+
                 var nameMatch = /<span[^>]*>([^<]+)<\/span>/i.exec(innerHtml);
                 var actorName = nameMatch ? nameMatch[1].trim() : actorSlug;
 
-                items.push({
-                    title: decodeHtmlEntities(actorName),
-                    url: "https://missav.media/genres/actor-" + actorSlug,
-                    posterUrl: avatar,
-                    subTitle: "Diễn viên"
-                });
+                var exists = items.some(function(i) { return i.url === "actor-" + actorSlug; });
+                if (!exists && actorSlug && actorSlug !== "actors") {
+                    items.push({
+                        title: decodeHtmlEntities(actorName),
+                        url: "https://missav.media/vi/genres/actor-" + actorSlug,
+                        posterUrl: avatar,
+                        subTitle: "Diễn viên"
+                    });
+                }
             }
             if (items.length > 0) return JSON.stringify(items);
         }
 
+        // Quét danh sách video chuẩn trên trang chủ / thể loại / tìm kiếm
         var standardRegex = /<a[^>]+href=["'](https?:\/\/missav\.media\/[^"']+|\/[^"']+)["'][^>]*>[\s\S]*?<img[^>]+(?:data-src|src)=["']([^"']+)["'][\s\S]*?(?:<span[^>]*>([^<]+)<\/span>)?[\s\S]*?<\/a>/gi;
         var match;
+
         while ((match = standardRegex.exec(htmlContent)) !== null) {
             var rawUrl = match[1];
             var poster = match[2];
             var duration = match[3] ? match[3].trim() : "";
-            var url = rawUrl.indexOf("http") === 0 ? rawUrl : "https://missav.media" + rawUrl;
 
-            if (url.indexOf("/genres") !== -1 || url.indexOf("/search") !== -1 || url.indexOf("/tags") !== -1 || url.indexOf("/actors") !== -1) {
+            var url = rawUrl.indexOf("http") === 0 ? rawUrl : "https://missav.media" + rawUrl;
+            
+            // Lọc bỏ các đường dẫn điều hướng hệ thống
+            if (url.indexOf("/genres") !== -1 || url.indexOf("/search") !== -1 || url.indexOf("/tags") !== -1 || url.indexOf("/actors") !== -1 || url.indexOf("/login") !== -1) {
                 continue;
             }
+
             if (poster.indexOf("//") === 0) poster = "https:" + poster;
 
+            // Lấy tiêu đề video từ thuộc tính title hoặc phần tử liên quan
             var titleMatch = new RegExp('<a[^>]+href=["\']' + rawUrl.replace(/[\/\.]/g, '\\$&') + '["\'][^>]*title=["\']([^\'"]+)["\']', 'i').exec(htmlContent);
             var title = titleMatch ? titleMatch[1] : "Video MissAV";
 
@@ -136,6 +173,7 @@ function parseListResponse(htmlContent) {
                 });
             }
         }
+
         return JSON.stringify(items);
     } catch (e) {
         return "[]";
@@ -143,23 +181,22 @@ function parseListResponse(htmlContent) {
 }
 
 // ============================================================================
-// 3. PARSE DETAIL RESPONSE (GIẢI PHÁP THAY THẾ TRỰC TIẾP)
+// 4. PARSE DETAIL RESPONSE (XỬ LÝ LUỒNG PHÁT VÀ CHẾ ĐỘ SNIFFER)
 // ============================================================================
 
 function parseDetailResponse(htmlContent, pageUrl) {
     try {
         if (!htmlContent) {
-            return JSON.stringify({ url: "", isEmbed: false, headers: {}, subtitles: [] });
+            return JSON.stringify({ url: pageUrl, isEmbed: true, headers: {}, subtitles: [] });
         }
 
-        // 1. Quét tìm kiếm trực tiếp các biến chứa m3u8 trong thẻ script của trang chi tiết
+        // 1. Quét tìm kiếm trực tiếp link HLS (.m3u8) từ mã nguồn trang chi tiết hoặc script nhúng CDN
         var m3u8Regex = /https?:\/\/[^"'\s<>]+\.m3u8(?:\?[^"'\s<>]*)?/gi;
         var match;
         var bestUrl = "";
 
         while ((match = m3u8Regex.exec(htmlContent)) !== null) {
             var found = match[0].replace(/\\\//g, "/");
-            // Lọc ưu tiên link stream chính hãng
             if (found.indexOf("playlist.m3u8") !== -1 || found.indexOf("index.m3u8") !== -1 || found.indexOf("master.m3u8") !== -1) {
                 bestUrl = found;
                 break;
@@ -181,48 +218,62 @@ function parseDetailResponse(htmlContent, pageUrl) {
             });
         }
 
-        // 2. Nếu không tìm thấy bằng m3u8, thử tìm kiếm chuỗi mã hóa hls/video source dạng JSON trong script
-        var sourceDataRegex = /sources\s*:\s*(\{[\s\S]*?\})|file\s*:\s*["'](https?:\/\/[^"']+\.mp4[^"']*)["']/i.exec(htmlContent);
-        if (sourceDataRegex && sourceDataRegex[2]) {
+        // 2. Nếu không tìm thấy link tĩnh do trang dùng bảo mật động, kích hoạt chế độ WebView Sniffer
+        // Giúp VAAPP tự động mở trang qua trình duyệt nội bộ để bắt gói tin phát video chính xác 100%
+        return JSON.stringify({
+            url: pageUrl,
+            isEmbed: true,
+            headers: {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+                "Referer": "https://missav123.com/"
+            },
+            subtitles: []
+        });
+
+    } catch (e) {
+        return JSON.stringify({
+            url: pageUrl,
+            isEmbed: true,
+            headers: {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+            },
+            subtitles: []
+        });
+    }
+}
+
+function parseEmbedResponse(htmlContent, url) {
+    try {
+        var streamMatch = /https?:\/\/[^"'\s<>\\]+\.m3u8(?:\?[^"'\s<>\\]*)?/i.exec(htmlContent);
+        if (streamMatch) {
+            var cleanUrl = streamMatch[0].replace(/\\\//g, "/");
             return JSON.stringify({
-                url: sourceDataRegex[2].replace(/\\\//g, "/"),
+                url: cleanUrl,
                 isEmbed: false,
-                mimeType: "video/mp4",
+                mimeType: "application/x-mpegURL",
                 headers: {
                     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-                    "Referer": pageUrl
+                    "Referer": url
                 },
                 subtitles: []
             });
         }
-
-        // 3. Phương án cuối cùng: Trả về một đối tượng phản hồi rỗng thay vì báo lỗi chết ứng dụng, 
-        // giúp VAAPP tự động chuyển sang cơ chế xử lý dự phòng của app.
-        return JSON.stringify({
-            url: "",
-            isEmbed: false,
-            headers: {},
-            subtitles: []
-        });
-
+        return JSON.stringify({ url: "", isEmbed: false, headers: {}, subtitles: [] });
     } catch (e) {
         return JSON.stringify({ url: "", isEmbed: false, headers: {}, subtitles: [] });
     }
 }
 
-function parseEmbedResponse(htmlContent, url) {
-    return JSON.stringify({ url: "", isEmbed: false, headers: {}, subtitles: [] });
-}
-
 // ============================================================================
-// 4. PARSER CATEGORIES & UTILS
+// 5. CATEGORIES, ACTORS & UTILS
 // ============================================================================
 
 function parseCategoriesResponse(htmlContent) {
     try {
         var categories = [];
-        var catRegex = /<a[^>]+href=["']https?:\/\/missav\.media\/genres\/([^/"']+)\/?["'][^>]*>([\s\S]*?)<\/a>/gi;
+        var catRegex = /<a[^>]+href=["']https?:\/\/missav\.media\/[^"']*genres\/([^/"']+)\/?["'][^>]*>([\s\S]*?)<\/a>/gi;
         var match;
+
         while ((match = catRegex.exec(htmlContent)) !== null) {
             var slug = match[1].trim();
             var rawName = match[2].replace(/<[^>]+>/g, "").trim();
@@ -240,13 +291,14 @@ function parseCategoriesResponse(htmlContent) {
 function parseCountriesResponse(htmlContent) {
     try {
         var actors = [];
-        var actorRegex = /<a[^>]+href=["']https?:\/\/missav\.media\/actors\/([^/"']+)\/?["'][^>]*>([\s\S]*?)<\/a>/gi;
+        var actorRegex = /<a[^>]+href=["']https?:\/\/missav\.media\/[^"']*actors\/([^/"']+)\/?["'][^>]*>([\s\S]*?)<\/a>/gi;
         var match;
+
         while ((match = actorRegex.exec(htmlContent)) !== null) {
             var slug = match[1].trim();
             var rawName = match[2].replace(/<[^>]+>/g, "").trim();
             var exists = actors.some(function(a) { return a.value === "actor-" + slug; });
-            if (!exists && rawName) {
+            if (!exists && rawName && slug !== "actors") {
                 actors.push({ name: decodeHtmlEntities(rawName), value: "actor-" + slug });
             }
         }
@@ -256,7 +308,9 @@ function parseCountriesResponse(htmlContent) {
     }
 }
 
-function parseYearsResponse(htmlContent) { return "[]"; }
+function parseYearsResponse(htmlContent) {
+    return "[]";
+}
 
 function decodeHtmlEntities(str) {
     if (!str) return "";
