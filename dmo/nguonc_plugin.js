@@ -7,7 +7,7 @@ function getManifest() {
   return JSON.stringify({
     id: "kkphim_clbphimxua",
     name: "Kho Phim Xưa & Tổng Hợp (M3U8)",
-    version: "3.1",
+    version: "3.3",
     type: "MOVIE",
     baseUrl: BASE_URL
   });
@@ -75,7 +75,9 @@ function getUrlSearch(k, filtersJson) {
 function getUrlDetail(slug) {
   if (!slug) return "";
   if (slug.indexOf("http") === 0) return slug;
-  var clean = slug.replace(/^.*\/phim\//, "").replace(/^\/+|\/+$/g, "");
+  // Tách lấy slug gốc của phim nếu có kèm chỉ số tập (vd: ten-phim|0|0)
+  var baseSlug = slug.split("|").shift();
+  var clean = baseSlug.replace(/^.*\/phim\//, "").replace(/^\/+|\/+$/g, "");
   return BASE_URL + "/phim/" + clean;
 }
 
@@ -133,39 +135,47 @@ function parseMovieDetail(jsonStr) {
   try {
     var data = JSON.parse(jsonStr || "{}");
     var movie = data.movie || {};
+    var movieSlug = movie.slug || "";
     title = movie.name || "";
     poster = makeImgUrl(movie.poster_url || movie.thumb_url, IMG_HOST);
     desc = (movie.content || "").replace(/<[^>]+>/g, " ").trim();
 
     var epGroups = data.episodes || new Array();
+    // Sắp xếp ưu tiên Server Thuyết Minh / Lồng Tiếng lên đầu trước khi đánh số
+    if (epGroups.length > 1) {
+      var vnGroups = new Array(), otherGroups = new Array();
+      while (epGroups.length > 0) {
+        var g = epGroups.shift();
+        var low = (g.server_name || "").toLowerCase();
+        if (low.indexOf("thuyết minh") !== -1 || low.indexOf("thuyet minh") !== -1 || low.indexOf("lồng tiếng") !== -1 || low.indexOf("long tieng") !== -1) {
+          vnGroups.push(g);
+        } else {
+          otherGroups.push(g);
+        }
+      }
+      epGroups = vnGroups.concat(otherGroups);
+    }
+
+    var svIdx = 0;
     while (epGroups.length > 0) {
       var sv = epGroups.shift(), eps = new Array();
       var svItems = sv.server_data || new Array();
+      var epIdx = 0;
       while (svItems.length > 0) {
         var ep = svItems.shift();
         var link = ep.link_m3u8 || ep.link_embed || "";
         if (link) {
-          var epTitle = ep.name ? (ep.name.toLowerCase().indexOf("tập") === -1 && ep.name.toLowerCase() !== "full" ? "Tập " + ep.name : ep.name) : ("Tập " + (eps.length + 1));
-          eps.push({ id: link, name: epTitle, slug: link });
+          var epTitle = ep.name ? (ep.name.toLowerCase().indexOf("tập") === -1 && ep.name.toLowerCase() !== "full" ? "Tập " + ep.name : ep.name) : ("Tập " + (epIdx + 1));
+          // Truyền định danh chuẩn: slug-phim|thứ-tự-server|thứ-tự-tập
+          var epId = movieSlug ? (movieSlug + "|" + svIdx + "|" + epIdx) : link;
+          eps.push({ id: epId, name: epTitle, slug: epId });
         }
+        epIdx++;
       }
       if (eps.length > 0) {
-        servers.push({ serverName: sv.server_name || ("Server #" + (servers.length + 1)), episodes: eps });
+        servers.push({ serverName: sv.server_name || ("Server #" + (svIdx + 1)), episodes: eps });
       }
-    }
-
-    if (servers.length > 1) {
-      var vnServers = new Array(), otherServers = new Array();
-      while (servers.length > 0) {
-        var s = servers.shift();
-        var low = (s.serverName || "").toLowerCase();
-        if (low.indexOf("thuyết minh") !== -1 || low.indexOf("thuyet minh") !== -1 || low.indexOf("lồng tiếng") !== -1 || low.indexOf("long tieng") !== -1) {
-          vnServers.push(s);
-        } else {
-          otherServers.push(s);
-        }
-      }
-      servers = vnServers.concat(otherServers);
+      svIdx++;
     }
   } catch (e) {}
 
@@ -177,27 +187,51 @@ function parseMovieDetail(jsonStr) {
     servers: servers
   });
 }
-function parseDetailResponse(input) {
+
+function parseDetailResponse(input, episodeId) {
   var raw = (input || "").trim();
   if (!raw) return JSON.stringify({ url: "" });
 
-  var url = raw;
-  // Nếu VAX Player truyền vào nội dung JSON hoặc HTML thay vì URL trực tiếp
+  var url = "";
   if (raw.indexOf("{") === 0) {
     try {
       var d = JSON.parse(raw);
-      var firstEp = d.episodes.shift().server_data.shift();
-      url = firstEp.link_m3u8 || firstEp.link_embed || "";
+      var epGroups = d.episodes || new Array();
+      if (epGroups.length > 1) {
+        var vnG = new Array(), otG = new Array();
+        while (epGroups.length > 0) {
+          var itemG = epGroups.shift();
+          var lName = (itemG.server_name || "").toLowerCase();
+          if (lName.indexOf("thuyết minh") !== -1 || lName.indexOf("thuyet minh") !== -1 || lName.indexOf("lồng tiếng") !== -1 || lName.indexOf("long tieng") !== -1) {
+            vnG.push(itemG);
+          } else {
+            otG.push(itemG);
+          }
+        }
+        epGroups = vnG.concat(otG);
+      }
+
+      var targetSv = 0, targetEp = 0;
+      if (episodeId && episodeId.indexOf("|") !== -1) {
+        var parts = episodeId.split("|");
+        parts.shift();
+        targetSv = parseInt(parts.shift(), 10) || 0;
+        targetEp = parseInt(parts.shift(), 10) || 0;
+      }
+
+      // Lấy đúng Server và Tập được chọn
+      var chosenSv = epGroups.slice(targetSv, targetSv + 1).shift() || epGroups.shift();
+      var svList = (chosenSv && chosenSv.server_data) ? chosenSv.server_data : new Array();
+      var chosenEp = svList.slice(targetEp, targetEp + 1).shift() || svList.shift();
+      if (chosenEp) {
+        url = chosenEp.link_m3u8 || chosenEp.link_embed || "";
+      }
     } catch (e) {}
-  } else if (raw.indexOf("<") !== -1) {
-    var m3u8Match = raw.match(/["'](https?:\/\/[^"'\s\\]+\.m3u8[^"'\s\\]*)["']/i);
-    if (m3u8Match) {
-      url = m3u8Match[1].replace(/\\\//g, "/");
-    }
+  } else if (raw.indexOf("http") === 0 && raw.indexOf("\n") === -1) {
+    url = raw;
   }
 
   var type = (url.indexOf(".m3u8") !== -1 || url.indexOf(".mp4") !== -1) ? "hls" : "embed";
-
   return JSON.stringify({
     url: url,
     type: type,
