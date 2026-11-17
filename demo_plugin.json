@@ -4,7 +4,7 @@
     {
       "id": "nguonphim1",
       "name": "Nguồn Phim 1",
-      "version": 1,
+      "version": 2,
       "scriptUrl": "https://raw.githubusercontent.com/mangyeu/TV/refs/heads/main/dmo/demo.js",
       "iconUrl": "https://m3.ngontv.com/media/images/1/logo/logo16012018.png"
     }
