@@ -139,8 +139,6 @@ function parseListResponse(html) {
   });
 }
 
-function parseSearchResponse(html) { return parseListResponse(html); }
-
 function parseMovieDetail(jsonStr) {
   var title = "", poster = "", desc = "", servers = new Array();
   try {
@@ -159,10 +157,12 @@ function parseMovieDetail(jsonStr) {
         var link = ep.m3u8 || ep.embed || "";
         if (link) {
           var epTitle = ep.name ? (ep.name.toLowerCase().indexOf("tập") === -1 && ep.name.toLowerCase() !== "full" ? "Tập " + ep.name : ep.name) : ("Tập " + (eps.length + 1));
+          // Gắn thêm cờ #vax_embed để báo cho parseDetailResponse biết đây là link embed gốc
+          var safeId = link.indexOf(".m3u8") === -1 ? (link + "#vax_embed") : link;
           eps.push({
-            id: link,
+            id: safeId,
             name: epTitle,
-            slug: link
+            slug: safeId
           });
         }
       }
@@ -174,7 +174,6 @@ function parseMovieDetail(jsonStr) {
       }
     }
 
-    // Ưu tiên đưa Server Thuyết Minh / Lồng Tiếng lên vị trí đầu tiên
     if (servers.length > 1) {
       var vnServers = new Array(), otherServers = new Array();
       while (servers.length > 0) {
@@ -203,15 +202,22 @@ function parseDetailResponse(input) {
   var raw = (input || "").trim();
   if (!raw) return JSON.stringify({ url: "" });
 
+  // 1. Nếu nhận được URL trực tiếp từ tập phim
   if (raw.indexOf("http") === 0 && raw.indexOf("<") === -1) {
-    var type = (raw.indexOf(".m3u8") !== -1 || raw.indexOf(".mp4") !== -1) ? "hls" : "embed";
+    var cleanUrl = raw.replace("#vax_embed", "");
+    var isHls = (cleanUrl.indexOf(".m3u8") !== -1 || cleanUrl.indexOf(".mp4") !== -1);
     return JSON.stringify({
-      url: raw,
-      type: type,
-      headers: { "Referer": BASE_URL + "/", "Origin": BASE_URL }
+      url: cleanUrl,
+      type: isHls ? "hls" : "embed",
+      headers: {
+        "Referer": "https://nguonc.com",
+        "Origin": "https://nguonc.com",
+        "User-Agent": "Mozilla/5.0 (Linux; Android 13; SM-S918B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36"
+      }
     });
   }
 
+  // 2. Nếu nhận được HTML từ trang embed.php của streamc.xyz
   var url = "", vType = "hls";
   try {
     var m3u8 = match1(raw, /["'](https?:\/\/[^"'\s\\]+\.(?:m3u8|mp4)[^"'\s\\]*)["']/i);
@@ -219,11 +225,13 @@ function parseDetailResponse(input) {
       url = m3u8.replace(/\\\//g, "/");
       vType = url.indexOf(".mp4") !== -1 ? "mp4" : "hls";
     }
+    // Bắt link dự phòng từ thẻ canonical hoặc og:url nếu trang streamc.xyz giấu link m3u8 bằng JS
     if (!url) {
-      var emb = match1(raw, /<iframe[^>]*src=["']((?:https?:)?\/\/[^"']+)["']/i);
-      if (emb) {
-        url = emb.replace(/\\\//g, "/");
-        if (url.indexOf("//") === 0) url = "https:" + url;
+      var selfUrl = match1(raw, /<link[^>]*rel=["']canonical["'][^>]*href=["'](https?:\/\/[^"']+)["']/i) ||
+                    match1(raw, /<meta[^>]*property=["']og:url["'][^>]*content=["'](https?:\/\/[^"']+)["']/i) ||
+                    match1(raw, /["'](https?:\/\/embed\d*\.streamc\.xyz\/embed\.php\?hash=[a-zA-Z0-9]+)["']/i);
+      if (selfUrl) {
+        url = selfUrl.replace(/\\\//g, "/");
         vType = "embed";
       }
     }
@@ -232,6 +240,11 @@ function parseDetailResponse(input) {
   return JSON.stringify({
     url: url,
     type: vType,
-    headers: { "Referer": "https://streamc.xyz", "Origin": "https://streamc.xyz" }
+    headers: {
+      "Referer": "https://nguonc.com",
+      "Origin": "https://nguonc.com",
+      "User-Agent": "Mozilla/5.0 (Linux; Android 13; SM-S918B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36"
+    }
   });
 }
+
