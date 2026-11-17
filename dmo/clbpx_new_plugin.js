@@ -14,7 +14,7 @@ function getManifest() {
 
 function getHomeSections() {
   return JSON.stringify(new Array(
-    { slug: "danh-sach/phim-moi-cap-nhat", title: "Phim Mới Cập Nhật", type: "HORIZONTAL", path: "danh-sach/phim-moi-cap-nhat" },
+    { slug: "v1/api/danh-sach/phim-moi-cap-nhat", title: "Phim Mới Cập Nhật", type: "HORIZONTAL", path: "v1/api/danh-sach/phim-moi-cap-nhat" },
     { slug: "v1/api/danh-sach/phim-bo", title: "Phim Bộ Mới", type: "HORIZONTAL", path: "v1/api/danh-sach/phim-bo" },
     { slug: "v1/api/danh-sach/phim-le", title: "Phim Lẻ Mới", type: "HORIZONTAL", path: "v1/api/danh-sach/phim-le" },
     { slug: "v1/api/quoc-gia/hong-kong", title: "Phim TVB - Hồng Kông", type: "HORIZONTAL", path: "v1/api/quoc-gia/hong-kong" },
@@ -24,7 +24,7 @@ function getHomeSections() {
 
 function getPrimaryCategories() {
   return JSON.stringify(new Array(
-    { name: "Phim Mới", slug: "danh-sach/phim-moi-cap-nhat" },
+    { name: "Phim Mới", slug: "v1/api/danh-sach/phim-moi-cap-nhat" },
     { name: "Phim Bộ", slug: "v1/api/danh-sach/phim-bo" },
     { name: "Phim Lẻ", slug: "v1/api/danh-sach/phim-le" },
     { name: "Hoạt Hình", slug: "v1/api/danh-sach/hoat-hinh" },
@@ -35,30 +35,10 @@ function getPrimaryCategories() {
   ));
 }
 
-function getFilterConfig() {
-  return JSON.stringify({
-    countries: new Array(
-      { name: "Tất cả", value: "" }, { name: "Hồng Kông", value: "hong-kong" }, { name: "Trung Quốc", value: "trung-quoc" },
-      { name: "Hàn Quốc", value: "han-quoc" }, { name: "Đài Loan", value: "dai-loan" }, { name: "Việt Nam", value: "viet-nam" },
-      { name: "Âu Mỹ", value: "au-my" }, { name: "Nhật Bản", value: "nhat-ban" }, { name: "Thái Lan", value: "thai-lan" }
-    ),
-    categories: new Array(
-      { name: "Tất cả", value: "" }, { name: "Cổ Trang", value: "co-trang" }, { name: "Võ Thuật", value: "vo-thuat" },
-      { name: "Hành Động", value: "hanh-dong" }, { name: "Tình Cảm", value: "tinh-cam" }, { name: "Tâm Lý", value: "tam-ly" },
-      { name: "Hình Sự", value: "hinh-su" }, { name: "Hài Hước", value: "hai-huoc" }, { name: "Thần Thoại", value: "than-thoai" },
-      { name: "Kinh Dị", value: "kinh-di" }, { name: "Chiến Tranh", value: "chien-tranh" }, { name: "Gia Đình", value: "gia-dinh" }
-    ),
-    years: new Array(
-      { name: "Tất cả", value: "" }, { name: "2026", value: "2026" }, { name: "2025", value: "2025" },
-      { name: "2020", value: "2020" }, { name: "2010", value: "2010" }, { name: "2000", value: "2000" }, { name: "1995", value: "1995" }
-    )
-  });
-}
-
 function getUrlList(slug, filtersJson) {
   var f = JSON.parse(filtersJson || "{}"), p = Number(f.page) || 1;
   var c = f.country || f.countries || "", g = f.category || f.categories || "", y = f.year || "";
-  var path = (slug || f.slug || f.path || "danh-sach/phim-moi-cap-nhat").replace(/^\/+|\/+$/g, "");
+  var path = (slug || f.slug || f.path || "v1/api/danh-sach/phim-moi-cap-nhat").replace(/^\/+|\/+$/g, "");
 
   if (c && c !== "all") path = "v1/api/quoc-gia/" + c;
   else if (g && g !== "all") path = "v1/api/the-loai/" + g;
@@ -67,24 +47,8 @@ function getUrlList(slug, filtersJson) {
   return BASE_URL + "/" + path + "?page=" + p + "&limit=24";
 }
 
-function getUrlSearch(k, filtersJson) {
-  var p = (JSON.parse(filtersJson || "{}")).page || 1;
-  return BASE_URL + "/v1/api/tim-kiem?keyword=" + encodeURIComponent(k || "") + "&page=" + p + "&limit=24";
-}
-
-function getUrlDetail(slug) {
-  if (!slug) return "";
-  var clean = slug.replace(/^.*\/phim\//, "").replace(/^\/+|\/+$/g, "");
-  return BASE_URL + "/phim/" + clean;
-}
-
-function fixImg(url) {
-  if (!url) return "";
-  return url.indexOf("http") === 0 ? url : "https://phimimg.com" + url.replace(/^\/+/, "");
-}
-
 function parseListResponse(jsonStr) {
-  var items = new Array(), currentPage = 1, totalPages = 1;
+  var items = new Array(), currentPage = 1, totalPages = 1, totalItems = 0;
   try {
     var raw = JSON.parse(jsonStr || "{}");
     var data = raw.data ? raw.data : raw;
@@ -100,11 +64,49 @@ function parseListResponse(jsonStr) {
         year: m.year ? String(m.year) : ""
       });
     }
-    var pag = data.params && data.params.pagination ? data.params.pagination : (raw.pagination || {});
+
+    var pag = (data.params && data.params.pagination) ? data.params.pagination : (raw.pagination || {});
     currentPage = Number(pag.currentPage) || 1;
-    totalPages = Number(pag.totalPages) || 1;
+    totalItems = Number(pag.totalItems) || 0;
+    var perPage = Number(pag.totalItemsPerPage) || 24;
+
+    totalPages = Number(pag.totalPages) || 0;
+    if (totalPages <= 1 && totalItems > 0) {
+      totalPages = Math.ceil(totalItems / perPage);
+    }
+    if (totalPages <= 1 && items.length >= 10) {
+      totalPages = currentPage + 10;
+    }
   } catch (e) {}
-  return JSON.stringify({ items: items, currentPage: currentPage, totalPages: totalPages, hasNextPage: currentPage < totalPages });
+
+  return JSON.stringify({
+    items: items,
+    currentPage: currentPage,
+    totalPages: totalPages,
+    totalItems: totalItems || (totalPages * 24),
+    hasNextPage: items.length > 0 && currentPage < totalPages,
+    pagination: {
+      currentPage: currentPage,
+      totalPages: totalPages
+    }
+  });
+}
+
+
+function getUrlSearch(k, filtersJson) {
+  var p = (JSON.parse(filtersJson || "{}")).page || 1;
+  return BASE_URL + "/v1/api/tim-kiem?keyword=" + encodeURIComponent(k || "") + "&page=" + p + "&limit=24";
+}
+
+function getUrlDetail(slug) {
+  if (!slug) return "";
+  var clean = slug.replace(/^.*\/phim\//, "").replace(/^\/+|\/+$/g, "");
+  return BASE_URL + "/phim/" + clean;
+}
+
+function fixImg(url) {
+  if (!url) return "";
+  return url.indexOf("http") === 0 ? url : "https://phimimg.com" + url.replace(/^\/+/, "");
 }
 
 function parseSearchResponse(jsonStr) { return parseListResponse(jsonStr); }
