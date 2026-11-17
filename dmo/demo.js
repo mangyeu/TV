@@ -301,46 +301,18 @@ function parseMovieDetail(html, pageUrl) {
         return "null";
     }
 }
-
 function parseDetailResponse(html, pageUrl) {
-    var streamUrl = "";
-
-    // 1. Cố gắng quét tự động nếu HTML có chứa link m3u8 hoặc UUID
-    if (html) {
-        var directM3u8 = html.match(/https?:\/\/[^"'\s<>]+\.m3u8(?:\?[^"'\s<>]*)?/i);
-        if (directM3u8) {
-            streamUrl = directM3u8[0].replace(/\\\//g, "/");
-        } else {
-            var uuidMatch = html.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i);
-            if (uuidMatch) {
-                // [NỐI GÓI TIN]: Ghép UUID vừa bắt được vào cấu trúc CDN chuẩn của hệ thống
-                streamUrl = "https://fourhoi.mrstcdn.store/" + uuidMatch[0] + "/1080p/video.m3u8";
-            }
-        }
-    }
-
-    // 2. [NỐI GÓI TIN THỦ CÔNG THEO SLUG]: Nếu trang web mã hóa quá sâu, ánh xạ trực tiếp từ URL chi tiết
-    if (!streamUrl && pageUrl) {
-        // Ví dụ pageUrl: https://missav.media/vi/rct-588-uncensored-leak
-        // Ta có thể trích xuất các từ khóa đặc thù để nối chuỗi nếu hệ thống hỗ trợ endpoint tĩnh
-        if (pageUrl.indexOf("rct-588") !== -1) {
-            // Đây là link gói tin bạn đã bắt mẫu cho video cụ thể này
-            streamUrl = "https://surrit.mrstcdn.store/3e93e88a-51bb-494f-884a-ea9e07c14f97/1080p/video.m3u8";
-        }
-    }
-
-    // Trả về luồng kèm đầy đủ Header định danh bảo mật chống chặn kết nối
+    // Trả về thẳng pageUrl dưới dạng WebView fallback để app bật trình duyệt nhúng bên trong
     return JSON.stringify({
-        url: streamUrl || pageUrl,
+        url: pageUrl,
         headers: {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
-            "Referer": "https://missav.media/",
-            "Origin": "https://missav.media",
-            "Accept": "*/*"
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+            "Referer": "https://missav.media/"
         },
         subtitles: []
     });
 }
+
 
 function extractStreamUrl(html) {
     if (!html) return "";
