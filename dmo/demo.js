@@ -6,7 +6,7 @@ function getManifest() {
     return JSON.stringify({
         "id": "missav",
         "name": "MissAV",
-        "version": "2.7.0",
+        "version": "3.1.0",
         "baseUrl": "https://missav.media",
         "referrer": "https://missav.media/",
         "iconUrl": "https://raw.githubusercontent.com/youngbi/repo/main/plugins/missav.ico",
@@ -141,13 +141,6 @@ function getUrlYears() { return ""; }
 // =============================================================================
 
 var PluginUtils = {
-    normalizeHtml: function (html) {
-        if (!html) return "";
-        return html.replace(/class="([^"]*)"/g, function (fullMatch, classValue) {
-            var normalized = classValue.replace(/missav_media-/g, '');
-            return 'class="' + normalized + '"';
-        });
-    },
     cleanText: function (text) {
         if (!text) return "";
         return text.replace(/<[^>]*>/g, "")
@@ -167,20 +160,21 @@ var PluginUtils = {
 };
 
 function parseListResponse(html) {
-    html = PluginUtils.normalizeHtml(html);
     var movies = [];
     var seenUrls = {};
 
-    var cardRegex = /<a[^>]+href="([^"]+\/[a-zA-Z0-9\-]+)"[^>]*>([\s\S]*?<img[\s\S]*?>[\s\S]*?)<\/a>/gi;
+    var cardRegex = /<a[^>]+href="([^"]+\/([a-zA-Z0-9\-]+))"[^>]*>([\s\S]*?)<\/a>/gi;
     var match;
 
     while ((match = cardRegex.exec(html)) !== null) {
         var fullUrl = match[1];
-        var innerHtml = match[2];
+        var innerHtml = match[3];
 
-        if (fullUrl.indexOf("/genres") !== -1 || fullUrl.indexOf("/actresses") !== -1 || fullUrl.indexOf("/search") !== -1 || fullUrl.indexOf("/login") !== -1 || fullUrl.indexOf("/history") !== -1) {
+        if (fullUrl.indexOf("/genres") !== -1 || fullUrl.indexOf("/actresses") !== -1 || fullUrl.indexOf("/search") !== -1 || fullUrl.indexOf("/login") !== -1 || fullUrl.indexOf("/tag") !== -1) {
             continue;
         }
+
+        if (fullUrl.indexOf("missav.media") === -1 && fullUrl.indexOf("/vi/") === -1) continue;
 
         var slug = fullUrl.replace(/https?:\/\/[^\/]+/, "");
         if (slug.indexOf("/") !== 0) slug = "/" + slug;
@@ -188,24 +182,32 @@ function parseListResponse(html) {
         if (seenUrls[slug]) continue;
         seenUrls[slug] = true;
 
-        // Trích xuất Poster: Hỗ trợ triệt để data-src, src và chuẩn hóa URL tuyệt đối
+        // Quét lấy link ảnh poster từ các thuộc tính data-src, src hoặc srcset
         var thumb = "";
-        var imgMatch = innerHtml.match(/<img[^>]+(?:data-src|src|srcset)="([^" ]+)"/i);
-        if (imgMatch) {
-            thumb = imgMatch[1];
+        var imgMatches = innerHtml.match(/<img[^>]+(?:data-src|src|srcset)="([^"]+)"/gi);
+        if (imgMatches) {
+            for (var im = 0; im < imgMatches.length; im++) {
+                var srcMatch = imgMatches[im].match(/(?:data-src|src|srcset)="([^"]+)"/i);
+                if (srcMatch && srcMatch[1]) {
+                    var candidate = srcMatch[1];
+                    if (candidate.indexOf("http") === 0 || candidate.indexOf("//") === 0) {
+                        thumb = candidate;
+                        break;
+                    }
+                }
+            }
         }
 
-        if (thumb && thumb.indexOf("//") === 0) {
-            thumb = "https:" + thumb;
-        } else if (thumb && thumb.indexOf("http") !== 0) {
-            thumb = "https://missav.media" + (thumb.indexOf("/") === 0 ? "" : "/") + thumb;
+        if (!thumb) {
+            var rawLinkMatch = innerHtml.match(/https?:\/\/[^"'\s]+\.(?:jpg|jpeg|png|webp)/i);
+            if (rawLinkMatch) thumb = rawLinkMatch[0];
         }
 
+        if (thumb && thumb.indexOf("//") === 0) thumb = "https:" + thumb;
         if (thumb && thumb.indexOf("cover-t.jpg") !== -1) {
             thumb = thumb.replace("/cover-t.jpg", "/cover.jpg");
         }
-
-        if (thumb.indexOf("data:image") !== -1 || thumb.indexOf("svg") !== -1) {
+        if (!thumb || thumb.indexOf("svg") !== -1 || thumb.indexOf("data:image") !== -1) {
             thumb = "";
         }
 
@@ -216,19 +218,21 @@ function parseListResponse(html) {
         var code = partsSlug[partsSlug.length - 1].toUpperCase();
         if (!title) title = code;
 
-        movies.push({
-            id: slug,
-            title: title,
-            posterUrl: thumb,
-            image: thumb,         // Đảm bảo tương thích mọi phiên bản VAAPP
-            thumbnail: thumb,
-            backdropUrl: thumb,
-            description: "",
-            year: 0,
-            quality: "HD",
-            episode_current: "Full",
-            lang: code
-        });
+        if (slug.length > 5 && code) {
+            movies.push({
+                id: slug,
+                title: title,
+                posterUrl: thumb,
+                image: thumb,
+                thumbnail: thumb,
+                backdropUrl: thumb,
+                description: "",
+                year: 0,
+                quality: "HD",
+                episode_current: "Full",
+                lang: code
+            });
+        }
     }
 
     var totalPages = 1;
@@ -251,7 +255,6 @@ function parseSearchResponse(html) {
 }
 
 function parseMovieDetail(html, pageUrl) {
-    html = PluginUtils.normalizeHtml(html);
     try {
         var title = PluginUtils.getMeta(html, "og:title") || "MissAV Video";
         var thumb = PluginUtils.getMeta(html, "og:image");
@@ -316,49 +319,34 @@ function parseDetailResponse(html, pageUrl) {
     });
 }
 
+// Trích xuất link stream hỗ trợ chuẩn CDN mới (`mrstcdn.store`, `surrit.com`, v.v.)
 function extractStreamUrl(html) {
     if (!html) return "";
-    var uuid = "";
     
+    // 1. Quét tìm trực tiếp đường dẫn .m3u8 trong source (bao gồm các tên miền kho lưu trữ mới như mrstcdn.store)
     var directM3u8 = html.match(/https?:\/\/[^"'\s<>]+\.m3u8(?:\?[^"'\s<>]*)?/i);
     if (directM3u8) {
         return directM3u8[0].replace(/\\\//g, "/");
     }
 
-    var evalMatch = html.match(/eval\(function\(p,a,c,k,e,d\)[\s\S]*?'([^']+)'\.split\('\|'\)/i);
-    if (evalMatch) {
-        var parts = evalMatch[1].split('|');
-        var uuidParts = [];
-        for (var i = 0; i < parts.length; i++) {
-            if (parts[i].match(/^[0-9a-f]{8,12}$/)) uuidParts.push(parts[i]);
-        }
-        if (uuidParts.length >= 5) {
-            uuid = uuidParts[0] + '-' + uuidParts[1] + '-' + uuidParts[2] + '-' + uuidParts[3] + '-' + uuidParts[4];
-        }
+    // 2. Quét cấu trúc chứa mã định danh UUID kèm tên miền CDN
+    var cdnMatch = html.match(/(?:surrit|sixyik|nineyu|fourhoi|mrstcdn|apidata|m3u8)\.[a-z]+\/[^"'\s<>]+([0-9a-f-]{36})[^"'\s<>]*playlist\.m3u8/i);
+    if (cdnMatch) {
+        // Nếu tìm thấy chuỗi URL hoàn chỉnh chứa UUID
+        var fullStreamMatch = html.match(new RegExp("https?://[^\"'\\s<>]+/" + cdnMatch[1] + "/[^\"'\\s<>]+\\.m3u8", "i"));
+        if (fullStreamMatch) return fullStreamMatch[0].replace(/\\\//g, "/");
     }
 
-    if (!uuid) {
-        var domainMatch = html.match(/(?:surrit|sixyik|nineyu|fourhoi|apidata|m3u8)\.com\/([0-9a-f-]{36})/i);
-        if (domainMatch) uuid = domainMatch[1];
+    // 3. Quét UUID và fallback dựng lại link stream chuẩn qua surrit.com
+    var uuidMatch = html.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i);
+    if (uuidMatch) {
+        return "https://surrit.com/" + uuidMatch[0] + "/playlist.m3u8";
     }
 
-    if (!uuid) {
-        var allUuids = html.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi);
-        if (allUuids && allUuids.length > 0) {
-            for (var u = 0; u < allUuids.length; u++) {
-                if (allUuids[u].length === 36) {
-                    uuid = allUuids[u];
-                    break;
-                }
-            }
-        }
-    }
-
-    return uuid ? "https://surrit.com/" + uuid + "/playlist.m3u8" : "";
+    return "";
 }
 
 function parseCategoriesResponse(html) {
-    html = PluginUtils.normalizeHtml(html);
     var categories = [{ name: "Tất cả thể loại", slug: "vi/genres" }];
     var regex = /<a[^>]+href="([^"]*\/vi\/genres\/[^"]+)"[^>]*>([^<]+)<\/a>/g;
     var match;
@@ -372,6 +360,7 @@ function parseCategoriesResponse(html) {
 
         if (slug && name && !seen[slug]) {
             seen[slug] = true;
+            categories.path_slug = slug;
             categories.push({ name: name, slug: "vi/genres/" + slug });
         }
     }
