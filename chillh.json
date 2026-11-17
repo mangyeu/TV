@@ -24,7 +24,7 @@
         },
         {
             "id": "kkphim_clbphimxua",
-            "name": "Kho Phim Xưa & Tổng Hợp (M3U8)",
+            "name": "Kho Phim Xưa & Tổng Hợp (M3U8)"",
             "version": "3.1",
             "scriptUrl": "https://raw.githubusercontent.com/mangyeu/TV/refs/heads/main/dmo/nguonc_plugin.js",
             "iconUrl": "https://raw.githubusercontent.com/mangyeu/TV/refs/heads/main/dmo/nguonc.ico"
