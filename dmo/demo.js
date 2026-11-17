@@ -6,7 +6,7 @@ function getManifest() {
     return JSON.stringify({
         "id": "missav",
         "name": "MissAV",
-        "version": "2.4.0",
+        "version": "2.5.0",
         "baseUrl": "https://missav.media",
         "referrer": "https://missav.media/",
         "iconUrl": "https://raw.githubusercontent.com/youngbi/repo/main/plugins/missav.ico",
@@ -65,7 +65,7 @@ function getFilterConfig() {
 }
 
 // =============================================================================
-// URL GENERATION (Fix lỗi thiếu trang)
+// URL GENERATION
 // =============================================================================
 
 function getUrlList(slugOrPage, filtersJsonOrType, category, country, year) {
@@ -170,7 +170,6 @@ function parseListResponse(html) {
     html = PluginUtils.normalizeHtml(html);
     var movies = [];
 
-    // Tách các khối item video dựa trên thẻ chứa link hoặc khung thumbnail
     var parts = html.split('class="group relative"');
     if (parts.length <= 1) parts = html.split('thumbnail group');
     if (parts.length <= 1) parts = html.split('<div class="group">');
@@ -194,16 +193,21 @@ function parseListResponse(html) {
             code = partsSlug[partsSlug.length - 1];
         }
 
-        // Fix lỗi không hiện poster: Quét mọi trường hợp src, data-src, hoặc srcset
+        // Tối ưu hóa quét poster: ưu tiên lấy data-src, src từ thẻ img hoặc source
         var thumb = "";
-        var imgMatch = itemHtml.match(/<img[^>]+(?:data-src|src)="([^"]+)"/i);
-        if (imgMatch) {
-            thumb = imgMatch[1];
-        } else {
-            var srcMatch = itemHtml.match(/src="([^"]+)"/i);
-            if (srcMatch) thumb = srcMatch[1];
-        }
+        var dataSrcMatch = itemHtml.match(/data-src="([^"]+)"/i);
+        var srcMatch = itemHtml.match(/src="([^"]+)"/i);
         
+        if (dataSrcMatch && dataSrcMatch[1].indexOf('http') === 0) {
+            thumb = dataSrcMatch[1];
+        } else if (srcMatch && srcMatch[1].indexOf('http') === 0 && srcMatch[1].indexOf('svg') === -1) {
+            thumb = srcMatch[1];
+        } else if (dataSrcMatch) {
+            thumb = dataSrcMatch[1];
+        } else if (srcMatch) {
+            thumb = srcMatch[1];
+        }
+
         if (thumb && thumb.indexOf("//") === 0) thumb = "https:" + thumb;
         if (thumb && thumb.indexOf("cover-t.jpg") !== -1) {
             thumb = thumb.replace("/cover-t.jpg", "/cover.jpg");
@@ -225,7 +229,6 @@ function parseListResponse(html) {
         });
     }
 
-    // Fix lỗi thiếu trang: Quét số trang tổng cộng từ phân trang HTML
     var totalPages = 1;
     var pageMatches = html.match(/page=(\d+)/g);
     if (pageMatches) {
@@ -252,26 +255,7 @@ function parseMovieDetail(html, pageUrl) {
         var thumb = PluginUtils.getMeta(html, "og:image");
         var desc = PluginUtils.getMeta(html, "og:description");
 
-        // Fix lỗi phát video: Quét chính xác UUID để sinh link m3u8
-        var uuid = "";
-        var evalMatch = html.match(/eval\(function\(p,a,c,k,e,d\)[\s\S]*?'([^']+)'\.split\('\|'\)/i);
-        if (evalMatch) {
-            var parts = evalMatch[1].split('|');
-            var uuidParts = [];
-            for (var i = 0; i < parts.length; i++) {
-                if (parts[i].match(/^[0-9a-f]{8,12}$/)) uuidParts.push(parts[i]);
-            }
-            if (uuidParts.length >= 5) {
-                uuid = uuidParts[0] + '-' + uuidParts[1] + '-' + uuidParts[2] + '-' + uuidParts[3] + '-' + uuidParts[4];
-            }
-        }
-
-        if (!uuid) {
-            var surritMatch = html.match(/(?:surrit|sixyik|nineyu|fourhoi)\.com\/([0-9a-f-]{36})/i);
-            if (surritMatch) uuid = surritMatch[1];
-        }
-
-        var streamUrl = uuid ? "https://surrit.com/" + uuid + "/playlist.m3u8" : "";
+        var streamUrl = extractStreamUrl(html);
         var servers = [];
         if (streamUrl) {
             servers.push({
@@ -298,11 +282,7 @@ function parseMovieDetail(html, pageUrl) {
 }
 
 function parseDetailResponse(html) {
-    var uuid = "";
-    var surritMatch = html.match(/(?:surrit|sixyik|nineyu|fourhoi)\.com\/([0-9a-f-]{36})/i);
-    if (surritMatch) uuid = surritMatch[1];
-
-    var streamUrl = uuid ? "https://surrit.com/" + uuid + "/playlist.m3u8" : "";
+    var streamUrl = extractStreamUrl(html);
 
     return JSON.stringify({
         url: streamUrl,
@@ -313,6 +293,46 @@ function parseDetailResponse(html) {
         },
         subtitles: []
     });
+}
+
+// Hàm trích xuất link stream tối ưu, bóc tách nhiều lớp CDN (surrit, sixyik, fourhoi, v.v.)
+function extractStreamUrl(html) {
+    var uuid = "";
+    
+    // 1. Quét tìm trực tiếp file m3u8 trong mã nguồn
+    var directM3u8 = html.match(/https?:\/\/[^"'\s<>]+\.m3u8(?:\?[^"'\s<>]*)?/i);
+    if (directM3u8) {
+        return directM3u8[0].replace(/\\\//g, "/");
+    }
+
+    // 2. Quét qua cấu trúc eval bọc mã
+    var evalMatch = html.match(/eval\(function\(p,a,c,k,e,d\)[\s\S]*?'([^']+)'\.split\('\|'\)/i);
+    if (evalMatch) {
+        var parts = evalMatch[1].split('|');
+        var uuidParts = [];
+        for (var i = 0; i < parts.length; i++) {
+            if (parts[i].match(/^[0-9a-f]{8,12}$/)) uuidParts.push(parts[i]);
+        }
+        if (uuidParts.length >= 5) {
+            uuid = uuidParts[0] + '-' + uuidParts[1] + '-' + uuidParts[2] + '-' + uuidParts[3] + '-' + uuidParts[4];
+        }
+    }
+
+    // 3. Quét domain CDN phổ biến
+    if (!uuid) {
+        var domainMatch = html.match(/(?:surrit|sixyik|nineyu|fourhoi|apidata)\.com\/([0-9a-f-]{36})/i);
+        if (domainMatch) uuid = domainMatch[1];
+    }
+
+    // 4. Quét sâu toàn bộ chuỗi UUID tiêu chuẩn trong trang
+    if (!uuid) {
+        var allUuids = html.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi);
+        if (allUuids && allUuids.length > 0) {
+            uuid = allUuids[0];
+        }
+    }
+
+    return uuid ? "https://surrit.com/" + uuid + "/playlist.m3u8" : "";
 }
 
 function parseCategoriesResponse(html) {
