@@ -1,4 +1,4 @@
-// @Allowed-Domains: phimapi.com, *.phimapi.com, phimimg.com, *.phimimg.com, *.kkphimplayer1.com, *.kkphimplayer5.com, *.kkphimplayer6.com, *.kkphimplayer7.com, *.kkphimplayer8.com, googleapis.com, *.googleapis.com
+// @Allowed-Domains: phimapi.com, *.phimapi.com, phimimg.com, *.phimimg.com, *.phim1280.tv, *.kkphimplayer1.com, *.kkphimplayer2.com, *.kkphimplayer3.com, *.kkphimplayer4.com, *.kkphimplayer5.com, *.kkphimplayer6.com, *.kkphimplayer7.com, *.kkphimplayer8.com, *.kkphimplayer9.com, googleapis.com, *.googleapis.com
 
 var BASE_URL = "https://phimapi.com";
 var IMG_HOST = "https://phimimg" + ".com";
@@ -177,16 +177,35 @@ function parseMovieDetail(jsonStr) {
     servers: servers
   });
 }
-
 function parseDetailResponse(input) {
-  var url = (input || "").trim();
-  if (url.indexOf("{") === 0) {
+  var raw = (input || "").trim();
+  if (!raw) return JSON.stringify({ url: "" });
+
+  var url = raw;
+  // Nếu VAX Player truyền vào nội dung JSON hoặc HTML thay vì URL trực tiếp
+  if (raw.indexOf("{") === 0) {
     try {
-      var d = JSON.parse(url);
+      var d = JSON.parse(raw);
       var firstEp = d.episodes.shift().server_data.shift();
       url = firstEp.link_m3u8 || firstEp.link_embed || "";
     } catch (e) {}
+  } else if (raw.indexOf("<") !== -1) {
+    var m3u8Match = raw.match(/["'](https?:\/\/[^"'\s\\]+\.m3u8[^"'\s\\]*)["']/i);
+    if (m3u8Match) {
+      url = m3u8Match[1].replace(/\\\//g, "/");
+    }
   }
+
   var type = (url.indexOf(".m3u8") !== -1 || url.indexOf(".mp4") !== -1) ? "hls" : "embed";
-  return JSON.stringify({ url: url, type: type });
-      }
+
+  return JSON.stringify({
+    url: url,
+    type: type,
+    headers: {
+      "Referer": "https://phimapi.com",
+      "Origin": "https://phimapi.com",
+      "User-Agent": "Mozilla/5.0 (Linux; Android 13; SM-S918B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36"
+    }
+  });
+}
+
