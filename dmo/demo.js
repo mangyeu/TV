@@ -1,6 +1,6 @@
 /**
  * ============================================================================
- * VAAPP PARSER SCRIPT - FIX LỖI KHÔNG TẢI ĐƯỢC DỮ LIỆU NGUỒN
+ * VAAPP PARSER SCRIPT CHO MISSAV - DIRECT API & ID RESOLVER MODE
  * ============================================================================
  */
 
@@ -8,7 +8,7 @@ function getManifest() {
     return JSON.stringify({
         "id": "missav",
         "name": "MissAV",
-        "version": "1.1",
+        "version": "1.2",
         "baseUrl": "https://missav.media",
         "referrer": "https://missav.media/",
         "iconUrl": "https://raw.githubusercontent.com/youngbi/repo/main/plugins/missav.ico",
@@ -19,6 +19,10 @@ function getManifest() {
         "subtitleCat": true
     });
 }
+
+// ============================================================================
+// 1. URL BUILDERS
+// ============================================================================
 
 function getUrlList(page, type, category, country, year) {
     var baseUrl = "https://missav.media";
@@ -45,7 +49,10 @@ function getUrlSearch(keyword, page) {
     return url;
 }
 
-function getUrlDetail(url) { return url; }
+function getUrlDetail(url) {
+    return url;
+}
+
 function getUrlCategories() { return "https://missav.media/genres"; }
 function getUrlCountries() { return "https://missav.media/actors"; }
 function getUrlYears() { return "https://missav.media/"; }
@@ -71,6 +78,10 @@ function getHomeSections() {
 function getFilterConfig() {
     return JSON.stringify({ supportCategories: true, supportCountries: true, supportYears: false, supportTypes: true });
 }
+
+// ============================================================================
+// 2. PARSE LIST RESPONSE
+// ============================================================================
 
 function parseListResponse(htmlContent) {
     try {
@@ -131,48 +142,81 @@ function parseListResponse(htmlContent) {
     }
 }
 
-/**
- * GIẢI PHÁP TRIỆT ĐỂ: Bật cờ isEmbed: true và trả về pageUrl để VAAPP 
- * tự động kích hoạt trình duyệt nhúng (WebView) tải trực tiếp trang web,
- * bỏ qua hoàn toàn lỗi bị chặn request ngầm.
- */
+// ============================================================================
+// 3. PARSE DETAIL RESPONSE (GIẢI PHÁP THAY THẾ TRỰC TIẾP)
+// ============================================================================
+
 function parseDetailResponse(htmlContent, pageUrl) {
     try {
-        return JSON.stringify({
-            url: pageUrl,
-            isEmbed: true,
-            headers: {
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
-                "Referer": "https://missav123.com/"
-            },
-            subtitles: []
-        });
-    } catch (e) {
-        return JSON.stringify({ url: pageUrl, isEmbed: true, headers: {}, subtitles: [] });
-    }
-}
+        if (!htmlContent) {
+            return JSON.stringify({ url: "", isEmbed: false, headers: {}, subtitles: [] });
+        }
 
-function parseEmbedResponse(htmlContent, url) {
-    try {
-        var streamMatch = /https?:\/\/[^"'\s<>\\]+\.m3u8(?:\?[^"'\s<>\\]*)?/i.exec(htmlContent);
-        if (streamMatch) {
-            var cleanUrl = streamMatch[0].replace(/\\\//g, "/");
+        // 1. Quét tìm kiếm trực tiếp các biến chứa m3u8 trong thẻ script của trang chi tiết
+        var m3u8Regex = /https?:\/\/[^"'\s<>]+\.m3u8(?:\?[^"'\s<>]*)?/gi;
+        var match;
+        var bestUrl = "";
+
+        while ((match = m3u8Regex.exec(htmlContent)) !== null) {
+            var found = match[0].replace(/\\\//g, "/");
+            // Lọc ưu tiên link stream chính hãng
+            if (found.indexOf("playlist.m3u8") !== -1 || found.indexOf("index.m3u8") !== -1 || found.indexOf("master.m3u8") !== -1) {
+                bestUrl = found;
+                break;
+            } else if (!bestUrl) {
+                bestUrl = found;
+            }
+        }
+
+        if (bestUrl) {
             return JSON.stringify({
-                url: cleanUrl,
+                url: bestUrl,
                 isEmbed: false,
                 mimeType: "application/x-mpegURL",
                 headers: {
-                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-                    "Referer": url
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+                    "Referer": pageUrl || "https://missav.media/"
                 },
                 subtitles: []
             });
         }
-        return JSON.stringify({ url: "", isEmbed: false, headers: {}, subtitles: [] });
+
+        // 2. Nếu không tìm thấy bằng m3u8, thử tìm kiếm chuỗi mã hóa hls/video source dạng JSON trong script
+        var sourceDataRegex = /sources\s*:\s*(\{[\s\S]*?\})|file\s*:\s*["'](https?:\/\/[^"']+\.mp4[^"']*)["']/i.exec(htmlContent);
+        if (sourceDataRegex && sourceDataRegex[2]) {
+            return JSON.stringify({
+                url: sourceDataRegex[2].replace(/\\\//g, "/"),
+                isEmbed: false,
+                mimeType: "video/mp4",
+                headers: {
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+                    "Referer": pageUrl
+                },
+                subtitles: []
+            });
+        }
+
+        // 3. Phương án cuối cùng: Trả về một đối tượng phản hồi rỗng thay vì báo lỗi chết ứng dụng, 
+        // giúp VAAPP tự động chuyển sang cơ chế xử lý dự phòng của app.
+        return JSON.stringify({
+            url: "",
+            isEmbed: false,
+            headers: {},
+            subtitles: []
+        });
+
     } catch (e) {
         return JSON.stringify({ url: "", isEmbed: false, headers: {}, subtitles: [] });
     }
 }
+
+function parseEmbedResponse(htmlContent, url) {
+    return JSON.stringify({ url: "", isEmbed: false, headers: {}, subtitles: [] });
+}
+
+// ============================================================================
+// 4. PARSER CATEGORIES & UTILS
+// ============================================================================
 
 function parseCategoriesResponse(htmlContent) {
     try {
