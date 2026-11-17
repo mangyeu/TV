@@ -6,7 +6,7 @@ function getManifest() {
   return JSON.stringify({
     id: "phim_nguonc",
     name: "Nguồn C",
-    version: "4.6",
+    version: "4.7",
     type: "MOVIE",
     baseUrl: BASE_URL,
     headers: {
@@ -173,18 +173,54 @@ function parseMovieDetail(jsonStr) {
 function parseDetailResponse(input) {
   var raw = (input || "").trim();
   if (!raw) return JSON.stringify({ url: "" });
+
+  // 1. Nếu VAX Player truyền thẳng URL của tập phim
   if (raw.indexOf("http") === 0 && raw.indexOf("<") === -1) {
     var type = (raw.indexOf(".m3u8") !== -1 || raw.indexOf(".mp4") !== -1) ? "hls" : "embed";
     return JSON.stringify({ url: raw, type: type, headers: { "Referer": BASE_URL + "/", "Origin": BASE_URL } });
   }
+
+  // 2. Nếu VAX Player truyền vào HTML của trang embed streamc.xyz
   var url = "", vType = "hls";
   try {
-    var m3u8 = match1(raw, /["'](https?:\/\/[^"'\s\\]+\.(?:m3u8|mp4)[^"'\s\\]*)["']/i);
-    if (m3u8) { url = m3u8.replace(/\\\//g, "/"); vType = url.indexOf(".mp4") !== -1 ? "mp4" : "hls"; }
+    // Tìm link m3u8/mp4 trực tiếp hoặc thoát ký tự (\/)
+    var m3u8 = match1(raw, /["'](https?:\/\/[^"'\s\\]+\.(?:m3u8|mp4)[^"'\s\\]*)["']/i) ||
+               match1(raw, /["'](https?:\\\/\\\/[^"'\s]+\.(?:m3u8|mp4)[^"'\s]*)["']/i);
+    if (m3u8) {
+      url = m3u8.replace(/\\\//g, "/");
+      vType = url.indexOf(".mp4") !== -1 ? "mp4" : "hls";
+    }
+
+    // Tìm thẻ iframe nhúng bên trong
     if (!url) {
       var emb = match1(raw, /<iframe[^>]*src=["']((?:https?:)?\/\/[^"']+)["']/i);
-      if (emb) { url = emb.replace(/\\\//g, "/"); if (url.indexOf("//") === 0) url = "https:" + url; vType = "embed"; }
+      if (emb) {
+        url = emb.replace(/\\\//g, "/");
+        if (url.indexOf("//") === 0) url = "https:" + url;
+        vType = "embed";
+      }
+    }
+
+    // Dự phòng: Lấy chính đường dẫn của trang streamc.xyz đang mở để chạy ở chế độ embed
+    if (!url) {
+      var pageUrl = match1(raw, /<link[^>]*rel=["']canonical["'][^>]*href=["'](https?:\/\/[^"']+)["']/i) ||
+                    match1(raw, /<meta[^>]*property=["']og:url["'][^>]*content=["'](https?:\/\/[^"']+)["']/i) ||
+                    match1(raw, /(https?:\/\/embed\d*\.streamc\.xyz\/embed\.php\?hash=[a-zA-Z0-9]+)/i);
+      if (pageUrl) {
+        url = pageUrl;
+        vType = "embed";
+      }
     }
   } catch (e) {}
-  return JSON.stringify({ url: url, type: vType, headers: { "Referer": BASE_URL + "/", "Origin": BASE_URL } });
+
+  return JSON.stringify({
+    url: url,
+    type: vType,
+    headers: {
+      "Referer": BASE_URL + "/",
+      "Origin": BASE_URL,
+      "User-Agent": "Mozilla/5.0 (Linux; Android 13; SM-S918B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36"
+    }
+  });
 }
+
