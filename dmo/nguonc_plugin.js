@@ -1,13 +1,13 @@
-// @Allowed-Domains: ophim1.com, *.ophim1.com, img.ophim.live, *.ophim.live, *.ophim.cc, *.opstream10.com, *.opstream11.com, *.opstream12.com, *.opstream13.com, *.opstream14.com, *.opstream15.com, *.opstream16.com, googleapis.com, *.googleapis.com
+// @Allowed-Domains: phimapi.com, *.phimapi.com, phimimg.com, *.phimimg.com, *.kkphimplayer1.com, *.kkphimplayer5.com, *.kkphimplayer6.com, *.kkphimplayer7.com, *.kkphimplayer8.com, googleapis.com, *.googleapis.com
 
-var BASE_URL = "https://ophim1.com";
-var CDN_IMG = "https://img" + ".ophim.live";
+var BASE_URL = "https://phimapi.com";
+var IMG_HOST = "https://phimimg" + ".com";
 
 function getManifest() {
   return JSON.stringify({
-    id: "ophim_clbphimxua",
-    name: "Kho Phim Xưa & Tổng Hợp",
-    version: "2.5",
+    id: "kkphim_clbphimxua",
+    name: "Kho Phim Xưa & Tổng Hợp (M3U8)",
+    version: "3.1",
     type: "MOVIE",
     baseUrl: BASE_URL
   });
@@ -15,7 +15,7 @@ function getManifest() {
 
 function getHomeSections() {
   return JSON.stringify(new Array(
-    { slug: "danh-sach/phim-moi-cap-nhat", title: "Phim Mới Cập Nhật", type: "HORIZONTAL", path: "danh-sach/phim-moi-cap-nhat" },
+    { slug: "v1/api/danh-sach/phim-moi-cap-nhat", title: "Phim Mới Cập Nhật", type: "HORIZONTAL", path: "v1/api/danh-sach/phim-moi-cap-nhat" },
     { slug: "v1/api/quoc-gia/hong-kong", title: "Phim TVB - Hồng Kông", type: "HORIZONTAL", path: "v1/api/quoc-gia/hong-kong" },
     { slug: "v1/api/quoc-gia/dai-loan", title: "Phim Đài Loan Xưa", type: "HORIZONTAL", path: "v1/api/quoc-gia/dai-loan" },
     { slug: "v1/api/the-loai/co-trang", title: "Phim Cổ Trang", type: "HORIZONTAL", path: "v1/api/the-loai/co-trang" },
@@ -25,7 +25,7 @@ function getHomeSections() {
 
 function getPrimaryCategories() {
   return JSON.stringify(new Array(
-    { name: "Phim Mới", slug: "danh-sach/phim-moi-cap-nhat" },
+    { name: "Phim Mới", slug: "v1/api/danh-sach/phim-moi-cap-nhat" },
     { name: "Phim Bộ", slug: "v1/api/danh-sach/phim-bo" },
     { name: "Phim Lẻ", slug: "v1/api/danh-sach/phim-le" },
     { name: "Hồng Kông", slug: "v1/api/quoc-gia/hong-kong" },
@@ -58,33 +58,33 @@ function getFilterConfig() {
 function getUrlList(slug, filtersJson) {
   var f = JSON.parse(filtersJson || "{}"), p = Number(f.page) || 1;
   var c = f.country || f.countries || "", g = f.category || f.categories || "", y = f.year || "";
-  var path = (slug || f.slug || f.path || "danh-sach/phim-moi-cap-nhat").replace(/^\/+|\/+$/g, "");
+  var path = (slug || f.slug || f.path || "v1/api/danh-sach/phim-moi-cap-nhat").replace(/^\/+|\/+$/g, "");
 
   if (c && c !== "all") path = "v1/api/quoc-gia/" + c;
   else if (g && g !== "all") path = "v1/api/the-loai/" + g;
   else if (y && y !== "all") path = "v1/api/nam/" + y;
 
-  return BASE_URL + "/" + path + "?page=" + p;
+  return BASE_URL + "/" + path + "?page=" + p + "&limit=24";
 }
 
 function getUrlSearch(k, filtersJson) {
   var p = (JSON.parse(filtersJson || "{}")).page || 1;
-  return BASE_URL + "/v1/api/tim-kiem?keyword=" + encodeURIComponent(k || "") + "&page=" + p;
+  return BASE_URL + "/v1/api/tim-kiem?keyword=" + encodeURIComponent(k || "") + "&page=" + p + "&limit=24";
 }
 
-function getUrlDetail(s) {
-  if (!s) return "";
-  if (s.indexOf("http") === 0) return s;
-  var clean = s.replace(/^.*\/phim\//, "").replace(/^\/+|\/+$/g, "");
+function getUrlDetail(slug) {
+  if (!slug) return "";
+  if (slug.indexOf("http") === 0) return slug;
+  var clean = slug.replace(/^.*\/phim\//, "").replace(/^\/+|\/+$/g, "");
   return BASE_URL + "/phim/" + clean;
 }
 
-function buildImg(url, cdn) {
+function makeImgUrl(url, cdn) {
   if (!url) return "";
   if (url.indexOf("http") === 0) return url;
-  var base = (cdn || CDN_IMG).replace(/\/+$/, "");
+  var base = (cdn || IMG_HOST).replace(/\/+$/, "");
   var path = url.replace(/^\/+/, "");
-  if (path.indexOf("uploads/") !== 0) path = "uploads/movies/" + path;
+  if (path.indexOf("upload/") !== 0) path = "upload/vod/" + path;
   return base + "/" + path;
 }
 
@@ -93,7 +93,7 @@ function parseListResponse(jsonStr) {
   try {
     var raw = JSON.parse(jsonStr || "{}");
     var data = raw.data ? raw.data : raw;
-    var cdn = data.APP_DOMAIN_CDN_IMAGE || raw.APP_DOMAIN_CDN_IMAGE || CDN_IMG;
+    var cdn = data.APP_DOMAIN_CDN_IMAGE || raw.APP_DOMAIN_CDN_IMAGE || IMG_HOST;
     var list = data.items || new Array();
 
     while (list.length > 0) {
@@ -102,8 +102,8 @@ function parseListResponse(jsonStr) {
       items.push({
         id: m.slug,
         title: m.name || m.origin_name || "",
-        posterUrl: buildImg(m.thumb_url || m.poster_url, cdn),
-        backdropUrl: buildImg(m.poster_url || m.thumb_url, cdn),
+        posterUrl: makeImgUrl(m.poster_url || m.thumb_url, cdn),
+        backdropUrl: makeImgUrl(m.thumb_url || m.poster_url, cdn),
         year: m.year ? String(m.year) : ""
       });
     }
@@ -134,7 +134,7 @@ function parseMovieDetail(jsonStr) {
     var data = JSON.parse(jsonStr || "{}");
     var movie = data.movie || {};
     title = movie.name || "";
-    poster = buildImg(movie.thumb_url || movie.poster_url, CDN_IMG);
+    poster = makeImgUrl(movie.poster_url || movie.thumb_url, IMG_HOST);
     desc = (movie.content || "").replace(/<[^>]+>/g, " ").trim();
 
     var epGroups = data.episodes || new Array();
@@ -189,4 +189,4 @@ function parseDetailResponse(input) {
   }
   var type = (url.indexOf(".m3u8") !== -1 || url.indexOf(".mp4") !== -1) ? "hls" : "embed";
   return JSON.stringify({ url: url, type: type });
-}
+      }
