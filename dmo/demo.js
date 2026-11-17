@@ -1,7 +1,6 @@
 /**
  * ============================================================================
- * VAAPP PARSER SCRIPT HOÀN CHỈNH CHO MISSAV (missav.media)
- * Dựa trên cấu trúc HTML/Alpine.js chuẩn xác của trang web
+ * VAAPP PARSER SCRIPT HOÀN CHỈNH CHO MISSAV (missav.media) - FIXED
  * ============================================================================
  */
 
@@ -9,7 +8,7 @@ function getManifest() {
     return JSON.stringify({
         "id": "missav",
         "name": "MissAV",
-        "version": "2.1.0",
+        "version": "2.1.1",
         "baseUrl": "https://missav.media",
         "referrer": "https://missav.media/",
         "iconUrl": "https://raw.githubusercontent.com/youngbi/repo/main/plugins/missav.ico",
@@ -64,7 +63,6 @@ function getUrlCategories() {
 }
 
 function getUrlCountries() {
-    // Trả về endpoint danh sách diễn viên để tương thích với bộ lọc quốc gia/diễn viên trong VAAPP
     return "https://missav.media/vi/actors";
 }
 
@@ -98,14 +96,14 @@ function getHomeSections() {
 function getFilterConfig() {
     return JSON.stringify({
         supportCategories: true,
-        supportCountries: true, // Kích hoạt để hiển thị danh sách Diễn viên
+        supportCountries: true,
         supportYears: false,
         supportTypes: true
     });
 }
 
 // ============================================================================
-// 3. PARSE LIST RESPONSE (BÓC TÁCH DANH SÁCH VIDEO & DIỄN VIÊN)
+// 3. PARSE LIST RESPONSE
 // ============================================================================
 
 function parseListResponse(htmlContent) {
@@ -113,7 +111,6 @@ function parseListResponse(htmlContent) {
         var items = [];
         if (!htmlContent) return "[]";
 
-        // Trường hợp đang ở trang danh sách Diễn viên (/actors)
         if (htmlContent.indexOf("/actors/") !== -1 || htmlContent.indexOf("object-cover rounded-full") !== -1) {
             var actorRegex = /<a[^>]+href=["']https?:\/\/missav\.media\/[^"']*actors\/([^/"']+)\/?["'][^>]*>([\s\S]*?)<\/a>/gi;
             var matchActor;
@@ -141,7 +138,6 @@ function parseListResponse(htmlContent) {
             if (items.length > 0) return JSON.stringify(items);
         }
 
-        // Quét danh sách video chuẩn trên trang chủ / thể loại / tìm kiếm
         var standardRegex = /<a[^>]+href=["'](https?:\/\/missav\.media\/[^"']+|\/[^"']+)["'][^>]*>[\s\S]*?<img[^>]+(?:data-src|src)=["']([^"']+)["'][\s\S]*?(?:<span[^>]*>([^<]+)<\/span>)?[\s\S]*?<\/a>/gi;
         var match;
 
@@ -152,14 +148,12 @@ function parseListResponse(htmlContent) {
 
             var url = rawUrl.indexOf("http") === 0 ? rawUrl : "https://missav.media" + rawUrl;
             
-            // Lọc bỏ các đường dẫn điều hướng hệ thống
             if (url.indexOf("/genres") !== -1 || url.indexOf("/search") !== -1 || url.indexOf("/tags") !== -1 || url.indexOf("/actors") !== -1 || url.indexOf("/login") !== -1) {
                 continue;
             }
 
             if (poster.indexOf("//") === 0) poster = "https:" + poster;
 
-            // Lấy tiêu đề video từ thuộc tính title hoặc phần tử liên quan
             var titleMatch = new RegExp('<a[^>]+href=["\']' + rawUrl.replace(/[\/\.]/g, '\\$&') + '["\'][^>]*title=["\']([^\'"]+)["\']', 'i').exec(htmlContent);
             var title = titleMatch ? titleMatch[1] : "Video MissAV";
 
@@ -181,16 +175,16 @@ function parseListResponse(htmlContent) {
 }
 
 // ============================================================================
-// 4. PARSE DETAIL RESPONSE (XỬ LÝ LUỒNG PHÁT VÀ CHẾ ĐỘ SNIFFER)
+// 4. PARSE DETAIL RESPONSE (CẢI TIẾN ĐỂ BẮT LUỒNG HOẶC IFRAME CHUẨN XÁC)
 // ============================================================================
 
 function parseDetailResponse(htmlContent, pageUrl) {
     try {
         if (!htmlContent) {
-            return JSON.stringify({ url: pageUrl, isEmbed: true, headers: {}, subtitles: [] });
+            return JSON.stringify({ url: "", isEmbed: false, headers: {}, subtitles: [] });
         }
 
-        // 1. Quét tìm kiếm trực tiếp link HLS (.m3u8) từ mã nguồn trang chi tiết hoặc script nhúng CDN
+        // 1. Quét tìm kiếm trực tiếp link HLS (.m3u8) từ mã nguồn trang chi tiết
         var m3u8Regex = /https?:\/\/[^"'\s<>]+\.m3u8(?:\?[^"'\s<>]*)?/gi;
         var match;
         var bestUrl = "";
@@ -218,27 +212,33 @@ function parseDetailResponse(htmlContent, pageUrl) {
             });
         }
 
-        // 2. Nếu không tìm thấy link tĩnh do trang dùng bảo mật động, kích hoạt chế độ WebView Sniffer
-        // Giúp VAAPP tự động mở trang qua trình duyệt nội bộ để bắt gói tin phát video chính xác 100%
+        // 2. Quét tìm thẻ iframe nhúng bên trong trang chi tiết
+        var iframeMatch = /<iframe[^>]+(?:data-src|src)=["']([^"']+)["']/i.exec(htmlContent);
+        if (iframeMatch) {
+            var embedUrl = iframeMatch[1].trim();
+            if (embedUrl.indexOf("//") === 0) embedUrl = "https:" + embedUrl;
+            
+            return JSON.stringify({
+                url: embedUrl,
+                isEmbed: true,
+                headers: {
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+                    "Referer": pageUrl
+                },
+                subtitles: []
+            });
+        }
+
+        // 3. Nếu không tìm thấy, trả về url rỗng kèm cờ false thay vì pageUrl để tránh lỗi parse của app
         return JSON.stringify({
-            url: pageUrl,
-            isEmbed: true,
-            headers: {
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
-                "Referer": "https://missav123.com/"
-            },
+            url: "",
+            isEmbed: false,
+            headers: {},
             subtitles: []
         });
 
     } catch (e) {
-        return JSON.stringify({
-            url: pageUrl,
-            isEmbed: true,
-            headers: {
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
-            },
-            subtitles: []
-        });
+        return JSON.stringify({ url: "", isEmbed: false, headers: {}, subtitles: [] });
     }
 }
 
