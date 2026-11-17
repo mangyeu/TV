@@ -2,11 +2,11 @@
   "version": 1,
   "plugins": [
     {
-      "id": "phimhdcs",
-      "name": "PhimHDCS_2",
-      "version": "2.0",
+      "id": "missav",
+      "name": "MissAV",
+      "version": "1.0",
       "scriptUrl": "https://raw.githubusercontent.com/mangyeu/TV/refs/heads/main/dmo/demo.js",
-      "iconUrl": "https://m3.ngontv.com/media/images/1/logo/logo16012018.png"
+      "iconUrl": "https://raw.githubusercontent.com/youngbi/repo/main/plugins/missav.ico"
     }
   ]
 }
