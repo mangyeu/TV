@@ -1,6 +1,6 @@
 // @Allowed-Domains: ://nguonc.com, *.nguonc.com, ://nguonc.com, streamc.xyz, *.streamc.xyz, googleapis.com, *.googleapis.com
 
-var BASE_URL = "https://://nguonc.com";
+var BASE_URL = "https://nguonc.com";
 
 function getManifest() {
   return JSON.stringify({
