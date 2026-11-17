@@ -6,7 +6,7 @@ function getManifest() {
     return JSON.stringify({
         "id": "missav",
         "name": "MissAV",
-        "version": "2.3.0",
+        "version": "2.4.0",
         "baseUrl": "https://missav.media",
         "referrer": "https://missav.media/",
         "iconUrl": "https://raw.githubusercontent.com/youngbi/repo/main/plugins/missav.ico",
@@ -65,7 +65,7 @@ function getFilterConfig() {
 }
 
 // =============================================================================
-// URL GENERATION (Tương thích cả 2 chuẩn tham số của VAAPP)
+// URL GENERATION (Fix lỗi thiếu trang)
 // =============================================================================
 
 function getUrlList(slugOrPage, filtersJsonOrType, category, country, year) {
@@ -73,7 +73,6 @@ function getUrlList(slugOrPage, filtersJsonOrType, category, country, year) {
     var path = "vi/new";
     var sort = "";
 
-    // Trường hợp app gọi theo chuẩn mới: (slug, filtersJson)
     if (typeof filtersJsonOrType === "string" && filtersJsonOrType.indexOf("{") !== -1) {
         try {
             var filters = JSON.parse(filtersJsonOrType);
@@ -81,9 +80,7 @@ function getUrlList(slugOrPage, filtersJsonOrType, category, country, year) {
             sort = filters.sort || "";
         } catch (e) {}
         path = slugOrPage || "vi/new";
-    } 
-    // Trường hợp app gọi theo chuẩn cũ: (page, type, category, country, year)
-    else if (typeof slugOrPage === "number" || typeof slugOrPage === "string" && !isNaN(slugOrPage)) {
+    } else if (typeof slugOrPage === "number" || (typeof slugOrPage === "string" && !isNaN(slugOrPage))) {
         page = parseInt(slugOrPage) || 1;
         if (category && category !== "") {
             path = category;
@@ -101,7 +98,6 @@ function getUrlList(slugOrPage, filtersJsonOrType, category, country, year) {
 
     var url = "https://missav.media/" + path;
     
-    // Xử lý phân trang
     if (url.indexOf("?") === -1) {
         url += "?page=" + page;
     } else {
@@ -174,120 +170,74 @@ function parseListResponse(html) {
     html = PluginUtils.normalizeHtml(html);
     var movies = [];
 
-    var actressLinkMatch = html.match(/href="[^"]*\/actresses\/[^"]+"/g);
-    var isActressesPage = (actressLinkMatch && actressLinkMatch.length > 5);
-    var isAllGenresPage = !isActressesPage && html.indexOf('/genres/') !== -1;
+    // Tách các khối item video dựa trên thẻ chứa link hoặc khung thumbnail
+    var parts = html.split('class="group relative"');
+    if (parts.length <= 1) parts = html.split('thumbnail group');
+    if (parts.length <= 1) parts = html.split('<div class="group">');
 
-    if (isActressesPage) {
-        var liRegex = /<li[\s\S]*?<\/li>/gi;
-        var match;
-        while ((match = liRegex.exec(html)) !== null) {
-            var itemHtml = match[0];
-            var urlMatch = itemHtml.match(/href="([^"]*\/actresses\/[^"]+)"/);
-            if (!urlMatch || urlMatch[1].indexOf('?') !== -1) continue;
+    for (var i = 1; i < parts.length; i++) {
+        var itemHtml = parts[i];
+        
+        var linkMatch = itemHtml.match(/<a[^>]+href="([^"]+)"/);
+        if (!linkMatch) continue;
 
-            var url = urlMatch[1];
-            var nameMatch = itemHtml.match(/<h4[^>]*>([\s\S]*?)<\/h4>/) || itemHtml.match(/<img[^>]+alt="([^"]+)"/);
-            var name = PluginUtils.cleanText(nameMatch ? nameMatch[1] : "");
-            if (!name || name.length < 2) continue;
+        var fullUrl = linkMatch[1];
+        var slug = fullUrl.replace(/https?:\/\/[^\/]+/, "");
+        if (slug.indexOf("/") !== 0) slug = "/" + slug;
 
-            var imgMatch = itemHtml.match(/<img[^>]+src="([^"]+)"/);
-            var img = imgMatch ? imgMatch[1] : "";
+        if (slug.indexOf("/genres") !== -1 || slug.indexOf("/actresses") !== -1 || slug.indexOf("/search") !== -1) continue;
 
-            var slug = url.replace(/https?:\/\/[^\/]+/, "");
-            if (slug.indexOf("/") !== 0) slug = "/" + slug;
-
-            movies.push({
-                id: slug,
-                title: name,
-                posterUrl: img,
-                backdropUrl: img,
-                description: "Nữ diễn viên",
-                year: 0,
-                quality: "ACTRESS",
-                episode_current: "",
-                lang: ""
-            });
+        var codeMatch = itemHtml.match(/class="[^"]*text-nord13[^"]*"[^>]*>([\s\S]*?)<\/a>/);
+        var code = codeMatch ? PluginUtils.cleanText(codeMatch[1]) : "";
+        if (!code) {
+            var partsSlug = slug.split("/");
+            code = partsSlug[partsSlug.length - 1];
         }
-    } else if (isAllGenresPage) {
-        var genreRegex = /<a[^>]+href="([^"]+)"[^>]*>([\s\S]*?)<\/a>/gi;
-        var foundSlugs = {};
-        var match;
-        while ((match = genreRegex.exec(html)) !== null) {
-            var url = match[1];
-            var innerContent = match[2];
-            if (url.indexOf('/genres/') !== -1) {
-                var name = PluginUtils.cleanText(innerContent);
-                if (!name || name.length < 2) continue;
-                var slug = url.replace(/https?:\/\/[^\/]+/, "");
-                if (slug.indexOf("/") !== 0) slug = "/" + slug;
 
-                if (!foundSlugs[slug]) {
-                    movies.push({
-                        id: slug,
-                        title: name,
-                        posterUrl: "",
-                        backdropUrl: "",
-                        description: "Thể loại",
-                        year: 0,
-                        quality: "CAT",
-                        episode_current: "",
-                        lang: ""
-                    });
-                    foundSlugs[slug] = true;
-                }
-            }
+        // Fix lỗi không hiện poster: Quét mọi trường hợp src, data-src, hoặc srcset
+        var thumb = "";
+        var imgMatch = itemHtml.match(/<img[^>]+(?:data-src|src)="([^"]+)"/i);
+        if (imgMatch) {
+            thumb = imgMatch[1];
+        } else {
+            var srcMatch = itemHtml.match(/src="([^"]+)"/i);
+            if (srcMatch) thumb = srcMatch[1];
         }
+        
+        if (thumb && thumb.indexOf("//") === 0) thumb = "https:" + thumb;
+        if (thumb && thumb.indexOf("cover-t.jpg") !== -1) {
+            thumb = thumb.replace("/cover-t.jpg", "/cover.jpg");
+        }
+
+        var titleMatch = itemHtml.match(/title="([^"]+)"/i) || itemHtml.match(/alt="([^"]+)"/i);
+        var title = titleMatch ? PluginUtils.cleanText(titleMatch[1]) : code;
+
+        movies.push({
+            id: slug,
+            title: title,
+            posterUrl: thumb,
+            backdropUrl: thumb,
+            description: "",
+            year: 0,
+            quality: "HD",
+            episode_current: "Full",
+            lang: code
+        });
     }
 
-    if (movies.length === 0) {
-        var parts = html.split('thumbnail group');
-        if (parts.length <= 1) parts = html.split('class="thumbnail');
-
-        for (var i = 1; i < parts.length; i++) {
-            var itemHtml = parts[i];
-            var linkMatch = itemHtml.match(/<a[^>]+href="([^"]+)"/);
-            if (!linkMatch) continue;
-
-            var fullUrl = linkMatch[1];
-            var slug = fullUrl.replace(/https?:\/\/[^\/]+/, "");
-            if (slug.indexOf("/") !== 0) slug = "/" + slug;
-
-            if (slug.indexOf("/genres") !== -1 || slug.indexOf("/actresses") !== -1 || slug.indexOf("/search") !== -1) continue;
-
-            var codeMatch = itemHtml.match(/class="[^"]*text-nord13[^"]*"[^>]*>([\s\S]*?)<\/a>/);
-            var code = codeMatch ? PluginUtils.cleanText(codeMatch[1]) : "";
-            if (!code) {
-                var partsSlug = slug.split("/");
-                code = partsSlug[partsSlug.length - 1];
-            }
-
-            var imgMatch = itemHtml.match(/<img[^>]+(?:data-src|src)="([^"]+)"/);
-            var thumb = imgMatch ? imgMatch[1] : "";
-            if (thumb && thumb.indexOf("cover-t.jpg") !== -1) {
-                thumb = thumb.replace("/cover-t.jpg", "/cover.jpg");
-            }
-
-            var titleMatch = itemHtml.match(/title="([^"]+)"/) || itemHtml.match(/alt="([^"]+)"/);
-            var title = titleMatch ? PluginUtils.cleanText(titleMatch[1]) : code;
-
-            movies.push({
-                id: slug,
-                title: title,
-                posterUrl: thumb,
-                backdropUrl: thumb,
-                description: "",
-                year: 0,
-                quality: "HD",
-                episode_current: "Full",
-                lang: code
-            });
+    // Fix lỗi thiếu trang: Quét số trang tổng cộng từ phân trang HTML
+    var totalPages = 1;
+    var pageMatches = html.match(/page=(\d+)/g);
+    if (pageMatches) {
+        for (var p = 0; p < pageMatches.length; p++) {
+            var num = parseInt(pageMatches[p].replace("page=", ""));
+            if (num > totalPages) totalPages = num;
         }
     }
 
     return JSON.stringify({
         items: movies,
-        pagination: { currentPage: 1, totalPages: 10, totalItems: movies.length, itemsPerPage: 20 }
+        pagination: { currentPage: 1, totalPages: totalPages, totalItems: movies.length, itemsPerPage: 20 }
     });
 }
 
@@ -302,6 +252,7 @@ function parseMovieDetail(html, pageUrl) {
         var thumb = PluginUtils.getMeta(html, "og:image");
         var desc = PluginUtils.getMeta(html, "og:description");
 
+        // Fix lỗi phát video: Quét chính xác UUID để sinh link m3u8
         var uuid = "";
         var evalMatch = html.match(/eval\(function\(p,a,c,k,e,d\)[\s\S]*?'([^']+)'\.split\('\|'\)/i);
         if (evalMatch) {
