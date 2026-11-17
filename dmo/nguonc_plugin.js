@@ -6,7 +6,7 @@ function getManifest() {
   return JSON.stringify({
     id: "phim_nguonc",
     name: "Nguồn C",
-    version: "3.5",
+    version: "3.8",
     type: "MOVIE",
     baseUrl: BASE_URL,
     headers: {
@@ -171,24 +171,36 @@ function parseMovieDetail(html) {
     title = match1(html, /<h1[^>]*>([\s\S]*?)<\/h1>/i).replace(/<[^>]+>/g, "").trim();
     poster = match1(html, /<meta[^>]*property=["']og:image["'][^>]*content=["']([^"']+)["']/i);
     if (poster && poster.indexOf("http") !== 0) poster = BASE_URL + "/" + poster.replace(/^\/+/, "");
-    desc = match1(html, /class=["'][^"']*nc-film-description[^"']*["'][^>]*>([\s\S]*?)<\/div>/i).replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+    desc = match1(html, /class=["'][^"']*nc-film-description[^"']*["'][^>]*>([\s\S]*?)<\/div>/i).replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim() ||
+           match1(html, /<meta[^>]*name=["']description["'][^>]*content=["']([^"']+)["']/i);
 
-    // 1. Quét theo từng khối Server (.nc-player-episodes) của ://nguonc.com
+    // 1. Lấy danh sách tên các Server (.nc-player-server)
+    var svNames = new Array();
+    var svNameBlocks = html.split("nc-player-server");
+    svNameBlocks.shift();
+    while (svNameBlocks.length > 0) {
+      var snb = svNameBlocks.shift().substring(0, 300);
+      var sName = match1(snb, />([\s\S]*?)<\/button>/i).replace(/<[^>]+>/g, "").trim();
+      if (sName && sName.length < 40) {
+        svNames.push(decodeHtml(sName));
+      }
+    }
+
+    // 2. Quét danh sách tập phim theo từng khối (.nc-player-episodes__grid)
     var svBlocks = html.split("nc-player-episodes__grid");
     svBlocks.shift();
 
     while (svBlocks.length > 0) {
-      var sb = svBlocks.shift().substring(0, 25000);
+      var sb = svBlocks.shift().substring(0, 50000);
       var endGrid = sb.indexOf("</div>");
       if (endGrid !== -1) sb = sb.substring(0, endGrid);
 
       var eps = new Array(), epSeen = "|";
-      // Bắt cả thẻ <button> lẫn thẻ <a> có class nc-player-episode
       var btnBlocks = sb.split("nc-player-episode");
       btnBlocks.shift();
 
       while (btnBlocks.length > 0) {
-        var b = btnBlocks.shift().substring(0, 500);
+        var b = btnBlocks.shift().substring(0, 600);
         var link = match1(b, /data-(?:link|embed|url|src)=["']([^"']+)["']/i) ||
                    match1(b, /href=["']([^"']+)["']/i);
         var name = match1(b, />([\s\S]*?)<\/(?:button|a)>/i).replace(/<[^>]+>/g, "").trim();
@@ -197,27 +209,60 @@ function parseMovieDetail(html) {
           var cleanId = link.indexOf("http") === 0 ? link : link.replace(BASE_URL, "").replace(/^\/+|\/+$/g, "");
           if (cleanId && epSeen.indexOf("|" + cleanId + "|") === -1) {
             epSeen += cleanId + "|";
-            eps.push({ id: cleanId, name: decodeHtml(name) || ("Tập " + (eps.length + 1)), slug: cleanId });
+            eps.push({
+              id: cleanId,
+              name: decodeHtml(name) || ("Tập " + (eps.length + 1)),
+              slug: cleanId
+            });
           }
         }
       }
 
       if (eps.length > 0) {
-        servers.push({ serverName: "Server #" + (servers.length + 1), episodes: eps });
+        var currentSvName = svNames.length > 0 ? svNames.shift() : ("Server #" + (servers.length + 1));
+        servers.push({
+          serverName: currentSvName,
+          episodes: eps
+        });
       }
     }
 
-    // 2. Dự phòng nếu link video nằm trực tiếp trong thẻ iframe hoặc thẻ <textarea id="area_embed">
+    // 3. Dự phòng nếu tập phim nằm dạng link nhúng trong script
     if (servers.length === 0) {
-      var iframeSrc = match1(html, /<iframe[^>]*src=["'](https?:\/\/[^"']+)["']/i) ||
-                      match1(html, /id=["']area_embed["'][^>]*>([\s\S]*?)<\/textarea>/i);
-      var directLink = match1(iframeSrc, /(https?:\/\/[^\s"'<>]+)/i) || iframeSrc.trim();
-      if (directLink && directLink.indexOf("http") === 0) {
-        servers.push({
-          serverName: "Server Chính",
-          episodes: new Array({ id: directLink, name: "Full / Tập 1", slug: directLink })
-        });
+      var jsonEmbeds = html.match(/https?:\/\/[^"'\s\\]+\.(?:m3u8|mp4)|https?:\/\/[^"'\s\\]+\/embed\/[^"'\s\\]+/gi);
+      if (jsonEmbeds && jsonEmbeds.length > 0) {
+        var fallbackEps = new Array(), fSeen = "|";
+        while (jsonEmbeds.length > 0) {
+          var rawUrl = jsonEmbeds.shift().replace(/\\\//g, "/");
+          if (fSeen.indexOf("|" + rawUrl + "|") === -1) {
+            fSeen += rawUrl + "|";
+            fallbackEps.push({
+              id: rawUrl,
+              name: "Tập " + (fallbackEps.length + 1),
+              slug: rawUrl
+            });
+          }
+        }
+        if (fallbackEps.length > 0) {
+          servers.push({ serverName: "Server Chính", episodes: fallbackEps });
+        }
       }
+    }
+
+    // 4. Sắp xếp ưu tiên Server Thuyết Minh lên đầu tiên
+    if (servers.length > 1) {
+      var tmServers = new Array();
+      var otherServers = new Array();
+      while (servers.length > 0) {
+        var sv = servers.shift();
+        var lowerName = (sv.serverName || "").toLowerCase();
+        if (lowerName.indexOf("thuyết minh") !== -1 || lowerName.indexOf("thuyet minh") !== -1) {
+          tmServers.push(sv);
+        } else {
+          otherServers.push(sv);
+        }
+      }
+      servers = tmServers.concat(otherServers);
     }
   } catch (e) {}
 
@@ -229,6 +274,7 @@ function parseMovieDetail(html) {
     servers: servers
   });
 }
+
 
 function parseDetailResponse(input) {
   if (!input) return JSON.stringify({ url: "" });
