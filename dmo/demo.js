@@ -8,7 +8,7 @@ function getManifest() {
         "name": "MissAV",
         "version": "1.1.2",
         "baseUrl": "https://missav.media",
-        "referrer": "https://missav123.com/",
+        "referrer": "https://missav.media/",
         "iconUrl": "https://raw.githubusercontent.com/youngbi/repo/main/plugins/missav.ico",
         "isEnabled": true,
         "isAdult": true,
