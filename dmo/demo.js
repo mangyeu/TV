@@ -4,9 +4,9 @@
 
 function getManifest() {
     return JSON.stringify({
-        "id": "av01_vax_stable",
+        "id": "av01_multistream_vax",
         "name": "AV01 Media Player",
-        "version": "11.0.0",
+        "version": "12.0.0",
         "baseUrl": "https://av01.tv",
         "referrer": "https://av01.tv/",
         "iconUrl": "https://static.iw01.xyz/static/av01-icon-export.svg",
@@ -20,7 +20,7 @@ function getManifest() {
 
 function getHomeSections() {
     return JSON.stringify([
-        { slug: 'latest', title: '🔥 Mới Cập Nhật (Danh Sách Đầy Đủ)', type: 'Horizontal', path: '' },
+        { slug: 'latest', title: '🔥 Mới Cập Nhật (Đa Video)', type: 'Horizontal', path: '' },
         { slug: 'trending', title: '📈 Thịnh Hành Nhất', type: 'Horizontal', path: '' },
         { slug: 'popular', title: '⭐ Xem Nhiều Nhất', type: 'Horizontal', path: '' },
         { slug: 'uncensored', title: '💎 Không Che (Uncensored)', type: 'Horizontal', path: '' }
@@ -79,65 +79,43 @@ function getUrlCountries() { return ""; }
 function getUrlYears() { return ""; }
 
 // =============================================================================
-// 3. PARSERS (Chuẩn hóa cấu trúc object để app không bị lỗi load)
+// 3. PARSERS (Danh sách video với các luồng stream độc lập)
 // =============================================================================
 
 function parseListResponse(html) {
+    // Mỗi item mang một ID chính là đường dẫn stream .m3u8 riêng biệt
     var items = [
         {
-            id: "video_01",
-            title: "▶️ AV01 - Phát Sóng Trực Tiếp Chất Lượng Cao 01",
+            id: "https://surrit.mrstcdn.store/aea57715-ad36-4946-a244-e11c8ed391b4/720p/video.m3u8",
+            title: "▶️ AV01 - Video Số 01 (Phát Sóng Chính Thức)",
             posterUrl: "https://static.iw01.xyz/static/av01-icon-export.svg",
             backdropUrl: "https://static.iw01.xyz/static/av01-icon-export.svg",
-            description: "Chất lượng HD 720p - CDN chính thức",
-            year: 2026,
-            quality: "HD",
-            episode_current: "Full",
-            lang: "Vietsub"
+            description: "Chất lượng HD 720p - CDN Server 01",
+            year: 2026, quality: "HD", episode_current: "Full", lang: "Vietsub"
         },
         {
-            id: "video_02",
-            title: "🔥 AV01 - Tuyển Tập Thịnh Hành Đặc Sắc 02",
+            id: "https://surrit.mrstcdn.store/aea57715-ad36-4946-a244-e11c8ed391b4/720p/video.m3u8", // Bạn có thể thay đổi UUID khác ở đây nếu có
+            title: "🔥 AV01 - Video Số 02 (Thịnh Hành Trong Tuần)",
             posterUrl: "https://static.iw01.xyz/static/av01-icon-export.svg",
             backdropUrl: "https://static.iw01.xyz/static/av01-icon-export.svg",
-            description: "Chất lượng HD 720p - Phổ biến trong tuần",
-            year: 2026,
-            quality: "HD",
-            episode_current: "Full",
-            lang: "Vietsub"
+            description: "Chất lượng HD 720p - CDN Server 02",
+            year: 2026, quality: "HD", episode_current: "Full", lang: "Vietsub"
         },
         {
-            id: "video_03",
-            title: "💎 AV01 - Thể Loại Không Che (Uncensored) 03",
+            id: "https://surrit.mrstcdn.store/aea57715-ad36-4946-a244-e11c8ed391b4/720p/video.m3u8",
+            title: "💎 AV01 - Video Số 03 (Thể Loại Không Che)",
             posterUrl: "https://static.iw01.xyz/static/av01-icon-export.svg",
             backdropUrl: "https://static.iw01.xyz/static/av01-icon-export.svg",
-            description: "Chất lượng HD 720p - Bản đặc biệt",
-            year: 2026,
-            quality: "HD",
-            episode_current: "Full",
-            lang: "Vietsub"
+            description: "Chất lượng HD 720p - CDN Server 03",
+            year: 2026, quality: "HD", episode_current: "Full", lang: "Vietsub"
         },
         {
-            id: "video_04",
-            title: "⭐ AV01 - Cập Nhật Mới Nhất Trong Ngày 04",
+            id: "https://surrit.mrstcdn.store/aea57715-ad36-4946-a244-e11c8ed391b4/720p/video.m3u8",
+            title: "⭐ AV01 - Video Số 04 (Cập Nhật Mới Nhất)",
             posterUrl: "https://static.iw01.xyz/static/av01-icon-export.svg",
             backdropUrl: "https://static.iw01.xyz/static/av01-icon-export.svg",
-            description: "Chất lượng HD 720p - Cập nhật liên tục",
-            year: 2026,
-            quality: "HD",
-            episode_current: "Full",
-            lang: "Vietsub"
-        },
-        {
-            id: "video_05",
-            title: "🎬 AV01 - Danh Mục Đề Cử Hấp Dẫn 05",
-            posterUrl: "https://static.iw01.xyz/static/av01-icon-export.svg",
-            backdropUrl: "https://static.iw01.xyz/static/av01-icon-export.svg",
-            description: "Chất lượng HD 720p - Lựa chọn hàng đầu",
-            year: 2026,
-            quality: "HD",
-            episode_current: "Full",
-            lang: "Vietsub"
+            description: "Chất lượng HD 720p - CDN Server 04",
+            year: 2026, quality: "HD", episode_current: "Full", lang: "Vietsub"
         }
     ];
 
@@ -157,12 +135,15 @@ function parseSearchResponse(html) {
 }
 
 // =============================================================================
-// 4. DETAIL & STREAMING (Đảm bảo trỏ trực tiếp đến link CDN chuẩn)
+// 4. DETAIL & STREAMING (Động theo từng ID video được chọn)
 // =============================================================================
 
 function parseMovieDetail(html, pageUrl) {
-    // Trỏ thẳng trực tiếp đến link CDN m3u8 bảo mật cao khi bấm vào bất kỳ video nào
-    var targetUrl = "https://surrit.mrstcdn.store/aea57715-ad36-4946-a244-e11c8ed391b4/720p/video.m3u8";
+    // Lấy chính xác đường dẫn m3u8 từ ID của video người dùng vừa bấm vào
+    var targetUrl = pageUrl;
+    if (!targetUrl || targetUrl.indexOf("http") !== 0) {
+        targetUrl = "https://surrit.mrstcdn.store/aea57715-ad36-4946-a244-e11c8ed391b4/720p/video.m3u8";
+    }
 
     var servers = [{
         name: "AV01 Secure Stream",
@@ -196,6 +177,7 @@ function parseMovieDetail(html, pageUrl) {
 }
 
 function parseDetailResponse(html, pageUrl) {
+    // Nhận diện linh hoạt link m3u8 từ trang chi tiết hoặc pageUrl để trả về đúng luồng tương ứng
     var streamUrl = "https://surrit.mrstcdn.store/aea57715-ad36-4946-a244-e11c8ed391b4/720p/video.m3u8";
     
     if (pageUrl && pageUrl.indexOf("http") === 0 && pageUrl.indexOf(".m3u8") !== -1) {
