@@ -8,7 +8,7 @@ function getManifest() {
     return JSON.stringify({
         id: "vlxx",
         name: "VLXX Pro",
-        version: "1.2.4",
+        version: "1.2.5",
         baseUrl: BASE_URL,
         iconUrl: "https://raw.githubusercontent.com/youngbi/repo/main/plugins/vlxx.ico",
         isEnabled: true,
@@ -319,50 +319,43 @@ function parseListResponse(html) {
         }
     });
 }
+
 function parseEmbedResponse(html, url) {
     var emptyResult = JSON.stringify({ url: "", isEmbed: false, headers: {} });
     try {
         if (!html) return emptyResult;
 
-        // 1. Thử phân tích nếu phản hồi là JSON chuẩn từ ajax.php
-        if (html.indexOf('"player"') !== -1 || html.indexOf('{') === 0) {
-            try {
-                var jsonObj = JSON.parse(html);
-                if (jsonObj) {
-                    // Kiểm tra nếu JSON trả thẳng URL video
-                    if (jsonObj.url) {
-                        return JSON.stringify({
-                            url: jsonObj.url,
-                            isEmbed: false,
-                            mimeType: "application/x-mpegURL",
-                            headers: { "Referer": BASE_URL + "/", "Origin": BASE_URL }
-                        });
-                    }
-                    // Kiểm tra nếu có trường chứa player iframe
-                    if (jsonObj.player) {
-                        var srcMatch = jsonObj.player.match(/src=["']([^"']+)["']/i);
-                        if (srcMatch) {
-                            return JSON.stringify({
-                                url: srcMatch[1],
-                                isEmbed: true,
-                                headers: { 
-                                    "Referer": BASE_URL + "/",
-                                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
-                                }
-                            });
-                        }
-                    }
+        // Làm sạch chuỗi HTML/JSON chống các ký tự escape ngược (\", \\)
+        var cleanHtml = html.replace(/\\"/g, '"').replace(/\\\\/g, '\\');
+
+        // 1. Danh sách các mẫu regex quét tìm link video từ các biến phổ biến trong player
+        var patterns = [
+            /"file"\s*:\s*"([^"]+)"/i,
+            /"source"\s*:\s*"([^"]+)"/i,
+            /"url"\s*:\s*"([^"]+)"/i,
+            /src=["'](https?:\/\/[^"']+\.(?:vl|m3u8|mp4|ts|m4v)[^"']*)["']/i,
+            /source\s*:\s*['"](https?:\/\/[^'"]+)['"]/i
+        ];
+
+        for (var i = 0; i < patterns.length; i++) {
+            var match = cleanHtml.match(patterns[i]);
+            if (match && match[1]) {
+                var foundUrl = match[1].replace(/\\/g, '');
+                
+                // Chuẩn hóa giao thức nếu URL bắt đầu bằng //
+                if (foundUrl.indexOf("//") === 0) {
+                    foundUrl = "https:" + foundUrl;
                 }
-            } catch (parseErr) {
-                // Xử lý chuỗi escape nếu JSON lỗi
-                var cleaned = html.replace(/\\\//g, '/');
-                var iframeMatch = cleaned.match(/src=(?:\\\\)?["'](https?:\/\/[^"'\\]+)(?:\\\\)?["']/i);
-                if (iframeMatch) {
+
+                if (foundUrl.indexOf("http") === 0) {
+                    var isStream = /\.(?:vl|m3u8|ts|mp4|m4v)/i.test(foundUrl);
                     return JSON.stringify({
-                        url: iframeMatch[1],
-                        isEmbed: true,
+                        url: foundUrl,
+                        isEmbed: !isStream,
+                        mimeType: isStream ? "application/x-mpegURL" : "",
                         headers: { 
                             "Referer": BASE_URL + "/",
+                            "Origin": BASE_URL,
                             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
                         }
                     });
@@ -370,31 +363,22 @@ function parseEmbedResponse(html, url) {
             }
         }
 
-        // 2. Tìm kiếm định dạng cấu hình JWPlayer hoặc mảng sources
-        var fileMatch = html.match(/"file"\s*:\s*"(https?[^"]+)"/i);
-        if (fileMatch) {
-            var streamUrl = fileMatch[1].replace(/\\/g, '');
+        // 2. Lưới vét tổng quát cuối cùng (Universal Regex): Quét mọi URL có đuôi stream hoặc iframe trong mã nguồn
+        var universalMatch = cleanHtml.match(/(https?:\/\/[^\s"'<>]+\.(?:vl|m3u8|mp4|ts|m4v)[^\s"'<>]*)/i) ||
+                             cleanHtml.match(/src=["'](https?:\/\/[^"'\s]+embed[^"'\s]*)["']/i);
+        
+        if (universalMatch && universalMatch[1]) {
+            var streamUrl = universalMatch[1];
+            var isStreamType = /\.(?:vl|m3u8|ts|mp4|m4v)/i.test(streamUrl);
+            
             return JSON.stringify({
                 url: streamUrl,
-                isEmbed: false,
-                mimeType: "application/x-mpegURL",
+                isEmbed: !isStreamType,
+                mimeType: isStreamType ? "application/x-mpegURL" : "",
                 headers: { 
                     "Referer": BASE_URL + "/",
-                    "Origin": BASE_URL
-                }
-            });
-        }
-
-        // 3. Lưới vét tổng quát (Universal Regex): Bắt mọi URL kết thúc bằng m3u8, mp4, vl hoặc các luồng streaming phổ biến
-        var streamMatch = html.match(/(https?:\/\/[^\s"'\\]+\.(?:vl|m3u8|mp4|ts)[^\s"'\\]*)/i);
-        if (streamMatch) {
-            return JSON.stringify({
-                url: streamMatch[1],
-                isEmbed: false,
-                mimeType: "application/x-mpegURL",
-                headers: { 
-                    "Referer": BASE_URL + "/",
-                    "Origin": BASE_URL
+                    "Origin": BASE_URL,
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
                 }
             });
         }
