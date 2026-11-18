@@ -596,53 +596,36 @@ function parseDetailResponse(html, pageUrl) {
     var uuid = "";
     var streamUrl = "";
 
+    // 1. Quét UUID từ mọi biến thể domain CDN mới (mrstcdn.store, surrit.com, v.v.)
     var evalMatch = html.match(/eval\(function\(p,a,c,k,e,d\)[\s\S]*?'([^']+)'\.split\('\|'\)/i);
     if (evalMatch) {
         var parts = evalMatch[1].split('|');
-        var hasValidCdn = false;
+        var uuidParts = [];
         for (var i = 0; i < parts.length; i++) {
-            if (parts[i] === 'surrit' || parts[i] === 'sixyik' || parts[i] === 'nineyu' || parts[i] === 'fourhoi') { 
-                hasValidCdn = true; 
-                break; 
-            }
+            if (parts[i].match(/^[0-9a-f]{8,12}$/)) uuidParts.push(parts[i]);
         }
-        if (hasValidCdn) {
-            var uuidParts = [];
-            for (var i = 0; i < parts.length; i++) {
-                if (parts[i].match(/^[0-9a-f]{8,12}$/)) uuidParts.push(parts[i]);
-            }
-            if (uuidParts.length >= 5) {
-                uuid = uuidParts[0] + '-' + uuidParts[1] + '-' + uuidParts[2] + '-' + uuidParts[3] + '-' + uuidParts[4];
-            }
+        if (uuidParts.length >= 5) {
+            uuid = uuidParts[0] + '-' + uuidParts[1] + '-' + uuidParts[2] + '-' + uuidParts[3] + '-' + uuidParts[4];
         }
     }
 
     if (!uuid) {
-        var m = html.match(/(?:surrit|sixyik|nineyu|fourhoi)\.com\/([0-9a-f-]{36})/i);
+        var m = html.match(/(?:surrit|mrstcdn|sixyik|nineyu|fourhoi)(?:\.com|\.store|\.[a-z]+)\/([0-9a-f-]{36})/i);
         if (m) uuid = m[1];
     }
 
     if (!uuid) {
         var matches = html.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi) || [];
-        var blacklist = ["snaptrckr", "user_uuid", "popunder", "banner", "monitoring", "crypto", "randomUUID", "generateUUID"];
-        for (var j = 0; j < matches.length; j++) {
-            var u = matches[j];
-            var isBad = false;
-            var idx = html.indexOf(u);
-            if (idx !== -1) {
-                var ctx = html.substring(Math.max(0, idx - 80), Math.min(html.length, idx + 80));
-                for (var k = 0; k < blacklist.length; k++) {
-                    if (ctx.indexOf(blacklist[k]) !== -1) { isBad = true; break; }
-                }
-            }
-            if (!isBad) { uuid = u; break; }
-        }
+        if (matches.length > 0) uuid = matches[0];
     }
 
+    // 2. Xây dựng đường dẫn stream theo chuẩn CDN mới nhất (.mrstcdn.store)
     if (uuid) {
-        streamUrl = "https://surrit.com/" + uuid + "/playlist.m3u8";
+        // Ưu tiên dùng cấu trúc 720p/video.m3u8 hoặc playlist.m3u8 tương thích
+        streamUrl = "https://surrit.mrstcdn.store/" + uuid + "/720p/video.m3u8";
     }
 
+    // Fallback nếu pageUrl truyền vào đã là link m3u8 trực tiếp
     if (!streamUrl && pageUrl && pageUrl.indexOf(".m3u8") !== -1) {
         streamUrl = pageUrl;
     }
@@ -658,11 +641,14 @@ function parseDetailResponse(html, pageUrl) {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
             "Referer": "https://missav.media/",
             "Origin": "https://missav.media",
-            "Accept": "*/*",
-            "Accept-Language": "vi-VN,vi;q=0.9,en-US;q=0.8,en;q=0.9"
+            "Accept": "*/*"
         },
         subtitles: []
     });
+}
+
+function parseEmbedResponse(html, url) {
+    return parseDetailResponse(html, url);
 }
 
 function parseEmbedResponse(html, url) {
