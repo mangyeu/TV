@@ -8,7 +8,7 @@ function getManifest() {
     return JSON.stringify({
         id: "vlxx",
         name: "VLXX Pro",
-        version: "1.2.5",
+        version: "1.2.6",
         baseUrl: BASE_URL,
         iconUrl: "https://raw.githubusercontent.com/youngbi/repo/main/plugins/vlxx.ico",
         isEnabled: true,
@@ -328,7 +328,7 @@ function parseEmbedResponse(html, url) {
         // Làm sạch chuỗi HTML/JSON chống các ký tự escape ngược (\", \\)
         var cleanHtml = html.replace(/\\"/g, '"').replace(/\\\\/g, '\\');
 
-        // 1. Danh sách các mẫu regex quét tìm link video từ các biến phổ biến trong player
+        // 1. Quét sâu các biến cấu hình JSON/JS trong player (file, source, url, src, media)
         var patterns = [
             /"file"\s*:\s*"([^"]+)"/i,
             /"source"\s*:\s*"([^"]+)"/i,
@@ -341,14 +341,10 @@ function parseEmbedResponse(html, url) {
             var match = cleanHtml.match(patterns[i]);
             if (match && match[1]) {
                 var foundUrl = match[1].replace(/\\/g, '');
-                
-                // Chuẩn hóa giao thức nếu URL bắt đầu bằng //
-                if (foundUrl.indexOf("//") === 0) {
-                    foundUrl = "https:" + foundUrl;
-                }
+                if (foundUrl.indexOf("//") === 0) foundUrl = "https:" + foundUrl;
 
                 if (foundUrl.indexOf("http") === 0) {
-                    var isStream = /\.(?:vl|m3u8|ts|mp4|m4v)/i.test(foundUrl);
+                    var isStream = /\.(?:vl|m3u8|ts|mp4|m4v)/i.test(foundUrl) || foundUrl.indexOf("manifest") !== -1;
                     return JSON.stringify({
                         url: foundUrl,
                         isEmbed: !isStream,
@@ -363,13 +359,22 @@ function parseEmbedResponse(html, url) {
             }
         }
 
-        // 2. Lưới vét tổng quát cuối cùng (Universal Regex): Quét mọi URL có đuôi stream hoặc iframe trong mã nguồn
-        var universalMatch = cleanHtml.match(/(https?:\/\/[^\s"'<>]+\.(?:vl|m3u8|mp4|ts|m4v)[^\s"'<>]*)/i) ||
-                             cleanHtml.match(/src=["'](https?:\/\/[^"'\s]+embed[^"'\s]*)["']/i);
-        
+        // 2. Lưới vét sâu đa tầng (Universal Deep Regex): 
+        // Bắt mọi URL thuộc các CDN lưu trữ file trực tiếp (như vlstorage, googlevideo) hoặc có đuôi vl, mp4, m3u8
+        var universalRegex = /(https?:\/\/[^\s"'<>]+\b(?:vlstorage|googlevideo|vlstream)[^\s"'<>]*)/i;
+        var universalMatch = cleanHtml.match(universalRegex);
+
+        if (!universalMatch) {
+            // Lưới vét dự phòng tổng quát cho mọi link media/manifest
+            universalRegex = /(https?:\/\/[^\s"'<>]+\.(?:vl|m3u8|mp4|ts|m4v)[^\s"'<>]*)/i;
+            universalMatch = cleanHtml.match(universalRegex);
+        }
+
         if (universalMatch && universalMatch[1]) {
-            var streamUrl = universalMatch[1];
-            var isStreamType = /\.(?:vl|m3u8|ts|mp4|m4v)/i.test(streamUrl);
+            var streamUrl = universalMatch[1].replace(/\\/g, '');
+            if (streamUrl.indexOf("//") === 0) streamUrl = "https:" + streamUrl;
+
+            var isStreamType = /\.(?:vl|m3u8|ts|mp4|m4v)/i.test(streamUrl) || streamUrl.indexOf("manifest") !== -1;
             
             return JSON.stringify({
                 url: streamUrl,
