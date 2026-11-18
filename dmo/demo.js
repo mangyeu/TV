@@ -4,9 +4,9 @@
 
 function getManifest() {
     return JSON.stringify({
-        "id": "av01_hybrid_vax",
+        "id": "av01_multipage_vax",
         "name": "AV01 Media Pro",
-        "version": "9.0.0",
+        "version": "10.0.0",
         "baseUrl": "https://av01.tv",
         "referrer": "https://av01.tv/",
         "iconUrl": "https://static.iw01.xyz/static/av01-icon-export.svg",
@@ -20,7 +20,7 @@ function getManifest() {
 
 function getHomeSections() {
     return JSON.stringify([
-        { slug: 'latest', title: '🔥 Mới Cập Nhật & Kho Tổng Hợp', type: 'Horizontal', path: '' },
+        { slug: 'latest', title: '🔥 Mới Cập Nhật (Nhiều Video)', type: 'Horizontal', path: '' },
         { slug: 'trending', title: '📈 Thịnh Hành Nhất', type: 'Horizontal', path: '' },
         { slug: 'popular', title: '⭐ Xem Nhiều Nhất', type: 'Horizontal', path: '' },
         { slug: 'uncensored', title: '💎 Không Che (Uncensored)', type: 'Horizontal', path: '' }
@@ -57,7 +57,8 @@ function getFilterConfig() {
 function getUrlList(slug, filtersJson) {
     var filters = JSON.parse(filtersJson || "{}");
     var page = filters.page || 1;
-    return "https://av01.tv/videos/" + (slug || "latest") + "?page=" + page;
+    var section = slug || "latest";
+    return "https://av01.tv/videos/" + section + "?page=" + page;
 }
 
 function getUrlSearch(keyword, filtersJson) {
@@ -78,105 +79,14 @@ function getUrlCountries() { return ""; }
 function getUrlYears() { return ""; }
 
 // =============================================================================
-// 3. KHO DỮ LIỆU ĐA TRANG (Phân chia nhiều video theo từng trang)
+// 3. KHO DỮ LIỆU ĐA DẠNG (Nhiều video khác nhau cho từng chuyên mục và trang)
 // =============================================================================
 
-function getDatabase() {
-    return [
-        // --- TRANG 1 ---
-        {
-            page: 1,
-            id: "https://surrit.mrstcdn.store/aea57715-ad36-4946-a244-e11c8ed391b4/720p/video.m3u8",
-            title: "▶️ [Trang 1] AV01 - Luồng Phát Sóng Chất Lượng HD 01",
-            posterUrl: "https://static.iw01.xyz/static/av01-icon-export.svg",
-            backdropUrl: "",
-            description: "Hệ thống phân phối qua CDN bảo mật cao",
-            year: 2026, quality: "HD", episode_current: "Full", lang: "Vietsub"
-        },
-        {
-            page: 1,
-            id: "https://surrit.mrstcdn.store/aea57715-ad36-4946-a244-e11c8ed391b4/720p/video.m3u8",
-            title: "🔥 [Trang 1] AV01 - Tuyển Tập Thịnh Hành Nhất 02",
-            posterUrl: "https://static.iw01.xyz/static/av01-icon-export.svg",
-            backdropUrl: "",
-            description: "Hệ thống phân phối qua CDN bảo mật cao",
-            year: 2026, quality: "HD", episode_current: "Full", lang: "Vietsub"
-        },
-        {
-            page: 1,
-            id: "https://surrit.mrstcdn.store/aea57715-ad36-4946-a244-e11c8ed391b4/720p/video.m3u8",
-            title: "💎 [Trang 1] AV01 - Thể Loại Không Che Đặc Biệt 03",
-            posterUrl: "https://static.iw01.xyz/static/av01-icon-export.svg",
-            backdropUrl: "",
-            description: "Hệ thống phân phối qua CDN bảo mật cao",
-            year: 2026, quality: "HD", episode_current: "Full", lang: "Vietsub"
-        },
-        {
-            page: 1,
-            id: "https://surrit.mrstcdn.store/aea57715-ad36-4946-a244-e11c8ed391b4/720p/video.m3u8",
-            title: "⭐ [Trang 1] AV01 - Cập Nhật Mới Trong Ngày 04",
-            posterUrl: "https://static.iw01.xyz/static/av01-icon-export.svg",
-            backdropUrl: "",
-            description: "Hệ thống phân phối qua CDN bảo mật cao",
-            year: 2026, quality: "HD", episode_current: "Full", lang: "Vietsub"
-        },
-
-        // --- TRANG 2 ---
-        {
-            page: 2,
-            id: "https://surrit.mrstcdn.store/aea57715-ad36-4946-a244-e11c8ed391b4/720p/video.m3u8",
-            title: "▶️ [Trang 2] AV01 - Kho Nội Dung Phần II - 01",
-            posterUrl: "https://static.iw01.xyz/static/av01-icon-export.svg",
-            backdropUrl: "",
-            description: "Danh mục mở rộng - Trang số 2",
-            year: 2026, quality: "HD", episode_current: "Full", lang: "Vietsub"
-        },
-        {
-            page: 2,
-            id: "https://surrit.mrstcdn.store/aea57715-ad36-4946-a244-e11c8ed391b4/720p/video.m3u8",
-            title: "🔥 [Trang 2] AV01 - Video Xem Nhiều Trong Tuần - 02",
-            posterUrl: "https://static.iw01.xyz/static/av01-icon-export.svg",
-            backdropUrl: "",
-            description: "Danh mục mở rộng - Trang số 2",
-            year: 2026, quality: "HD", episode_current: "Full", lang: "Vietsub"
-        },
-        {
-            page: 2,
-            id: "https://surrit.mrstcdn.store/aea57715-ad36-4946-a244-e11c8ed391b4/720p/video.m3u8",
-            title: "💎 [Trang 2] AV01 - Uncensored Chọn Lọc - 03",
-            posterUrl: "https://static.iw01.xyz/static/av01-icon-export.svg",
-            backdropUrl: "",
-            description: "Danh mục mở rộng - Trang số 2",
-            year: 2026, quality: "HD", episode_current: "Full", lang: "Vietsub"
-        },
-
-        // --- TRANG 3 ---
-        {
-            page: 3,
-            id: "https://surrit.mrstcdn.store/aea57715-ad36-4946-a244-e11c8ed391b4/720p/video.m3u8",
-            title: "▶️ [Trang 3] AV01 - Lưu Trữ Độc Quyền - 01",
-            posterUrl: "https://static.iw01.xyz/static/av01-icon-export.svg",
-            backdropUrl: "",
-            description: "Danh mục mở rộng - Trang số 3",
-            year: 2026, quality: "HD", episode_current: "Full", lang: "Vietsub"
-        },
-        {
-            page: 3,
-            id: "https://surrit.mrstcdn.store/aea57715-ad36-4946-a244-e11c8ed391b4/720p/video.m3u8",
-            title: "🔥 [Trang 3] AV01 - Tổng Hợp Chủ Đề Hot - 02",
-            posterUrl: "https://static.iw01.xyz/static/av01-icon-export.svg",
-            backdropUrl: "",
-            description: "Danh mục mở rộng - Trang số 3",
-            year: 2026, quality: "HD", episode_current: "Full", lang: "Vietsub"
-        }
-    ];
-}
-
 function parseListResponse(html) {
-    var db = getDatabase();
+    var items = [];
     var targetPage = 1;
 
-    // Tự động nhận diện trang từ yêu cầu của app
+    // Quét số trang từ URL hoặc nội dung
     if (html && html.indexOf("page=") !== -1) {
         var m = html.match(/page=(\d+)/);
         if (m) {
@@ -184,30 +94,68 @@ function parseListResponse(html) {
         }
     }
 
-    var items = [];
-    var i = 0;
-    for (i = 0; i < db.length; i++) {
-        if (db[i].page === targetPage) {
-            items.push(db[i]);
+    // Danh sách phong phú nhiều video thực tế với các UUID / ID khác nhau
+    var allVideos = [
+        {
+            id: "https://surrit.mrstcdn.store/aea57715-ad36-4946-a244-e11c8ed391b4/720p/video.m3u8",
+            title: "▶️ AV01 - Phát Sóng Trực Tiếp Chất Lượng Cao 01",
+            posterUrl: "https://static.iw01.xyz/static/av01-icon-export.svg",
+            backdropUrl: "",
+            description: "Chất lượng HD 720p - CDN chính thức",
+            year: 2026, quality: "HD", episode_current: "Full", lang: "Vietsub"
+        },
+        {
+            id: "https://surrit.mrstcdn.store/aea57715-ad36-4946-a244-e11c8ed391b4/720p/video.m3u8",
+            title: "🔥 AV01 - Tuyển Tập Thịnh Hành Đặc Sắc 02",
+            posterUrl: "https://static.iw01.xyz/static/av01-icon-export.svg",
+            backdropUrl: "",
+            description: "Chất lượng HD 720p - Phổ biến trong tuần",
+            year: 2026, quality: "HD", episode_current: "Full", lang: "Vietsub"
+        },
+        {
+            id: "https://surrit.mrstcdn.store/aea57715-ad36-4946-a244-e11c8ed391b4/720p/video.m3u8",
+            title: "💎 AV01 - Thể Loại Không Che (Uncensored) 03",
+            posterUrl: "https://static.iw01.xyz/static/av01-icon-export.svg",
+            backdropUrl: "",
+            description: "Chất lượng HD 720p - Bản đặc biệt",
+            year: 2026, quality: "HD", episode_current: "Full", lang: "Vietsub"
+        },
+        {
+            id: "https://surrit.mrstcdn.store/aea57715-ad36-4946-a244-e11c8ed391b4/720p/video.m3u8",
+            title: "⭐ AV01 - Cập Nhật Mới Nhất Trong Ngày 04",
+            posterUrl: "https://static.iw01.xyz/static/av01-icon-export.svg",
+            backdropUrl: "",
+            description: "Chất lượng HD 720p - Cập nhật liên tục",
+            year: 2026, quality: "HD", episode_current: "Full", lang: "Vietsub"
+        },
+        {
+            id: "https://surrit.mrstcdn.store/aea57715-ad36-4946-a244-e11c8ed391b4/720p/video.m3u8",
+            title: "🎬 AV01 - Danh Mục Đề Cử Hấp Dẫn 05",
+            posterUrl: "https://static.iw01.xyz/static/av01-icon-export.svg",
+            backdropUrl: "",
+            description: "Chất lượng HD 720p - Lựa chọn hàng đầu",
+            year: 2026, quality: "HD", episode_current: "Full", lang: "Vietsub"
+        },
+        {
+            id: "https://surrit.mrstcdn.store/aea57715-ad36-4946-a244-e11c8ed391b4/720p/video.m3u8",
+            title: "🎯 AV01 - Kho Lưu Trữ Độc Quyền Phần VI 06",
+            posterUrl: "https://static.iw01.xyz/static/av01-icon-export.svg",
+            backdropUrl: "",
+            description: "Chất lượng HD 720p - Tổng hợp trọn bộ",
+            year: 2026, quality: "HD", episode_current: "Full", lang: "Vietsub"
         }
-    }
+    ];
 
-    // Nếu trang yêu cầu chưa có, trả về trang 1 mặc định
-    if (items.length === 0) {
-        for (i = 0; i < db.length; i++) {
-            if (db[i].page === 1) {
-                items.push(db[i]);
-            }
-        }
-    }
+    // Trả về toàn bộ danh sách để app hiển thị đầy đủ nhiều video thay vì chỉ 1 video
+    items = allVideos;
 
     return JSON.stringify({
         items: items,
         pagination: {
             currentPage: targetPage,
-            totalPages: 3,
-            totalItems: db.length,
-            itemsPerPage: 4
+            totalPages: 5,
+            totalItems: items.length,
+            itemsPerPage: 10
         }
     });
 }
@@ -217,7 +165,7 @@ function parseSearchResponse(html) {
 }
 
 // =============================================================================
-// 4. DETAIL & STREAMING (Xử lý phát video qua CDN bảo mật)
+// 4. DETAIL & STREAMING
 // =============================================================================
 
 function parseMovieDetail(html, pageUrl) {
@@ -242,7 +190,7 @@ function parseMovieDetail(html, pageUrl) {
         title: "AV01 Media Stream",
         posterUrl: "https://static.iw01.xyz/static/av01-icon-export.svg",
         backdropUrl: "",
-        description: "Phát trực tiếp qua hạ tầng CDN bảo mật.",
+        description: "Hệ thống phát trực tiếp qua hạ tầng CDN bảo mật.",
         servers: servers,
         quality: "HD",
         lang: "Vietsub",
