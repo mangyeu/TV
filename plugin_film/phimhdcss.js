@@ -4,10 +4,10 @@ function getManifest() {
     return {
         id: "phimhdcss",
         name: "PhimHDC",
-        version: "1.1.0",
+        version: "1.2.0",
         baseUrl: BASE_URL,
         icon: BASE_URL + "/favicon.ico",
-        description: "Plugin xem phim HD Vietsub, Thuyết Minh từ PhimHDC (ES5 - Fixed)",
+        description: "Plugin xem phim HD Vietsub, Thuyết Minh từ PhimHDC (ES5 - DPI Bypass)",
         language: "vi",
         supportSearch: true,
         supportFilter: true
@@ -54,6 +54,28 @@ function getFilterConfig() {
     };
 }
 
+// --- CƠ CHẾ DPI BYPASS & HÀM TIÊU ĐỀ HTTP CHUẨN TRÌNH DUYỆT THẬT ---
+
+function getBypassHeaders(targetUrl) {
+    return {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
+        "Accept-Language": "vi-VN,vi;q=0.9,en-US;q=0.8,en;q=0.7",
+        "Cache-Control": "no-cache",
+        "Pragma": "no-cache",
+        "Sec-Ch-Ua": "\"Chromium\";v=\"122\", \"Not(A:Brand\";v=\"24\", \"Google Chrome\";v=\"122\"",
+        "Sec-Ch-Ua-Mobile": "?0",
+        "Sec-Ch-Ua-Platform": "\"Windows\"",
+        "Sec-Fetch-Dest": "document",
+        "Sec-Fetch-Mode": "navigate",
+        "Sec-Fetch-Site": "cross-site",
+        "Sec-Fetch-User": "?1",
+        "Upgrade-Insecure-Requests": "1",
+        "Referer": BASE_URL + "/",
+        "Origin": BASE_URL
+    };
+}
+
 // --- HÀM HỖ TRỢ XỬ LÝ CHUỖI & URL (ES5) ---
 
 function normalizeUrl(url) {
@@ -81,14 +103,13 @@ function cleanHtmlText(str) {
         .trim();
 }
 
-// --- PARSE DANH SÁCH PHIM (ĐÃ TỐI ƯU REGEX CHỐNG LỖI RỖNG) ---
+// --- PARSE DANH SÁCH PHIM ---
 
 function parseListResponse(html) {
     var items = [];
     var seenUrls = {};
     if (!html) return items;
 
-    // Quét linh hoạt các thẻ item phim (thường nằm trong thẻ a hoặc article)
     var linkRegex = /<a[^>]+href=["']([^"']*\/(?:phim|thong-tin-phim)\/[^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi;
     var match;
 
@@ -99,7 +120,6 @@ function parseListResponse(html) {
         var cleanSlugUrl = href.replace(/\/tap-[^\/]+.*$/, "").replace(/\/xem-phim.*$/, "");
         if (seenUrls[cleanSlugUrl]) continue;
 
-        // Bắt mọi định dạng ảnh thumbnail (src, data-src, data-original, srcset)
         var imgMatch = innerHtml.match(/<img[^>]+(?:data-src|data-original|src)=["']([^"']+)["']/i);
         if (!imgMatch) continue;
 
@@ -118,7 +138,6 @@ function parseListResponse(html) {
         } else if (altAttrMatch && altAttrMatch[1]) {
             title = cleanHtmlText(altAttrMatch[1]);
         } else {
-            // Lấy text trong thẻ h3, h4 hoặc span nếu có
             var headingMatch = innerHtml.match(/<h[2-4][^>]*>([\s\S]*?)<\/h[2-4]>/i);
             title = headingMatch ? cleanHtmlText(headingMatch[1]) : cleanHtmlText(innerHtml);
         }
@@ -181,7 +200,6 @@ function parseDetailResponse(html, pageUrl) {
     var episodes = [];
     var seenEpUrls = {};
     
-    // Quét link tập phim linh hoạt hơn
     var epRegex = /<a[^>]+href=["']([^"']*(?:\/tap-|\/xem-phim|\?tap=|\/episode\/)[^"']*)["'][^>]*>([\s\S]*?)<\/a>/gi;
     var epMatch;
 
@@ -263,7 +281,7 @@ function unpackEvalScripts(html) {
     return unpackedAll;
 }
 
-// --- BÓC TÁCH LINK STREAM (.M3U8 / MP4) ĐA TẦNG CẢI TIẾN ---
+// --- BÓC TÁCH LINK STREAM (.M3U8 / MP4) TÍCH HỢP BYPASS HEADERS ---
 
 function parseStreamResponse(html, episodeUrl) {
     var streams = [];
@@ -275,7 +293,6 @@ function parseStreamResponse(html, episodeUrl) {
 
     var foundUrls = {};
 
-    // 1. Quét trực tiếp các đuôi .m3u8 hoặc .mp4 phổ biến
     var mediaRegex = /(https?:\/\/[^\s"'<>\\]+?\.(?:m3u8|mp4)(?:\?[^\s"'<>\\]*)?)/gi;
     var mediaMatch;
 
@@ -287,18 +304,13 @@ function parseStreamResponse(html, episodeUrl) {
                 url: streamUrl,
                 type: streamUrl.indexOf(".mp4") !== -1 ? "mp4" : "hls",
                 quality: "Auto / HD",
-                headers: {
-                    "Referer": BASE_URL + "/",
-                    "Origin": BASE_URL,
-                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
-                }
+                headers: getBypassHeaders(streamUrl)
             });
         }
     }
 
     if (streams.length > 0) return streams;
 
-    // 2. Quét các biến cấu hình stream phổ biến trong Javascript (file:, link:, url:)
     var jsConfigRegex = /(?:file|source|link|streamUrl|videoUrl|hls)\s*[:=]\s*["'](https?:\/\/[^"']+)["']/gi;
     var cfgMatch;
     while ((cfgMatch = jsConfigRegex.exec(normalizedSource)) !== null) {
@@ -309,7 +321,7 @@ function parseStreamResponse(html, episodeUrl) {
                 url: val,
                 type: val.indexOf(".mp4") !== -1 ? "mp4" : "hls",
                 quality: "HD",
-                headers: { "Referer": BASE_URL + "/" }
+                headers: getBypassHeaders(val)
             });
         }
     }
