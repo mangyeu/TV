@@ -1,12 +1,12 @@
 // =============================================================================
-// AV01.tv CONFIGURATION & MANIFEST (Cập nhật chuẩn theo View Source)
+// 1. CONFIGURATION & MANIFEST (AV01.tv - Chuẩn ES5)
 // =============================================================================
 
 function getManifest() {
     return JSON.stringify({
         "id": "av01_tv",
         "name": "AV01.tv",
-        "version": "2.0.0",
+        "version": "2.1.0",
         "baseUrl": "https://av01.tv",
         "referrer": "https://av01.tv/",
         "iconUrl": "https://static.iw01.xyz/static/av01-icon-export.svg",
@@ -22,7 +22,8 @@ function getHomeSections() {
     return JSON.stringify([
         { slug: 'latest', title: 'Mới Cập Nhật', type: 'Horizontal', path: '' },
         { slug: 'trending', title: 'Thịnh Hành', type: 'Horizontal', path: '' },
-        { slug: 'popular', title: 'Xem Nhiều', type: 'Horizontal', path: '' }
+        { slug: 'popular', title: 'Xem Nhiều', type: 'Horizontal', path: '' },
+        { slug: 'uncensored', title: 'Không Che', type: 'Horizontal', path: '' }
     ]);
 }
 
@@ -30,7 +31,10 @@ function getPrimaryCategories() {
     return JSON.stringify([
         { name: 'Mới nhất', slug: 'latest' },
         { name: 'Thịnh hành', slug: 'trending' },
-        { name: 'Phổ biến', slug: 'popular' }
+        { name: 'Phổ biến', slug: 'popular' },
+        { name: 'Không che', slug: 'uncensored' },
+        { name: 'Diễn viên', slug: 'actresses' },
+        { name: 'Thể loại', slug: 'genres' }
     ]);
 }
 
@@ -38,19 +42,32 @@ function getFilterConfig() {
     return JSON.stringify({
         sort: [
             { name: 'Mới nhất', value: 'latest' },
-            { name: 'Phổ biến', value: 'popular' }
+            { name: 'Phổ biến', value: 'popular' },
+            { name: 'Thịnh hành', value: 'trending' }
         ],
         category: [
-            { name: "Tất cả", value: "latest" }
+            { name: "Tất cả video", value: "latest" },
+            { name: "Không che", value: "uncensored" },
+            { name: "Thịnh hành", value: "trending" }
         ]
     });
 }
 
+// =============================================================================
+// 2. URL GENERATION (Sử dụng nối chuỗi chuẩn ES5)
+// =============================================================================
+
 function getUrlList(slug, filtersJson) {
     var filters = JSON.parse(filtersJson || "{}");
     var page = filters.page || 1;
-    // Trỏ trực tiếp tới domain chính xác lấy từ view source
-    return "https://av01.tv/videos/" + (slug || "latest") + "?page=" + page;
+    var baseUrl = "https://av01.tv";
+
+    var path = slug || "latest";
+    if (path.indexOf("/") === 0) {
+        path = path.substring(1);
+    }
+
+    return baseUrl + "/videos/" + path + "?page=" + page;
 }
 
 function getUrlSearch(keyword, filtersJson) {
@@ -60,14 +77,23 @@ function getUrlSearch(keyword, filtersJson) {
 }
 
 function getUrlDetail(slug) {
+    if (!slug) return "https://av01.tv";
     if (slug.indexOf("http") === 0) return slug;
     if (slug.indexOf("/") === 0) return "https://av01.tv" + slug;
     return "https://av01.tv/" + slug;
 }
 
-function getUrlCategories() { return "https://av01.tv/genres"; }
-function getUrlCountries() { return ""; }
-function getUrlYears() { return ""; }
+function getUrlCategories() { 
+    return "https://av01.tv/genres"; 
+}
+
+function getUrlCountries() { 
+    return ""; 
+}
+
+function getUrlYears() { 
+    return ""; 
+}
 
 // =============================================================================
 // 3. UTILS & HELPERS
@@ -93,14 +119,6 @@ var PluginUtils = {
         var regex = new RegExp('property="' + property + '"\\s+content="([^"]+)"', 'i');
         var match = html.match(regex);
         return match ? match[1] : "";
-    },
-    extractPreviewUrl: function (itemHtml) {
-        var previewMatch = itemHtml.match(/<video[^>]+data-src="([^"]+)"/) || itemHtml.match(/<source[^>]+src="([^"]+)"/);
-        var url = previewMatch ? previewMatch[1] : "";
-        if (url && url.indexOf('//') === 0) {
-            return "https:" + url;
-        }
-        return url;
     }
 };
 
@@ -112,89 +130,61 @@ function parseListResponse(html) {
     html = PluginUtils.normalizeHtml(html);
     var movies = [];
 
-    // Tách các khối item video trên trang av01.media
-    var parts = html.split('class="');
-    
+    // Quét các liên kết video trong HTML (hỗ trợ cả SPA render thô hoặc cấu trúc thẻ a)
+    var parts = html.split('href="');
     for (var i = 1; i < parts.length; i++) {
-        var itemHtml = parts[i];
-        
-        // Chỉ xử lý các khối chứa link video chi tiết
-        var linkMatch = itemHtml.match(/href="([^"]*\/vn\/video\/[^"]+)"/) || itemHtml.match(/href="([^"]*\/video\/[^"]+)"/);
-        if (!linkMatch) continue;
+        var chunk = parts[i];
+        var quoteIdx = chunk.indexOf('"');
+        if (quoteIdx === -1) continue;
 
-        var fullUrl = linkMatch[1];
-        var slug = fullUrl.replace(/https?:\/\/[^\/]+/, "");
-        if (slug.indexOf("/") !== 0) slug = "/" + slug;
+        var link = chunk.substring(0, quoteIdx);
+        // Lọc các đường dẫn video chi tiết
+        if (link.indexOf("/video/") !== -1 || link.indexOf("/vn/video/") !== -1) {
+            var slug = link.replace(/https?:\/\/[^\/]+/, "");
+            if (slug.indexOf("/") !== 0) {
+                slug = "/" + slug;
+            }
 
-        // Tránh trùng lặp ID trong danh sách
-        var isExist = false;
-        for (var m = 0; m < movies.length; m++) {
-            if (movies[m].id === slug) { isExist = true; break; }
-        }
-        if (isExist) continue;
+            // Tránh trùng lặp
+            var isExist = false;
+            for (var m = 0; m < movies.length; m++) {
+                if (movies[m].id === slug) {
+                    isExist = true;
+                    break;
+                }
+            }
+            if (isExist) continue;
 
-        // Lấy tiêu đề phim từ thẻ alt của ảnh hoặc title bên trong
-        var titleCandidates = [];
-        var imgMatch = itemHtml.match(/<img[^>]+(?:alt|title)="([^"]+)"/i);
-        if (imgMatch) {
-            titleCandidates.push(PluginUtils.cleanText(imgMatch[1]));
-        }
+            // Tìm tiêu đề và ảnh thumbnail xung quanh khối HTML đó
+            var blockHtml = chunk.substring(0, 500);
+            var titleMatch = blockHtml.match(/title="([^"]+)"/) || blockHtml.match(/alt="([^"]+)"/);
+            var title = titleMatch ? PluginUtils.cleanText(titleMatch[1]) : "Video AV01";
 
-        var textTitleMatch = itemHtml.match(/<a[^>]+title="([^"]+)"/i);
-        if (textTitleMatch) {
-            titleCandidates.push(PluginUtils.cleanText(textTitleMatch[1]));
-        }
+            var imgMatch = blockHtml.match(/src="([^"]+)"/) || blockHtml.match(/data-src="([^"]+)"/);
+            var thumb = imgMatch ? imgMatch[1] : "";
+            if (thumb && thumb.indexOf("//") === 0) {
+                thumb = "https:" + thumb;
+            }
 
-        var cleanTitle = titleCandidates.length > 0 ? titleCandidates[0] : "Video AV";
-
-        // Lấy hình ảnh thumbnail
-        var thumbMatch = itemHtml.match(/<img[^>]+(?:data-src|src)="([^"]+)"/i);
-        var thumb = thumbMatch ? thumbMatch[1] : "";
-        if (thumb && thumb.indexOf('//') === 0) thumb = "https:" + thumb;
-
-        // Lấy thời lượng hoặc nhãn chất lượng nếu có
-        var durationMatch = itemHtml.match(/<span[^>]*>\s*(\d+:\d+)\s*<\/span>/);
-        var duration = durationMatch ? durationMatch[1] : "";
-
-        var previewUrl = PluginUtils.extractPreviewUrl(itemHtml);
-
-        movies.push({
-            id: slug,
-            title: cleanTitle,
-            posterUrl: thumb,
-            backdropUrl: thumb,
-            description: duration,
-            year: 0,
-            quality: "HD",
-            episode_current: "Full",
-            lang: "Vietsub",
-            previewUrl: previewUrl
-        });
-    }
-
-    // Xử lý phân trang
-    var totalPages = 1;
-    var currentPage = 1;
-
-    var currentMatch = html.match(/class="[^"]*active[^"]*"[^>]*>\s*(\d+)\s*<\/span>/i) ||
-        html.match(/class="[^"]*current[^"]*"[^>]*>\s*(\d+)\s*<\/span>/i);
-    if (currentMatch) {
-        currentPage = parseInt(currentMatch[1]);
-    }
-
-    var allPageNums = html.match(/page=(\d+)/g);
-    if (allPageNums) {
-        for (var j = 0; j < allPageNums.length; j++) {
-            var p = parseInt(allPageNums[j].match(/\d+/)[0]);
-            if (p > totalPages) totalPages = p;
+            movies.push({
+                id: slug,
+                title: title,
+                posterUrl: thumb,
+                backdropUrl: thumb,
+                description: "",
+                year: 2026,
+                quality: "HD",
+                episode_current: "Full",
+                lang: "Vietsub"
+            });
         }
     }
 
     return JSON.stringify({
         items: movies,
         pagination: {
-            currentPage: currentPage,
-            totalPages: totalPages || 1,
+            currentPage: 1,
+            totalPages: 10,
             totalItems: movies.length,
             itemsPerPage: 20
         }
@@ -206,7 +196,7 @@ function parseSearchResponse(html) {
 }
 
 // =============================================================================
-// 5. PARSERS (DETAIL & STREAMING CHO AV01)
+// 5. PARSERS (DETAIL & STREAMING - Tương thích chuẩn CDN mới)
 // =============================================================================
 
 function parseMovieDetail(html, pageUrl) {
@@ -217,13 +207,13 @@ function parseMovieDetail(html, pageUrl) {
         var desc = PluginUtils.getMeta(html, "og:description");
 
         var streamUrl = "";
-        
-        // Quét UUID hoặc link m3u8 trực tiếp từ source của av01.media
+
+        // 1. Quét tìm trực tiếp link m3u8 trong mã nguồn
         var m3u8Match = html.match(/(https?:\/\/[^"'\s]+\.m3u8[^"'\s]*)/i);
         if (m3u8Match) {
             streamUrl = m3u8Match[1];
         } else {
-            // Quét mã định danh hoặc đường dẫn CDN video dự phòng
+            // 2. Quét UUID và dựng link CDN dòng 720p mới nhất (.mrstcdn.store)
             var uuidMatch = html.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i);
             if (uuidMatch) {
                 streamUrl = "https://surrit.mrstcdn.store/" + uuidMatch[0] + "/720p/video.m3u8";
@@ -234,7 +224,7 @@ function parseMovieDetail(html, pageUrl) {
         if (streamUrl) {
             var episodeId = pageUrl || streamUrl;
             servers.push({
-                name: "Stream AV01",
+                name: "Stream CDN",
                 episodes: [{ id: episodeId, name: "Full", slug: "full" }]
             });
         }
@@ -265,12 +255,12 @@ function parseMovieDetail(html, pageUrl) {
 function parseDetailResponse(html, pageUrl) {
     var streamUrl = "";
 
-    // 1. Quét tìm kiếm định dạng m3u8 trực tiếp trong mã nguồn trang chi tiết
+    // 1. Quét m3u8
     var m3u8Match = html.match(/(https?:\/\/[^"'\s]+\.m3u8[^"'\s]*)/i);
     if (m3u8Match) {
         streamUrl = m3u8Match[1];
     } else {
-        // 2. Quét UUID và tái tạo link CDN dòng tệp video tương thích
+        // 2. Quét UUID dựng chuẩn CDN mới
         var uuidMatch = html.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i);
         if (uuidMatch) {
             streamUrl = "https://surrit.mrstcdn.store/" + uuidMatch[0] + "/720p/video.m3u8";
@@ -281,6 +271,7 @@ function parseDetailResponse(html, pageUrl) {
         streamUrl = pageUrl;
     }
 
+    // Trả về định dạng JSON bao gồm headers bảo mật đầy đủ cho App
     return JSON.stringify({
         url: streamUrl,
         streamUrl: streamUrl,
@@ -290,8 +281,8 @@ function parseDetailResponse(html, pageUrl) {
         mimeType: "application/x-mpegURL",
         headers: {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
-            "Referer": "https://www.av01.media/",
-            "Origin": "https://www.av01.media",
+            "Referer": "https://av01.tv/",
+            "Origin": "https://av01.tv",
             "Accept": "*/*"
         },
         subtitles: []
@@ -303,13 +294,19 @@ function parseEmbedResponse(html, url) {
 }
 
 function parseCategoriesResponse(html) {
-    html = PluginUtils.normalizeHtml(html);
-    var categories = [];
-    categories.push({ name: "Tất cả video", slug: "vn/videos/latest" });
-    categories.push({ name: "Không che", slug: "vn/videos/uncensored" });
-    categories.push({ name: "Thịnh hành", slug: "vn/videos/trending" });
+    var categories = [
+        { name: "Tất cả video", slug: "latest" },
+        { name: "Không che", slug: "uncensored" },
+        { name: "Thịnh hành", slug: "trending" },
+        { name: "Phổ biến", slug: "popular" }
+    ];
     return JSON.stringify(categories);
 }
 
-function parseCountriesResponse(html) { return "[]"; }
-function parseYearsResponse(html) { return "[]"; }
+function parseCountriesResponse(html) { 
+    return "[]"; 
+}
+
+function parseYearsResponse(html) { 
+    return "[]"; 
+}
