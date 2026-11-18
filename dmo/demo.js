@@ -51,7 +51,7 @@ function getFilterConfig() {
 // URL GENERATION
 // =============================================================================
 
-const BASE_URL = "https://vlxx.app";
+var BASE_URL = "https://vlxx.app";
 
 function getUrlList(slug, filtersJson) {
     var filters = JSON.parse(filtersJson || "{}");
