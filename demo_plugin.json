@@ -2,10 +2,10 @@
   "version": 1,
   "plugins": [
     {
-       "id": "av01_multistream_vax",
-        "name": "AV01 Media Player",
-        "version": "12.0.0",
-      "scriptUrl": "https://raw.githubusercontent.com/mangyeu/TV/refs/heads/main/dmo/demo.js",
+        "id": "av01_custom_gallery",
+        "name": "AV01 Custom Gallery",
+        "version": "13.0.0",
+        "scriptUrl": "https://raw.githubusercontent.com/mangyeu/TV/refs/heads/main/dmo/demo.js",
       "iconUrl": "https://static.iw01.xyz/static/av01-icon-export.svg"
     }
   ]
