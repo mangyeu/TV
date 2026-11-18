@@ -6,9 +6,9 @@ function getManifest() {
     return JSON.stringify({
         "id": "missav",
         "name": "MissAV",
-        "version": "1.1.4",
+        "version": "1.1.5",
         "baseUrl": "https://missav.media",
-        "referrer": "https://missav.media/",
+        "referrer": "https://missav123.com/",
         "iconUrl": "https://raw.githubusercontent.com/youngbi/repo/main/plugins/missav.ico",
         "isEnabled": true,
         "isAdult": true,
@@ -649,6 +649,9 @@ function parseDetailResponse(html, pageUrl) {
 
     return JSON.stringify({
         url: streamUrl,
+        streamUrl: streamUrl,
+        file: streamUrl,
+        link: streamUrl,
         isEmbed: false,
         mimeType: "application/x-mpegURL",
         headers: {
@@ -691,57 +694,15 @@ function parseCategoriesResponse(html) {
     return JSON.stringify(categories);
 }
 
-function parseCountriesResponse(html) { return "[]"; }
-function parseYearsResponse(html) { return "[]"; }
+function parseCountriesResponse(html) { 
+    return "[]"; 
+}
 
-// =============================================================================
-// 6. HLS PLAYER INITIALIZER (Hỗ trợ XhrLoader / xhrSetup truyền Header bảo mật)
-// =============================================================================
-
-function initHlsPlayer(videoElementId, streamData) {
-    var video = document.getElementById(videoElementId);
-    if (!video || !streamData || !streamData.url) return;
-
-    var streamUrl = streamData.url;
-    var headers = streamData.headers || {};
-
-    if (window.Hls && Hls.isSupported()) {
-        var hls = new Hls({
-            xhrSetup: function(xhr, url) {
-                for (var key in headers) {
-                    if (headers.hasOwnProperty(key)) {
-                        xhr.setRequestHeader(key, headers[key]);
-                    }
-                }
-            }
-        });
-
-        hls.loadSource(streamUrl);
-        hls.attachMedia(video);
-        
-        hls.on(Hls.Events.MANIFEST_PARSED, function() {
-            video.play().catch(function(err) {
-                console.log("Autoplay bị chặn hoặc lỗi:", err);
-            });
-        });
-
-        hls.on(Hls.Events.ERROR, function(event, data) {
-            if (data.fatal) {
-                if (data.type === Hls.ErrorTypes.NETWORK_ERROR) {
-                    hls.startLoad();
-                } else if (data.type === Hls.ErrorTypes.MEDIA_ERROR) {
-                    hls.recoverMediaError();
-                } else {
-                    hls.destroy();
-                }
-            }
-        });
-
-        return hls;
-    } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-        video.src = streamUrl;
-        video.addEventListener('loadedmetadata', function() {
-            video.play();
-        });
+function parseYearsResponse(html) { 
+    var years = [];
+    var currentYear = 2026;
+    for (var i = currentYear; i >= 2010; i--) {
+        years.push({ name: i.toString(), slug: "vi/release/" + i });
     }
+    return JSON.stringify(years);
 }
