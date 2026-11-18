@@ -6,7 +6,7 @@ function getManifest() {
     return JSON.stringify({
         "id": "missav",
         "name": "MissAV",
-        "version": "1.1.2",
+        "version": "1.1.3",
         "baseUrl": "https://missav.media",
         "referrer": "https://missav.media/",
         "iconUrl": "https://raw.githubusercontent.com/youngbi/repo/main/plugins/missav.ico",
@@ -842,48 +842,59 @@ function parseDetailResponse(html, pageUrl) {
     }
 
     // -------------------------------------------------------------------------
-    // Strategy 4: Quét sâu UUID chuẩn kèm bộ lọc Blacklist an toàn
+    // Strategy 4: Quét sâu bổ sung tìm UUID rời rạc qua regex toàn cục nếu các bước trên trống
     // -------------------------------------------------------------------------
     if (!uuid && !streamUrl) {
-        var matches = html.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi) || [];
-        var blacklist = ["snaptrckr", "user_uuid", "popunder", "banner", "monitoring", "crypto", "randomUUID", "generateUUID"];
-        
-        for (var i = 0; i < matches.length; i++) {
-            var u = matches[i];
-            var isBad = false;
-            // Khắc phục lỗi vị trí bằng cách tìm kiếm từ vị trí hiện tại hoặc kiểm tra toàn cảnh
-            var idx = html.indexOf(u);
-            while (idx !== -1) {
-                var ctx = html.substring(Math.max(0, idx - 80), Math.min(html.length, idx + 80));
-                for (var j = 0; j < blacklist.length; j++) {
-                    if (ctx.indexOf(blacklist[j]) !== -1) {
-                        isBad = true;
-                        break;
+        var uuidMatches = html.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi);
+        if (uuidMatches && uuidMatches.length > 0) {
+            // Lọc bỏ các UUID nằm trong các từ khóa rác / tracking
+            var blacklist = ["snaptrckr", "user_uuid", "popunder", "banner", "monitoring", "crypto"];
+            for (var k = 0; k < uuidMatches.length; k++) {
+                var candidate = uuidMatches[k];
+                var idx = html.indexOf(candidate);
+                var isBlacklisted = false;
+                if (idx !== -1) {
+                    var context = html.substring(Math.max(0, idx - 60), Math.min(html.length, idx + 60));
+                    for (var b = 0; b < blacklist.length; b++) {
+                        if (context.indexOf(blacklist[b]) !== -1) {
+                            isBlacklisted = true;
+                            break;
+                        }
                     }
                 }
-                if (isBad) break;
-                // Tiếp tục tìm vị trí xuất hiện tiếp theo của UUID này nếu có
-                idx = html.indexOf(u, idx + 1);
-            }
-            if (!isBad) {
-                uuid = u;
-                break;
+                if (!isBlacklisted) {
+                    uuid = candidate;
+                    break;
+                }
             }
         }
     }
 
     // -------------------------------------------------------------------------
-    // Xây dựng streamUrl hoàn chỉnh từ UUID đã tìm được
+    // NỐI LẠI (REASSEMBLE): Lắp UUID bóc tách được thành đường dẫn video m3u8 hoàn chỉnh
     // -------------------------------------------------------------------------
     if (!streamUrl && uuid) {
-        // Sử dụng domain CDN chuẩn hiện tại của MissAV
         streamUrl = "https://fourhoi.mrstcdn.store/" + uuid + "/1080p/video.m3u8";
     }
 
-    // Fallback cuối cùng nếu không tìm thấy gì thì trả về trang chi tiết
+    // Fallback cuối cùng: Nếu hoàn toàn không quét được gì, giữ nguyên trang chi tiết
     if (!streamUrl) {
         streamUrl = pageUrl;
     }
+
+    // Trả về định dạng JSON chuẩn cho VAAPP kèm đầy đủ Header giả lập
+    return JSON.stringify({
+        url: streamUrl,
+        headers: {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+            "Referer": "https://missav.media/",
+            "Origin": "https://missav.media",
+            "Accept": "*/*"
+        },
+        subtitles: []
+    });
+}
+
 
     // Trả về định dạng JSON chuẩn yêu cầu của VAAPP kèm đầy đủ Header chống chặn
     return JSON.stringify({
