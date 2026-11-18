@@ -1,12 +1,12 @@
 // =============================================================================
-// 1. MANIFEST & CONFIGURATION (CLB Phim Xưa - Chuẩn ES5)
+// 1. MANIFEST & CONFIGURATION (CLB Phim Xua + Streamc Dynamic Scanner)
 // =============================================================================
 
 function getManifest() {
     return JSON.stringify({
-        "id": "clb_phim_xua",
-        "name": "CLB Phim Xưa",
-        "version": "1.0.0",
+        "id": "clb_phim_xua_streamc",
+        "name": "CLB Phim Xưa & Streamc Player",
+        "version": "2.0.0",
         "baseUrl": "https://clbphimxua.top",
         "referrer": "https://clbphimxua.top/",
         "iconUrl": "https://clbphimxua.top/wp-content/uploads/2023/favicon.png",
@@ -42,7 +42,7 @@ function getFilterConfig() {
 }
 
 // =============================================================================
-// 2. URL GENERATION (Xây dựng đường dẫn trực tiếp đến clbphimxua.top)
+// 2. URL GENERATION
 // =============================================================================
 
 function getUrlList(slug, filtersJson) {
@@ -88,17 +88,9 @@ function getUrlDetail(slug) {
     return "https://clbphimxua.top/" + slug;
 }
 
-function getUrlCategories() { 
-    return "https://clbphimxua.top/"; 
-}
-
-function getUrlCountries() { 
-    return ""; 
-}
-
-function getUrlYears() { 
-    return ""; 
-}
+function getUrlCategories() { return "https://clbphimxua.top/"; }
+function getUrlCountries() { return ""; }
+function getUrlYears() { return ""; }
 
 // =============================================================================
 // 3. UTILS & HELPERS
@@ -119,7 +111,7 @@ var PluginUtils = {
 };
 
 // =============================================================================
-// 4. PARSERS (Cào dữ liệu danh sách trực tiếp từ trang web)
+// 4. PARSERS (Cào danh sách phim trực tiếp từ clbphimxua.top)
 // =============================================================================
 
 function parseListResponse(html) {
@@ -131,7 +123,6 @@ function parseListResponse(html) {
         });
     }
 
-    // Quét các liên kết bài viết / phim trong mã HTML trả về từ clbphimxua.top
     var parts = html.split('href="');
     for (var i = 1; i < parts.length; i++) {
         var chunk = parts[i];
@@ -140,7 +131,6 @@ function parseListResponse(html) {
 
         var link = chunk.substring(0, quoteIdx);
         
-        // Lọc các liên kết thuộc tên miền clbphimxua.top và loại bỏ các trang hệ thống không cần thiết
         if (link.indexOf("clbphimxua.top") !== -1 || link.indexOf("/") === 0) {
             if (link.indexOf("/wp-content/") !== -1 || 
                 link.indexOf("/wp-json/") !== -1 || 
@@ -153,7 +143,6 @@ function parseListResponse(html) {
             var slug = link.replace(/https?:\/\/[^\/]+/, "");
             if (slug === "" || slug === "/") continue;
 
-            // Tránh trùng lặp item
             var isExist = false;
             var m = 0;
             for (m = 0; m < items.length; m++) {
@@ -166,13 +155,11 @@ function parseListResponse(html) {
 
             var blockHtml = chunk.substring(0, 500);
             
-            // Trích xuất tiêu đề phim
             var titleMatch = blockHtml.match(/title="([^"]+)"/) || blockHtml.match(/alt="([^"]+)"/);
             var title = titleMatch ? PluginUtils.cleanText(titleMatch[1]) : "";
             
             if (!title || title.length < 2) continue;
 
-            // Trích xuất ảnh poster
             var imgMatch = blockHtml.match(/src="([^"]+)"/) || blockHtml.match(/data-src="([^"]+)"/);
             var thumb = imgMatch ? imgMatch[1] : "";
             if (thumb && thumb.indexOf("//") === 0) {
@@ -184,7 +171,7 @@ function parseListResponse(html) {
                 title: title,
                 posterUrl: thumb,
                 backdropUrl: thumb,
-                description: "Phim xưa kinh điển trực tiếp từ CLB Phim Xưa",
+                description: "Phim xưa kinh điển từ CLB Phim Xưa",
                 year: 2026,
                 quality: "HD",
                 episode_current: "Full",
@@ -209,7 +196,7 @@ function parseSearchResponse(html) {
 }
 
 // =============================================================================
-// 5. PARSERS (Xử lý chi tiết và lấy luồng phát video trực tiếp)
+// 5. DETAIL & STREAMING (Quét luồng nhúng streamc / .m3u8 tự động)
 // =============================================================================
 
 function parseMovieDetail(html, pageUrl) {
@@ -234,11 +221,11 @@ function parseMovieDetail(html, pageUrl) {
     }
 
     var servers = [{
-        name: "Server Phim Xưa Chính Thức",
+        name: "Server Phim Xưa & Streamc",
         episodes: [
             { 
                 id: targetUrl, 
-                name: "Xem Phim (Full)", 
+                name: "Phát Ngay (HD)", 
                 slug: "full" 
             }
         ]
@@ -266,21 +253,38 @@ function parseMovieDetail(html, pageUrl) {
 
 function parseDetailResponse(html, pageUrl) {
     var streamUrl = "";
+    var targetInput = (html || "") + (pageUrl || "");
 
-    if (html) {
-        // 1. Quét tìm trực tiếp file video m3u8 hoặc mp4 trong mã nguồn trang chi tiết
-        var mediaMatch = html.match(/(https?:\/\/[^"'\s]+\.(m3u8|mp4)[^"'\s]*)/i);
-        if (mediaMatch) {
-            streamUrl = mediaMatch[1];
-        } else {
-            // 2. Quét tìm thẻ iframe nhúng player nếu trang dùng nguồn phát ngoài
-            var iframeMatch = html.match(/src="(https?:\/\/[^"'\s]+embed[^"'\s]*)"/i) || html.match(/iframe[^>]+src="([^"]+)"/i);
-            if (iframeMatch) {
-                streamUrl = iframeMatch[1];
+    // 1. Quét tìm trực tiếp file .m3u8 hoặc .mp4 trong mã nguồn trang chi tiết
+    var mediaMatch = targetInput.match(/(https?:\/\/[^"'\s]+\.(m3u8|mp4)[^"'\s]*)/i);
+    if (mediaMatch) {
+        streamUrl = mediaMatch[1];
+    }
+
+    // 2. Nếu không có, quét tìm link nhúng từ streamc (embed10.streamc.xyz hoặc embed.streamc.xyz)
+    if (!streamUrl) {
+        var embedMatch = targetInput.match(/src="(https?:\/\/[^"'\s]*streamc\.xyz[^"'\s]*)"/i) || targetInput.match(/iframe[^>]+src="([^"]+)"/i);
+        if (embedMatch) {
+            var embedUrl = embedMatch[1];
+            // Tự động trích xuất UUID hoặc mã định danh v= từ embed URL để tái tạo link CDN chuẩn
+            var uuidMatch = embedUrl.match(/(?:v=|embed\/|\/)([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i);
+            if (uuidMatch) {
+                streamUrl = "https://surrit.mrstcdn.store/" + uuidMatch[1] + "/720p/video.m3u8";
+            } else {
+                streamUrl = embedUrl;
             }
         }
     }
 
+    // 3. Quét dự phòng mã UUID bất kỳ xuất hiện trong trang
+    if (!streamUrl) {
+        var generalUuid = targetInput.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i);
+        if (generalUuid) {
+            streamUrl = "https://surrit.mrstcdn.store/" + generalUuid[0] + "/720p/video.m3u8";
+        }
+    }
+
+    // Fallback mặc định
     if (!streamUrl) {
         streamUrl = pageUrl;
     }
