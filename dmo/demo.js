@@ -1,17 +1,17 @@
 // =============================================================================
-// 1. MANIFEST & CONFIGURATION
+// 1. MANIFEST & CONFIGURATION (CLB Phim Xưa - Chuẩn ES5)
 // =============================================================================
 
 function getManifest() {
     return JSON.stringify({
-        "id": "av01_custom_gallery",
-        "name": "AV01 Custom Gallery",
-        "version": "13.0.0",
-        "baseUrl": "https://av01.tv",
-        "referrer": "https://av01.tv/",
-        "iconUrl": "https://static.iw01.xyz/static/av01-icon-export.svg",
+        "id": "clb_phim_xua",
+        "name": "CLB Phim Xưa",
+        "version": "1.0.0",
+        "baseUrl": "https://clbphimxua.top",
+        "referrer": "https://clbphimxua.top/",
+        "iconUrl": "https://clbphimxua.top/wp-content/uploads/2023/favicon.png",
         "isEnabled": true,
-        "isAdult": true,
+        "isAdult": false,
         "type": "VIDEO",
         "layoutType": "HORIZONTAL",
         "subtitleCat": false
@@ -20,98 +20,186 @@ function getManifest() {
 
 function getHomeSections() {
     return JSON.stringify([
-        { slug: 'latest', title: '🔥 Danh Sách Video Tổng Hợp', type: 'Horizontal', path: '' },
-        { slug: 'trending', title: '📈 Thịnh Hành', type: 'Horizontal', path: '' },
-        { slug: 'uncensored', title: '💎 Không Che (Uncensored)', type: 'Horizontal', path: '' }
+        { slug: '', title: '🔥 Phim Mới Cập Nhật', type: 'Horizontal', path: '' },
+        { slug: 'phim-bo', title: '📺 Phim Bộ Kinh Điển', type: 'Horizontal', path: '' },
+        { slug: 'phim-le', title: '🎬 Phim Lẻ Xưa', type: 'Horizontal', path: '' }
     ]);
 }
 
 function getPrimaryCategories() {
     return JSON.stringify([
-        { name: 'Mới nhất', slug: 'latest' },
-        { name: 'Thịnh hành', slug: 'trending' },
-        { name: 'Không che', slug: 'uncensored' }
+        { name: 'Trang chủ', slug: '' },
+        { name: 'Phim bộ', slug: 'phim-bo' },
+        { name: 'Phim lẻ', slug: 'phim-le' }
     ]);
 }
 
 function getFilterConfig() {
     return JSON.stringify({
-        sort: [
-            { name: 'Mới nhất', value: 'latest' },
-            { name: 'Phổ biến', value: 'popular' }
-        ],
-        category: [
-            { name: "Tất cả", value: "latest" }
-        ]
+        sort: [],
+        category: []
     });
 }
 
 // =============================================================================
-// 2. URL GENERATION
+// 2. URL GENERATION (Xây dựng đường dẫn trực tiếp đến clbphimxua.top)
 // =============================================================================
 
 function getUrlList(slug, filtersJson) {
     var filters = JSON.parse(filtersJson || "{}");
     var page = filters.page || 1;
-    return "https://av01.tv/videos/" + (slug || "latest") + "?page=" + page;
+    var baseUrl = "https://clbphimxua.top";
+    
+    var path = slug || "";
+    if (path.indexOf("/") === 0) {
+        path = path.substring(1);
+    }
+
+    if (page > 1) {
+        if (path) {
+            return baseUrl + "/" + path + "/page/" + page + "/";
+        }
+        return baseUrl + "/page/" + page + "/";
+    }
+
+    return baseUrl + (path ? "/" + path + "/" : "");
 }
 
 function getUrlSearch(keyword, filtersJson) {
-    return "https://av01.tv/search?q=" + encodeURIComponent(keyword);
+    var filters = JSON.parse(filtersJson || "{}");
+    var page = filters.page || 1;
+    var url = "https://clbphimxua.top/?s=" + encodeURIComponent(keyword);
+    if (page > 1) {
+        url += "&page=" + page;
+    }
+    return url;
 }
 
 function getUrlDetail(slug) {
-    if (!slug) return "https://av01.tv";
-    if (slug.indexOf("http") === 0) return slug;
-    return "https://av01.tv/" + slug;
+    if (!slug) {
+        return "https://clbphimxua.top";
+    }
+    if (slug.indexOf("http") === 0) {
+        return slug;
+    }
+    if (slug.indexOf("/") === 0) {
+        return "https://clbphimxua.top" + slug;
+    }
+    return "https://clbphimxua.top/" + slug;
 }
 
-function getUrlCategories() { return "https://av01.tv/genres"; }
-function getUrlCountries() { return ""; }
-function getUrlYears() { return ""; }
+function getUrlCategories() { 
+    return "https://clbphimxua.top/"; 
+}
+
+function getUrlCountries() { 
+    return ""; 
+}
+
+function getUrlYears() { 
+    return ""; 
+}
 
 // =============================================================================
-// 3. PARSERS (Danh sách video độc lập - Mỗi mục một link stream riêng)
+// 3. UTILS & HELPERS
+// =============================================================================
+
+var PluginUtils = {
+    cleanText: function (text) {
+        if (!text) return "";
+        return text.replace(/<[^>]*>/g, "")
+            .replace(/&/g, "&")
+            .replace(/"/g, '"')
+            .replace(/'/g, "'")
+            .replace(/</g, "<")
+            .replace(/>/g, ">")
+            .replace(/\s+/g, " ")
+            .trim();
+    }
+};
+
+// =============================================================================
+// 4. PARSERS (Cào dữ liệu danh sách trực tiếp từ trang web)
 // =============================================================================
 
 function parseListResponse(html) {
-    // 💡 TẠI ĐÂY: Bạn có thể thay thế các URL .m3u8 khác nhau ở trường "id" cho từng video
-    var items = [
-        {
-            id: "https://surrit.mrstcdn.store/aea57715-ad36-4946-a244-e11c8ed391b4/720p/video.m3u8",
-            title: "▶️ Video Số 01 - Phân Phối Qua CDN Chính Thức",
-            posterUrl: "https://static.iw01.xyz/static/av01-icon-export.svg",
-            backdropUrl: "https://static.iw01.xyz/static/av01-icon-export.svg",
-            description: "Chất lượng HD 720p - Nội dung 01",
-            year: 2026, quality: "HD", episode_current: "Full", lang: "Vietsub"
-        },
-        {
-            // Ví dụ: Thay link m3u8 khác vào đây cho video số 2
-            id: "https://surrit.mrstcdn.store/aea57715-ad36-4946-a244-e11c8ed391b4/720p/video.m3u8",
-            title: "🔥 Video Số 02 - Tuyển Tập Thịnh Hành",
-            posterUrl: "https://static.iw01.xyz/static/av01-icon-export.svg",
-            backdropUrl: "https://static.iw01.xyz/static/av01-icon-export.svg",
-            description: "Chất lượng HD 720p - Nội dung 02",
-            year: 2026, quality: "HD", episode_current: "Full", lang: "Vietsub"
-        },
-        {
-            // Ví dụ: Thay link m3u8 khác vào đây cho video số 3
-            id: "https://surrit.mrstcdn.store/aea57715-ad36-4946-a244-e11c8ed391b4/720p/video.m3u8",
-            title: "💎 Video Số 03 - Thể Loại Không Che",
-            posterUrl: "https://static.iw01.xyz/static/av01-icon-export.svg",
-            backdropUrl: "https://static.iw01.xyz/static/av01-icon-export.svg",
-            description: "Chất lượng HD 720p - Nội dung 03",
-            year: 2026, quality: "HD", episode_current: "Full", lang: "Vietsub"
+    var items = [];
+    if (!html) {
+        return JSON.stringify({
+            items: [],
+            pagination: { currentPage: 1, totalPages: 1, totalItems: 0, itemsPerPage: 20 }
+        });
+    }
+
+    // Quét các liên kết bài viết / phim trong mã HTML trả về từ clbphimxua.top
+    var parts = html.split('href="');
+    for (var i = 1; i < parts.length; i++) {
+        var chunk = parts[i];
+        var quoteIdx = chunk.indexOf('"');
+        if (quoteIdx === -1) continue;
+
+        var link = chunk.substring(0, quoteIdx);
+        
+        // Lọc các liên kết thuộc tên miền clbphimxua.top và loại bỏ các trang hệ thống không cần thiết
+        if (link.indexOf("clbphimxua.top") !== -1 || link.indexOf("/") === 0) {
+            if (link.indexOf("/wp-content/") !== -1 || 
+                link.indexOf("/wp-json/") !== -1 || 
+                link.indexOf("/tag/") !== -1 || 
+                link.indexOf("/category/") !== -1 ||
+                link.indexOf("/page/") !== -1) {
+                continue;
+            }
+
+            var slug = link.replace(/https?:\/\/[^\/]+/, "");
+            if (slug === "" || slug === "/") continue;
+
+            // Tránh trùng lặp item
+            var isExist = false;
+            var m = 0;
+            for (m = 0; m < items.length; m++) {
+                if (items[m].id === link || items[m].id === slug) {
+                    isExist = true;
+                    break;
+                }
+            }
+            if (isExist) continue;
+
+            var blockHtml = chunk.substring(0, 500);
+            
+            // Trích xuất tiêu đề phim
+            var titleMatch = blockHtml.match(/title="([^"]+)"/) || blockHtml.match(/alt="([^"]+)"/);
+            var title = titleMatch ? PluginUtils.cleanText(titleMatch[1]) : "";
+            
+            if (!title || title.length < 2) continue;
+
+            // Trích xuất ảnh poster
+            var imgMatch = blockHtml.match(/src="([^"]+)"/) || blockHtml.match(/data-src="([^"]+)"/);
+            var thumb = imgMatch ? imgMatch[1] : "";
+            if (thumb && thumb.indexOf("//") === 0) {
+                thumb = "https:" + thumb;
+            }
+
+            items.push({
+                id: link.indexOf("http") === 0 ? link : slug,
+                title: title,
+                posterUrl: thumb,
+                backdropUrl: thumb,
+                description: "Phim xưa kinh điển trực tiếp từ CLB Phim Xưa",
+                year: 2026,
+                quality: "HD",
+                episode_current: "Full",
+                lang: "Thuyết Minh / Vietsub"
+            });
         }
-    ];
+    }
 
     return JSON.stringify({
         items: items,
         pagination: {
             currentPage: 1,
-            totalPages: 1,
+            totalPages: 10,
             totalItems: items.length,
-            itemsPerPage: 10
+            itemsPerPage: 20
         }
     });
 }
@@ -121,21 +209,36 @@ function parseSearchResponse(html) {
 }
 
 // =============================================================================
-// 4. DETAIL & STREAMING (Bóc tách luồng tương ứng theo từng video được bấm)
+// 5. PARSERS (Xử lý chi tiết và lấy luồng phát video trực tiếp)
 // =============================================================================
 
 function parseMovieDetail(html, pageUrl) {
+    var title = "Phim Xưa";
+    var thumb = "";
+    var desc = "";
+
+    if (html) {
+        var ogTitle = html.match(/property="og:title"\s+content="([^"]+)"/i);
+        if (ogTitle) title = PluginUtils.cleanText(ogTitle[1]);
+
+        var ogImg = html.match(/property="og:image"\s+content="([^"]+)"/i);
+        if (ogImg) thumb = ogImg[1];
+
+        var ogDesc = html.match(/property="og:description"\s+content="([^"]+)"/i);
+        if (ogDesc) desc = PluginUtils.cleanText(ogDesc[1]);
+    }
+
     var targetUrl = pageUrl;
-    if (!targetUrl || targetUrl.indexOf("http") !== 0 || targetUrl.indexOf(".m3u8") === -1) {
-        targetUrl = "https://surrit.mrstcdn.store/aea57715-ad36-4946-a244-e11c8ed391b4/720p/video.m3u8";
+    if (!targetUrl) {
+        targetUrl = "https://clbphimxua.top";
     }
 
     var servers = [{
-        name: "AV01 Secure Stream",
+        name: "Server Phim Xưa Chính Thức",
         episodes: [
             { 
                 id: targetUrl, 
-                name: "Phát ngay (HD)", 
+                name: "Xem Phim (Full)", 
                 slug: "full" 
             }
         ]
@@ -143,46 +246,64 @@ function parseMovieDetail(html, pageUrl) {
 
     return JSON.stringify({
         id: targetUrl,
-        title: "AV01 Media Stream",
-        posterUrl: "https://static.iw01.xyz/static/av01-icon-export.svg",
-        backdropUrl: "https://static.iw01.xyz/static/av01-icon-export.svg",
-        description: "Hệ thống phát trực tiếp qua hạ tầng CDN bảo mật.",
+        title: title,
+        posterUrl: thumb,
+        backdropUrl: thumb,
+        description: desc,
         servers: servers,
         quality: "HD",
         lang: "Vietsub",
         year: 2026,
-        rating: 0,
+        rating: 5.0,
         casts: "",
         director: "",
-        category: "Direct",
-        status: "Online",
+        category: "Phim Kinh Điển",
+        status: "Full",
         duration: "",
         previewUrl: ""
     });
 }
 
 function parseDetailResponse(html, pageUrl) {
-    var streamUrl = "https://surrit.mrstcdn.store/aea57715-ad36-4946-a244-e11c8ed391b4/720p/video.m3u8";
-    
-    if (pageUrl && pageUrl.indexOf("http") === 0 && pageUrl.indexOf(".m3u8") !== -1) {
+    var streamUrl = "";
+
+    if (html) {
+        // 1. Quét tìm trực tiếp file video m3u8 hoặc mp4 trong mã nguồn trang chi tiết
+        var mediaMatch = html.match(/(https?:\/\/[^"'\s]+\.(m3u8|mp4)[^"'\s]*)/i);
+        if (mediaMatch) {
+            streamUrl = mediaMatch[1];
+        } else {
+            // 2. Quét tìm thẻ iframe nhúng player nếu trang dùng nguồn phát ngoài
+            var iframeMatch = html.match(/src="(https?:\/\/[^"'\s]+embed[^"'\s]*)"/i) || html.match(/iframe[^>]+src="([^"]+)"/i);
+            if (iframeMatch) {
+                streamUrl = iframeMatch[1];
+            }
+        }
+    }
+
+    if (!streamUrl) {
         streamUrl = pageUrl;
     }
 
-    return JSON.stringify({
+    var isEmbed = streamUrl.indexOf(".m3u8") === -1 && streamUrl.indexOf(".mp4") === -1;
+
+    var responseData = {
         url: streamUrl,
         streamUrl: streamUrl,
         file: streamUrl,
         link: streamUrl,
-        isEmbed: false,
-        mimeType: "application/x-mpegURL",
+        isEmbed: isEmbed,
+        mimeType: isEmbed ? "" : "application/x-mpegURL",
         headers: {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
-            "Referer": "https://av01.tv/",
-            "Origin": "https://av01.tv",
+            "Referer": "https://clbphimxua.top/",
+            "Origin": "https://clbphimxua.top",
             "Accept": "*/*"
         },
         subtitles: []
-    });
+    };
+
+    return JSON.stringify(responseData);
 }
 
 function parseEmbedResponse(html, url) {
@@ -191,8 +312,9 @@ function parseEmbedResponse(html, url) {
 
 function parseCategoriesResponse(html) { 
     return JSON.stringify([
-        { name: "Mới nhất", slug: "latest" },
-        { name: "Thịnh hành", slug: "trending" }
+        { name: "Phim Mới", slug: "phim-moi" },
+        { name: "Phim Bộ", slug: "phim-bo" },
+        { name: "Phim Lẻ", slug: "phim-le" }
     ]); 
 }
 
