@@ -2,7 +2,7 @@
   "version": 1,
   "plugins": [
     {
-       "id": "clb_phim_xua_streamc",
+      "id": "clb_phim_xua_streamc",
         "name": "CLB Phim Xưa & Streamc Player",
         "version": "2.0.0",
         "scriptUrl": "https://raw.githubusercontent.com/mangyeu/TV/refs/heads/main/dmo/demo.js",
