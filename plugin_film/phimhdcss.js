@@ -457,16 +457,114 @@ function parseDetailResponse(htmlContent, pageUrl) {
             } catch (e) { return null; }
         };
 
-        var makeResult = function (playerUrl) {
+        // Hàm làm sạch link, lọc bỏ wrapper player.php
+        var cleanStreamUrl = function(rawUrl) {
+            if (!rawUrl) return "";
+            if (rawUrl.indexOf("player.php?") !== -1) {
+                var matchLink = /[?&](?:link|url)=([^&]+)/.exec(rawUrl);
+                if (matchLink) {
+                    try { rawUrl = decodeURIComponent(matchLink[1]); } catch (err) {}
+                }
+            }
+            if (rawUrl.indexOf('//') === 0) rawUrl = "https:" + rawUrl;
+            return rawUrl;
+        };
+
+        // 1. Quét chuỗi muối (salt) nếu có
+        var saltMatch = /(?:const|let|var)\s+_0xS\s*=\s*["']([^"']+)["']/.exec(htmlContent);
+        var saltString = saltMatch ? saltMatch[1] : "";
+
+        var oxData = null;
+
+        // 2. Thử tìm đối tượng chứa các mảng chunk dữ liệu mã hóa
+        var realObjMatch = /(?:const|let|var)\s+realObj\s*=\s*JSON\.parse\(\s*atob\(\s*["']([^"']+)["']\s*\)\s*\)/i.exec(htmlContent);
+        if (realObjMatch) {
+            try {
+                var decodedRealObj = decodeBase64(realObjMatch[1]);
+                if (decodedRealObj) oxData = JSON.parse(decodedRealObj);
+            } catch (e) {}
+        }
+
+        // Fallback quét _0xData dạng object chứa mảng rời rạc
+        if (!oxData) {
+            var dataMatch = /(?:const|let|var)\s+_0xData\s*=\s*(\{[\s\S]*?\})\s*;/.exec(htmlContent);
+            if (dataMatch) {
+                try {
+                    var startIdx = dataMatch.index + dataMatch[0].indexOf('{');
+                    var braceCount = 0;
+                    var jsonEnd = -1;
+                    for (var j = startIdx; j < htmlContent.length && j < startIdx + 100000; j++) {
+                        if (htmlContent[j] === '{') braceCount++;
+                        else if (htmlContent[j] === '}') {
+                            braceCount--;
+                            if (braceCount === 0) { jsonEnd = j + 1; break; }
+                        }
+                    }
+                    if (jsonEnd > 0) {
+                        oxData = JSON.parse(htmlContent.substring(startIdx, jsonEnd));
+                    }
+                } catch (e) {}
+            }
+        }
+
+        // 3. THỰC THI QUÉT MẢNG RỜI RẠC VÀ NỐI LẠI (RECONSTRUCT CHUNKS)
+        if (oxData) {
+            var targetId = null;
+            var keys = [];
+            for (var k in oxData) { if (oxData.hasOwnProperty(k)) keys.push(k); }
+            if (keys.length > 0) targetId = keys[0];
+
+            if (targetId && oxData[targetId] && Array.isArray(oxData[targetId])) {
+                var chunks = oxData[targetId]; // Lấy mảng các chuỗi rời rạc
+                
+                // Thuật toán nối các mảnh rời rạc:
+                // Bước A: Nối các phần tử mảng lại với nhau thành chuỗi đảo ngược
+                var revBase64 = chunks.join('');
+                
+                // Bước B: Đảo ngược lại chuỗi (reverse string) để trả về base64 chuẩn
+                var base64 = revBase64.split('').reverse().join('');
+                
+                // Bước C: Loại bỏ chuỗi muối (salt) nếu xuất hiện trong mã hóa
+                if (saltString) {
+                    base64 = base64.replace(new RegExp(saltString, 'g'), '');
+                }
+                
+                // Bước D: Giải mã Base64 thành URL hoàn chỉnh
+                var playerUrl = decodeBase64(base64);
+                playerUrl = cleanStreamUrl(playerUrl);
+
+                if (playerUrl && playerUrl.indexOf('http') === 0) {
+                    var isDirect = playerUrl.indexOf('.m3u8') !== -1 || playerUrl.indexOf('.mp4') !== -1;
+                    return JSON.stringify({
+                        url: playerUrl,
+                        isEmbed: !isDirect,
+                        mimeType: isDirect ? "application/x-mpegURL" : undefined,
+                        headers: {
+                            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+                            "Referer": "https://phimhdcss.com/"
+                        },
+                        subtitles: []
+                    });
+                }
+            }
+        }
+
+        // 4. Fallback dự phòng quét trực tiếp link m3u8 thông thường nếu không dùng mảng chunk
+        var m3u8Match = /(https?:\/\/[^"'\s]+\.m3u8[^"'\s]*)/i.exec(htmlContent);
+        if (m3u8Match) {
+            var directUrl = cleanStreamUrl(m3u8Match[1]);
             return JSON.stringify({
-                url: playerUrl,
+                url: directUrl,
+                isEmbed: false,
+                mimeType: "application/x-mpegURL",
                 headers: {
                     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
                     "Referer": "https://phimhdcss.com/"
                 },
                 subtitles: []
             });
-        };
+        }
+
 
 
         // Helper: decode chunks with salt removal → base64 decode
