@@ -1,193 +1,138 @@
 // =============================================================================
-// 1. MANIFEST & CONFIGURATION (CLB Phim Xua + Streamc Dynamic Scanner)
+// MANIFEST & CONFIG
 // =============================================================================
 
 function getManifest() {
     return JSON.stringify({
-        "id": "clb_phim_xua_streamc",
-        "name": "CLB Phim Xưa & Streamc Player",
-        "version": "2.0.0",
-        "baseUrl": "https://clbphimxua.top",
-        "referrer": "https://clbphimxua.top/",
-        "iconUrl": "https://clbphimxua.top/wp-content/uploads/2023/favicon.png",
-        "isEnabled": true,
-        "isAdult": false,
-        "type": "VIDEO",
-        "layoutType": "HORIZONTAL",
-        "subtitleCat": false
+        id: "vlxx",
+        name: "VLXX",
+        version: "1.0.5",
+        baseUrl: "https://vlxx.net",
+        iconUrl: "https://raw.githubusercontent.com/youngbi/repo/main/plugins/vlxx.ico",
+        isEnabled: true,
+        isAdult: true,
+        type: "MOVIE",
+        playerType: "exoplayer",
+        layoutType: "HORIZONTAL"
     });
 }
 
 function getHomeSections() {
     return JSON.stringify([
-        { slug: '', title: '🔥 Phim Mới Cập Nhật', type: 'Horizontal', path: '' },
-        { slug: 'phim-bo', title: '📺 Phim Bộ Kinh Điển', type: 'Horizontal', path: '' },
-        { slug: 'phim-le', title: '🎬 Phim Lẻ Xưa', type: 'Horizontal', path: '' }
+        { slug: 'jav', title: 'Phim JAV', type: 'Horizontal', path: 'category' },
+        { slug: 'phim-sex-hay', title: 'Phim Sex Hay', type: 'Horizontal', path: 'category' },
+        { slug: 'vietsub', title: 'Phim Sex Vietsub', type: 'Horizontal', path: 'category' },
+        { slug: 'khong-che', title: 'Không Che', type: 'Horizontal', path: 'category' },
+        { slug: 'home', title: 'Phim Sex Mới', type: 'Grid', path: '' }
     ]);
 }
 
 function getPrimaryCategories() {
     return JSON.stringify([
-        { name: 'Trang chủ', slug: '' },
-        { name: 'Phim bộ', slug: 'phim-bo' },
-        { name: 'Phim lẻ', slug: 'phim-le' }
+        { name: 'JAV', slug: 'jav' },
+        { name: 'Phim Sex Hay', slug: 'phim-sex-hay' },
+        { name: 'Vietsub', slug: 'vietsub' },
+        { name: 'Không Che', slug: 'khong-che' },
+        { name: 'Sex Học Sinh', slug: 'hoc-sinh' },
+        { name: 'Vụng Trộm', slug: 'vung-trom' },
+        { name: 'Phim Cấp 3', slug: 'cap-3' },
+        { name: 'Mỹ - Châu Âu', slug: 'chau-au' },
+        { name: 'XVIDEOS', slug: 'xvideos' },
+        { name: 'XNXX', slug: 'xnxx' },
+        { name: 'XXX', slug: 'xxx' }
     ]);
 }
 
 function getFilterConfig() {
-    return JSON.stringify({
-        sort: [],
-        category: []
-    });
+    return "{}";
 }
 
 // =============================================================================
-// 2. URL GENERATION
+// URL GENERATION
 // =============================================================================
+
+const BASE_URL = "https://vlxx.net";
 
 function getUrlList(slug, filtersJson) {
     var filters = JSON.parse(filtersJson || "{}");
     var page = filters.page || 1;
-    var baseUrl = "https://clbphimxua.top";
     
-    var path = slug || "";
-    if (path.indexOf("/") === 0) {
-        path = path.substring(1);
+    if (!slug || slug === 'home') {
+        return page > 1 ? `${BASE_URL}/new/${page}/` : `${BASE_URL}/`;
     }
-
-    if (page > 1) {
-        if (path) {
-            return baseUrl + "/" + path + "/page/" + page + "/";
-        }
-        return baseUrl + "/page/" + page + "/";
-    }
-
-    return baseUrl + (path ? "/" + path + "/" : "");
+    
+    return page > 1 ? `${BASE_URL}/${slug}/${page}/` : `${BASE_URL}/${slug}/`;
 }
 
 function getUrlSearch(keyword, filtersJson) {
     var filters = JSON.parse(filtersJson || "{}");
     var page = filters.page || 1;
-    var url = "https://clbphimxua.top/?s=" + encodeURIComponent(keyword);
-    if (page > 1) {
-        url += "&page=" + page;
-    }
-    return url;
+    var safeKeyword = encodeURIComponent(keyword.trim().replace(/\s+/g, '-'));
+    
+    return page > 1 
+        ? `${BASE_URL}/search/${safeKeyword}/${page}/` 
+        : `${BASE_URL}/search/${safeKeyword}/`;
 }
 
 function getUrlDetail(slug) {
-    if (!slug) {
-        return "https://clbphimxua.top";
-    }
-    if (slug.indexOf("http") === 0) {
-        return slug;
-    }
-    if (slug.indexOf("/") === 0) {
-        return "https://clbphimxua.top" + slug;
-    }
-    return "https://clbphimxua.top/" + slug;
+    if (!slug) return "";
+    if (slug.indexOf("http") === 0) return slug;
+    return slug.charAt(0) === '/' ? BASE_URL + slug : `${BASE_URL}/${slug}`;
 }
 
-function getUrlCategories() { return "https://clbphimxua.top/"; }
+function getUrlCategories() { return ""; }
 function getUrlCountries() { return ""; }
 function getUrlYears() { return ""; }
 
 // =============================================================================
-// 3. UTILS & HELPERS
-// =============================================================================
-
-var PluginUtils = {
-    cleanText: function (text) {
-        if (!text) return "";
-        return text.replace(/<[^>]*>/g, "")
-            .replace(/&/g, "&")
-            .replace(/"/g, '"')
-            .replace(/'/g, "'")
-            .replace(/</g, "<")
-            .replace(/>/g, ">")
-            .replace(/\s+/g, " ")
-            .trim();
-    }
-};
-
-// =============================================================================
-// 4. PARSERS (Cào danh sách phim trực tiếp từ clbphimxua.top)
+// PARSERS
 // =============================================================================
 
 function parseListResponse(html) {
     var items = [];
-    if (!html) {
-        return JSON.stringify({
-            items: [],
-            pagination: { currentPage: 1, totalPages: 1, totalItems: 0, itemsPerPage: 20 }
-        });
-    }
+    var blocks = html.split('class="video-item"');
 
-    var parts = html.split('href="');
-    for (var i = 1; i < parts.length; i++) {
-        var chunk = parts[i];
-        var quoteIdx = chunk.indexOf('"');
-        if (quoteIdx === -1) continue;
+    for (var i = 1; i < blocks.length; i++) {
+        var block = blocks[i];
 
-        var link = chunk.substring(0, quoteIdx);
-        
-        if (link.indexOf("clbphimxua.top") !== -1 || link.indexOf("/") === 0) {
-            if (link.indexOf("/wp-content/") !== -1 || 
-                link.indexOf("/wp-json/") !== -1 || 
-                link.indexOf("/tag/") !== -1 || 
-                link.indexOf("/category/") !== -1 ||
-                link.indexOf("/page/") !== -1) {
-                continue;
-            }
+        var linkMatch = block.match(/href=["']([^"']+)["']/i);
+        var titleMatch = block.match(/title=["']([^"']+)["']/i);
+        var thumbMatch = block.match(/data-original=["']([^"']+)["']/i) || block.match(/<img[^>]*src=["']([^"']+)["']/i);
 
-            var slug = link.replace(/https?:\/\/[^\/]+/, "");
-            if (slug === "" || slug === "/") continue;
+        var link = linkMatch ? linkMatch[1] : "";
+        var title = titleMatch ? titleMatch[1].replace(/<[^>]+>/g, '').trim() : "";
+        var thumb = thumbMatch ? thumbMatch[1] : "";
 
-            var isExist = false;
-            var m = 0;
-            for (m = 0; m < items.length; m++) {
-                if (items[m].id === link || items[m].id === slug) {
-                    isExist = true;
-                    break;
-                }
-            }
-            if (isExist) continue;
+        if (thumb && thumb.indexOf("data:image") === 0) thumb = "";
 
-            var blockHtml = chunk.substring(0, 500);
-            
-            var titleMatch = blockHtml.match(/title="([^"]+)"/) || blockHtml.match(/alt="([^"]+)"/);
-            var title = titleMatch ? PluginUtils.cleanText(titleMatch[1]) : "";
-            
-            if (!title || title.length < 2) continue;
-
-            var imgMatch = blockHtml.match(/src="([^"]+)"/) || blockHtml.match(/data-src="([^"]+)"/);
-            var thumb = imgMatch ? imgMatch[1] : "";
-            if (thumb && thumb.indexOf("//") === 0) {
-                thumb = "https:" + thumb;
-            }
-
+        if (link && title) {
             items.push({
-                id: link.indexOf("http") === 0 ? link : slug,
+                id: link,
                 title: title,
                 posterUrl: thumb,
                 backdropUrl: thumb,
-                description: "Phim xưa kinh điển từ CLB Phim Xưa",
-                year: 2026,
-                quality: "HD",
-                episode_current: "Full",
-                lang: "Thuyết Minh / Vietsub"
+                year: 0
             });
         }
     }
 
+    var currentPage = 1;
+    var totalPages = 1;
+
+    var cpMatch = html.match(/<a[^>]*class=["'][^"']*active[^"']*["'][^>]*data-page=["'](\d+)["']/i);
+    if (cpMatch) currentPage = parseInt(cpMatch[1], 10);
+
+    var lpRegex = /<a[^>]*data-page=["'](\d+)["'][^>]*>[0-9]+<\/a>/gi;
+    var lpMatch;
+    while ((lpMatch = lpRegex.exec(html)) !== null) {
+        var pageNum = parseInt(lpMatch[1], 10);
+        if (pageNum > totalPages) totalPages = pageNum;
+    }
+    if (currentPage > totalPages) totalPages = currentPage;
+
     return JSON.stringify({
         items: items,
-        pagination: {
-            currentPage: 1,
-            totalPages: 10,
-            totalItems: items.length,
-            itemsPerPage: 20
-        }
+        pagination: { currentPage, totalPages }
     });
 }
 
@@ -195,132 +140,210 @@ function parseSearchResponse(html) {
     return parseListResponse(html);
 }
 
-// =============================================================================
-// 5. DETAIL & STREAMING (Quét luồng nhúng streamc / .m3u8 tự động)
-// =============================================================================
+function parseMovieDetail(html) {
+    try {
+        var titleMatch = html.match(/<h1[^>]*page-title[^>]*>([\s\S]*?)<\/h1>/i) ||
+                         html.match(/<h2[^>]*page-title[^>]*>([\s\S]*?)<\/h2>/i) ||
+                         html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i);
+        var title = titleMatch ? titleMatch[1].replace(/<[^>]+>/g, '').trim() : "";
 
-function parseMovieDetail(html, pageUrl) {
-    var title = "Phim Xưa";
-    var thumb = "";
-    var desc = "";
+        var descMatch = html.match(/<div[^>]*class=["']video-description["'][^>]*>([\s\S]*?)<\/div>/i);
+        var description = descMatch ? descMatch[1].replace(/<[^>]+>/g, '').trim() : "";
 
-    if (html) {
-        var ogTitle = html.match(/property="og:title"\s+content="([^"]+)"/i);
-        if (ogTitle) title = PluginUtils.cleanText(ogTitle[1]);
+        var codeMatch = html.match(/<span[^>]*class=["']video-code["'][^>]*>([\s\S]*?)<\/span>/i);
+        var code = codeMatch ? codeMatch[1].replace(/<[^>]+>/g, '').trim() : "";
 
-        var ogImg = html.match(/property="og:image"\s+content="([^"]+)"/i);
-        if (ogImg) thumb = ogImg[1];
+        if (code && title) title = `(${code}) ${title}`;
 
-        var ogDesc = html.match(/property="og:description"\s+content="([^"]+)"/i);
-        if (ogDesc) desc = PluginUtils.cleanText(ogDesc[1]);
-    }
+        var ogImg = html.match(/<meta[^>]*property=["']og:image["'][^>]*content=["']([^"']+)["']/i);
+        var posterUrl = ogImg ? ogImg[1] : "";
 
-    var targetUrl = pageUrl;
-    if (!targetUrl) {
-        targetUrl = "https://clbphimxua.top";
-    }
+        var castsArr = [];
+        var castRegex = /<div[^>]*class=["']actress-tag["'][^>]*><a[^>]*>([\s\S]*?)<\/a>/gi;
+        var castMatch;
+        while ((castMatch = castRegex.exec(html)) !== null) {
+            castsArr.push(castMatch[1].replace(/<[^>]+>/g, '').trim());
+        }
 
-    var servers = [{
-        name: "Server Phim Xưa & Streamc",
-        episodes: [
-            { 
-                id: targetUrl, 
-                name: "Phát Ngay (HD)", 
-                slug: "full" 
+        var categoriesArr = [];
+        var catSectionMatch = html.match(/<div[^>]*class=["']category-tag["'][^>]*>([\s\S]*?)<\/div>/i);
+        if (catSectionMatch) {
+            var catRegex = /<a[^>]*>([\s\S]*?)<\/a>/gi;
+            var cmMatch;
+            while ((cmMatch = catRegex.exec(catSectionMatch[1])) !== null) {
+                categoriesArr.push(cmMatch[1].replace(/<[^>]+>/g, '').trim());
             }
-        ]
-    }];
+        }
 
-    return JSON.stringify({
-        id: targetUrl,
-        title: title,
-        posterUrl: thumb,
-        backdropUrl: thumb,
-        description: desc,
-        servers: servers,
-        quality: "HD",
-        lang: "Vietsub",
-        year: 2026,
-        rating: 5.0,
-        casts: "",
-        director: "",
-        category: "Phim Kinh Điển",
-        status: "Full",
-        duration: "",
-        previewUrl: ""
-    });
+        var canonicalMatch = html.match(/<link[^>]*rel=["']canonical["'][^>]*href=["']([^"']+)["']/i) ||
+                             html.match(/<meta[^>]*property=["']og:url["'][^>]*content=["']([^"']+)["']/i);
+        var pageUrl = canonicalMatch ? canonicalMatch[1] : "";
+
+        var servers = [];
+        var serverRegex = /onclick=["']server\((\d+),\s*(\d+)\)["']/gi;
+        var srvMatch;
+
+        while ((srvMatch = serverRegex.exec(html)) !== null) {
+            var serverId = srvMatch[1];
+            servers.push({
+                name: `Server #${serverId}`,
+                episodes: [{
+                    id: `${pageUrl}#s${serverId}`,
+                    name: "Full",
+                    slug: `full-s${serverId}`
+                }]
+            });
+        }
+
+        if (servers.length === 0 && pageUrl) {
+            servers.push({
+                name: "Server #1",
+                episodes: [{
+                    id: `${pageUrl}#s1`,
+                    name: "Full",
+                    slug: "full"
+                }]
+            });
+        }
+
+        return JSON.stringify({
+            id: "",
+            title: title,
+            posterUrl: posterUrl,
+            backdropUrl: posterUrl,
+            description: description,
+            servers: servers,
+            quality: "HD",
+            lang: "Vietsub",
+            year: 0,
+            rating: 0,
+            casts: castsArr.join(", "),
+            director: "",
+            country: "",
+            category: categoriesArr.join(", "),
+            status: code || "Full"
+        });
+
+    } catch (e) {
+        return "null";
+    }
 }
 
-function parseDetailResponse(html, pageUrl) {
-    var streamUrl = "";
-    var targetInput = (html || "") + (pageUrl || "");
+// =============================================================================
+// STREAM RESOLUTION
+// =============================================================================
 
-    // 1. Quét tìm trực tiếp file .m3u8 hoặc .mp4 trong mã nguồn trang chi tiết
-    var mediaMatch = targetInput.match(/(https?:\/\/[^"'\s]+\.(m3u8|mp4)[^"'\s]*)/i);
-    if (mediaMatch) {
-        streamUrl = mediaMatch[1];
-    }
+function parseDetailResponse(html, fetchedUrl) {
+    try {
+        var dataIdMatch = html.match(/data-id=["'](\d+)["']/i);
+        var videoId = dataIdMatch ? dataIdMatch[1] : "";
 
-    // 2. Nếu không có, quét tìm link nhúng từ streamc (embed10.streamc.xyz hoặc embed.streamc.xyz)
-    if (!streamUrl) {
-        var embedMatch = targetInput.match(/src="(https?:\/\/[^"'\s]*streamc\.xyz[^"'\s]*)"/i) || targetInput.match(/iframe[^>]+src="([^"]+)"/i);
-        if (embedMatch) {
-            var embedUrl = embedMatch[1];
-            // Tự động trích xuất UUID hoặc mã định danh v= từ embed URL để tái tạo link CDN chuẩn
-            var uuidMatch = embedUrl.match(/(?:v=|embed\/|\/)([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i);
-            if (uuidMatch) {
-                streamUrl = "https://surrit.mrstcdn.store/" + uuidMatch[1] + "/720p/video.m3u8";
-            } else {
-                streamUrl = embedUrl;
-            }
+        if (!videoId && fetchedUrl) {
+            var urlIdMatch = fetchedUrl.match(/\/(\d+)\/?(?:#|$)/);
+            if (urlIdMatch) videoId = urlIdMatch[1];
         }
-    }
 
-    // 3. Quét dự phòng mã UUID bất kỳ xuất hiện trong trang
-    if (!streamUrl) {
-        var generalUuid = targetInput.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i);
-        if (generalUuid) {
-            streamUrl = "https://surrit.mrstcdn.store/" + generalUuid[0] + "/720p/video.m3u8";
+        if (!videoId) return JSON.stringify({ url: "", isEmbed: false, headers: {} });
+
+        var serverId = "1";
+        if (fetchedUrl) {
+            var fragMatch = fetchedUrl.match(/#s(\d+)/);
+            if (fragMatch) serverId = fragMatch[1];
         }
+
+        var deviceMatch = html.match(/deviceType\s*=\s*['"](\w+)['"]/i);
+        var deviceType = deviceMatch ? deviceMatch[1] : "mobile";
+        var vlxxServer = (deviceType === "desktop") ? "1" : "2";
+
+        return JSON.stringify({
+            url: `${BASE_URL}/ajax.php`,
+            isEmbed: true,
+            postBody: `vlxx_server=${vlxxServer}&id=${videoId}&server=${serverId}`,
+            headers: { "Referer": `${BASE_URL}/` }
+        });
+    } catch (error) {
+        return JSON.stringify({ url: "", isEmbed: false, headers: {} });
     }
-
-    // Fallback mặc định
-    if (!streamUrl) {
-        streamUrl = pageUrl;
-    }
-
-    var isEmbed = streamUrl.indexOf(".m3u8") === -1 && streamUrl.indexOf(".mp4") === -1;
-
-    var responseData = {
-        url: streamUrl,
-        streamUrl: streamUrl,
-        file: streamUrl,
-        link: streamUrl,
-        isEmbed: isEmbed,
-        mimeType: isEmbed ? "" : "application/x-mpegURL",
-        headers: {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
-            "Referer": "https://clbphimxua.top/",
-            "Origin": "https://clbphimxua.top",
-            "Accept": "*/*"
-        },
-        subtitles: []
-    };
-
-    return JSON.stringify(responseData);
 }
 
 function parseEmbedResponse(html, url) {
-    return parseDetailResponse(html, url);
-}
+    var emptyResult = JSON.stringify({ url: "", isEmbed: false, headers: {} });
+    try {
+        // CASE 1: AJAX JSON response
+        if (html.indexOf('"player"') !== -1) {
+            try {
+                var jsonObj = JSON.parse(html);
+                if (jsonObj && jsonObj.player) {
+                    var srcMatch = jsonObj.player.match(/src=["']([^"']+)["']/i);
+                    if (srcMatch) {
+                        return JSON.stringify({
+                            url: srcMatch[1],
+                            isEmbed: true,
+                            headers: { "Referer": `${BASE_URL}/` }
+                        });
+                    }
+                }
+            } catch (parseErr) {
+                var cleaned = html.replace(/\\\//g, '/');
+                var iframeMatch = cleaned.match(/src=(?:\\\\)?["'](https?:\/\/[^"'\\]+)(?:\\\\)?["']/i);
+                if (iframeMatch) {
+                    return JSON.stringify({
+                        url: iframeMatch[1],
+                        isEmbed: true,
+                        headers: { "Referer": `${BASE_URL}/` }
+                    });
+                }
+            }
+        }
 
-function parseCategoriesResponse(html) { 
-    return JSON.stringify([
-        { name: "Phim Mới", slug: "phim-moi" },
-        { name: "Phim Bộ", slug: "phim-bo" },
-        { name: "Phim Lẻ", slug: "phim-le" }
-    ]); 
-}
+        // CASE 2: Embed page HTML (JWPlayer with .vl sources)
+        var fileMatch = html.match(/"file"\s*:\s*"(https?[^"]+\.vl[^"]*)"/i);
+        if (fileMatch) {
+            return JSON.stringify({
+                url: fileMatch[1],
+                isEmbed: false,
+                mimeType: "application/x-mpegURL",
+                headers: { "Referer": "https://play.vlstream.net/" }
+            });
+        }
 
-function parseCountriesResponse(html) { return "[]"; }
-function parseYearsResponse(html) { return "[]"; }
+        var sourcesMatch = html.match(/sources\s*:\s*(\[[^\]]+\])/i);
+        if (sourcesMatch) {
+            try {
+                var sources = JSON.parse(sourcesMatch[1]);
+                if (sources && sources.length > 0 && sources[0].file) {
+                    return JSON.stringify({
+                        url: sources[0].file,
+                        isEmbed: false,
+                        mimeType: sources[0].type === 'hls' ? 'application/x-mpegURL' : '',
+                        headers: { "Referer": "https://play.vlstream.net/" }
+                    });
+                }
+            } catch (e) {
+                var regexFile = sourcesMatch[1].match(/"file"\s*:\s*"([^"]+)"/i);
+                if (regexFile) {
+                    return JSON.stringify({
+                        url: regexFile[1],
+                        isEmbed: false,
+                        mimeType: "application/x-mpegURL",
+                        headers: { "Referer": "https://play.vlstream.net/" }
+                    });
+                }
+            }
+        }
+
+        var vlMatch = html.match(/(https?:\/\/[^\s"'\\]+\.vl[^\s"'\\]*)/i);
+        if (vlMatch) {
+            return JSON.stringify({
+                url: vlMatch[1],
+                isEmbed: false,
+                mimeType: "application/x-mpegURL",
+                headers: { "Referer": "https://play.vlstream.net/" }
+            });
+        }
+
+        return emptyResult;
+    } catch (e) {
+        return emptyResult;
+    }
+}
