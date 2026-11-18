@@ -6,8 +6,8 @@ function getManifest() {
     return JSON.stringify({
         id: "vlxx",
         name: "VLXX Pro",
-        version: "1.1.0",
-        baseUrl: "https://vlxx.net",
+        version: "1.2.0",
+        baseUrl: "https://vlxx.app",
         iconUrl: "https://raw.githubusercontent.com/youngbi/repo/main/plugins/vlxx.ico",
         isEnabled: true,
         isAdult: true,
@@ -51,7 +51,7 @@ function getFilterConfig() {
 // URL GENERATION
 // =============================================================================
 
-const BASE_URL = "https://vlxx.net";
+const BASE_URL = "https://vlxx.app";
 
 function getUrlList(slug, filtersJson) {
     var filters = JSON.parse(filtersJson || "{}");
