@@ -1,15 +1,15 @@
 // =============================================================================
-// 1. CONFIGURATION & MANIFEST (AV01.media)
+// AV01.tv CONFIGURATION & MANIFEST (Cập nhật chuẩn theo View Source)
 // =============================================================================
 
 function getManifest() {
     return JSON.stringify({
-        "id": "av01",
-        "name": "AV01",
-        "version": "1.1.0",
-        "baseUrl": "https://www.av01.media",
-        "referrer": "https://www.av01.media/",
-        "iconUrl": "https://raw.githubusercontent.com/youngbi/repo/main/plugins/av01.ico",
+        "id": "av01_tv",
+        "name": "AV01.tv",
+        "version": "2.0.0",
+        "baseUrl": "https://av01.tv",
+        "referrer": "https://av01.tv/",
+        "iconUrl": "https://static.iw01.xyz/static/av01-icon-export.svg",
         "isEnabled": true,
         "isAdult": true,
         "type": "VIDEO",
@@ -20,26 +20,17 @@ function getManifest() {
 
 function getHomeSections() {
     return JSON.stringify([
-        { slug: 'vn/videos/latest', title: 'Mới Cập Nhật', type: 'Horizontal', path: '' },
-        { slug: 'vn/videos/trending', title: 'Thịnh Hành', type: 'Horizontal', path: '' },
-        { slug: 'vn/videos/popular', title: 'Xem Nhiều', type: 'Horizontal', path: '' },
-        { slug: 'vn/videos/uncensored', title: 'Không Che', type: 'Horizontal', path: '' }
+        { slug: 'latest', title: 'Mới Cập Nhật', type: 'Horizontal', path: '' },
+        { slug: 'trending', title: 'Thịnh Hành', type: 'Horizontal', path: '' },
+        { slug: 'popular', title: 'Xem Nhiều', type: 'Horizontal', path: '' }
     ]);
 }
 
 function getPrimaryCategories() {
     return JSON.stringify([
-        { name: 'Mới nhất', slug: 'vn/videos/latest' },
-        { name: 'Thịnh hành', slug: 'vn/videos/trending' },
-        { name: 'Phổ biến', slug: 'vn/videos/popular' },
-        { name: 'Không che', slug: 'vn/videos/uncensored' },
-        { name: 'Diễn viên', slug: 'vn/actresses' },
-        { name: 'Thể loại', slug: 'vn/genres' },
-        { name: 'FC2-PPV', slug: 'vn/tags/fc2-ppv' },
-        { name: 'HEYZO', slug: 'vn/tags/heyzo' },
-        { name: 'Tokyo Hot', slug: 'vn/tags/tokyo-hot' },
-        { name: '1pondo', slug: 'vn/tags/1pondo' },
-        { name: 'Caribbeancom', slug: 'vn/tags/caribbeancom' }
+        { name: 'Mới nhất', slug: 'latest' },
+        { name: 'Thịnh hành', slug: 'trending' },
+        { name: 'Phổ biến', slug: 'popular' }
     ]);
 }
 
@@ -47,51 +38,34 @@ function getFilterConfig() {
     return JSON.stringify({
         sort: [
             { name: 'Mới nhất', value: 'latest' },
-            { name: 'Phổ biến', value: 'popular' },
-            { name: 'Thịnh hành', value: 'trending' }
+            { name: 'Phổ biến', value: 'popular' }
         ],
         category: [
-            { name: "Tất cả video", value: "vn/videos/latest" },
-            { name: "Không che", value: "vn/videos/uncensored" },
-            { name: "Thịnh hành", value: "vn/videos/trending" },
-            { name: "Diễn viên", value: "vn/actresses" },
-            { name: "Thể loại", value: "vn/genres" }
+            { name: "Tất cả", value: "latest" }
         ]
     });
 }
 
-// =============================================================================
-// 2. URL GENERATION
-// =============================================================================
-
 function getUrlList(slug, filtersJson) {
     var filters = JSON.parse(filtersJson || "{}");
     var page = filters.page || 1;
-    var baseUrl = "https://www.av01.media";
-
-    var path = slug || "vn/videos/latest";
-    if (path.indexOf("/") !== 0) path = "/" + path;
-
-    var pathStr = path;
-    if (pathStr.indexOf("/") === 0) pathStr = pathStr.substring(1);
-
-    var url = baseUrl + "/" + pathStr + "?page=" + page;
-    return url;
+    // Trỏ trực tiếp tới domain chính xác lấy từ view source
+    return "https://av01.tv/videos/" + (slug || "latest") + "?page=" + page;
 }
 
 function getUrlSearch(keyword, filtersJson) {
     var filters = JSON.parse(filtersJson || "{}");
     var page = filters.page || 1;
-    return "https://www.av01.media/vn/search?q=" + encodeURIComponent(keyword) + "&page=" + page;
+    return "https://av01.tv/search?q=" + encodeURIComponent(keyword) + "&page=" + page;
 }
 
 function getUrlDetail(slug) {
     if (slug.indexOf("http") === 0) return slug;
-    if (slug.indexOf("/") === 0) return "https://www.av01.media" + slug;
-    return "https://www.av01.media/" + slug;
+    if (slug.indexOf("/") === 0) return "https://av01.tv" + slug;
+    return "https://av01.tv/" + slug;
 }
 
-function getUrlCategories() { return "https://www.av01.media/vn/genres"; }
+function getUrlCategories() { return "https://av01.tv/genres"; }
 function getUrlCountries() { return ""; }
 function getUrlYears() { return ""; }
 
