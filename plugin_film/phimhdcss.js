@@ -4,10 +4,10 @@ function getManifest() {
     return {
         id: "phimhdcss",
         name: "PhimHDC",
-        version: "1.0.0",
+        version: "1.1.0",
         baseUrl: BASE_URL,
         icon: BASE_URL + "/favicon.ico",
-        description: "Plugin xem phim HD Vietsub, Thuyết Minh từ PhimHDC (ES5)",
+        description: "Plugin xem phim HD Vietsub, Thuyết Minh từ PhimHDC (ES5 - Fixed)",
         language: "vi",
         supportSearch: true,
         supportFilter: true
@@ -16,42 +16,11 @@ function getManifest() {
 
 function getHomeSections() {
     return [
-        {
-            id: "phim-de-cu",
-            title: "Phim Đề Cử",
-            url: BASE_URL + "/",
-            type: "slider"
-        },
-        {
-            id: "phim-chieu-rap",
-            title: "Phim Chiếu Rạp",
-            url: BASE_URL + "/danh-sach/phim-chieu-rap",
-            type: "grid"
-        },
-        {
-            id: "phim-bo",
-            title: "Phim Bộ Mới",
-            url: BASE_URL + "/danh-sach/phim-bo",
-            type: "grid"
-        },
-        {
-            id: "phim-le",
-            title: "Phim Lẻ Mới",
-            url: BASE_URL + "/danh-sach/phim-le",
-            type: "grid"
-        },
-        {
-            id: "phim-ngan",
-            title: "Phim Ngắn",
-            url: BASE_URL + "/the-loai/phim-ngan",
-            type: "grid"
-        },
-        {
-            id: "hoat-hinh",
-            title: "Hoạt Hình",
-            url: BASE_URL + "/the-loai/hoat-hinh",
-            type: "grid"
-        }
+        { id: "phim-de-cu", title: "Phim Đề Cử", url: BASE_URL + "/", type: "slider" },
+        { id: "phim-chieu-rap", title: "Phim Chiếu Rạp", url: BASE_URL + "/danh-sach/phim-chieu-rap", type: "grid" },
+        { id: "phim-bo", title: "Phim Bộ Mới", url: BASE_URL + "/danh-sach/phim-bo", type: "grid" },
+        { id: "phim-le", title: "Phim Lẻ Mới", url: BASE_URL + "/danh-sach/phim-le", type: "grid" },
+        { id: "hoat-hinh", title: "Hoạt Hình", url: BASE_URL + "/the-loai/hoat-hinh", type: "grid" }
     ];
 }
 
@@ -60,9 +29,7 @@ function getPrimaryCategories() {
         { id: "phim-bo", name: "Phim Bộ", url: BASE_URL + "/danh-sach/phim-bo" },
         { id: "phim-le", name: "Phim Lẻ", url: BASE_URL + "/danh-sach/phim-le" },
         { id: "phim-chieu-rap", name: "Chiếu Rạp", url: BASE_URL + "/danh-sach/phim-chieu-rap" },
-        { id: "phim-ngan", name: "Phim Ngắn", url: BASE_URL + "/the-loai/phim-ngan" },
-        { id: "hoat-hinh", name: "Hoạt Hình", url: BASE_URL + "/the-loai/hoat-hinh" },
-        { id: "sap-chieu", name: "Sắp Chiếu", url: BASE_URL + "/danh-sach/sap-chieu" }
+        { id: "hoat-hinh", name: "Hoạt Hình", url: BASE_URL + "/the-loai/hoat-hinh" }
     ];
 }
 
@@ -76,44 +43,11 @@ function getFilterConfig() {
                 label: "Thể loại",
                 options: [
                     { label: "Tất cả", value: "" },
-                    { label: "Cổ trang", value: "co-trang" },
-                    { label: "Ngôn tình", value: "ngon-tinh" },
-                    { label: "Hiện đại", value: "hien-dai" },
-                    { label: "Tình cảm", value: "tinh-cam" },
                     { label: "Hành động", value: "hanh-dong" },
-                    { label: "Hoạt hình", value: "hoat-hinh" },
-                    { label: "Bí ẩn", value: "bi-an" },
-                    { label: "Chiến tranh", value: "chien-tranh" },
-                    { label: "Chính kịch", value: "chinh-kich" },
-                    { label: "Gia đình", value: "gia-dinh" },
-                    { label: "Giả tưởng", value: "gia-tuong" },
+                    { label: "Tình cảm", value: "tinh-cam" },
                     { label: "Hài hước", value: "hai-huoc" },
-                    { label: "Hình sự", value: "hinh-su" },
-                    { label: "Học đường", value: "hoc-duong" },
-                    { label: "Huyền huyễn", value: "huyen-huyen" },
-                    { label: "Khoa học viễn tưởng", value: "khoa-hoc-vien-tuong" },
                     { label: "Kinh dị", value: "kinh-di" },
-                    { label: "Phiêu lưu", value: "phieu-luu" },
-                    { label: "Tâm lý", value: "tam-ly" },
-                    { label: "Tiên hiệp", value: "tien-hiep" },
-                    { label: "Võ thuật", value: "vo-thuat" },
-                    { label: "Xuyên không", value: "xuyen-khong" }
-                ]
-            },
-            {
-                key: "quoc-gia",
-                label: "Quốc gia",
-                options: [
-                    { label: "Tất cả", value: "" },
-                    { label: "Trung Quốc", value: "trung-quoc" },
-                    { label: "Hàn Quốc", value: "han-quoc" },
-                    { label: "Thái Lan", value: "thai-lan" },
-                    { label: "Nhật Bản", value: "nhat-ban" },
-                    { label: "Việt Nam", value: "viet-nam" },
-                    { label: "Âu Mỹ", value: "au-my" },
-                    { label: "Đài Loan", value: "dai-loan" },
-                    { label: "Hồng Kông", value: "hong-kong" },
-                    { label: "Ấn Độ", value: "an-do" }
+                    { label: "Hoạt hình", value: "hoat-hinh" }
                 ]
             }
         ]
@@ -147,32 +81,34 @@ function cleanHtmlText(str) {
         .trim();
 }
 
-// --- PARSE DANH SÁCH PHIM (TRANG CHỦ / TÌM KIẾM / DANH MỤC) ---
+// --- PARSE DANH SÁCH PHIM (ĐÃ TỐI ƯU REGEX CHỐNG LỖI RỖNG) ---
 
 function parseListResponse(html) {
     var items = [];
     var seenUrls = {};
     if (!html) return items;
 
-    // Bắt các thẻ <a> trỏ tới trang phim (/phim/...)
-    var linkRegex = /<a[^>]+href=["']([^"']*\/phim\/[^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi;
+    // Quét linh hoạt các thẻ item phim (thường nằm trong thẻ a hoặc article)
+    var linkRegex = /<a[^>]+href=["']([^"']*\/(?:phim|thong-tin-phim)\/[^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi;
     var match;
 
     while ((match = linkRegex.exec(html)) !== null) {
         var href = normalizeUrl(match[1]);
         var innerHtml = match[2];
 
-        // Bỏ qua link xem ngay trực tiếp nếu trùng slug gốc
         var cleanSlugUrl = href.replace(/\/tap-[^\/]+.*$/, "").replace(/\/xem-phim.*$/, "");
         if (seenUrls[cleanSlugUrl]) continue;
 
-        // Tìm ảnh poster (ưu tiên data-src, data-original, src)
-        var imgMatch = innerHtml.match(/<img[^>]+(?:data-src|data-original|src)=["']([^"']+)["'][^>]*>/i);
-        if (!imgMatch) continue; // Chỉ lấy các card có chứa hình ảnh
+        // Bắt mọi định dạng ảnh thumbnail (src, data-src, data-original, srcset)
+        var imgMatch = innerHtml.match(/<img[^>]+(?:data-src|data-original|src)=["']([^"']+)["']/i);
+        if (!imgMatch) continue;
 
         var poster = normalizeUrl(imgMatch[1]);
+        if (poster.indexOf("data:image") === 0) {
+            var lazyMatch = innerHtml.match(/data-src=["']([^"']+)["']/i);
+            if (lazyMatch) poster = normalizeUrl(lazyMatch[1]);
+        }
 
-        // Lấy tiêu đề từ alt ảnh, title thẻ a hoặc text bên trong
         var title = "";
         var titleAttrMatch = match[0].match(/title=["']([^"']+)["']/i);
         var altAttrMatch = innerHtml.match(/alt=["']([^"']+)["']/i);
@@ -182,14 +118,15 @@ function parseListResponse(html) {
         } else if (altAttrMatch && altAttrMatch[1]) {
             title = cleanHtmlText(altAttrMatch[1]);
         } else {
-            title = cleanHtmlText(innerHtml);
+            // Lấy text trong thẻ h3, h4 hoặc span nếu có
+            var headingMatch = innerHtml.match(/<h[2-4][^>]*>([\s\S]*?)<\/h[2-4]>/i);
+            title = headingMatch ? cleanHtmlText(headingMatch[1]) : cleanHtmlText(innerHtml);
         }
 
-        if (!title) continue;
+        if (!title || title.length < 2) continue;
 
-        // Lấy nhãn tập / chất lượng (Vietsub, Tập X, Full...)
         var badge = "";
-        var badgeMatch = innerHtml.match(/<(?:span|div)[^>]*class=["'][^"']*(?:badge|episode|status|label|quality|tag)[^"']*["'][^>]*>([\s\S]*?)<\/(?:span|div)>/i);
+        var badgeMatch = innerHtml.match(/<(?:span|div|label)[^>]*class=["'][^"']*(?:badge|episode|status|label|quality|tag)[^"']*["'][^>]*>([\s\S]*?)<\/(?:span|div|label)>/i);
         if (badgeMatch) {
             badge = cleanHtmlText(badgeMatch[1]);
         }
@@ -217,15 +154,11 @@ function parseDetailResponse(html, pageUrl) {
         poster: "",
         banner: "",
         description: "",
-        year: "",
-        country: "",
-        categories: [],
         servers: []
     };
 
     if (!html) return result;
 
-    // 1. Tiêu đề phim
     var h1Match = html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i);
     if (h1Match) {
         result.title = cleanHtmlText(h1Match[1]);
@@ -234,37 +167,31 @@ function parseDetailResponse(html, pageUrl) {
         if (ogTitle) result.title = cleanHtmlText(ogTitle[1]);
     }
 
-    // 2. Poster & Banner
     var ogImage = html.match(/<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i);
     if (ogImage) {
         result.poster = normalizeUrl(ogImage[1]);
         result.banner = result.poster;
     }
 
-    // 3. Mô tả nội dung
-    var descMatch = html.match(/<(?:div|p)[^>]*class=["'][^"']*(?:description|content|film-content|tom-tat|summary)[^"']*["'][^>]*>([\s\S]*?)<\/(?:div|p)>/i);
+    var descMatch = html.match(/<(?:div|p)[^>]*class=["'][^"']*(?:description|content|film-content|entry-content|summary)[^"']*["'][^>]*>([\s\S]*?)<\/(?:div|p)>/i);
     if (descMatch) {
         result.description = cleanHtmlText(descMatch[1]);
-    } else {
-        var metaDesc = html.match(/<meta[^>]+name=["']description["'][^>]+content=["']([^"']+)["']/i);
-        if (metaDesc) result.description = cleanHtmlText(metaDesc[1]);
     }
 
-    // 4. Trích xuất danh sách tập theo từng Server
     var episodes = [];
     var seenEpUrls = {};
-
-    // Tìm các link tập phim (thường có /tap- hoặc ?tap= hoặc data-episode)
-    var epRegex = /<a[^>]+href=["']([^"']*(?:\/tap-|\/xem-phim|\?tap=)[^"']*)["'][^>]*>([\s\S]*?)<\/a>/gi;
+    
+    // Quét link tập phim linh hoạt hơn
+    var epRegex = /<a[^>]+href=["']([^"']*(?:\/tap-|\/xem-phim|\?tap=|\/episode\/)[^"']*)["'][^>]*>([\s\S]*?)<\/a>/gi;
     var epMatch;
 
     while ((epMatch = epRegex.exec(html)) !== null) {
         var epUrl = normalizeUrl(epMatch[1]);
         var epName = cleanHtmlText(epMatch[2]);
 
-        if (!epName || epName.length > 40) continue;
-        if (epName.toLowerCase() === "xem phim" || epName.toLowerCase() === "xem ngay") {
-            epName = "Full";
+        if (!epName || epName.length > 50) continue;
+        if (epName.toLowerCase().indexOf("xem phim") !== -1 || epName.toLowerCase() === "play") {
+            epName = "Tập Full";
         }
 
         if (!seenEpUrls[epUrl]) {
@@ -277,9 +204,8 @@ function parseDetailResponse(html, pageUrl) {
         }
     }
 
-    // Fallback nếu phim lẻ chỉ có 1 nút "Xem phim"
     if (episodes.length === 0) {
-        var watchBtn = html.match(/<a[^>]+href=["']([^"']+)["'][^>]*>\s*(?:Xem\s*Phim|Xem\s*Ngay|Play)\s*<\/a>/i);
+        var watchBtn = html.match(/<a[^>]+href=["']([^"']+)["'][^>]*>\s*(?:Xem\s*Phim|Xem\s*Ngay|Play|Thưởng thức)\s*<\/a>/i);
         if (watchBtn) {
             var watchUrl = normalizeUrl(watchBtn[1]);
             episodes.push({
@@ -292,7 +218,7 @@ function parseDetailResponse(html, pageUrl) {
 
     if (episodes.length > 0) {
         result.servers.push({
-            name: "Vietsub / Thuyết Minh",
+            name: "Server Chính (Vietsub)",
             episodes: episodes
         });
     }
@@ -300,7 +226,7 @@ function parseDetailResponse(html, pageUrl) {
     return result;
 }
 
-// --- GIẢI MÃ EVAL PACKER (P, A, C, K, E, D) CHUẨN ES5 ---
+// --- GIẢI MÃ EVAL PACKER CHUẨN ES5 ---
 
 function unpackEvalScripts(html) {
     var unpackedAll = "";
@@ -337,32 +263,30 @@ function unpackEvalScripts(html) {
     return unpackedAll;
 }
 
-// --- BÓC TÁCH LINK STREAM (.M3U8 / MP4 / IFRAME) ĐA TẦNG ---
+// --- BÓC TÁCH LINK STREAM (.M3U8 / MP4) ĐA TẦNG CẢI TIẾN ---
 
 function parseStreamResponse(html, episodeUrl) {
     var streams = [];
     if (!html) return streams;
 
-    // Gộp HTML gốc với nội dung script đã giải mã eval()
     var unpacked = unpackEvalScripts(html);
     var combinedSource = html + "\n" + unpacked;
-
-    // Chuẩn hóa các chuỗi thoát dấu gạch chéo trong JSON/JS (https:\/\/...)
     var normalizedSource = combinedSource.replace(/\\\//g, "/");
 
-    // TẦNG 1: Bắt trực tiếp URL .m3u8 đầy đủ
-    var m3u8Regex = /(https?:\/\/[^\s"'<>\\]+\.m3u8(?:\?[^\s"'<>\\]*)?)/gi;
-    var m3u8Match;
     var foundUrls = {};
 
-    while ((m3u8Match = m3u8Regex.exec(normalizedSource)) !== null) {
-        var streamUrl = m3u8Match[1];
+    // 1. Quét trực tiếp các đuôi .m3u8 hoặc .mp4 phổ biến
+    var mediaRegex = /(https?:\/\/[^\s"'<>\\]+?\.(?:m3u8|mp4)(?:\?[^\s"'<>\\]*)?)/gi;
+    var mediaMatch;
+
+    while ((mediaMatch = mediaRegex.exec(normalizedSource)) !== null) {
+        var streamUrl = mediaMatch[1];
         if (!foundUrls[streamUrl]) {
             foundUrls[streamUrl] = true;
             streams.push({
                 url: streamUrl,
-                type: "hls",
-                quality: "Auto",
+                type: streamUrl.indexOf(".mp4") !== -1 ? "mp4" : "hls",
+                quality: "Auto / HD",
                 headers: {
                     "Referer": BASE_URL + "/",
                     "Origin": BASE_URL,
@@ -374,66 +298,18 @@ function parseStreamResponse(html, episodeUrl) {
 
     if (streams.length > 0) return streams;
 
-    // TẦNG 2: Bắt link theo cấu trúc CDN + UUID (ví dụ: https://cdn.../stream/<uuid>/index.m3u8 hoặc không đuôi)
-    var cdnUuidRegex = /(https?:\/\/[^\s"'<>\\]+?\/[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}(?:\/[^\s"'<>\\]*)?)/gi;
-    var cdnMatch;
-    while ((cdnMatch = cdnUuidRegex.exec(normalizedSource)) !== null) {
-        var candidate = cdnMatch[1];
-        if (candidate.indexOf(".jpg") === -1 && candidate.indexOf(".png") === -1 && candidate.indexOf(".webp") === -1) {
-            if (candidate.indexOf(".m3u8") === -1) {
-                candidate = candidate.replace(/\/$/, "") + "/index.m3u8";
-            }
-            if (!foundUrls[candidate]) {
-                foundUrls[candidate] = true;
-                streams.push({
-                    url: candidate,
-                    type: "hls",
-                    quality: "HD",
-                    headers: {
-                        "Referer": BASE_URL + "/"
-                    }
-                });
-            }
-        }
-    }
-
-    if (streams.length > 0) return streams;
-
-    // TẦNG 3: Quét biến cấu hình player (file, source, link_m3u8, url) + UUID trong ngữ cảnh gần
-    var configVarRegex = /(?:file|source|link_m3u8|streamUrl|videoUrl)\s*[:=]\s*["']([^"']+)["']/gi;
+    // 2. Quét các biến cấu hình stream phổ biến trong Javascript (file:, link:, url:)
+    var jsConfigRegex = /(?:file|source|link|streamUrl|videoUrl|hls)\s*[:=]\s*["'](https?:\/\/[^"']+)["']/gi;
     var cfgMatch;
-    while ((cfgMatch = configVarRegex.exec(normalizedSource)) !== null) {
+    while ((cfgMatch = jsConfigRegex.exec(normalizedSource)) !== null) {
         var val = cfgMatch[1];
-        if (val.indexOf("http") === 0 && (val.indexOf(".m3u8") !== -1 || val.indexOf(".mp4") !== -1)) {
-            if (!foundUrls[val]) {
-                foundUrls[val] = true;
-                streams.push({
-                    url: val,
-                    type: val.indexOf(".mp4") !== -1 ? "mp4" : "hls",
-                    quality: "HD",
-                    headers: {
-                        "Referer": BASE_URL + "/"
-                    }
-                });
-            }
-        }
-    }
-
-    if (streams.length > 0) return streams;
-
-    // TẦNG 4: Bắt Iframe Embed dự phòng nếu server nhúng player ngoài
-    var iframeRegex = /<iframe[^>]+src=["']([^"']+)["'][^>]*>/gi;
-    var iframeMatch;
-    while ((iframeMatch = iframeRegex.exec(normalizedSource)) !== null) {
-        var iframeSrc = normalizeUrl(iframeMatch[1]);
-        if (iframeSrc.indexOf("facebook.com") === -1 && iframeSrc.indexOf("google") === -1) {
+        if (!foundUrls[val] && (val.indexOf(".m3u8") !== -1 || val.indexOf(".mp4") !== -1)) {
+            foundUrls[val] = true;
             streams.push({
-                url: iframeSrc,
-                type: "embed",
-                quality: "Embed",
-                headers: {
-                    "Referer": episodeUrl || (BASE_URL + "/")
-                }
+                url: val,
+                type: val.indexOf(".mp4") !== -1 ? "mp4" : "hls",
+                quality: "HD",
+                headers: { "Referer": BASE_URL + "/" }
             });
         }
     }
