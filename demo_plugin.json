@@ -4,7 +4,7 @@
     {
       "id": "missav",
       "name": "MissAV",
-      "version": "4.0.3",
+      "version": "1.1.2",
       "scriptUrl": "https://raw.githubusercontent.com/mangyeu/TV/refs/heads/main/dmo/demo.js",
       "iconUrl": "https://raw.githubusercontent.com/youngbi/repo/main/plugins/missav.ico"
     }
