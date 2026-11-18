@@ -8,7 +8,7 @@ function getManifest() {
     return JSON.stringify({
         id: "vlxx",
         name: "VLXX Pro",
-        version: "1.2.2",
+        version: "1.2.3",
         baseUrl: BASE_URL,
         iconUrl: "https://raw.githubusercontent.com/youngbi/repo/main/plugins/vlxx.ico",
         isEnabled: true,
@@ -253,43 +253,73 @@ function parseMovieDetail(html) {
 // STREAM RESOLUTION & PERFORMANCE OPTIMIZATION
 // =============================================================================
 
-function parseDetailResponse(html, fetchedUrl) {
-    try {
-        var dataIdMatch = html.match(/data-id=["'](\d+)["']/i);
-        var videoId = dataIdMatch ? dataIdMatch[1] : "";
-
-        if (!videoId && fetchedUrl) {
-            var urlIdMatch = fetchedUrl.match(/\/(\d+)\/?(?:#|$)/);
-            if (urlIdMatch) videoId = urlIdMatch[1];
-        }
-
-        if (!videoId) return JSON.stringify({ url: "", isEmbed: false, headers: {} });
-
-        var serverId = "1";
-        if (fetchedUrl) {
-            var fragMatch = fetchedUrl.match(/#s(\d+)/);
-            if (fragMatch) serverId = fragMatch[1];
-        }
-
-        var deviceMatch = html.match(/deviceType\s*=\s*['"](\w+)['"]/i);
-        var deviceType = deviceMatch ? deviceMatch[1] : "desktop";
-        var vlxxServer = (serverId === "2") ? "2" : "1";
-
-        return JSON.stringify({
-            url: BASE_URL + "/ajax.php",
-            isEmbed: true,
-            postBody: "vlxx_server=" + vlxxServer + "&id=" + videoId + "&server=" + serverId,
-            headers: { 
-                "Referer": BASE_URL + "/",
-                "X-Requested-With": "XMLHttpRequest"
-            }
-        });
-    } catch (error) {
-        return JSON.stringify({ url: "", isEmbed: false, headers: {} });
+function parseListResponse(html) {
+    var items = [];
+    
+    // Sử dụng Regex linh hoạt tìm các khối video bất kể tên class có thay đổi nhẹ
+    var blocks = html.split('class="video-item"');
+    if (blocks.length <= 1) {
+        // Fallback dự phòng nếu web đổi class thành 'item' hoặc 'box'
+        blocks = html.split('class="item"');
     }
+    if (blocks.length <= 1) {
+        blocks = html.split('<article');
+    }
+
+    for (var i = 1; i < blocks.length; i++) {
+        var block = blocks[i];
+
+        var linkMatch = block.match(/href=["']([^"']+)["']/i);
+        var titleMatch = block.match(/title=["']([^"']+)["']/i) || block.match(/alt=["']([^"']+)["']/i) || block.match(/<h\d[^>]*>([\s\S]*?)<\/h\d>/i);
+        
+        // Mở rộng tìm kiếm ảnh: ưu tiên data-original, data-src, đến src thông thường
+        var thumbMatch = block.match(/data-original=["']([^"']+)["']/i) || 
+                         block.match(/data-src=["']([^"']+)["']/i) || 
+                         block.match(/<img[^>]*src=["']([^"']+)["']/i);
+
+        var link = linkMatch ? linkMatch[1] : "";
+        var title = titleMatch ? titleMatch[1].replace(/<[^>]+>/g, '').trim() : "";
+        var thumb = thumbMatch ? thumbMatch[1] : "";
+
+        if (thumb && (thumb.indexOf("data:image") === 0 || thumb.indexOf("pixel") !== -1)) {
+            thumb = "";
+        }
+
+        if (link && title) {
+            items.push({
+                id: link,
+                title: title,
+                posterUrl: thumb,
+                backdropUrl: thumb,
+                year: 0
+            });
+        }
+    }
+
+    var currentPage = 1;
+    var totalPages = 1;
+
+    var cpMatch = html.match(/<a[^>]*class=["'][^"']*active[^"']*["'][^>]*data-page=["'](\d+)["']/i) ||
+                  html.match(/<span[^>]*class=["'][^"']*current[^"']*["'][^>]*>(\d+)<\/span>/i);
+    if (cpMatch) currentPage = parseInt(cpMatch[1], 10);
+
+    var lpRegex = /data-page=["'](\d+)["']/gi;
+    var lpMatch;
+    while ((lpMatch = lpRegex.exec(html)) !== null) {
+        var pageNum = parseInt(lpMatch[1], 10);
+        if (pageNum > totalPages) totalPages = pageNum;
+    }
+    if (currentPage > totalPages) totalPages = currentPage;
+
+    return JSON.stringify({
+        items: items,
+        pagination: { 
+            currentPage: currentPage, 
+            totalPages: totalPages 
+        }
+    });
 }
 
-function parseEmbedResponse(html, url) {
 function parseEmbedResponse(html, url) {
     var emptyResult = JSON.stringify({ url: "", isEmbed: false, headers: {} });
     try {
