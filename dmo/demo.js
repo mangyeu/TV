@@ -6,9 +6,9 @@ function getManifest() {
     return JSON.stringify({
         "id": "missav",
         "name": "MissAV",
-        "version": "1.1.5",
+        "version": "1.1.6",
         "baseUrl": "https://missav.media",
-        "referrer": "https://missav123.com/",
+        "referrer": "https://missav.media/",
         "iconUrl": "https://raw.githubusercontent.com/youngbi/repo/main/plugins/missav.ico",
         "isEnabled": true,
         "isAdult": true,
@@ -596,7 +596,7 @@ function parseDetailResponse(html, pageUrl) {
     var uuid = "";
     var streamUrl = "";
 
-    // 1. Quét UUID từ mọi biến thể domain CDN mới (mrstcdn.store, surrit.com, v.v.)
+    // 1. Quét UUID từ mọi biến thể CDN mới nhất (.mrstcdn.store, surrit.com, v.v.)
     var evalMatch = html.match(/eval\(function\(p,a,c,k,e,d\)[\s\S]*?'([^']+)'\.split\('\|'\)/i);
     if (evalMatch) {
         var parts = evalMatch[1].split('|');
@@ -619,18 +619,19 @@ function parseDetailResponse(html, pageUrl) {
         if (matches.length > 0) uuid = matches[0];
     }
 
-    // 2. Xây dựng đường dẫn stream theo chuẩn CDN mới nhất (.mrstcdn.store)
+    // 2. Ưu tiên sử dụng đường dẫn chuẩn của CDN mới
     if (uuid) {
-        // Ưu tiên dùng cấu trúc 720p/video.m3u8 hoặc playlist.m3u8 tương thích
+        // Thử dùng định dạng 720p trực tiếp
         streamUrl = "https://surrit.mrstcdn.store/" + uuid + "/720p/video.m3u8";
     }
 
-    // Fallback nếu pageUrl truyền vào đã là link m3u8 trực tiếp
+    // Fallback nếu pageUrl truyền vào đã là link m3u8
     if (!streamUrl && pageUrl && pageUrl.indexOf(".m3u8") !== -1) {
         streamUrl = pageUrl;
     }
 
-    return JSON.stringify({
+    // 3. Trả về cấu trúc JSON chuẩn mực tương thích với mọi phiên bản VAX Player
+    var resultObj = {
         url: streamUrl,
         streamUrl: streamUrl,
         file: streamUrl,
@@ -641,10 +642,17 @@ function parseDetailResponse(html, pageUrl) {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
             "Referer": "https://missav.media/",
             "Origin": "https://missav.media",
-            "Accept": "*/*"
+            "Accept": "*/*",
+            "Connection": "keep-alive"
         },
         subtitles: []
-    });
+    };
+
+    return JSON.stringify(resultObj);
+}
+
+function parseEmbedResponse(html, url) {
+    return parseDetailResponse(html, url);
 }
 
 function parseEmbedResponse(html, url) {
