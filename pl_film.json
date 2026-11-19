@@ -2,7 +2,7 @@
     "version": 1,
     "plugins": [
         {
-        "id": "tvhay",
+         "id": "tvhay",
         "name": "TVHay",
         "version": "1.2.3",
         "baseUrl": "https://tvhay.buzz",
