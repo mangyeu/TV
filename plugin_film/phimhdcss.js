@@ -11,7 +11,7 @@ function getManifest() {
     return JSON.stringify({
         "id": "tvhay",
         "name": "TVHay",
-        "version": "1.2.5",
+        "version": "1.2.6",
         "baseUrl": BASE_URL,
         "iconUrl": BASE_URL + "/favicon.png",
         "isEnabled": true,
@@ -619,7 +619,7 @@ function parseListResponse(htmlContent) {
         }
 
         if (movies.length === 0) {
-            var aRegex = /<a[^>]+href="((?:https?:\/\/[^"'\s]+)?\/(?:phim|xem)\/[^"'\s]+)"[^>]*>([\s\S]*?)<\/a>/gi;
+            var aRegex = /<a[^>]+href="((?:https?:\/\/[^"'\s]+)?\/(?:phim|xem)\/[^"'\s?#]+)"[^>]*>([\s\S]*?)<\/a>/gi;
             var aMatch;
             while ((aMatch = aRegex.exec(html)) !== null) {
                 var aHref = aMatch[1].trim();
@@ -640,6 +640,40 @@ function parseListResponse(htmlContent) {
                     title: aTitle,
                     posterUrl: aPoster,
                     backdropUrl: aPoster,
+                    year: 0,
+                    quality: "",
+                    episode_current: "",
+                    lang: ""
+                });
+            }
+        }
+
+        if (movies.length === 0) {
+            var posterCardRegex = /<a[^>]+href="((?:https?:\/\/(?:www\.)?tvhay\.buzz)?\/[^"'\s?#]+)"[^>]*>([\s\S]*?)<\/a>/gi;
+            var pCardMatch;
+            while ((pCardMatch = posterCardRegex.exec(html)) !== null) {
+                var pHref = pCardMatch[1].trim();
+                var pId = pHref.replace(/^https?:\/\/[^/]+\//i, "").replace(/^\/+/, "");
+                if (!pId || seenIds[pId]) continue;
+                if (/^(?:phim-moi|phim-bo|phim-le|short-drama|the-loai|quoc-gia|nam|index\.php|login|register|search|tim-kiem)/i.test(pId)) continue;
+
+                var pInner = pCardMatch[2];
+                var pImg = /<img[^>]+(?:data-src|data-lazy-src|src)="([^"]+)"[^>]*>/i.exec(pInner);
+                if (!pImg) continue;
+                var pImgSrc = pImg[1] || "";
+                if (/logo|favicon|banner|ads|placeholder|bit\.ly|c168n|choitic88|154\.82\.109\.164/i.test(pImgSrc)) continue;
+
+                var pAlt = /alt="([^"]*)"/i.exec(pImg[0]) || /title="([^"]*)"/i.exec(pCardMatch[0]);
+                var pTitle = pAlt ? stripTags(pAlt[1]) : stripTags(pInner);
+                if (!pTitle || pTitle.length < 2) continue;
+
+                seenIds[pId] = true;
+                var pPoster = normalizeUrl(pImgSrc);
+                movies.push({
+                    id: pId,
+                    title: pTitle,
+                    posterUrl: pPoster,
+                    backdropUrl: pPoster,
                     year: 0,
                     quality: "",
                     episode_current: "",
