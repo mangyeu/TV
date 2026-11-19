@@ -1,540 +1,590 @@
 // =============================================================================
-// CONFIGURATION & METADATA
+// CONFIGURATION & METADATA (STRICT ES5)
 // =============================================================================
+
+var PLUGIN_CONFIG = {
+    id: "javhd",
+    name: "JavHD",
+    version: "1.2.0",
+    baseUrl: "https://javhdz.today",
+    iconUrl: "https://javhdz.today/favicon.ico",
+    isEnabled: true,
+    isAdult: true,
+    type: "VIDEO",
+    playerType: "embedtoexoplay",
+    userAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+};
+
+var IDOLS_MENU_HTML = ""
+    + '<li class="dropdown dropdown-large">'
+    + '  <a href="#" class="dropdown-toggle" data-toggle="dropdown"><i class="fa fa-star"></i> Idols Av<b class="caret"></b></a>'
+    + '  <ul class="dropdown-menu dropdown-menu-large row">'
+    + '    <li class="col-sm-4"><ul>'
+    + '      <li class="dropdown-header" style="color: #000;">Top Idols</li>'
+    + '      <li class="divider"></li>'
+    + '      <li><a href="https://javhdz.today/pornstar/hatano-yui/"><i class="fa fa-caret-right"></i> Hatano Yui</a></li>'
+    + '      <li><a href="https://javhdz.today/pornstar/aika/"><i class="fa fa-caret-right"></i> Aika</a></li>'
+    + '      <li><a href="https://javhdz.today/pornstar/hasumi-kurea/"><i class="fa fa-caret-right"></i> Hasumi Kurea</a></li>'
+    + '      <li><a href="https://javhdz.today/pornstar/iioka-kanako/"><i class="fa fa-caret-right"></i> Iioka Kanako</a></li>'
+    + '      <li><a href="https://javhdz.today/pornstar/nagisa-mitsuki/"><i class="fa fa-caret-right"></i> Nagisa Mitsuki</a></li>'
+    + '      <li><a href="https://javhdz.today/pornstar/shinoda-yuu/"><i class="fa fa-caret-right"></i> Shinoda Yuu</a></li>'
+    + '      <li><a href="https://javhdz.today/pornstar/matsumoto-ichika/"><i class="fa fa-caret-right"></i> Matsumoto Ichika</a></li>'
+    + '      <li><a href="https://javhdz.today/pornstar/hamasaki-mao/"><i class="fa fa-caret-right"></i> Hamasaki Mao</a></li>'
+    + '      <li><a href="https://javhdz.today/pornstar/haruna-hana/"><i class="fa fa-caret-right"></i> Haruna Hana</a></li>'
+    + '      <li><a href="https://javhdz.today/pornstar/mitani-akari/"><i class="fa fa-caret-right"></i> Mitani Akari</a></li>'
+    + '      <li><a href="https://javhdz.today/pornstar/ootsuki-hibiki/"><i class="fa fa-caret-right"></i> Ootsuki Hibiki</a></li>'
+    + '      <li><a href="https://javhdz.today/pornstar/uehara-ai/"><i class="fa fa-caret-right"></i> Uehara Ai</a></li>'
+    + '      <li><a href="https://javhdz.today/pornstar/seina-arisa/"><i class="fa fa-caret-right"></i> Seina Arisa</a></li>'
+    + '      <li><a href="https://javhdz.today/pornstar/hachino-tsubasa/"><i class="fa fa-caret-right"></i> Hachino Tsubasa</a></li>'
+    + '      <li><a href="https://javhdz.today/pornstar/yayoi-mizuki/"><i class="fa fa-caret-right"></i> Yayoi Mizuki</a></li>'
+    + '      <li><a href="https://javhdz.today/pornstar/kimijima-mio/"><i class="fa fa-caret-right"></i> Kimijima Mio</a></li>'
+    + '      <li><a href="https://javhdz.today/pornstar"><i class="fa fa-caret-right"></i> <strong>All Idols Av</strong></a></li>'
+    + '    </ul></li>'
+    + '    <li class="col-sm-4"><ul>'
+    + '      <li class="dropdown-header" style="color: #000;">Newest Idols AV</li>'
+    + '      <li class="divider"></li>'
+    + '      <li><a href="https://javhdz.today/pornstar/kanade-miyu/" title="Kanade Miyu "><i class="fa fa-caret-right"></i> Kanade Miyu</a></li>'
+    + '      <li><a href="https://javhdz.today/pornstar/hana-arisu/" title="Hana Arisu "><i class="fa fa-caret-right"></i> Hana Arisu</a></li>'
+    + '      <li><a href="https://javhdz.today/pornstar/kanamatsu-toho/" title="Kanamatsu Toho "><i class="fa fa-caret-right"></i> Kanamatsu Toho</a></li>'
+    + '      <li><a href="https://javhdz.today/pornstar/yu-sasamoto/" title="Yu Sasamoto "><i class="fa fa-caret-right"></i> Yu Sasamoto</a></li>'
+    + '      <li><a href="https://javhdz.today/pornstar/hanazato-akari/" title="Hanazato Akari "><i class="fa fa-caret-right"></i> Hanazato Akari</a></li>'
+    + '      <li><a href="https://javhdz.today/pornstar/yui-mita/" title="Yui Mita "><i class="fa fa-caret-right"></i> Yui Mita</a></li>'
+    + '      <li><a href="https://javhdz.today/pornstar/riria-hido/" title="Riria Hido "><i class="fa fa-caret-right"></i> Riria Hido</a></li>'
+    + '      <li><a href="https://javhdz.today/pornstar/marina-sina/" title="Marina Sina "><i class="fa fa-caret-right"></i> Marina Sina</a></li>'
+    + '      <li><a href="https://javhdz.today/pornstar/rin-chibana/" title="Rin Chibana "><i class="fa fa-caret-right"></i> Rin Chibana</a></li>'
+    + '      <li><a href="https://javhdz.today/pornstar/yui-tsubaki/" title="Yui Tsubaki "><i class="fa fa-caret-right"></i> Yui Tsubaki</a></li>'
+    + '      <li><a href="https://javhdz.today/pornstar/yurina-shoji/" title="Yurina Shoji "><i class="fa fa-caret-right"></i> Yurina Shoji</a></li>'
+    + '      <li><a href="https://javhdz.today/pornstar/nao-hayakawa/" title="Nao Hayakawa "><i class="fa fa-caret-right"></i> Nao Hayakawa</a></li>'
+    + '      <li><a href="https://javhdz.today/pornstar/hikari-mizusumi/" title="Hikari Mizusumi "><i class="fa fa-caret-right"></i> Hikari Mizusumi</a></li>'
+    + '      <li><a href="https://javhdz.today/pornstar/saki-no-kanna/" title="Saki no Kanna "><i class="fa fa-caret-right"></i> Saki no Kanna</a></li>'
+    + '      <li><a href="https://javhdz.today/pornstar/yurina-momosaki/" title="Yurina Momosaki "><i class="fa fa-caret-right"></i> Yurina Momosaki</a></li>'
+    + '      <li><a href="https://javhdz.today/pornstar/hasmi-claire/" title="Hasmi Claire "><i class="fa fa-caret-right"></i> Hasmi Claire</a></li>'
+    + '      <li><a href="https://javhdz.today/pornstar/yui-higa/" title="Yui Higa "><i class="fa fa-caret-right"></i> Yui Higa</a></li>'
+    + '    </ul></li>'
+    + '    <li class="col-sm-4"><ul>'
+    + '      <li class="dropdown-header" style="color: #000;">Most Popular Idols AV</li>'
+    + '      <li class="divider"></li>'
+    + '      <li><a href="https://javhdz.today/pornstar/yumi-kazama/" title="Yumi Kazama "><i class="fa fa-caret-right"></i> Yumi Kazama</a></li>'
+    + '      <li><a href="https://javhdz.today/pornstar/yui-hatano/" title="Yui Hatano"><i class="fa fa-caret-right"></i> Yui Hatano</a></li>'
+    + '      <li><a href="https://javhdz.today/pornstar/hana-haruna/" title="Hana Haruna "><i class="fa fa-caret-right"></i> Hana Haruna</a></li>'
+    + '      <li><a href="https://javhdz.today/pornstar/eimi-fukada/" title="Eimi Fukada "><i class="fa fa-caret-right"></i> Eimi Fukada</a></li>'
+    + '      <li><a href="https://javhdz.today/pornstar/reiko-kobayakawa/" title="Reiko Kobayakawa "><i class="fa fa-caret-right"></i> Reiko Kobayakawa</a></li>'
+    + '      <li><a href="https://javhdz.today/pornstar/asahi-mizuno/" title="Asahi Mizuno "><i class="fa fa-caret-right"></i> Asahi Mizuno</a></li>'
+    + '      <li><a href="https://javhdz.today/pornstar/hitomi-tanaka/" title="Hitomi Tanaka "><i class="fa fa-caret-right"></i> Hitomi Tanaka</a></li>'
+    + '      <li><a href="https://javhdz.today/pornstar/maria-nagai/" title="Maria Nagai "><i class="fa fa-caret-right"></i> Maria Nagai</a></li>'
+    + '      <li><a href="https://javhdz.today/pornstar/ai-sayama/" title="Ai Sayama "><i class="fa fa-caret-right"></i> Ai Sayama</a></li>'
+    + '      <li><a href="https://javhdz.today/pornstar/mako-oda/" title="Mako Oda "><i class="fa fa-caret-right"></i> Mako Oda</a></li>'
+    + '      <li><a href="https://javhdz.today/pornstar/aimi-yoshikawa/" title="Aimi Yoshikawa "><i class="fa fa-caret-right"></i> Aimi Yoshikawa</a></li>'
+    + '      <li><a href="https://javhdz.today/pornstar/mina-kitano/" title="Mina Kitano "><i class="fa fa-caret-right"></i> Mina Kitano</a></li>'
+    + '      <li><a href="https://javhdz.today/pornstar/ai-uehara/" title="Ai Uehara "><i class="fa fa-caret-right"></i> Ai Uehara</a></li>'
+    + '      <li><a href="https://javhdz.today/pornstar/anri-okita/" title="Anri Okita "><i class="fa fa-caret-right"></i> Anri Okita</a></li>'
+    + '      <li><a href="https://javhdz.today/pornstar/kaho-shibuya/" title="Kaho Shibuya "><i class="fa fa-caret-right"></i> Kaho Shibuya</a></li>'
+    + '      <li><a href="https://javhdz.today/pornstar/yua-mikami/" title="Yua Mikami "><i class="fa fa-caret-right"></i> Yua Mikami</a></li>'
+    + '      <li><a href="https://javhdz.today/pornstar/yu-shinoda/" title="Yu Shinoda"><i class="fa fa-caret-right"></i> Yu Shinoda</a></li>'
+    + '    </ul></li>'
+    + '  </ul>'
+    + '</li>';
 
 function getManifest() {
     return JSON.stringify({
-        "id": "missav",
-        "name": "MissAV",
-        "version": "1.1.2",
-        "baseUrl": "https://missav.media",
-        "referrer": "https://missav.media/",
-        "iconUrl": "https://raw.githubusercontent.com/youngbi/repo/main/plugins/missav.ico",
-        "isEnabled": true,
-        "isAdult": true,
-        "type": "VIDEO",
-        "layoutType": "HORIZONTAL",
-        "subtitleCat": true
+        id: PLUGIN_CONFIG.id,
+        name: PLUGIN_CONFIG.name,
+        version: PLUGIN_CONFIG.version,
+        baseUrl: PLUGIN_CONFIG.baseUrl,
+        iconUrl: PLUGIN_CONFIG.iconUrl,
+        isEnabled: PLUGIN_CONFIG.isEnabled,
+        isAdult: PLUGIN_CONFIG.isAdult,
+        type: PLUGIN_CONFIG.type,
+        playerType: PLUGIN_CONFIG.playerType
     });
-}
-
-function getHomeSections() {
-    return JSON.stringify([
-        { slug: 'vi/today-hot', title: 'Hot Hôm Nay', type: 'Horizontal', path: '' },
-        { slug: 'vi/weekly-hot', title: 'Hot Trong Tuần', type: 'Horizontal', path: '' },
-        { slug: 'vi/monthly-hot', title: 'Hot Trong Tháng', type: 'Horizontal', path: '' },
-        { slug: 'vi/uncensored-leak', title: 'Không Che (Rò Rỉ)', type: 'Horizontal', path: '' },
-        { slug: 'vi/release', title: 'Mới Cập Nhật', type: 'Grid', path: '' }
-    ]);
 }
 
 function getPrimaryCategories() {
     return JSON.stringify([
-        { name: 'Mới cập nhật', slug: 'vi/new' },
-        { name: 'Nữ diễn viên', slug: 'vi/actresses' },
-        { name: 'Thể loại', slug: 'vi/genres' },
-        { name: 'Không che', slug: 'vi/uncensored-leak' },
-        { name: "FC2", slug: "vi/fc2" },
-        { name: "HEYZO", slug: "vi/heyzo" },
-        { name: "Tokyo Hot", slug: "vi/tokyohot" },
-        { name: "1pondo", slug: "vi/1pondo" },
-        { name: "Caribbeancom", slug: "vi/caribbeancom" },
-        { name: "Caribbeancompr", slug: "vi/caribbeancompr" },
-        { name: "10musume", slug: "vi/10musume" },
-        { name: "pacopacomama", slug: "vi/pacopacomama" },
-        { name: "Gachinco", slug: "vi/gachinco" },
-        { name: "XXX-AV", slug: "vi/xxx-av" },
-        { name: "MarriedSlash", slug: "vi/marriedslash" },
-        { name: "Naughty4610", slug: "vi/naughty4610" },
-        { name: "Naughty0930", slug: "vi/naughty0930" }
+        { name: "Mới cập nhật", slug: "recent" },
+        { name: "Không Che", slug: "uncensored-jav" },
+        { name: "Khử Che", slug: "reducing-mosaic" },
+        { name: "Vietsub", slug: "jav-sub" },
+        { name: "Nghiệp Dư", slug: "amateur" },
+        { name: "Idols AV", slug: "pornstar" }
     ]);
 }
+
+function getHomeSections() {
+    return JSON.stringify([
+        { slug: "popular/today", title: "Xem Nhiều Hôm Nay", type: "Horizontal", path: "" },
+        { slug: "uncensored-jav", title: "Jav Uncensored", type: "Horizontal", path: "" },
+        { slug: "reducing-mosaic", title: "Reducing Mosaic", type: "Horizontal", path: "" },
+        { slug: "jav-sub", title: "Jav Sub", type: "Horizontal", path: "" },
+        { slug: "recent", title: "Video Mới Cập Nhật", type: "Grid", path: "" }
+    ]);
+}
+
+function getIdols() {
+    return parseIdolsResponse(IDOLS_MENU_HTML);
+}
+
 function getFilterConfig() {
+    var idolsList = [];
+    try {
+        var parsedIdols = JSON.parse(getIdols());
+        for (var i = 0; i < parsedIdols.length; i++) {
+            idolsList.push({
+                name: parsedIdols[i].name,
+                value: parsedIdols[i].slug
+            });
+        }
+    } catch (e) {}
+
     return JSON.stringify({
         sort: [
-            { name: 'Mới nhất', value: 'new' },
-            { name: 'Xem nhiều', value: 'views' },
-            { name: 'Hôm nay', value: 'today_views' },
-            { name: 'Tuần này', value: 'weekly_views' },
-            { name: 'Tháng này', value: 'monthly_views' }
+            { name: "Mới nhất", value: "recent" },
+            { name: "Xem nhiều hôm nay", value: "popular/today" },
+            { name: "Xem nhiều trong tuần", value: "popular/week" },
+            { name: "Xem nhiều trong tháng", value: "popular/month" },
+            { name: "Xem nhiều tất cả", value: "popular/year" },
+            { name: "Nhiều lượt thích", value: "rated/year" }
         ],
         category: [
-            { name: "Tất cả thể loại", value: "vi/genres" },
-            { name: "Mới cập nhật", value: "vi/new" },
-            { name: "Phát hành mới", value: "vi/release" },
-            { name: "Không che (Rò rỉ)", value: "vi/uncensored-leak" },
-            { name: "Nữ diễn viên", value: "vi/actresses" },
-            { name: "BXH Diễn viên", value: "vi/actresses/ranking" },
-            { name: "Nhà sản xuất", value: "vi/makers" },
-            { name: "VR", value: "vi/genres/VR" },
-            { name: "Xem nhiều hôm nay", value: "vi/today-hot" },
-            { name: "Xem nhiều tuần", value: "vi/weekly-hot" },
-            { name: "Xem nhiều tháng", value: "vi/monthly-hot" },
-            { name: "Phụ đề Anh", value: "vi/english-subtitle" },
-            { name: "Phụ đề China", value: "vi/chinese-subtitle" }, // Mapped from old config, keeping consistency 
-
-            // Amateur
-            { name: "SIRO", value: "vi/series/SIRO" },
-            { name: "LUXU", value: "vi/series/LUXU" },
-            { name: "GANA", value: "vi/series/GANA" },
-            { name: "MAAN", value: "vi/series/MAAN" },
-            { name: "S-CUTE", value: "vi/series/S-CUTE" },
-            { name: "ARA", value: "vi/series/ARA" },
-
-            // Uncensored Brands
-            { name: "FC2", value: "vi/series/FC2" },
-            { name: "HEYZO", value: "vi/series/HEYZO" },
-            { name: "Tokyo Hot", value: "vi/series/Tokyo-Hot" },
-            { name: "1pondo", value: "vi/series/1pondo" },
-            { name: "Caribbeancom", value: "vi/series/Caribbeancom" },
-            { name: "Caribbeancompr", value: "vi/series/Caribbeancompr" },
-            { name: "10musume", value: "vi/series/10musume" },
-            { name: "pacopacomama", value: "vi/series/pacopacomama" },
-            { name: "Gachinco", value: "vi/series/Gachinco" },
-            { name: "XXX-AV", value: "vi/series/XXX-AV" },
-            { name: "MarriedSlash", value: "vi/series/MarriedSlash" },
-            { name: "Naughty4610", value: "vi/series/naughty4610" },
-            { name: "Naughty0930", value: "vi/series/naughty0930" }
-        ]
+            { name: "Uncensored Jav", value: "uncensored-jav" },
+            { name: "Reducing Mosaic", value: "reducing-mosaic" },
+            { name: "Jav Sub", value: "jav-sub" },
+            { name: "Chinese Sub", value: "chinese-subtitle" },
+            { name: "Creampie", value: "creampie" },
+            { name: "Big Tits", value: "big-tits" },
+            { name: "Amateur", value: "amateur" },
+            { name: "Married Woman", value: "married-woman" },
+            { name: "Beautiful Girl", value: "beautiful-girl" },
+            { name: "Mature Woman", value: "mature-woman" },
+            { name: "Cuckold", value: "cuckold" },
+            { name: "Squirting", value: "squirting" },
+            { name: "Nasty", value: "nasty" },
+            { name: "Hardcore", value: "hardcore" }
+        ],
+        idol: idolsList
     });
 }
 
 // =============================================================================
-// URL GENERATION
+// URL GENERATION (STRICT ES5)
 // =============================================================================
 
 function getUrlList(slug, filtersJson) {
-    var filters = JSON.parse(filtersJson || "{}");
-    var page = filters.page || 1;
-    var baseUrl = "https://missav.media";
-
-    // If slug is empty (default), use 'vi/new'
-    var path = slug || "vi/new";
-
-    // Ensure path starts with /
-    if (path.indexOf("/") !== 0) path = "/" + path;
-
-    // Handle pagination (Slug handling with slash protection)
-    var pathStr = path;
-    if (pathStr.indexOf("/") === 0) pathStr = pathStr.substring(1);
-
-    var url = baseUrl + "/" + pathStr + "?page=" + page;
-
-    // Append sort parameter if applicable
-    if (filters.sort && filters.sort !== 'new' && filters.sort !== 'hot') {
-        url += "&sort=" + filters.sort;
-    } else if (filters.sort === 'hot') {
-        url += "&sort=views";
+    var base = PLUGIN_CONFIG.baseUrl.replace(/\/+$/, "");
+    var filters = {};
+    try {
+        filters = JSON.parse(filtersJson || "{}");
+    } catch (e) {
+        filters = {};
     }
 
-    return url;
+    var page = parseInt(filters.page, 10) || 1;
+    if (page < 1) page = 1;
+
+    var sortPath = "";
+    if (filters.sort && filters.sort !== "recent") {
+        sortPath = String(filters.sort).replace(/^\/+|\/+$/g, "") + "/";
+    }
+
+    var targetSlug = slug || "recent";
+    if (filters.idol) {
+        targetSlug = filters.idol;
+    } else if (filters.category) {
+        targetSlug = filters.category;
+    }
+
+    var isBrowse = false;
+    var browsePrefixes = ["recent", "popular", "rated", "discussed", "downloaded", "longest", "watched"];
+    for (var i = 0; i < browsePrefixes.length; i++) {
+        if (String(targetSlug).indexOf(browsePrefixes[i]) === 0) {
+            isBrowse = true;
+            break;
+        }
+    }
+
+    var finalUrl = "";
+    if (String(targetSlug).indexOf("http") === 0) {
+        finalUrl = String(targetSlug).replace(/\/+$/, "") + "/";
+    } else {
+        var cleanSlug = String(targetSlug).replace(/^\/+|\/+$/g, "");
+        var isPornstarRoute = cleanSlug.indexOf("pornstar") === 0;
+        var appliedSort = isPornstarRoute ? "" : sortPath;
+        finalUrl = base + "/" + cleanSlug + "/" + appliedSort;
+    }
+
+    var params = [isBrowse ? "ajax=browse_videos" : "ajax=1"];
+    if (page > 1) {
+        params.push("page=" + page);
+    }
+
+    var separator = finalUrl.indexOf("?") !== -1 ? "&" : "?";
+    return finalUrl + separator + params.join("&");
 }
 
 function getUrlSearch(keyword, filtersJson) {
-    var filters = JSON.parse(filtersJson || "{}");
-    var page = filters.page || 1;
-    return "https://missav.media/vi/search/" + encodeURIComponent(keyword) + "?page=" + page;
+    var base = PLUGIN_CONFIG.baseUrl.replace(/\/+$/, "");
+    var filters = {};
+    try {
+        filters = JSON.parse(filtersJson || "{}");
+    } catch (e) {
+        filters = {};
+    }
+
+    var page = parseInt(filters.page, 10) || 1;
+    if (page < 1) page = 1;
+
+    var url = base + "/search/video/?s=" + encodeURIComponent(keyword || "") + "&ajax=1";
+    if (page > 1) {
+        url += "&page=" + page;
+    }
+    return url;
 }
 
 function getUrlDetail(slug) {
-    if (slug.indexOf("http") === 0) return slug;
-    if (slug.indexOf("/") === 0) return "https://missav.media" + slug;
-    return "https://missav.media/vi/" + slug;
+    var base = PLUGIN_CONFIG.baseUrl.replace(/\/+$/, "");
+    var s = String(slug || "");
+    if (s.indexOf("http") === 0) return s;
+    if (s.indexOf("/") === 0) return base + s;
+    return base + "/" + s;
 }
 
-function getUrlCategories() { return "https://missav.media/vi/genres"; }
-function getUrlCountries() { return ""; } // Not supported
-function getUrlYears() { return ""; } // Not supported
+function getUrlCategories() { return PLUGIN_CONFIG.baseUrl.replace(/\/+$/, "") + "/categories/"; }
+function getUrlIdols() { return PLUGIN_CONFIG.baseUrl.replace(/\/+$/, "") + "/pornstar"; }
+function getUrlCountries() { return PLUGIN_CONFIG.baseUrl.replace(/\/+$/, "") + "/"; }
+function getUrlYears() { return PLUGIN_CONFIG.baseUrl.replace(/\/+$/, "") + "/"; }
 
 // =============================================================================
-// PARSERS
+// ES5 UTILITIES & PACKER DECODER
 // =============================================================================
+
+var B64_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+var BASE62_CHARS = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
 var PluginUtils = {
-    /**
-     * Strip prefix missav_media- (hoặc bất kỳ prefix dạng domain_) khỏi CSS class names.
-     * Ví dụ: class="missav_media-thumbnail missav_media-group" -> class="thumbnail group"
-     * Điều này đảm bảo parser hoạt động với cả HTML cũ và mới.
-     */
-    normalizeHtml: function (html) {
-        if (!html) return "";
-        // Strip missav_media- prefix trong class attributes
-        // Pattern: tìm class="..." rồi strip prefix bên trong
-        return html.replace(/class="([^"]*)"/g, function (fullMatch, classValue) {
-            var normalized = classValue.replace(/missav_media-/g, '');
-            return 'class="' + normalized + '"';
-        });
+    trim: function (str) {
+        return String(str || "").replace(/^\s+|\s+$/g, "");
     },
+
     cleanText: function (text) {
         if (!text) return "";
-        return text.replace(/<[^>]*>/g, "")
-            .replace(/&amp;/g, "&")
-            .replace(/&quot;/g, '"')
-            .replace(/&#039;/g, "'")
-            .replace(/&lt;/g, "<")
-            .replace(/&gt;/g, ">")
-            .replace(/\s+/g, " ")
-            .trim();
+        return PluginUtils.trim(
+            String(text)
+                .replace(/<[^>]*>/g, "")
+                .replace(/&/g, "&")
+                .replace(/"/g, '"')
+                .replace(/'/g, "'")
+                .replace(/ /g, " ")
+                .replace(/\s+/g, " ")
+        );
     },
-    getMeta: function (html, property) {
-        var regex = new RegExp('property="' + property + '"\\s+content="([^"]+)"', 'i');
-        var match = html.match(regex);
-        return match ? match[1] : "";
-    },
-    getMetaList: function (html, property) {
-        var regex = new RegExp('property="' + property + '"\\s+content="([^"]+)"', 'gi');
-        var results = [];
-        var match;
-        while ((match = regex.exec(html)) !== null) {
-            results.push(match[1]);
+
+    decodeBase64: function (input) {
+        if (!input) return "";
+        var clean = PluginUtils.trim(input).replace(/-/g, "+").replace(/_/g, "/");
+        var padLen = clean.length % 4;
+        if (padLen > 0) {
+            var pads = "";
+            for (var p = 0; p < 4 - padLen; p++) {
+                pads += "=";
+            }
+            clean += pads;
         }
-        return results;
-    },
-    /**
-     * Tối ưu hóa việc lấy Preview URL bằng 3 bước Strategy tương tự như lấy link phim
-     */
-    extractPreviewUrl: function (itemHtml) {
-        // Strategy 1: Regex cơ bản từ data-src của thẻ video
-        var previewMatch = itemHtml.match(/<video[^>]+data-src="([^"]+)"/);
-        var url = previewMatch ? previewMatch[1] : "";
-        
-        // Strategy 2: Nếu chỉ là UUID (36 ký tự) thì dựng link surrit
-        if (url && url.length === 36 && url.match(/^[0-9a-f-]{36}$/i)) {
-            return "https://surrit.com/" + url + "/preview.mp4";
-        }
-        
-        // Strategy 3: Deep Scan UUID trong cụm HTML của item (giống Strategy của link phim)
-        if (!url || url === "") {
-            var uuidMatch = itemHtml.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i);
-            if (uuidMatch) {
-                return "https://surrit.com/" + uuidMatch[0] + "/preview.mp4";
+
+        try {
+            if (typeof atob === "function") {
+                return atob(clean);
+            }
+        } catch (e) {}
+
+        var str = clean.replace(/=+$/, "");
+        if (str.length % 4 === 1) return "";
+
+        var output = "";
+        var bc = 0;
+        var bs = 0;
+        var buffer = "";
+        var idx = 0;
+
+        while ((buffer = str.charAt(idx++)) !== "") {
+            buffer = B64_CHARS.indexOf(buffer);
+            if (~buffer) {
+                bs = bc % 4 ? bs * 64 + buffer : buffer;
+                if (bc++ % 4) {
+                    output += String.fromCharCode(255 & (bs >> (-2 * bc & 6)));
+                }
             }
         }
-        
-        // Chuẩn hóa protocol
-        if (url && url.indexOf('//') === 0) {
-            return "https:" + url;
+        return output;
+    },
+
+    getAttr: function (tagAttrs, attrName) {
+        if (!tagAttrs || !attrName) return "";
+        var re = new RegExp(attrName + '\\s*=\\s*(["\'])([\\s\\S]*?)\\1', "i");
+        var m = String(tagAttrs).match(re);
+        return m ? m[2] : "";
+    },
+
+    detectLanguage: function (text) {
+        var t = String(text || "").toLowerCase();
+        if (t.indexOf("vietsub") !== -1 || t.indexOf("viet sub") !== -1 || t.indexOf("jav-sub") !== -1) {
+            return "Vietsub";
         }
-        
-        return url;
+        if (t.indexOf("chinese") !== -1 || t.indexOf("zh-sub") !== -1) {
+            return "Chinese Sub";
+        }
+        if (t.indexOf("uncensored") !== -1 || t.indexOf("không che") !== -1) {
+            return "Uncensored";
+        }
+        return "RAW / Nhật";
+    },
+
+    toBase: function (num, base) {
+        var prefix = num < base ? "" : PluginUtils.toBase(parseInt(num / base, 10), base);
+        var rem = num % base;
+        var ch = rem > 35 ? String.fromCharCode(rem + 29) : BASE62_CHARS.charAt(rem);
+        return prefix + ch;
+    },
+
+    unpackJs: function (html) {
+        var match = String(html || "").match(/eval\(function\(p,a,c,k,e,[dr]\)\{[\s\S]*?\}\('([\s\S]*?)',(\d+),(\d+),'([\s\S]*?)'\.split\('\|'\)/);
+        if (!match) return "";
+
+        var p = match[1];
+        var a = parseInt(match[2], 10);
+        var c = parseInt(match[3], 10);
+        var k = match[4].split("|");
+        if (!a || !c || !k.length) return "";
+
+        var dict = {};
+        while (c--) {
+            var key = PluginUtils.toBase(c, a);
+            dict[key] = k[c] || key;
+        }
+
+        return p.replace(/\b\w+\b/g, function (token) {
+            return Object.prototype.hasOwnProperty.call(dict, token) ? dict[token] : token;
+        });
+    },
+
+    extractStreamUrl: function (html) {
+        var src = String(html || "");
+        var unpacked = PluginUtils.unpackJs(src);
+        var combined = unpacked ? (src + "\n" + unpacked) : src;
+
+        var m3u8Match = combined.match(/https?:\/\/[^\s"'<>\\]+\.m3u8[^\s"'<>\\]*/i);
+        if (m3u8Match) return m3u8Match[0];
+
+        var mp4Match = combined.match(/https?:\/\/[^\s"'<>\\]+\.mp4[^\s"'<>\\]*/i);
+        if (mp4Match) return mp4Match[0];
+
+        return "";
     }
 };
 
-function parseListResponse(html) {
-    // Normalize HTML: strip missav_media- prefix từ CSS class
-    html = PluginUtils.normalizeHtml(html);
-    var movies = [];
+// =============================================================================
+// PARSERS (STRICT ES5)
+// =============================================================================
 
-    // SPECIAL CASE: Search page uses Alpine.js + Recombee API (dynamic loading)
-    // The search results are loaded via JavaScript, not static HTML
-    // We detect this by looking for the Recombee client initialization
-    var isSearchPage = html.indexOf('window.recombeeClient.send(new recombee.SearchItems') !== -1 ||
-        html.indexOf('x-data="{') !== -1 && html.indexOf('recommendItems') !== -1;
+function parseIdolsResponse(html) {
+    var idolsMap = {};
+    var idols = [];
+    var srcHtml = html || "";
 
-    if (isSearchPage) {
-        // Return a helpful message since we can't parse dynamic JS content
-        return JSON.stringify({
-            items: [{
-                id: "/vi",
-                title: "⚠️ Tìm kiếm MissAV chưa hỗ trợ",
-                posterUrl: "",
-                backdropUrl: "",
-                description: "Trang tìm kiếm của MissAV sử dụng công nghệ tải động (Alpine.js + Recombee API), không thể parse từ HTML tĩnh. Vui lòng sử dụng các mục 'Thể loại', 'Hôm nay nóng', 'Mới nhất' để duyệt phim.",
-                year: 0,
-                quality: "INFO",
-                episode_current: "",
-                lang: ""
-            }],
-            pagination: {
-                currentPage: 1,
-                totalPages: 1,
-                totalItems: 1,
-                itemsPerPage: 1
-            }
-        });
-    }
+    var colRegex = /<li[^>]*class=["'][^"']*col-sm-4[^"']*["'][^>]*>([\s\S]*?)<\/li>\s*<\/ul>/gi;
+    var colMatch = null;
+    var matchedCols = false;
 
-    // Scenario 1: Genre Grid (e.g. from /vi/genres)
-    // Scenario 1.5: Actresses Grid (e.g. from /vi/actresses)
+    while ((colMatch = colRegex.exec(srcHtml)) !== null) {
+        matchedCols = true;
+        var colBlock = colMatch[1];
+        var headerMatch = colBlock.match(/<li[^>]*class=["'][^"']*dropdown-header[^"']*["'][^>]*>([\s\S]*?)<\/li>/i);
+        var groupName = headerMatch ? PluginUtils.cleanText(headerMatch[1]) : "Idols AV";
 
-    // DETECT PAGE TYPE
-    // 1. Check for Actresses Page first (Priority)
-    // Look for multiple links containing '/actresses/'
-    var actressLinkMatch = html.match(/href="[^"]*\/actresses\/[^"]+"/g);
-    var isActressesPage = (actressLinkMatch && actressLinkMatch.length > 5);
-
-    // 2. Check for Genres Page (if not Actresses)
-    var isAllGenresPage = !isActressesPage &&
-        html.indexOf('class="text-nord13"') !== -1 &&
-        html.indexOf(':đếm video') !== -1;
-
-    if (isActressesPage) {
-        // Tactic: Isolate the Grid UL first to avoid header/footer noise (Language flags etc.)
-        // The list is usually inside a <ul class="... grid-cols-2 ...">
-        var gridMatch = html.match(/<ul[^>]*class="[^"]*grid-cols-2[^"]*"[^>]*>([\s\S]*?)<\/ul>/);
-        var searchScope = gridMatch ? gridMatch[1] : html;
-
-        // List of blocked names (Language switcher labels)
-        var blockedNames = ["Tiếng Việt", "English", "繁體中文", "简体中文", "日本語", "한국의", "Melayu", "ไทย", "Deutsch", "Français", "Bahasa Indonesia", "Filipino", "Português", "MissAV"];
-        var foundActresses = {};
-
-        // Parse each <li> item
-        var liRegex = /<li[\s\S]*?<\/li>/gi;
-        var match;
-
-        while ((match = liRegex.exec(searchScope)) !== null) {
-            var itemHtml = match[0];
-
-            // 1. Identify Actress URL
-            // Look for link containing /actresses/ inside this item
-            var urlMatch = itemHtml.match(/href="([^"]*\/actresses\/[^"]+)"/);
-            if (!urlMatch) continue;
-
-            var url = urlMatch[1];
-            // Exclude links with '?' (pagination/language)
-            if (url.indexOf('?') !== -1) continue;
-
-            // 2. Extract Name
-            // Try to find h4 first (most reliable in this layout)
-            var nameMatch = itemHtml.match(/<h4[^>]*>([\s\S]*?)<\/h4>/);
-            var nameRaw = nameMatch ? nameMatch[1] : "";
-
-            // Fallback to alt tag on image if h4 missing
-            if (!nameRaw) {
-                var altMatch = itemHtml.match(/<img[^>]+alt="([^"]+)"/);
-                if (altMatch) nameRaw = altMatch[1];
-            }
-
-            var name = PluginUtils.cleanText(nameRaw);
-            if (!name || name.length < 2) continue;
-            if (name.indexOf(':đếm') !== -1) continue;
-
-            // Filter out language names
-            var isBlocked = false;
-            for (var k = 0; k < blockedNames.length; k++) {
-                if (name === blockedNames[k]) { isBlocked = true; break; }
-            }
-            if (isBlocked) continue;
-
-            // 3. Extract Image
-            // Find img tag with src
-            var imgMatch = itemHtml.match(/<img[^>]+src="([^"]+)"/);
-            var img = imgMatch ? imgMatch[1] : "";
-
-            // Filter flags/icons just in case
-            if (img.indexOf('flag') !== -1 || img.indexOf('icon') !== -1) img = "";
-
-            var slug = url.replace(/https?:\/\/[^\/]+/, "");
-            if (slug.indexOf("/") !== 0) slug = "/" + slug;
-
-            if (!foundActresses[slug]) {
-                movies.push({
-                    id: slug,
-                    title: name,
-                    posterUrl: img,
-                    backdropUrl: img,
-                    description: "Nữ diễn viên",
-                    year: 0,
-                    quality: "ACTRESS",
-                    episode_current: "",
-                    lang: ""
-                });
-                foundActresses[slug] = true;
-            }
-        }
-    } else if (isAllGenresPage) {
-        // GENRE PARSING LOGIC
-        var genreRegex = /<a[^>]+href="([^"]+)"[^>]*>([\s\S]*?)<\/a>/gi;
-        var foundSlugs = {};
-        var match;
-
-        while ((match = genreRegex.exec(html)) !== null) {
-            var url = match[1];
-            var innerContent = match[2];
-
-            // Filter: Must be a genre link and MUST NOT contain the count text in the link itself
-            if (url.indexOf('/genres/') !== -1 && innerContent.indexOf(':đếm video') === -1) {
-                var name = PluginUtils.cleanText(innerContent);
-                if (!name || name.length < 2) continue;
-
-                var slug = url.replace(/https?:\/\/[^\/]+/, "");
-                if (slug.indexOf("/") !== 0) slug = "/" + slug;
-
-                // Avoid duplicates
-                if (!foundSlugs[slug]) {
-                    movies.push({
-                        id: slug,
-                        title: name,
-                        posterUrl: "",
-                        backdropUrl: "",
-                        description: "Thể loại",
-                        year: 0,
-                        quality: "CAT",
-                        episode_current: "",
-                        lang: ""
-                    });
-                    foundSlugs[slug] = true;
+        var linkRegex = /<a[^>]*href=["']([^"']*\/pornstar(?:\/[^"']*)?)["'][^>]*>([\s\S]*?)<\/a>/gi;
+        var linkMatch = null;
+        while ((linkMatch = linkRegex.exec(colBlock)) !== null) {
+            var rawHref = PluginUtils.trim(linkMatch[1]);
+            var name = PluginUtils.cleanText(linkMatch[2]);
+            var pathMatch = rawHref.match(/\/pornstar(?:\/([^"'/?#]+))?\/?$/i);
+            if (pathMatch && name) {
+                var slug = pathMatch[1] ? ("pornstar/" + pathMatch[1]) : "pornstar";
+                if (!Object.prototype.hasOwnProperty.call(idolsMap, slug)) {
+                    var item = {
+                        name: name,
+                        slug: slug,
+                        group: groupName
+                    };
+                    idolsMap[slug] = item;
+                    idols.push(item);
                 }
             }
         }
     }
 
-    // Scenario 2: Standard Movie List
-    if (movies.length === 0) {
-        // More resilient split by searching for partial class name
-        var parts = html.split('thumbnail group');
-        if (parts.length <= 1) parts = html.split('class="thumbnail'); // Fallback split
-
-        for (var i = 1; i < parts.length; i++) {
-            var itemHtml = parts[i];
-
-            // Extract Slug/ID first
-            var linkMatch = itemHtml.match(/<a[^>]+href="[^"]*\/vi\/([^"\/ \?]+)"/);
-            var slug = linkMatch ? "vi/" + linkMatch[1] : "";
-
-            var fullLinkMatch = itemHtml.match(/<a[^>]+href="([^"]+)"/);
-            if (fullLinkMatch) {
-                var fullUrl = fullLinkMatch[1];
-                slug = fullUrl.replace(/https?:\/\/[^\/]+/, "");
-                if (slug.indexOf("/") !== 0) slug = "/" + slug;
+    if (!matchedCols && srcHtml) {
+        var anyLinkRegex = /<a[^>]*href=["']([^"']*\/pornstar(?:\/[^"']*)?)["'][^>]*>([\s\S]*?)<\/a>/gi;
+        var anyMatch = null;
+        while ((anyMatch = anyLinkRegex.exec(srcHtml)) !== null) {
+            var rawHref2 = PluginUtils.trim(anyMatch[1]);
+            var name2 = PluginUtils.cleanText(anyMatch[2]);
+            var pathMatch2 = rawHref2.match(/\/pornstar(?:\/([^"'/?#]+))?\/?$/i);
+            if (pathMatch2 && name2) {
+                var slug2 = pathMatch2[1] ? ("pornstar/" + pathMatch2[1]) : "pornstar";
+                if (!Object.prototype.hasOwnProperty.call(idolsMap, slug2)) {
+                    var item2 = {
+                        name: name2,
+                        slug: slug2,
+                        group: "Idols AV"
+                    };
+                    idolsMap[slug2] = item2;
+                    idols.push(item2);
+                }
             }
+        }
+    }
 
-            // Extract Code from text-nord13 explicitly
-            var codeMatch = itemHtml.match(/class="[^"]*text-nord13[^"]*"[^>]*>([\s\S]*?)<\/a>/);
+    return JSON.stringify(idols);
+}
+
+function parseListResponse(html) {
+    var responseHtml = html || "";
+    var paginationHtml = "";
+
+    if (PluginUtils.trim(responseHtml).indexOf("{") === 0) {
+        try {
+            var data = JSON.parse(responseHtml);
+            if (data && data.html) {
+                responseHtml = data.html;
+                if (data.pagination) {
+                    paginationHtml = data.pagination;
+                }
+            }
+        } catch (e) {}
+    }
+
+    var moviesMap = {};
+    var parts = responseHtml.split(/<li[^>]*id=["']video-[^"']*["'][^>]*>/);
+
+    for (var i = 1; i < parts.length; i++) {
+        var itemHtml = parts[i];
+        var fullUrl = "";
+        var title = "";
+
+        var aRegex = /<a([^>]+)>/g;
+        var aMatch = null;
+        while ((aMatch = aRegex.exec(itemHtml)) !== null) {
+            var attrs = aMatch[1];
+            if (attrs.indexOf("thumbnail") !== -1) {
+                fullUrl = PluginUtils.getAttr(attrs, "href");
+                title = PluginUtils.getAttr(attrs, "title");
+                break;
+            }
+        }
+
+        var slug = fullUrl;
+        if (slug && slug.indexOf("/") === 0) {
+            slug = slug.substring(1);
+        }
+
+        var thumb = "";
+        var imgMatch = itemHtml.match(/<img([^>]+)>/);
+        if (imgMatch) {
+            var imgAttrs = imgMatch[1];
+            var dataSrc = PluginUtils.getAttr(imgAttrs, "data-src");
+            var srcAttr = PluginUtils.getAttr(imgAttrs, "src");
+            thumb = dataSrc || srcAttr || "";
+        }
+
+        if (slug) {
+            var rawTitle = PluginUtils.cleanText(title);
+
+            var durationMatch = itemHtml.match(/<span[^>]*class=["']video-overlay badge transparent["'][^>]*>([\s\S]*?)<\/span>/);
+            var duration = durationMatch ? PluginUtils.cleanText(durationMatch[1]) : "";
+
+            var codeMatch = itemHtml.match(/<span[^>]*class=["']video-overlay1 badge transparent["'][^>]*>([\s\S]*?)<\/span>/);
             var code = codeMatch ? PluginUtils.cleanText(codeMatch[1]) : "";
 
-            // Fallback for code: extract from slug (e.g., /vi/snos-056 -> snos-056)
-            if (!code && slug) {
-                var slugParts = slug.split("/");
-                code = slugParts[slugParts.length - 1];
-            }
+            var labels = [];
+            if (duration) labels.push(duration);
+            if (code) labels.push(code);
 
-            // Extract Candidates for Title
-            var titleCandidates = [];
-            // 1. Look for alt/title in img tag (best source)
-            var imgFullMatch = itemHtml.match(/<img[^>]+(?:alt|title)="([^"]+)"/i);
-            if (imgFullMatch) titleCandidates.push(PluginUtils.cleanText(imgFullMatch[1]));
+            var labelText = labels.length ? labels.join(" | ") : "HD";
+            var detectedLang = PluginUtils.detectLanguage(rawTitle + " " + slug);
 
-            // 2. Look for any other title attributes
-            var otherTitleRegex = /title="([^"]+)"/gi;
-            var tMatch;
-            while ((tMatch = otherTitleRegex.exec(itemHtml)) !== null) {
-                var val = PluginUtils.cleanText(tMatch[1]);
-                if (val.toUpperCase() !== code.toUpperCase()) {
-                    titleCandidates.push(val);
-                }
-            }
-
-            // Choose the longest candidate
-            var bestTitle = "";
-            for (var c = 0; c < titleCandidates.length; c++) {
-                if (titleCandidates[c].length > bestTitle.length) {
-                    bestTitle = titleCandidates[c];
-                }
-            }
-
-            // Clean bestTitle: remove code if it prefixes the title
-            var cleanTitle = bestTitle || code;
-            if (code && cleanTitle.toUpperCase().indexOf(code.toUpperCase()) === 0) {
-                var stripped = cleanTitle.substring(code.length).trim();
-                if (stripped.indexOf("-") === 0 || stripped.indexOf(" ") === 0) {
-                    stripped = stripped.substring(1).trim();
-                }
-                if (stripped.length > 3) {
-                    cleanTitle = stripped;
-                }
-            }
-
-            if (!cleanTitle) cleanTitle = code || "No Title";
-
-            // Extract Thumbnail
-            var thumbMatch = itemHtml.match(/<img[\s\S]*?data-src="([^"]+)"/) ||
-                itemHtml.match(/<img[\s\S]*?src="([^"]+)"/);
-            var thumb = thumbMatch ? thumbMatch[1] : "";
-
-            // Upgrade thumbnail to cover
-            if (thumb && thumb.indexOf("cover-t.jpg") !== -1) {
-                thumb = thumb.replace("/cover-t.jpg", "/cover.jpg");
-            }
-
-            if (slug && !slug.includes("actresses") && !slug.includes("genres")) {
-                // FILTER: Discard template items (junk data often found at the end of search/lists)
-                if (slug.indexOf('item.') !== -1 || slug.indexOf('{{') !== -1 || slug === "/" || slug === "#") continue;
-                if (cleanTitle.indexOf('item.') !== -1 || cleanTitle.indexOf('{{') !== -1) continue;
-                if (thumb.indexOf('item.') !== -1 || thumb.indexOf('itemUrl') !== -1) continue;
-
-                // Try to extract Year/Duration if available
-                var durationMatch = itemHtml.match(/<span[^>]*>\s*(\d+):(\d+):(\d+)\s*<\/span>/);
-                var duration = durationMatch ? durationMatch[1] + ":" + durationMatch[2] + ":" + durationMatch[3] : "";
-
-                // Check for "Không kiểm duyệt" (Uncensored) badge
-                var isUncensored = itemHtml.indexOf("Không kiểm duyệt") !== -1 ||
-                    itemHtml.indexOf("Uncensored") !== -1 ||
-                    itemHtml.indexOf("bg-blue-800") !== -1;
-
-                // Extract Preview Video bằng Strategy tối ưu
-                var previewUrl = PluginUtils.extractPreviewUrl(itemHtml);
-
-                movies.push({
+            if (!Object.prototype.hasOwnProperty.call(moviesMap, slug)) {
+                moviesMap[slug] = {
                     id: slug,
-                    title: cleanTitle,
+                    title: rawTitle || "Phim không tiêu đề",
                     posterUrl: thumb,
                     backdropUrl: thumb,
-                    description: duration,
                     year: 0,
-                    quality: isUncensored ? "K.K.Duyệt" : "HD",
-                    episode_current: isUncensored ? "K.K.Duyệt" : "Full",
-                    lang: code, // Show only the code below the title
-                    previewUrl: previewUrl
-                });
+                    quality: "HD",
+                    episode_current: labelText,
+                    lang: detectedLang
+                };
             }
         }
     }
 
-    // Pagination
+    var movies = [];
+    for (var key in moviesMap) {
+        if (Object.prototype.hasOwnProperty.call(moviesMap, key)) {
+            movies.push(moviesMap[key]);
+        }
+    }
+
     var totalPages = 1;
     var currentPage = 1;
 
-    // Parse current page: <span class="bg-nord8 ...">2</span> or similar active class
-    var currentMatch = html.match(/<span[^>]+class="[^"]*(?:bg-nord8|active|current)[^"]*"[^>]*>\s*(\d+)\s*<\/span>/i) ||
-        html.match(/<a[^>]+class="[^"]*(?:bg-nord8|active|current)[^"]*"[^>]*>\s*(\d+)\s*<\/a>/i);
-
-    if (currentMatch) {
-        currentPage = parseInt(currentMatch[1]);
+    var paginationSrc = paginationHtml || responseHtml;
+    var pagNav = "";
+    var paginationBlock = paginationSrc.match(/<ul[^>]*class="[^"]*pagination[^"]*"[^>]*>([\s\S]*?)<\/ul>/);
+    if (paginationBlock) {
+        pagNav = paginationBlock[1];
+    } else if (paginationHtml) {
+        pagNav = paginationHtml;
     }
 
-    // Capture all page numbers and find max
-    var allPageNums = html.match(/page=(\d+)/g);
-    if (allPageNums) {
-        for (var j = 0; j < allPageNums.length; j++) {
-            var p = parseInt(allPageNums[j].match(/\d+/)[0]);
-            if (p > totalPages) totalPages = p;
+    if (pagNav) {
+        var activeMatch = pagNav.match(/<li[^>]*class="[^"]*active[^"]*"[^>]*>\s*<a[^>]*>(\d+)<\/a>/i)
+            || pagNav.match(/<li[^>]*class="[^"]*active[^"]*"[^>]*>\s*<span[^>]*>(\d+)<\/span>/i);
+        if (activeMatch) {
+            currentPage = parseInt(activeMatch[1], 10) || 1;
+        }
+
+        var pageLinks = pagNav.match(/href="[^"]*\/(\d+)\/?[^"]*"/g);
+        if (pageLinks) {
+            for (var j = 0; j < pageLinks.length; j++) {
+                var pMatch = pageLinks[j].match(/\/(\d+)\/?"/);
+                if (pMatch) {
+                    var p = parseInt(pMatch[1], 10);
+                    if (p > totalPages) totalPages = p;
+                }
+            }
+        }
+
+        var queryPageLinks = pagNav.match(/href="[^"]*(?:[?&]|&)page=(\d+)[^"]*"/g);
+        if (queryPageLinks) {
+            for (var m = 0; m < queryPageLinks.length; m++) {
+                var qm = queryPageLinks[m].match(/(?:[?&]|&)page=(\d+)/);
+                if (qm) {
+                    var qp = parseInt(qm[1], 10);
+                    if (qp > totalPages) totalPages = qp;
+                }
+            }
         }
     }
 
-    // Also check input field pagination value (if any)
-    var inputPageMatch = html.match(/name="page" value="(\d+)"/) || html.match(/type="number" value="(\d+)"/);
-    if (inputPageMatch) {
-        var pVal = parseInt(inputPageMatch[1]);
-        if (pVal > 0) currentPage = Math.max(currentPage, pVal);
-    }
-
-    // Total pages usually appears after a slash or in a last-page link or in the last numeric link before "Next"
-    var totalLabelMatch = html.match(/\/ (\d+)\s*<\/span>/) ||
-        html.match(/>(\d+)<\/a>\s*<a[^>]*aria-label="Next"/i) ||
-        html.match(/page=(\d+)[^>]*aria-label="Last"/i);
-
-    if (totalLabelMatch) {
-        var tVal = parseInt(totalLabelMatch[1]);
-        if (tVal > 0) totalPages = Math.max(totalPages, tVal);
-    }
-
-    // Fallback: If we have many page=N links, find the maximum N mentioned
-    if (totalPages === 1 && allPageNums) {
-        // allPageNums was already captured above
-        for (var k = 0; k < allPageNums.length; k++) {
-            var p = parseInt(allPageNums[k].match(/\d+/)[0]);
-            if (p > totalPages) totalPages = p;
+    if (totalPages <= 1) {
+        var queryPages = paginationSrc.match(/(?:[?&]|&)page=(\d+)/g);
+        if (queryPages) {
+            for (var k = 0; k < queryPages.length; k++) {
+                var qMatch = queryPages[k].match(/page=(\d+)/);
+                if (qMatch) {
+                    var qPage = parseInt(qMatch[1], 10);
+                    if (qPage > totalPages) totalPages = qPage;
+                }
+            }
         }
     }
 
@@ -553,346 +603,200 @@ function parseSearchResponse(html) {
     return parseListResponse(html);
 }
 
-function parseMovieDetail(html, pageUrl) {
-    // Normalize HTML: strip missav_media- prefix từ CSS class
-    html = PluginUtils.normalizeHtml(html);
+function parseMovieDetail(html) {
     try {
-        // Helper to extract relative slug from full URL
-        var getSlug = function (url) {
-            if (!url) return "";
-            return url.replace(/^https?:\/\/[^\/]+/, "");
-        };
+        var srcHtml = html || "";
+        var titleMatch = srcHtml.match(/<h1[^>]*>([\s\S]*?)<\/h1>/);
+        var title = titleMatch ? PluginUtils.cleanText(titleMatch[1]) : "";
 
-        // 1. Helper for specific HTML structure: 
-        // <div class="text-secondary"><span>Label:</span> <tag>Value</tag></div>
-        var getField = function (labelKey) {
-            // Capture entire content between </span> and </div> (across newlines)
-            var regex = new RegExp("<span>" + labelKey + ":<\\/span>([\\s\\S]*?)<\\/div>", "i");
-            var match = html.match(regex);
-            if (!match) return "";
-
-            var content = match[1];
-            // Check for link
-            var linkMatch = content.match(/<a[^>]+href="([^"]+)"[^>]*>([^<]+)<\/a>/i);
-            if (linkMatch) {
-                var url = linkMatch[1];
-                var text = PluginUtils.cleanText(linkMatch[2]);
-                return "[" + text + "](" + getSlug(url) + ")";
-            }
-            // Check for <time> tag (e.g. release date)
-            var timeMatch = content.match(/<time[^>]*>([^<]+)<\/time>/i);
-            if (timeMatch) {
-                return PluginUtils.cleanText(timeMatch[1]);
-            }
-            // Check for <span class="font-medium"> (e.g. code, title)
-            var spanMatch = content.match(/<span[^>]*>([^<]+)<\/span>/i);
-            if (spanMatch) {
-                return PluginUtils.cleanText(spanMatch[1]);
-            }
-            // Fallback to text (strip all tags)
-            return PluginUtils.cleanText(content.replace(/<[^>]+>/g, ""));
-        };
-
-        var getMultiField = function (labelKey) {
-            // Find start: <span>Label:</span>
-            var regexStart = new RegExp("<span>" + labelKey + ":<\\/span>", "i");
-            var matchStart = html.match(regexStart);
-            if (!matchStart) return "";
-
-            // Look ahead for closing div of the text-secondary container
-            var startIndex = matchStart.index + matchStart[0].length;
-            var searchArea = html.substring(startIndex);
-            var divEnd = searchArea.indexOf("</div>");
-            if (divEnd === -1) divEnd = searchArea.length;
-
-            var content = searchArea.substring(0, divEnd);
-
-            // Extract all links: [Name](Slug)
-            var items = [];
-            var linkRegex = /<a[^>]+href="([^"]+)"[^>]*>([^<]+)<\/a>/g;
-            var linkMatch;
-            while ((linkMatch = linkRegex.exec(content)) !== null) {
-                var url = linkMatch[1];
-                var text = PluginUtils.cleanText(linkMatch[2]);
-                if (text && !text.includes("<img")) {
-                    items.push("[" + text + "](" + getSlug(url) + ")");
-                }
-            }
-            return items.join(", ");
-        };
-
-        // 2. Extract Metadata
-        var code = getField("Mã số") || getField("Code");
-        var releaseDate = getField("Ngày phát hành") || getField("Release date");
-        var studio = getField("nhà sản xuất") || getField("Maker");
-        var director = getField("Giám đốc") || getField("Director");
-        var label = getField("Nhãn") || getField("Label");
-
-        var casts = getMultiField("Nữ diễn viên") || getMultiField("Actresses");
-        var genres = getMultiField("thể loại") || getMultiField("Genre") || getMultiField("Genres");
-        var series = getMultiField("Loạt") || getMultiField("Series");
-
-        // 3. Fallback/Original Metadata (if above fails)
-        if (!code) {
-            var dvdIdMatch = html.match(/dvdId:\s*'([^']+)'/);
-            code = dvdIdMatch ? dvdIdMatch[1] : "";
-        }
-
-        var title = PluginUtils.getMeta(html, "og:title");
-        var thumb = PluginUtils.getMeta(html, "og:image");
-        var desc = PluginUtils.getMeta(html, "og:description");
-
-        var previewMatch = html.match(/<video[^>]+data-src="([^"]+)"/) || html.match(/video_url:\s*'([^']+)'/);
-        var previewUrl = previewMatch ? previewMatch[1] : "";
-
-        // Alternative: derive from thumb if it's a cover.jpg
-        if (!previewUrl && thumb && thumb.indexOf("cover.jpg") !== -1) {
-            previewUrl = thumb.replace("cover.jpg", "preview.mp4");
-        }
-
-        // Prepare a Display Title that includes the code in brackets for clarity in Details
-        var displayTitle = title;
-        // Strip code if it's already there to re-add in a standardized way [CODE] Title
-        if (code && displayTitle.toUpperCase().indexOf(code.toUpperCase()) === 0) {
-            displayTitle = displayTitle.substring(code.length).trim();
-            if (displayTitle.indexOf("-") === 0 || displayTitle.indexOf(" ") === 0) {
-                displayTitle = displayTitle.substring(1).trim();
-            }
-        }
-
-        if (code) {
-            displayTitle = "[" + code.toUpperCase() + "] " + displayTitle;
-        }
-
-        // Truncate Title if extremely long
-        var titleWords = displayTitle.split(" ");
-        if (titleWords.length > 25) {
-            displayTitle = titleWords.slice(0, 25).join(" ") + "...";
-        }
-
-        // 4. Stream URL Logic
-        var streamUrl = "";
-        var uuid = "";
-
-        // Strategy 1: Extract from eval() obfuscated code (new pattern)
-        // The source URL is now hidden inside eval(function(p,a,c,k,e,d){...})
-        // Look for the split('|') array which contains UUID parts and domain
-        var evalMatch = html.match(/eval\(function\(p,a,c,k,e,d\)[\s\S]*?'([^']+)'\.split\('\|'\)/i);
-        if (evalMatch) {
-            var parts = evalMatch[1].split('|');
-            // Look for 'surrit' or 'sixyik' in parts to confirm it's the video source eval
-            var hasSurrit = false;
-            for (var ei = 0; ei < parts.length; ei++) {
-                if (parts[ei] === 'surrit' || parts[ei] === 'sixyik') {
-                    hasSurrit = true;
-                    break;
-                }
-            }
-            if (hasSurrit) {
-                // Find UUID parts (5 hex segments) in the array
-                var uuidParts = [];
-                for (var ei = 0; ei < parts.length; ei++) {
-                    if (parts[ei].match(/^[0-9a-f]{8,12}$/)) {
-                        uuidParts.push(parts[ei]);
-                    }
-                }
-                // Try to reconstruct UUID from parts array
-                // Pattern: fa80d6f9|e876|491d|877c|f56188cab276
-                if (uuidParts.length >= 5) {
-                    uuid = uuidParts[0] + '-' + uuidParts[1] + '-' + uuidParts[2] + '-' + uuidParts[3] + '-' + uuidParts[4];
-                }
-            }
-        }
-
-        // Strategy 2: Check for direct Surrit/Sixyik/Nineyu/Fourhoi patterns
-        if (!uuid) {
-            var surritMatch = html.match(/surrit\.com\/([0-9a-f-]{36})/i) ||
-                html.match(/sixyik\.com\/([0-9a-f-]{36})/i) ||
-                html.match(/nineyu\.com\/([0-9a-f-]{36})/i) ||
-                html.match(/fourhoi\.com\/([0-9a-f-]{36})/i);
-            if (surritMatch) {
-                uuid = surritMatch[1];
-            }
-        }
-
-        // Strategy 3: Check for blob/data-source patterns
-        if (!uuid && !streamUrl) {
-            var blobMatch = html.match(/src=["']blob:[^"']+\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})["']/i);
-            var sourceMatch = html.match(/data-source=["']([^"']+)["']/i);
-            if (blobMatch) {
-                uuid = blobMatch[1];
-            } else if (sourceMatch && sourceMatch[1].indexOf('m3u8') !== -1) {
-                streamUrl = sourceMatch[1];
-            }
-        }
-
-        // Strategy 4: Deep Scan for UUID (fallback)
-        if (!uuid && !streamUrl) {
-            var uuidRegex = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi;
-            var matches = html.match(uuidRegex) || [];
-            var blacklist = ["snaptrckr", "user_uuid", "popunder", "banner", "monitoring", "crypto", "randomUUID", "generateUUID"];
-
-            for (var i = 0; i < matches.length; i++) {
-                var u = matches[i];
-                var isBad = false;
-                var idx = html.indexOf(u);
-                if (idx !== -1) {
-                    var context = html.substring(Math.max(0, idx - 80), Math.min(html.length, idx + 80));
-                    for (var j = 0; j < blacklist.length; j++) {
-                        if (context.indexOf(blacklist[j]) !== -1) {
-                            isBad = true; break;
-                        }
-                    }
-                }
-                if (!isBad) { uuid = u; break; }
-            }
-        }
-
-        if (uuid) {
-            streamUrl = "https://surrit.com/" + uuid + "/playlist.m3u8";
-        }
+        var descMatch = srcHtml.match(/<p[^>]*class=["']description["'][^>]*>([\s\S]*?)<\/p>/);
+        var description = descMatch ? PluginUtils.cleanText(descMatch[1]) : "";
 
         var servers = [];
-        if (streamUrl) {
-            // IMPORTANT: Dùng URL gốc thay vì m3u8 URL trực tiếp
-            // Để PlayerViewModel gọi getStreamLink() → headers Referer được gắn
-            // surrit.com yêu cầu Referer header, nếu gọi trực tiếp sẽ bị 403
-            var episodeId = pageUrl || streamUrl;
-            servers.push({
-                name: "Stream",
-                episodes: [{
-                    id: episodeId,
-                    name: "Full",
-                    slug: "full"
-                }]
-            });
+        var btnRegex = /<button([^>]*class=["'][^"']*button_choice_server[^"']*["'][^>]*)>/gi;
+        var btnMatch = null;
+        var foundServer = false;
+
+        while ((btnMatch = btnRegex.exec(srcHtml)) !== null) {
+            var attrs = btnMatch[1];
+            var b64url = PluginUtils.getAttr(attrs, "data-embed");
+            var serverName = PluginUtils.cleanText(PluginUtils.getAttr(attrs, "data-name")) || "Server";
+            var decodedUrl = PluginUtils.decodeBase64(b64url);
+
+            if (decodedUrl) {
+                foundServer = true;
+                servers.push({
+                    name: serverName,
+                    episodes: [{
+                        id: decodedUrl,
+                        name: "Full",
+                        slug: "full"
+                    }]
+                });
+            }
         }
 
-        // 5. Construct Result
-        // Composite status field to show Studio and Label
-        var statusLine = "";
-        if (studio) statusLine += "Studio: " + studio;
-        if (label) statusLine += (statusLine ? " | " : "") + "Label: " + label;
-        if (!statusLine && releaseDate) statusLine = "Released: " + releaseDate;
+        if (!foundServer) {
+            var mainPlayerStr = 'id="main-player"';
+            var idxMain = srcHtml.indexOf(mainPlayerStr);
+            if (idxMain !== -1) {
+                var srcStr = 'src="';
+                var idxSrc = srcHtml.indexOf(srcStr, idxMain);
+                if (idxSrc !== -1 && idxSrc - idxMain < 500) {
+                    var startUrl = idxSrc + srcStr.length;
+                    var endUrl = srcHtml.indexOf('"', startUrl);
+                    if (endUrl !== -1) {
+                        var embedUrl = srcHtml.substring(startUrl, endUrl);
+                        servers.push({
+                            name: "Embed Server",
+                            episodes: [{
+                                id: embedUrl,
+                                name: "Full",
+                                slug: "full"
+                            }]
+                        });
+                        foundServer = true;
+                    }
+                }
+            }
+        }
 
-        var year = releaseDate ? parseInt(releaseDate.substring(0, 4)) : 0;
+        if (!foundServer) {
+            var ultimateMatch = srcHtml.match(/src=["'](https?:\/\/[a-z0-9A-Z.-]+\/(v|e|embed)\/[^"']+)["']/i);
+            if (ultimateMatch) {
+                servers.push({
+                    name: "Default Embed",
+                    episodes: [{
+                        id: ultimateMatch[1],
+                        name: "Full",
+                        slug: "full"
+                    }]
+                });
+            } else {
+                servers.push({
+                    name: "Unknown",
+                    episodes: [{
+                        id: "",
+                        name: "Full",
+                        slug: "full"
+                    }]
+                });
+            }
+        }
+
+        var thumbMatch = srcHtml.match(/<meta[^>]*property=["']og:image["'][^>]*content=["']([^"']+)["']/);
+        var thumb = thumbMatch ? thumbMatch[1] : "";
+
+        var codeMatch = srcHtml.match(/Label:\s*<a[^>]*>([\s\S]*?)<\/a>/i);
+        var code = codeMatch ? PluginUtils.cleanText(codeMatch[1]) : "Full";
+
+        var categoryRegex = /<a[^>]*href=["']\/([^"']+)["'][^>]*><i[^>]*class=["']fa fa-th-list["'][^>]*><\/i>([^<]+)<\/a>/g;
+        var categoriesArr = [];
+        var catMatch = null;
+        while ((catMatch = categoryRegex.exec(srcHtml)) !== null) {
+            categoriesArr.push(PluginUtils.cleanText(catMatch[2]));
+        }
+
+        var categoriesText = categoriesArr.join(", ");
 
         return JSON.stringify({
-            id: code || "",
-            title: PluginUtils.cleanText(displayTitle),
+            id: "",
+            title: title,
             posterUrl: thumb,
             backdropUrl: thumb,
-            description: PluginUtils.cleanText(desc),
+            description: description,
             servers: servers,
             quality: "HD",
-            lang: "Vietsub",
-            year: year,
+            lang: PluginUtils.detectLanguage(title + " " + categoriesText),
+            year: 0,
             rating: 0,
-            casts: casts,
-            director: director,
-            category: genres,
-            status: statusLine,
-            duration: series ? "Series: " + series : "", // Or parse duration if needed
-            previewUrl: previewUrl || ""
+            casts: "",
+            director: "",
+            country: "",
+            category: categoriesText,
+            status: code
         });
     } catch (e) {
         return "null";
     }
 }
 
-function parseDetailResponse(html) {
-    // Extract UUID directly from HTML (independent from parseMovieDetail)
-    var uuid = "";
-    var streamUrl = "";
+function parseDetailResponse(html, fallbackUrl) {
+    var refererUrl = PLUGIN_CONFIG.baseUrl.replace(/\/+$/, "") + "/";
+    try {
+        var hostUrl = fallbackUrl || "";
+        var srcHtml = html || "";
 
-    // Strategy 1: Decode eval() obfuscated code
-    var evalMatch = html.match(/eval\(function\(p,a,c,k,e,d\)[\s\S]*?'([^']+)'\.split\('\|'\)/i);
-    if (evalMatch) {
-        var parts = evalMatch[1].split('|');
-        var hasSurrit = false;
-        for (var i = 0; i < parts.length; i++) {
-            if (parts[i] === 'surrit' || parts[i] === 'sixyik') { hasSurrit = true; break; }
-        }
-        if (hasSurrit) {
-            var uuidParts = [];
-            for (var i = 0; i < parts.length; i++) {
-                if (parts[i].match(/^[0-9a-f]{8,12}$/)) uuidParts.push(parts[i]);
-            }
-            if (uuidParts.length >= 5) {
-                uuid = uuidParts[0] + '-' + uuidParts[1] + '-' + uuidParts[2] + '-' + uuidParts[3] + '-' + uuidParts[4];
-            }
-        }
-    }
-
-    // Strategy 2: Direct domain scan
-    if (!uuid) {
-        var m = html.match(/surrit\.com\/([0-9a-f-]{36})/i) ||
-            html.match(/sixyik\.com\/([0-9a-f-]{36})/i) ||
-            html.match(/nineyu\.com\/([0-9a-f-]{36})/i) ||
-            html.match(/fourhoi\.com\/([0-9a-f-]{36})/i);
-        if (m) uuid = m[1];
-    }
-
-    // Strategy 3: Deep UUID scan (fallback)
-    if (!uuid) {
-        var matches = html.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi) || [];
-        var blacklist = ["snaptrckr", "user_uuid", "popunder", "banner", "monitoring", "crypto", "randomUUID", "generateUUID"];
-        for (var i = 0; i < matches.length; i++) {
-            var u = matches[i];
-            var isBad = false;
-            var idx = html.indexOf(u);
-            if (idx !== -1) {
-                var ctx = html.substring(Math.max(0, idx - 80), Math.min(html.length, idx + 80));
-                for (var j = 0; j < blacklist.length; j++) {
-                    if (ctx.indexOf(blacklist[j]) !== -1) { isBad = true; break; }
+        var mainPlayerStr = 'id="main-player"';
+        var idxMain = srcHtml.indexOf(mainPlayerStr);
+        if (idxMain !== -1) {
+            var srcStr = 'src="';
+            var idxSrc = srcHtml.indexOf(srcStr, idxMain);
+            if (idxSrc !== -1 && idxSrc - idxMain < 500) {
+                var startUrl = idxSrc + srcStr.length;
+                var endUrl = srcHtml.indexOf('"', startUrl);
+                if (endUrl !== -1) {
+                    hostUrl = srcHtml.substring(startUrl, endUrl);
                 }
             }
-            if (!isBad) { uuid = u; break; }
         }
-    }
 
-    if (uuid) {
-        streamUrl = "https://surrit.com/" + uuid + "/playlist.m3u8";
+        return JSON.stringify({
+            url: hostUrl,
+            headers: {
+                "User-Agent": PLUGIN_CONFIG.userAgent,
+                "Referer": refererUrl
+            },
+            subtitles: [],
+            isEmbed: true,
+            embedRegex: "['\"](https?:\\/\\/[^\\s'\"]+\\.m3u8[^'\"]*)['\"]"
+        });
+    } catch (e) {
+        return JSON.stringify({
+            url: fallbackUrl || "",
+            headers: {
+                "User-Agent": PLUGIN_CONFIG.userAgent,
+                "Referer": refererUrl
+            },
+            subtitles: []
+        });
     }
+}
+
+function parseEmbedResponse(html, fallbackUrl) {
+    var refererUrl = PLUGIN_CONFIG.baseUrl.replace(/\/+$/, "") + "/";
+    var extractedStream = PluginUtils.extractStreamUrl(html);
+    var finalUrl = extractedStream || fallbackUrl || "";
 
     return JSON.stringify({
-        url: streamUrl,
+        url: finalUrl,
         headers: {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-            "Referer": "https://missav.media/",
-            "Origin": "https://missav.media"
+            "User-Agent": PLUGIN_CONFIG.userAgent,
+            "Referer": fallbackUrl || refererUrl
         },
-        subtitles: []
+        subtitles: [],
+        isEmbed: !extractedStream
     });
 }
 
 function parseCategoriesResponse(html) {
-    // Normalize HTML: strip missav_media- prefix từ CSS class
-    html = PluginUtils.normalizeHtml(html);
     var categories = [];
+    var parts = (html || "").split(/<li[^>]*id=["']category-[^"']*["'][^>]*>/);
+    for (var i = 1; i < parts.length; i++) {
+        var itemHtml = parts[i];
+        var linkMatch = itemHtml.match(/href=["']\/([^"']+)[\/]?["']/);
+        var nameMatch = itemHtml.match(/<div[^>]*class=["']category-title["'][^>]*>([\s\S]*?)<\/div>/);
 
-    // Add "All Genres" as the first item
-    categories.push({ name: "Tất cả thể loại", slug: "vi/genres" });
-
-    // Regex to capture both relative and absolute links: href=".../vi/genres/slug"
-    // Capture group 1: potentially full url or relative path
-    // Capture group 2: Category Name
-    var regex = /<a[^>]+href="([^"]*\/vi\/genres\/[^"]+)"[^>]*>([^<]+)<\/a>/g;
-    var match;
-    var seen = {};
-
-    while ((match = regex.exec(html)) !== null) {
-        var fullPath = match[1];
-        var name = PluginUtils.cleanText(match[2]);
-
-        // Extract slug from path (e.g. /vi/genres/vr -> vr)
-        var parts = fullPath.split("/genres/");
-        var slug = parts.length > 1 ? parts[1] : "";
-
-        if (slug && name && !seen[slug]) {
-            seen[slug] = true;
-            // Ensure slug is full relative path for plugin system
-            categories.push({ name: name, slug: "vi/genres/" + slug });
+        if (linkMatch && nameMatch) {
+            var slug = linkMatch[1];
+            if (slug.charAt(slug.length - 1) === "/") {
+                slug = slug.substring(0, slug.length - 1);
+            }
+            var name = PluginUtils.cleanText(nameMatch[1]);
+            categories.push({
+                name: name,
+                slug: slug
+            });
         }
     }
     return JSON.stringify(categories);
