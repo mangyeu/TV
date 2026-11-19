@@ -14,7 +14,7 @@ function getManifest() {
     return JSON.stringify({
         "id": "javhd",
         "name": "JavHD",
-        "version": "1.0.9",
+        "version": "1.1.0",
         "baseUrl": BASE_URL,
         "iconUrl": BASE_URL + "/favicon.ico",
         "isEnabled": true,
@@ -189,6 +189,46 @@ var PluginUtils = {
         return output;
     },
 
+    isMyServer: function (nameOrUrl) {
+        var s = String(nameOrUrl || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+        return s.indexOf("myserver") !== -1;
+    },
+
+    promoteMyServer: function (servers) {
+        if (!servers || servers.length <= 1) return servers;
+        var myServers = [];
+        var others = [];
+        for (var i = 0; i < servers.length; i++) {
+            var srv = servers[i];
+            var epUrl = (srv.episodes && srv.episodes[0]) ? srv.episodes[0].id : "";
+            if (PluginUtils.isMyServer(srv.name) || PluginUtils.isMyServer(epUrl)) {
+                myServers.push(srv);
+            } else {
+                others.push(srv);
+            }
+        }
+        return myServers.concat(others);
+    },
+
+    extractDirectStreamFromHtml: function (html) {
+        var raw = String(html || "");
+        if (!raw) return "";
+
+        // Tìm link .m3u8 hoặc .mp4 trực tiếp (kể cả có escape \/)
+        var match = raw.match(/https?:\\?\/\\?\/[^\s"'<>\\]+?\.(?:m3u8|mp4)(?:\?[^\s"'<>\\]*)?/i);
+        if (match && match[0]) {
+            return PluginUtils.normalizeUrl(match[0]);
+        }
+
+        // Tìm trong các cấu hình player phổ biến (file/src/url/hls)
+        var cfgMatch = raw.match(/(?:file|src|url|hls|source)\s*[:=]\s*["'](https?:\\?\/\\?\/[^"']+\.(?:m3u8|mp4)[^"']*)["']/i);
+        if (cfgMatch && cfgMatch[1]) {
+            return PluginUtils.normalizeUrl(cfgMatch[1]);
+        }
+
+        return "";
+    },
+
     unwrapPayload: function (rawInput) {
         var text = String(rawInput || "");
         var paginationHtml = "";
@@ -245,7 +285,6 @@ function getUrlList(slug, filtersJson) {
         ? PluginUtils.extractSlug(filters.category)
         : (cleanInputSlug || "recent");
 
-    // Danh sách diễn viên / model
     if (
         targetSlug.indexOf("pornstars") === 0 ||
         targetSlug.indexOf("pornstar") === 0 ||
@@ -549,7 +588,7 @@ function parseMovieDetail(html) {
         var servers = [];
         var serverIndex = 0;
 
-        // Giữ nguyên thứ tự và tên nút chọn server như trên trang web
+        // Quét toàn bộ nút chọn server như trên web
         var fullBtnRegex = /<button([^>]*class=["'][^"']*button_choice_server[^"']*["'][^>]*)>([\s\S]*?)<\/button>/gi;
         var btnMatch;
         while ((btnMatch = fullBtnRegex.exec(rawHtml)) !== null) {
@@ -561,8 +600,12 @@ function parseMovieDetail(html) {
 
             if (decodedUrl) {
                 serverIndex++;
+                var displayName = PluginUtils.isMyServer(rawName)
+                    ? "Myserver"
+                    : (rawName || ("Server " + serverIndex));
+
                 servers.push({
-                    name: rawName || ("Server " + serverIndex),
+                    name: displayName,
                     episodes: [{
                         id: decodedUrl,
                         name: "Full",
@@ -572,13 +615,14 @@ function parseMovieDetail(html) {
             }
         }
 
+        // Fallback nếu không có nút .button_choice_server
         if (servers.length === 0) {
             var mainPlayerMatch = rawHtml.match(/<(?:iframe|video|embed)[^>]*id=["']main-player["'][^>]*>/i);
             if (mainPlayerMatch) {
                 var embedUrl = PluginUtils.normalizeUrl(PluginUtils.extractAttr(mainPlayerMatch[0], "src"));
                 if (embedUrl) {
                     servers.push({
-                        name: "Server 1",
+                        name: PluginUtils.isMyServer(embedUrl) ? "Myserver" : "Server 1",
                         episodes: [{
                             id: embedUrl,
                             name: "Full",
@@ -595,7 +639,7 @@ function parseMovieDetail(html) {
                 var fallbackEmbed = PluginUtils.normalizeUrl(ultimateMatch[1]);
                 if (fallbackEmbed) {
                     servers.push({
-                        name: "Server 1",
+                        name: PluginUtils.isMyServer(fallbackEmbed) ? "Myserver" : "Server 1",
                         episodes: [{
                             id: fallbackEmbed,
                             name: "Full",
@@ -608,13 +652,15 @@ function parseMovieDetail(html) {
 
         if (servers.length === 0) {
             servers.push({
-                name: "Server 1",
+                name: "Myserver",
                 episodes: [{
                     id: "",
                     name: "Full",
                     slug: "full"
                 }]
             });
+        } else {
+            servers = PluginUtils.promoteMyServer(servers);
         }
 
         var thumbMatch = rawHtml.match(/<meta[^>]*property=["']og:image["'][^>]*content=["']([^"']+)["']/i);
@@ -666,14 +712,17 @@ function parseDetailResponse(html, fallbackUrl) {
             }
         }
 
+        var directStream = PluginUtils.extractDirectStreamFromHtml(rawHtml);
+        var finalUrl = directStream || hostUrl;
+
         return JSON.stringify({
-            url: hostUrl,
+            url: finalUrl,
             headers: {
                 "User-Agent": DEFAULT_HEADERS["User-Agent"],
                 "Referer": hostUrl || (BASE_URL + "/")
             },
             subtitles: [],
-            isEmbed: true,
+            isEmbed: !directStream,
             embedRegex: "['\"](https?:\\/\\/[^\\s'\"]+\\.(?:m3u8|mp4)[^'\"]*)['\"]"
         });
     } catch (e) {
@@ -688,16 +737,10 @@ function parseDetailResponse(html, fallbackUrl) {
 function parseEmbedResponse(html, fallbackUrl) {
     var rawHtml = String(html || "");
     var currentUrl = PluginUtils.normalizeUrl(fallbackUrl || "");
-    var resolvedUrl = currentUrl;
-    var foundDirectStream = false;
+    var directStream = PluginUtils.extractDirectStreamFromHtml(rawHtml);
+    var resolvedUrl = directStream || currentUrl;
 
-    var directMatch = rawHtml.match(/https?:\\?\/\\?\/[^\s"'<>\\]+?\.(?:m3u8|mp4)(?:\?[^\s"'<>\\]*)?/i);
-    if (directMatch && directMatch[0]) {
-        resolvedUrl = PluginUtils.normalizeUrl(directMatch[0]);
-        foundDirectStream = true;
-    }
-
-    var isEmbed = !foundDirectStream && (
+    var isEmbed = !directStream && (
         currentUrl.indexOf("/e/") !== -1 ||
         currentUrl.indexOf("/v/") !== -1 ||
         currentUrl.indexOf("embed") !== -1
