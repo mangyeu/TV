@@ -3,8 +3,8 @@
   "plugins": [
     {
         "id": "javhd",
+        "name": "JavHD",
         "version": "1.3.2",
-        "version": "1.3.0",
         "baseUrl": "https://javhdz.today",
         "scriptUrl": "https://raw.githubusercontent.com/mangyeu/TV/refs/heads/main/dmo/demo.js",
       "iconUrl": "https://static.iw01.xyz/static/av01-icon-export.svg"
