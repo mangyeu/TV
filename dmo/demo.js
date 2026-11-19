@@ -5,6 +5,63 @@
 var BASE_URL = "https://javhdz.today";
 var DEFAULT_USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
 
+// Poster dự phòng khi trang danh sách idols hoặc mục menu không có thẻ <img>
+var DEFAULT_IDOL_POSTER = BASE_URL + "/favicon.ico";
+
+// Tùy chọn bảng poster theo slug idol (vd: "pornstar/hatano-yui": "https://...")
+var IDOL_POSTERS = {
+    "pornstar/hatano-yui": "",
+    "pornstar/aika": "",
+    "pornstar/hasumi-kurea": "",
+    "pornstar/iioka-kanako": "",
+    "pornstar/nagisa-mitsuki": "",
+    "pornstar/shinoda-yuu": "",
+    "pornstar/matsumoto-ichika": "",
+    "pornstar/hamasaki-mao": "",
+    "pornstar/haruna-hana": "",
+    "pornstar/mitani-akari": "",
+    "pornstar/ootsuki-hibiki": "",
+    "pornstar/uehara-ai": "",
+    "pornstar/seina-arisa": "",
+    "pornstar/hachino-tsubasa": "",
+    "pornstar/yayoi-mizuki": "",
+    "pornstar/kimijima-mio": "",
+    "pornstar/kanade-miyu": "",
+    "pornstar/hana-arisu": "",
+    "pornstar/kanamatsu-toho": "",
+    "pornstar/yu-sasamoto": "",
+    "pornstar/hanazato-akari": "",
+    "pornstar/yui-mita": "",
+    "pornstar/riria-hido": "",
+    "pornstar/marina-sina": "",
+    "pornstar/rin-chibana": "",
+    "pornstar/yui-tsubaki": "",
+    "pornstar/yurina-shoji": "",
+    "pornstar/nao-hayakawa": "",
+    "pornstar/hikari-mizusumi": "",
+    "pornstar/saki-no-kanna": "",
+    "pornstar/yurina-momosaki": "",
+    "pornstar/hasmi-claire": "",
+    "pornstar/yui-higa": "",
+    "pornstar/yumi-kazama": "",
+    "pornstar/yui-hatano": "",
+    "pornstar/hana-haruna": "",
+    "pornstar/eimi-fukada": "",
+    "pornstar/reiko-kobayakawa": "",
+    "pornstar/asahi-mizuno": "",
+    "pornstar/hitomi-tanaka": "",
+    "pornstar/maria-nagai": "",
+    "pornstar/ai-sayama": "",
+    "pornstar/mako-oda": "",
+    "pornstar/aimi-yoshikawa": "",
+    "pornstar/mina-kitano": "",
+    "pornstar/ai-uehara": "",
+    "pornstar/anri-okita": "",
+    "pornstar/kaho-shibuya": "",
+    "pornstar/yua-mikami": "",
+    "pornstar/yu-shinoda": ""
+};
+
 var IDOLS_MENU_HTML = [
     '<li class="dropdown dropdown-large">',
     '  <a href="#" class="dropdown-toggle" data-toggle="dropdown"><i class="fa fa-star"></i> Idols Av<b class="caret"></b></a>',
@@ -77,7 +134,7 @@ function getManifest() {
     return JSON.stringify({
         "id": "javhd",
         "name": "JavHD",
-        "version": "1.1.1",
+        "version": "1.2.1",
         "baseUrl": BASE_URL,
         "iconUrl": BASE_URL + "/favicon.ico",
         "isEnabled": true,
@@ -109,6 +166,16 @@ function getHomeSections() {
     ]);
 }
 
+function getIdolPosterUrl(slug, htmlPoster) {
+    if (htmlPoster) {
+        return PluginUtils.normalizeUrl(htmlPoster);
+    }
+    if (slug && IDOL_POSTERS && IDOL_POSTERS[slug]) {
+        return PluginUtils.normalizeUrl(IDOL_POSTERS[slug]);
+    }
+    return DEFAULT_IDOL_POSTER;
+}
+
 function parseIdolsMenuHtml(html) {
     var src = html || IDOLS_MENU_HTML;
     var items = [];
@@ -137,14 +204,23 @@ function parseIdolsMenuHtml(html) {
             var labelText = PluginUtils.cleanText(titleAttr || innerHtml);
             if (!labelText) continue;
 
+            var imgInLink = innerHtml.match(/<img\b[^>]*>/i);
+            var rawImg = imgInLink ? (PluginUtils.extractAttr(imgInLink[0], "data-src") || PluginUtils.extractAttr(imgInLink[0], "src")) : "";
+            var poster = getIdolPosterUrl(slug, rawImg);
+
             if (!seen[slug]) {
                 seen[slug] = true;
                 items.push({
+                    id: slug,
                     name: labelText,
+                    title: labelText,
                     value: slug,
                     slug: slug,
                     url: BASE_URL + "/" + slug + "/",
-                    group: groupName
+                    group: groupName,
+                    posterUrl: poster,
+                    backdropUrl: poster,
+                    thumb: poster
                 });
             }
         }
@@ -157,13 +233,53 @@ function getIdolsList() {
     return JSON.stringify(parseIdolsMenuHtml(IDOLS_MENU_HTML));
 }
 
+function getIdolsPosterPage(pageNum) {
+    var page = parseInt(pageNum, 10) || 1;
+    var perPage = 20;
+    var allIdols = parseIdolsMenuHtml(IDOLS_MENU_HTML);
+    var totalPages = Math.max(1, Math.ceil(allIdols.length / perPage));
+    var safePage = Math.min(Math.max(1, page), totalPages);
+    var start = (safePage - 1) * perPage;
+    var end = Math.min(start + perPage, allIdols.length);
+
+    var pageItems = [];
+    for (var i = start; i < end; i++) {
+        var idol = allIdols[i];
+        pageItems.push({
+            id: idol.slug,
+            title: idol.name,
+            name: idol.name,
+            slug: idol.slug,
+            url: idol.url,
+            group: idol.group,
+            posterUrl: idol.posterUrl,
+            backdropUrl: idol.backdropUrl,
+            year: 0,
+            quality: "HD",
+            episode_current: idol.group,
+            lang: "Idol AV"
+        });
+    }
+
+    return JSON.stringify({
+        items: pageItems,
+        pagination: {
+            currentPage: safePage,
+            totalPages: totalPages,
+            totalItems: allIdols.length,
+            itemsPerPage: perPage
+        }
+    });
+}
+
 function getFilterConfig() {
     var rawIdols = parseIdolsMenuHtml(IDOLS_MENU_HTML);
     var idolFilters = [];
     for (var i = 0; i < rawIdols.length; i++) {
         idolFilters.push({
             name: rawIdols[i].name + " (" + rawIdols[i].group + ")",
-            value: rawIdols[i].value
+            value: rawIdols[i].value,
+            posterUrl: rawIdols[i].posterUrl
         });
     }
 
@@ -214,7 +330,8 @@ function getUrlList(slug, filtersJson) {
     var chosenSlug = filters.idol || filters.category || slug || 'recent';
     var normalizedTarget = String(chosenSlug).replace(/^https?:\/\/[^/]+/i, '').replace(/^\/+|\/+$/g, '');
 
-    var isPornstar = (normalizedTarget.indexOf("pornstar") === 0);
+    var isPornstarRoot = (normalizedTarget === "pornstar");
+    var isPornstarDetail = (normalizedTarget.indexOf("pornstar/") === 0);
     var isBrowse = false;
     var browsePrefixes = ['recent', 'popular', 'rated', 'discussed', 'downloaded', 'longest', 'watched'];
     for (var i = 0; i < browsePrefixes.length; i++) {
@@ -229,14 +346,14 @@ function getUrlList(slug, filtersJson) {
         finalUrl = String(chosenSlug).replace(/\/+$/, '') + '/';
     } else if (!normalizedTarget || normalizedTarget === 'recent') {
         finalUrl = BASE_URL + "/recent/" + sortPath;
-    } else if (isPornstar) {
+    } else if (isPornstarRoot || isPornstarDetail) {
         finalUrl = BASE_URL + "/" + normalizedTarget + "/";
     } else {
         finalUrl = BASE_URL + "/" + normalizedTarget + "/" + sortPath;
     }
 
     var params = [];
-    if (!isPornstar) {
+    if (!isPornstarRoot && !isPornstarDetail) {
         params.push(isBrowse ? "ajax=browse_videos" : "ajax=1");
     }
     if (page > 1) {
@@ -356,6 +473,132 @@ var PluginUtils = {
     }
 };
 
+function isLikelyUrl(val) {
+    if (!val) return false;
+    var s = PluginUtils.trimStr(val);
+    return (
+        s.indexOf("http://") === 0 ||
+        s.indexOf("https://") === 0 ||
+        s.indexOf("//") === 0 ||
+        s.indexOf("/") === 0
+    );
+}
+
+function unescapeStreamUrl(url) {
+    if (!url) return "";
+    return PluginUtils.trimStr(
+        String(url)
+            .replace(/\\\//g, "/")
+            .replace(/\\u002F/gi, "/")
+            .replace(/&/g, "&")
+    );
+}
+
+function extractStreamFromHtml(html) {
+    var src = (html === null || html === undefined) ? "" : String(html);
+    if (!src) return "";
+
+    var normalized = unescapeStreamUrl(src);
+
+    var m3u8Match = normalized.match(/(?:https?:)?\/\/[^\s"'<>\\]+\.m3u8(?:[^\s"'<>\\]*)?/i);
+    if (m3u8Match && m3u8Match[0]) {
+        return PluginUtils.normalizeUrl(m3u8Match[0]);
+    }
+
+    var mp4Match = normalized.match(/(?:https?:)?\/\/[^\s"'<>\\]+\.mp4(?:[^\s"'<>\\]*)?/i);
+    if (mp4Match && mp4Match[0]) {
+        return PluginUtils.normalizeUrl(mp4Match[0]);
+    }
+
+    var varMatch = normalized.match(/(?:file|src|source|hls|url)\s*[:=]\s*["']((?:https?:)?\/\/[^"'\s<>]+(?:\.m3u8|\.mp4)[^"'\s<>]*)["']/i);
+    if (varMatch && varMatch[1]) {
+        return PluginUtils.normalizeUrl(varMatch[1]);
+    }
+
+    return "";
+}
+
+function parseIdolsPosterPageHtml(html) {
+    var src = (html === null || html === undefined) ? "" : String(html);
+    var items = [];
+    var seen = {};
+
+    // Tách theo khối thẻ <li ...> hoặc <div ...> chứa link /pornstar/<slug>
+    var blocks = src.split(/<(?:li|div)\b[^>]*>/i);
+    for (var i = 0; i < blocks.length; i++) {
+        var blk = blocks[i];
+        if (blk.indexOf("/pornstar/") === -1) continue;
+
+        var linkMatch = blk.match(/<a\b([^>]*)>([\s\S]*?)<\/a>/i);
+        if (!linkMatch) continue;
+
+        var href = PluginUtils.extractAttr(linkMatch[1], "href");
+        if (!href || href.indexOf("/pornstar/") === -1) continue;
+
+        var slug = href.replace(/^https?:\/\/[^/]+/i, "").replace(/^\/+|\/+$/g, "");
+        if (!slug || slug === "pornstar" || seen[slug]) continue;
+
+        var imgMatch = blk.match(/<img\b([^>]*)>/i);
+        var rawThumb = "";
+        var altText = "";
+        if (imgMatch) {
+            rawThumb = PluginUtils.extractAttr(imgMatch[1], "data-src") ||
+                PluginUtils.extractAttr(imgMatch[1], "data-lazy-src") ||
+                PluginUtils.extractAttr(imgMatch[1], "src");
+            altText = PluginUtils.extractAttr(imgMatch[1], "alt");
+        }
+
+        var name = PluginUtils.cleanText(
+            PluginUtils.extractAttr(linkMatch[1], "title") ||
+            altText ||
+            linkMatch[2]
+        );
+        if (!name) continue;
+
+        seen[slug] = true;
+        var poster = getIdolPosterUrl(slug, rawThumb);
+        items.push({
+            id: slug,
+            title: name,
+            name: name,
+            slug: slug,
+            url: BASE_URL + "/" + slug + "/",
+            posterUrl: poster,
+            backdropUrl: poster,
+            year: 0,
+            quality: "HD",
+            episode_current: "Idol AV",
+            lang: "Idol AV"
+        });
+    }
+
+    // Fallback nếu trang idols chỉ có danh sách link/menu mà không có poster riêng
+    if (items.length === 0) {
+        var menuIdols = parseIdolsMenuHtml(src || IDOLS_MENU_HTML);
+        for (var k = 0; k < menuIdols.length; k++) {
+            var mIdol = menuIdols[k];
+            if (!seen[mIdol.slug]) {
+                seen[mIdol.slug] = true;
+                items.push({
+                    id: mIdol.slug,
+                    title: mIdol.name,
+                    name: mIdol.name,
+                    slug: mIdol.slug,
+                    url: mIdol.url,
+                    posterUrl: mIdol.posterUrl,
+                    backdropUrl: mIdol.backdropUrl,
+                    year: 0,
+                    quality: "HD",
+                    episode_current: mIdol.group || "Idol AV",
+                    lang: "Idol AV"
+                });
+            }
+        }
+    }
+
+    return items;
+}
+
 function parseListResponse(html) {
     var responseHtml = (html === null || html === undefined) ? "" : String(html);
     var paginationHtml = "";
@@ -458,6 +701,11 @@ function parseListResponse(html) {
         }
     }
 
+    // Nếu không có thẻ video-* nhưng có danh sách idol (/pornstar/...), chuyển sang parse trang idols poster
+    if (movies.length === 0 && responseHtml.indexOf("/pornstar/") !== -1) {
+        movies = parseIdolsPosterPageHtml(responseHtml);
+    }
+
     var totalPages = 1;
     var currentPage = 1;
     var paginationSrc = paginationHtml || responseHtml;
@@ -545,16 +793,19 @@ function parseMovieDetail(html) {
             var btnAttrs = btnMatch[1];
             var cls = PluginUtils.extractAttr(btnAttrs, "class");
             if (cls.indexOf("button_choice_server") !== -1) {
-                var b64url = PluginUtils.extractAttr(btnAttrs, "data-embed");
+                var rawEmbed = PluginUtils.extractAttr(btnAttrs, "data-embed");
                 var serverName = PluginUtils.cleanText(PluginUtils.extractAttr(btnAttrs, "data-name")) || ("Server " + (servers.length + 1));
-                var decodedUrl = PluginUtils.normalizeUrl(PluginUtils.decodeBase64(b64url));
 
-                if (decodedUrl) {
+                var decoded = PluginUtils.decodeBase64(rawEmbed);
+                var candidate = isLikelyUrl(decoded) ? decoded : (isLikelyUrl(rawEmbed) ? rawEmbed : decoded);
+                var finalServerUrl = PluginUtils.normalizeUrl(unescapeStreamUrl(candidate));
+
+                if (finalServerUrl) {
                     foundServer = true;
                     servers.push({
                         name: serverName,
                         episodes: [{
-                            id: decodedUrl,
+                            id: finalServerUrl,
                             name: "Full",
                             slug: "full"
                         }]
@@ -568,13 +819,13 @@ function parseMovieDetail(html) {
             var idxMain = srcHtml.indexOf(mainPlayerStr);
             if (idxMain === -1) idxMain = srcHtml.indexOf("id='main-player'");
             if (idxMain !== -1) {
-                var snippet = srcHtml.substring(idxMain, Math.min(srcHtml.length, idxMain + 500));
-                var srcAttr = PluginUtils.extractAttr(snippet, "src");
+                var snippet = srcHtml.substring(idxMain, Math.min(srcHtml.length, idxMain + 800));
+                var srcAttr = PluginUtils.extractAttr(snippet, "src") || PluginUtils.extractAttr(snippet, "data-src");
                 if (srcAttr) {
                     servers.push({
                         name: "Embed Server",
                         episodes: [{
-                            id: PluginUtils.normalizeUrl(srcAttr),
+                            id: PluginUtils.normalizeUrl(unescapeStreamUrl(srcAttr)),
                             name: "Full",
                             slug: "full"
                         }]
@@ -585,12 +836,28 @@ function parseMovieDetail(html) {
         }
 
         if (!foundServer) {
-            var ultimateMatch = srcHtml.match(/src=["'](https?:\/\/[a-z0-9A-Z.-]+\/(?:v|e|embed)\/[^"']+)["']/i);
-            if (ultimateMatch) {
+            var directStream = extractStreamFromHtml(srcHtml);
+            if (directStream) {
+                servers.push({
+                    name: "Direct Stream",
+                    episodes: [{
+                        id: directStream,
+                        name: "Full",
+                        slug: "full"
+                    }]
+                });
+                foundServer = true;
+            }
+        }
+
+        if (!foundServer) {
+            var ultimateMatch = srcHtml.match(/<iframe\b[^>]*\bsrc=["']([^"']+)["']/i) ||
+                srcHtml.match(/src=["'](https?:\/\/[a-z0-9A-Z.-]+\/(?:v|e|embed|player|play)\/[^"']+)["']/i);
+            if (ultimateMatch && ultimateMatch[1]) {
                 servers.push({
                     name: "Default Embed",
                     episodes: [{
-                        id: ultimateMatch[1],
+                        id: PluginUtils.normalizeUrl(unescapeStreamUrl(ultimateMatch[1])),
                         name: "Full",
                         slug: "full"
                     }]
@@ -648,28 +915,31 @@ function parseMovieDetail(html) {
 function parseDetailResponse(html, fallbackUrl) {
     try {
         var srcHtml = (html === null || html === undefined) ? "" : String(html);
-        var hostUrl = PluginUtils.normalizeUrl(fallbackUrl || "");
+        var hostUrl = PluginUtils.normalizeUrl(unescapeStreamUrl(fallbackUrl || ""));
 
         var mainPlayerStr = 'id="main-player"';
         var idxMain = srcHtml.indexOf(mainPlayerStr);
         if (idxMain === -1) idxMain = srcHtml.indexOf("id='main-player'");
         if (idxMain !== -1) {
-            var snippet = srcHtml.substring(idxMain, Math.min(srcHtml.length, idxMain + 500));
-            var srcAttr = PluginUtils.extractAttr(snippet, "src");
+            var snippet = srcHtml.substring(idxMain, Math.min(srcHtml.length, idxMain + 800));
+            var srcAttr = PluginUtils.extractAttr(snippet, "src") || PluginUtils.extractAttr(snippet, "data-src");
             if (srcAttr) {
-                hostUrl = PluginUtils.normalizeUrl(srcAttr);
+                hostUrl = PluginUtils.normalizeUrl(unescapeStreamUrl(srcAttr));
             }
         }
 
+        var directStream = extractStreamFromHtml(srcHtml);
+        var isDirectMedia = /\.(?:m3u8|mp4)(?:[?#]|$)/i.test(directStream || hostUrl);
+
         return JSON.stringify({
-            url: hostUrl,
+            url: directStream || hostUrl,
             headers: {
                 "User-Agent": DEFAULT_USER_AGENT,
-                "Referer": BASE_URL + "/"
+                "Referer": hostUrl || (BASE_URL + "/")
             },
             subtitles: [],
-            isEmbed: true,
-            embedRegex: "['\"](https?:\\/\\/[^\\s'\"]+\\.m3u8[^'\"]*)['\"]"
+            isEmbed: !isDirectMedia,
+            embedRegex: "(?:https?:)?\\/\\/[^\\s\"'<>\\\\]+\\.(?:m3u8|mp4)(?:[^\\s\"'<>\\\\]*)?"
         });
     } catch (e) {
         return JSON.stringify({
@@ -683,22 +953,15 @@ function parseDetailResponse(html, fallbackUrl) {
 function parseEmbedResponse(html, fallbackUrl) {
     try {
         var srcHtml = (html === null || html === undefined) ? "" : String(html);
-        var streamUrl = PluginUtils.normalizeUrl(fallbackUrl || "");
-
-        var m3u8Match = srcHtml.match(/["'](https?:\/\/[^"'\s]+\.m3u8[^"'\s]*)["']/i);
-        var mp4Match = srcHtml.match(/["'](https?:\/\/[^"'\s]+\.mp4[^"'\s]*)["']/i);
-
-        if (m3u8Match && m3u8Match[1]) {
-            streamUrl = m3u8Match[1].replace(/\\\//g, "/");
-        } else if (mp4Match && mp4Match[1]) {
-            streamUrl = mp4Match[1].replace(/\\\//g, "/");
-        }
+        var cleanFallback = PluginUtils.normalizeUrl(unescapeStreamUrl(fallbackUrl || ""));
+        var extracted = extractStreamFromHtml(srcHtml);
+        var streamUrl = extracted || cleanFallback;
 
         return JSON.stringify({
             url: streamUrl,
             headers: {
                 "User-Agent": DEFAULT_USER_AGENT,
-                "Referer": BASE_URL + "/"
+                "Referer": cleanFallback || (BASE_URL + "/")
             },
             subtitles: [],
             isEmbed: false
@@ -719,11 +982,20 @@ function parseCategoriesResponse(html) {
     var src = (html === null || html === undefined) ? "" : String(html);
 
     var idols = parseIdolsMenuHtml(IDOLS_MENU_HTML);
-    var defaultEntries = [{ name: "Idols AV (Tất cả)", slug: "pornstar" }];
+    var defaultEntries = [{
+        name: "Idols AV (Tất cả)",
+        slug: "pornstar",
+        posterUrl: DEFAULT_IDOL_POSTER,
+        backdropUrl: DEFAULT_IDOL_POSTER
+    }];
+
     for (var k = 0; k < idols.length; k++) {
         defaultEntries.push({
             name: "Idol: " + idols[k].name,
-            slug: idols[k].slug
+            slug: idols[k].slug,
+            posterUrl: idols[k].posterUrl,
+            backdropUrl: idols[k].backdropUrl,
+            group: idols[k].group
         });
     }
 
@@ -744,11 +1016,16 @@ function parseCategoriesResponse(html) {
         if (linkMatch && nameMatch) {
             var slug = linkMatch[1].replace(/^\/+|\/+$/g, '');
             var name = PluginUtils.cleanText(nameMatch[1]);
+            var imgM = itemHtml.match(/<img\b([^>]*)>/i);
+            var catPoster = imgM ? PluginUtils.normalizeUrl(PluginUtils.extractAttr(imgM[1], "data-src") || PluginUtils.extractAttr(imgM[1], "src")) : "";
+
             if (slug && name && !seen[slug]) {
                 seen[slug] = true;
                 categories.push({
                     name: name,
-                    slug: slug
+                    slug: slug,
+                    posterUrl: catPoster,
+                    backdropUrl: catPoster
                 });
             }
         }
