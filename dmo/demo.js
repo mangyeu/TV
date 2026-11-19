@@ -1,11 +1,15 @@
 function getManifest() {
     return JSON.stringify({
-        "id": "missav_media",
+        "id": "missavmedia",
         "name": "MissAV Media",
-        "version": "1.0.0",
+        "version": "1.0.2",
+        "versionCode": 1,
         "baseUrl": "https://missav.media",
         "iconUrl": "",
-        "isEnabled": false,
+        "description": "MissAV Media plugin",
+        "author": "Plugin",
+        "lang": "vi",
+        "isEnabled": true,
         "type": "MOVIE"
     });
 }
@@ -14,7 +18,7 @@ function getHomeSections() {
     return JSON.stringify([
         { slug: "new", title: "Mới cập nhật", type: "Grid", path: "vi" },
         { slug: "release", title: "Phát hành mới", type: "Horizontal", path: "vi" },
-        { slug: "uncensored-leak", title: "Không che / Leak", type: "Horizontal", path: "vi" }
+        { slug: "uncensored-leak", title: "Không che", type: "Horizontal", path: "vi" }
     ]);
 }
 
@@ -36,7 +40,7 @@ function getFilterConfig() {
 }
 
 // =============================================================================
-// URL GENERATION (HTML pages)
+// URL GENERATION
 // =============================================================================
 
 function getUrlList(slug, filtersJson) {
@@ -59,27 +63,36 @@ function getUrlSearch(keyword, filtersJson) {
     try {
         var filters = JSON.parse(filtersJson || "{}");
         var page = parseInt(filters.page, 10) || 1;
-        var q = encodeURIComponent((keyword || "").trim());
+        var q = encodeURIComponent(String(keyword || "").replace(/^\s+|\s+$/g, ""));
         var url = "https://missav.media/vi/search/" + q;
         return page > 1 ? (url + "?page=" + page) : url;
     } catch (e) {
-        return "https://missav.media/vi/search/" + encodeURIComponent(keyword || "");
+        return "https://missav.media/vi/search/" + encodeURIComponent(String(keyword || ""));
     }
 }
 
 function getUrlDetail(slug) {
     var cleanSlug = String(slug || "").replace(/^\/+|\/+$/g, "");
-    if (cleanSlug.indexOf("http") === 0) return cleanSlug;
+    if (!cleanSlug) return "https://missav.media/vi/new";
+    if (cleanSlug.indexOf("http://") === 0 || cleanSlug.indexOf("https://") === 0) return cleanSlug;
     if (cleanSlug.indexOf("vi/") === 0) return "https://missav.media/" + cleanSlug;
     return "https://missav.media/vi/" + cleanSlug;
 }
 
-function getUrlCategories() { return ""; }
-function getUrlCountries() { return ""; }
-function getUrlYears() { return ""; }
+function getUrlCategories() {
+    return "";
+}
+
+function getUrlCountries() {
+    return "";
+}
+
+function getUrlYears() {
+    return "";
+}
 
 // =============================================================================
-// HTML PARSERS (Cần điều chỉnh selector/regex theo HTML thực tế của trang)
+// PARSERS
 // =============================================================================
 
 function decodeHtmlEntities(text) {
@@ -89,7 +102,7 @@ function decodeHtmlEntities(text) {
         .replace(/'/g, "'")
         .replace(/</g, "<")
         .replace(/>/g, ">")
-        .trim();
+        .replace(/^\s+|\s+$/g, "");
 }
 
 function normalizeImageUrl(src) {
@@ -104,11 +117,8 @@ function parseListResponse(htmlText) {
     try {
         var html = String(htmlText || "");
         var items = [];
-
-        // Ví dụ mẫu bóc thẻ <a> chứa link video và <img> thumbnail
-        // Thực tế cần đối chiếu DOM/HTML hiện tại của trang vì cấu trúc có thể thay đổi
-        var cardRegex = /<a[^>]+href=["'](https?:\/\/[^"']*\/vi\/[^"']+|\/vi\/[^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi;
         var seen = {};
+        var cardRegex = /<a[^>]+href=["'](https?:\/\/[^"']*\/vi\/[^"']+|\/vi\/[^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi;
         var match;
 
         while ((match = cardRegex.exec(html)) !== null) {
@@ -122,13 +132,14 @@ function parseListResponse(htmlText) {
             seen[slug] = true;
 
             var titleMatch = inner.match(/title=["']([^"']+)["']/i);
-            var title = decodeHtmlEntities((titleMatch && titleMatch[1]) || (imgMatch && imgMatch[2]) || slug);
+            var title = decodeHtmlEntities((titleMatch && titleMatch[1]) || imgMatch[2] || slug);
+            var imgUrl = normalizeImageUrl(imgMatch[1]);
 
             items.push({
                 id: slug,
                 title: title,
-                posterUrl: normalizeImageUrl(imgMatch[1]),
-                backdropUrl: normalizeImageUrl(imgMatch[1]),
+                posterUrl: imgUrl,
+                backdropUrl: imgUrl,
                 year: 0,
                 quality: "",
                 episode_current: "",
@@ -169,7 +180,6 @@ function parseMovieDetail(htmlText) {
         var poster = normalizeImageUrl(thumbMatch ? thumbMatch[1] : "");
         var desc = decodeHtmlEntities(descMatch ? descMatch[1] : "");
 
-        // Cần bổ sung logic trích xuất nguồn phát (m3u8 / packed js / player url) ở tầng fetch/JS phù hợp
         return JSON.stringify({
             id: "",
             title: title,
@@ -188,7 +198,10 @@ function parseMovieDetail(htmlText) {
             country: "",
             director: "",
             casts: "",
-            status: ""
+            status: "",
+            tmdbId: "",
+            tmdbSeason: 0,
+            tmdbType: ""
         });
     } catch (e) {
         return "null";
@@ -196,7 +209,7 @@ function parseMovieDetail(htmlText) {
 }
 
 function resolveStreamData(streamInput) {
-    var raw = String(streamInput || "").trim();
+    var raw = String(streamInput || "").replace(/^\s+|\s+$/g, "");
     return JSON.stringify({
         url: raw,
         headers: {
@@ -205,4 +218,14 @@ function resolveStreamData(streamInput) {
         },
         subtitles: []
     });
+}
+
+function parseDetailResponse(apiResponseJson) {
+    try {
+        var parsed = JSON.parse(apiResponseJson || "{}");
+        var candidate = parsed.url || parsed.streamUrl || parsed.link_m3u8 || parsed.link_embed || "";
+        return resolveStreamData(candidate);
+    } catch (e) {
+        return resolveStreamData(apiResponseJson);
+    }
 }
