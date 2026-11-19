@@ -32,7 +32,7 @@ function getManifest() {
     return JSON.stringify({
         "id": "javhd",
         "name": "JavHD",
-        "version": "1.0.9",
+        "version": "1.1.0",
         "baseUrl": BASE_URL,
         "iconUrl": BASE_URL + "/favicon.ico",
         "isEnabled": true,
@@ -206,7 +206,7 @@ function getUrlCountries() { return BASE_URL + "/"; }
 function getUrlYears() { return BASE_URL + "/"; }
 
 // =============================================================================
-// UTILITIES & SERVER PROBE / RANKING
+// UTILITIES & SERVER EXTRACTION (GIỮ NGUYÊN THỨ TỰ NHƯ WEB)
 // =============================================================================
 
 function getOriginReferer(url) {
@@ -396,20 +396,32 @@ function resolveEmbedRecursive(initialHtml, initialUrl, maxDepth) {
     };
 }
 
-function extractServersFromHtml(html) {
+// Bóc tách đúng thứ tự các nút server trên web javhdz.today
+function extractServersInOrder(html) {
     var servers = [];
-    var btnRegex = /<button\b([^>]*\bbutton_choice_server\b[^>]*)>/gi;
+    var btnRegex = /<button\b([^>]*\bbutton_choice_server\b[^>]*)>([\s\S]*?)<\/button>/gi;
     var btnMatch;
 
     while ((btnMatch = btnRegex.exec(html)) !== null) {
         var attrs = btnMatch[1];
+        var innerHtml = btnMatch[2] || "";
 
         var nameMatch = attrs.match(/\bdata-name=["']([^"']*)["']/i);
         var embedsMatch = attrs.match(/\bdata-embeds=["']([^"']*)["']/i);
         var embedMatch = attrs.match(/\bdata-embed=["']([^"']*)["']/i);
 
-        var serverName = nameMatch ? PluginUtils.cleanText(nameMatch[1]) : "Server";
+        var baseName = nameMatch ? PluginUtils.cleanText(nameMatch[1]) : "";
+        if (!baseName) {
+            baseName = PluginUtils.cleanText(innerHtml) || "Server";
+        }
+
+        // Gắn thêm nhãn badge (TOP / VIP / Noads / HOST / LIVE) nếu có trên nút
+        var labelMatch = innerHtml.match(/<span[^>]*class=["'][^"']*server-label[^"']*["'][^>]*>([\s\S]*?)<\/span>/i);
+        var badgeText = labelMatch ? PluginUtils.cleanText(labelMatch[1]) : "";
+        var serverName = badgeText ? (baseName + " [" + badgeText + "]") : baseName;
+
         var episodes = [];
+        var seenUrls = {};
 
         if (embedsMatch && embedsMatch[1]) {
             var decodedList = PluginUtils.decodeBase64(embedsMatch[1]);
@@ -418,7 +430,8 @@ function extractServersFromHtml(html) {
                 if (urls && urls.length) {
                     for (var i = 0; i < urls.length; i++) {
                         var normMirror = PluginUtils.normalizeUrl(urls[i]);
-                        if (normMirror) {
+                        if (normMirror && !seenUrls[normMirror]) {
+                            seenUrls[normMirror] = true;
                             episodes.push({
                                 id: normMirror,
                                 name: urls.length > 1 ? ("Mirror " + (i + 1)) : "Full",
@@ -433,7 +446,8 @@ function extractServersFromHtml(html) {
         if (episodes.length === 0 && embedMatch && embedMatch[1]) {
             var decodedSingle = PluginUtils.decodeBase64(embedMatch[1]);
             var normSingle = PluginUtils.normalizeUrl(decodedSingle);
-            if (normSingle) {
+            if (normSingle && !seenUrls[normSingle]) {
+                seenUrls[normSingle] = true;
                 episodes.push({
                     id: normSingle,
                     name: "Full",
@@ -451,127 +465,6 @@ function extractServersFromHtml(html) {
     }
 
     return servers;
-}
-
-function rankAndFilterServers(rawServers, options) {
-    var opts = options || {};
-    var enableProbe = !!opts.enableProbe;
-    var timeoutMs = opts.timeoutMs || 2500;
-    var maxProbePerServer = opts.maxProbePerServer || 2;
-
-    var priorityKeywords = [
-        "myserver", "fastserver", "topserver", "maxcloud", "bpserver",
-        "cloudwish", "mycloudz", "upnshare", "dood"
-    ];
-
-    function getPriorityScore(serverName) {
-        var lower = String(serverName || "").toLowerCase().replace(/\s+/g, "");
-        if (lower.indexOf("myserver") !== -1) {
-            return 1000;
-        }
-        for (var i = 0; i < priorityKeywords.length; i++) {
-            if (lower.indexOf(priorityKeywords[i]) !== -1) {
-                return (priorityKeywords.length - i) * 10;
-            }
-        }
-        return 1;
-    }
-
-    function isUrlReachable(url) {
-        if (!url || url.indexOf("http") !== 0) return false;
-        if (!enableProbe || typeof XMLHttpRequest === "undefined") return true;
-
-        try {
-            var xhr = new XMLHttpRequest();
-            xhr.open("GET", url, false);
-            if (typeof xhr.timeout === "number") {
-                xhr.timeout = timeoutMs;
-            }
-            try {
-                xhr.setRequestHeader("Referer", DEFAULT_HEADERS.Referer);
-                xhr.setRequestHeader("User-Agent", DEFAULT_HEADERS["User-Agent"]);
-            } catch (eHeader) {}
-
-            xhr.send(null);
-            if (xhr.status < 200 || xhr.status >= 400) return false;
-
-            var body = String(xhr.responseText || "");
-            if (!body || body.length < 30) return false;
-
-            var lowerBody = body.toLowerCase();
-            var deadMarkers = [
-                "file was deleted",
-                "video not found",
-                "404 not found",
-                "video is processing",
-                "encoding in progress",
-                "cf-browser-verification"
-            ];
-            for (var m = 0; m < deadMarkers.length; m++) {
-                if (lowerBody.indexOf(deadMarkers[m]) !== -1) {
-                    return false;
-                }
-            }
-            return true;
-        } catch (eReq) {
-            return false;
-        }
-    }
-
-    var indexed = [];
-    for (var i = 0; i < rawServers.length; i++) {
-        indexed.push({
-            idx: i,
-            score: getPriorityScore(rawServers[i].name),
-            server: rawServers[i]
-        });
-    }
-
-    indexed.sort(function (a, b) {
-        if (b.score !== a.score) return b.score - a.score;
-        return a.idx - b.idx;
-    });
-
-    var workingServers = [];
-    var fallbackServers = [];
-
-    for (var s = 0; s < indexed.length; s++) {
-        var srv = indexed[s].server;
-        var seenUrls = {};
-        var validEpisodes = [];
-        var probedCount = 0;
-        var hasWorkingEp = false;
-
-        for (var e = 0; e < srv.episodes.length; e++) {
-            var ep = srv.episodes[e];
-            if (!ep || !ep.id || seenUrls[ep.id]) continue;
-            seenUrls[ep.id] = true;
-
-            if (enableProbe && probedCount < maxProbePerServer) {
-                probedCount++;
-                if (isUrlReachable(ep.id)) {
-                    validEpisodes.push(ep);
-                    hasWorkingEp = true;
-                }
-            } else {
-                validEpisodes.push(ep);
-            }
-        }
-
-        if (validEpisodes.length > 0) {
-            var cleanSrv = {
-                name: srv.name,
-                episodes: validEpisodes
-            };
-            if (enableProbe && hasWorkingEp) {
-                workingServers.push(cleanSrv);
-            } else {
-                fallbackServers.push(cleanSrv);
-            }
-        }
-    }
-
-    return workingServers.concat(fallbackServers);
 }
 
 // =============================================================================
@@ -754,7 +647,8 @@ function parseMovieDetail(html) {
         var descMatch = srcHtml.match(/<p[^>]*class=["']description["'][^>]*>([\s\S]*?)<\/p>/i);
         var description = descMatch ? PluginUtils.cleanText(descMatch[1]) : "";
 
-        var servers = extractServersFromHtml(srcHtml);
+        // Giữ nguyên thứ tự nút chọn server như trên web javhdz.today
+        var servers = extractServersInOrder(srcHtml);
 
         if (servers.length === 0) {
             var mainPlayerStr = 'id="main-player"';
@@ -793,14 +687,158 @@ function parseMovieDetail(html) {
             }
         }
 
-        servers = rankAndFilterServers(servers, {
-            enableProbe: false,
-            timeoutMs: 2500,
-            maxProbePerServer: 2
-        });
-
         var thumbMatch = srcHtml.match(/<meta[^>]*property=["']og:image["'][^>]*content=["']([^"']+)["']/i);
         var thumb = thumbMatch ? PluginUtils.normalizeUrl(thumbMatch[1]) : "";
         if (!thumb) {
             var posterBgMatch = srcHtml.match(/id=["']player-poster["'][^>]*background-image:\s*url\(([^)]+)\)/i)
-                || srcHtml.match(/background-image:\s*url\(([^)]+)\)/i
+                || srcHtml.match(/background-image:\s*url\(([^)]+)\)/i);
+            if (posterBgMatch && posterBgMatch[1]) {
+                thumb = PluginUtils.normalizeUrl(posterBgMatch[1].replace(/["']/g, ""));
+            }
+        }
+
+        var codeMatch = srcHtml.match(/Label:\s*<a[^>]*>([\s\S]*?)<\/a>/i);
+        var code = codeMatch ? PluginUtils.cleanText(codeMatch[1]) : "Full";
+
+        var categoryRegex = /<a[^>]*href=["']\/([^"']+)["'][^>]*><i[^>]*class=["']fa fa-th-list["'][^>]*><\/i>([^<]+)<\/a>/gi;
+        var categoriesArr = [];
+        var catMatch;
+        while ((catMatch = categoryRegex.exec(srcHtml)) !== null) {
+            categoriesArr.push(PluginUtils.cleanText(catMatch[2]));
+        }
+
+        return JSON.stringify({
+            id: "",
+            title: title,
+            posterUrl: thumb,
+            backdropUrl: thumb,
+            description: description,
+            servers: servers,
+            quality: "HD",
+            lang: "Vietsub",
+            year: 0,
+            rating: 0,
+            casts: "",
+            director: "",
+            country: "",
+            category: categoriesArr.join(", "),
+            status: code
+        });
+    } catch (e) {
+        return "null";
+    }
+}
+
+function parseDetailResponse(html, fallbackUrl) {
+    try {
+        var srcHtml = html || "";
+        var hostUrl = PluginUtils.normalizeUrl(fallbackUrl || "");
+
+        var mainPlayerStr = 'id="main-player"';
+        var idxMain = srcHtml.indexOf(mainPlayerStr);
+        if (idxMain !== -1) {
+            var srcStr = 'src="';
+            var idxSrc = srcHtml.indexOf(srcStr, idxMain);
+            if (idxSrc !== -1 && idxSrc - idxMain < 500) {
+                var startUrl = idxSrc + srcStr.length;
+                var endUrl = srcHtml.indexOf('"', startUrl);
+                if (endUrl !== -1) {
+                    var extractedSrc = PluginUtils.normalizeUrl(srcHtml.substring(startUrl, endUrl));
+                    if (extractedSrc) hostUrl = extractedSrc;
+                }
+            }
+        }
+
+        var directStream = PluginUtils.extractStreamUrl(srcHtml);
+        if (directStream) {
+            return JSON.stringify({
+                url: directStream,
+                headers: buildHeadersForUrl(directStream),
+                subtitles: [],
+                isEmbed: false
+            });
+        }
+
+        return JSON.stringify({
+            url: hostUrl,
+            headers: buildHeadersForUrl(hostUrl),
+            subtitles: [],
+            isEmbed: true,
+            embedRegex: "['\"](https?:\\/\\/[^\\s'\"]+\\.m3u8[^'\"]*)['\"]"
+        });
+    } catch (e) {
+        var fb = PluginUtils.normalizeUrl(fallbackUrl || "");
+        return JSON.stringify({ url: fb, headers: buildHeadersForUrl(fb), subtitles: [], isEmbed: true });
+    }
+}
+
+function parseEmbedResponse(html, fallbackUrl) {
+    try {
+        var resolved = resolveEmbedRecursive(html || "", fallbackUrl || "", 2);
+        return JSON.stringify({
+            url: resolved.url,
+            headers: {
+                "User-Agent": DEFAULT_HEADERS["User-Agent"],
+                "Referer": resolved.referer
+            },
+            subtitles: [],
+            isEmbed: resolved.isEmbed
+        });
+    } catch (e) {
+        var fb = PluginUtils.normalizeUrl(fallbackUrl || "");
+        return JSON.stringify({
+            url: fb,
+            headers: buildHeadersForUrl(fb),
+            subtitles: [],
+            isEmbed: true
+        });
+    }
+}
+
+function parseCategoriesResponse(html) {
+    var categories = [];
+    var seen = {};
+    var src = html || "";
+
+    var parts = src.split(/<li[^>]*id=["']category-[^"']*["'][^>]*>/i);
+    for (var i = 1; i < parts.length; i++) {
+        var itemHtml = parts[i];
+        var linkMatch = itemHtml.match(/href=["']\/([^"']+)[\/]?["']/i);
+        var nameMatch = itemHtml.match(/<div[^>]*class=["']category-title["'][^>]*>([\s\S]*?)<\/div>/i);
+
+        if (linkMatch && nameMatch) {
+            var slug = linkMatch[1].replace(/\/+$/, "");
+            var name = PluginUtils.cleanText(nameMatch[1]);
+            if (slug && name && !seen[slug]) {
+                seen[slug] = true;
+                categories.push({ name: name, slug: slug });
+            }
+        }
+    }
+
+    var starRegex = /<a[^>]*href=["'](?:https?:\/\/[^/"']+)?\/(pornstar\/[^"'#?\/]+)\/?["'][^>]*>([\s\S]*?)<\/a>/gi;
+    var starMatch;
+    while ((starMatch = starRegex.exec(src)) !== null) {
+        var starSlug = starMatch[1].replace(/\/+$/, "");
+        var starName = PluginUtils.cleanText(starMatch[2]);
+        if (starSlug && starName && !seen[starSlug]) {
+            seen[starSlug] = true;
+            categories.push({ name: starName, slug: starSlug });
+        }
+    }
+
+    if (categories.length === 0) {
+        for (var k = 0; k < PORNSTARS_LIST.length; k++) {
+            var item = PORNSTARS_LIST[k];
+            if (!seen[item.slug]) {
+                seen[item.slug] = true;
+                categories.push({ name: item.name, slug: item.slug });
+            }
+        }
+    }
+
+    return JSON.stringify(categories);
+}
+
+function parseCountriesResponse(html) { return "[]"; }
+function parseYearsResponse(html) { return "[]"; }
