@@ -59,7 +59,7 @@ function getManifest() {
     return JSON.stringify({
         "id": "av01",
         "name": "AV01",
-        "version": "1.0.2",
+        "version": "1.0.0",
         "baseUrl": BASE_URL,
         "iconUrl": "https://static.av01.tv/favicon.ico",
         "isEnabled": true,
@@ -171,14 +171,18 @@ function parseListResponse(html) {
             }
         }
 
-        var cpMatch = html.match(/<(?:a|span|li)[^>]*class=["'][^"']*(?:active|current)[^"']*["'][^>]*>(?:\s*<a[^>]*>)?\s*(\d+)\s*(?:<\/a>)?<\/(?:a|span|li)>/i);
+        // Thu hẹp vùng phân trang để tránh bắt nhầm số ngoài pagination
+        var pagAreaMatch = html.match(/<(?:nav|div|ul)[^>]*class=["'][^"']*(?:pagination|pager|page-nav)[^"']*["'][^>]*>([\s\S]*?)<\/(?:nav|div|ul)>/i);
+        var pagHtml = pagAreaMatch ? pagAreaMatch[1] : "";
+
+        var cpMatch = pagHtml.match(/<(?:a|span|li)[^>]*class=["'][^"']*(?:active|current)[^"']*["'][^>]*>(?:\s*<a[^>]*>)?\s*(\d+)\s*(?:<\/a>)?<\/(?:a|span|li)>/i);
         if (cpMatch) {
             currentPage = parseInt(cpMatch[1], 10);
         }
 
-        var pageRegex = /(?:href=["'][^"']*(?:page[=\/])(\d+)["']|data-page=["'](\d+)["']|>(\d+)<\/a>)/gi;
+        var pageRegex = /(?:href=["'][^"']*(?:page[=\/])(\d+)["']|data-page=["'](\d+)["']|>(\d+)<\/(?:a|span)>)/gi;
         var pMatch;
-        while ((pMatch = pageRegex.exec(html)) !== null) {
+        while ((pMatch = pageRegex.exec(pagHtml)) !== null) {
             var rawNum = pMatch[1] || pMatch[2] || pMatch[3];
             if (rawNum) {
                 var num = parseInt(rawNum, 10);
@@ -329,9 +333,10 @@ function parseEmbedResponse(html, url) {
         }
 
         var referer = getOriginReferer(url, EMBED_REFERER);
+        var unescaped = html.replace(/\\\//g, "/");
 
         // 1. Tìm link stream trực tiếp (.m3u8 hoặc .mp4)
-        var streamMatch = html.match(/(https?:\/\/[^\s"'\\<>]+?\.(?:m3u8|mp4)(?:\?[^\s"'\\<>]*)?)/i);
+        var streamMatch = unescaped.match(/(https?:\/\/[^\s"'\\<>]+?\.(?:m3u8|mp4)(?:\?[^\s"'\\<>]*)?)/i);
         if (streamMatch && streamMatch[1]) {
             var streamUrl = resolveUrl(streamMatch[1], referer);
             var isHls = /\.m3u8/i.test(streamUrl);
@@ -345,14 +350,15 @@ function parseEmbedResponse(html, url) {
             });
         }
 
-        // 2. Tìm cấu hình file / sources
-        var fileMatch = html.match(/["']?file["']?\s*[:=]\s*["']([^"']+\.(?:m3u8|mp4)[^"']*)["']/i);
+        // 2. Tìm cấu hình file / url / src trong JSON hoặc JS
+        var fileMatch = unescaped.match(/["']?(?:file|stream|url|src)["']?\s*[:=]\s*["'](https?:\/\/[^"']+(?:\.m3u8|\.mp4|embed)[^"']*)["']/i);
         if (fileMatch && fileMatch[1]) {
-            var fileUrl = resolveUrl(fileMatch[1], referer);
+            var matchedUrl = resolveUrl(fileMatch[1], referer);
+            var isMedia = /\.(?:m3u8|mp4)/i.test(matchedUrl);
             return JSON.stringify({
-                url: fileUrl,
-                isEmbed: false,
-                mimeType: /\.m3u8/i.test(fileUrl) ? "application/x-mpegURL" : "video/mp4",
+                url: matchedUrl,
+                isEmbed: !isMedia,
+                mimeType: isMedia ? (/\.m3u8/i.test(matchedUrl) ? "application/x-mpegURL" : "video/mp4") : "",
                 headers: {
                     "Referer": referer
                 }
@@ -360,7 +366,7 @@ function parseEmbedResponse(html, url) {
         }
 
         // 3. Tìm iframe lồng tiếp nếu chưa có link stream
-        var nestedIframe = html.match(/<iframe[^>]*src=["']([^"']+)["']/i);
+        var nestedIframe = unescaped.match(/<iframe[^>]*src=["']([^"']+)["']/i);
         if (nestedIframe && nestedIframe[1]) {
             return JSON.stringify({
                 url: resolveUrl(nestedIframe[1], referer),
