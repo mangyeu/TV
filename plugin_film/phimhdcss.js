@@ -9,7 +9,7 @@ function getManifest() {
         "id": "tvhay",
         "name": "TVHay",
         "version": "1.2.0",
-        "baseUrl": BASE_URL,
+        "baseUrl": "https://tvhay.buzz",
         "iconUrl": BASE_URL + "/favicon.png",
         "isEnabled": true,
         "playerType": "exoplayer",
