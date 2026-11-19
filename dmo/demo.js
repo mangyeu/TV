@@ -1,13 +1,14 @@
 var BASE_URL = "https://vlxx.net";
 var DEFAULT_SITE_REFERER = "https://vlxx.net/";
+var DEFAULT_EMBED_ORIGIN = "https://play.vlstream.net";
 var DEFAULT_EMBED_REFERER = "https://play.vlstream.net/";
-var DEFAULT_USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36";
+var MOBILE_UA = "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Mobile Safari/537.36 EdgA/157.0.0.0";
 
 function getManifest() {
     return JSON.stringify({
         "id": "vlxx",
         "name": "VLXX",
-        "version": "1.0.6",
+        "version": "1.0.7",
         "baseUrl": BASE_URL,
         "iconUrl": "https://raw.githubusercontent.com/youngbi/repo/main/plugins/vlxx.ico",
         "isEnabled": true,
@@ -61,6 +62,12 @@ function resolveUrl(rawUrl, base) {
     var root = base || BASE_URL;
     if (val.charAt(0) !== "/") val = "/" + val;
     return root + val;
+}
+
+function getOriginFromUrl(targetUrl, fallback) {
+    if (!targetUrl) return fallback;
+    var match = String(targetUrl).match(/^(https?:\/\/[^/?#]+)/i);
+    return match ? match[1] : fallback;
 }
 
 function getRefererFromUrl(targetUrl, fallback) {
@@ -119,7 +126,7 @@ function decodeBase64Safe(b64) {
     }
 }
 
-function buildStreamResult(streamUrl, referer, mimeType) {
+function buildStreamResult(streamUrl, referer, origin, mimeType) {
     var cleanUrl = String(streamUrl || "").trim();
     if (!cleanUrl) {
         return JSON.stringify({ url: "", isEmbed: false, headers: {} });
@@ -138,8 +145,9 @@ function buildStreamResult(streamUrl, referer, mimeType) {
         isEmbed: false,
         mimeType: detectedMime,
         headers: {
+            "Origin": origin || DEFAULT_EMBED_ORIGIN,
             "Referer": referer || DEFAULT_EMBED_REFERER,
-            "User-Agent": DEFAULT_USER_AGENT
+            "User-Agent": MOBILE_UA
         }
     });
 }
@@ -381,7 +389,6 @@ function parseMovieDetail(html) {
     }
 }
 
-// Trích xuất thông tin AJAX/embed từ trang detail khi người dùng chọn tập (episodeUrl có thể chứa #s1, #s2)
 function parseDetailResponse(html, episodeUrl) {
     try {
         var srcHtml = String(html || "");
@@ -389,29 +396,26 @@ function parseDetailResponse(html, episodeUrl) {
         var hashMatch = fullUrl.match(/#s(\d+)/i);
         var targetServer = hashMatch ? hashMatch[1] : "1";
 
-        // Tìm videoId từ onclick="server(1, 3105)" hoặc data-id="..."
         var srvCallMatch = srcHtml.match(/server\(\s*\d+\s*,\s*(\d+)\s*\)/i);
-        var dataIdMatch = srcHtml.match(/data-id=["'](\d+)["']/i);
+        var dataIdMatch = srcHtml.match(/<div[^>]*id=["']video["'][^>]*data-id=["'](\d+)["']/i)
+            || srcHtml.match(/data-id=["'](\d+)["']/i);
         var videoId = srvCallMatch ? srvCallMatch[1] : (dataIdMatch ? dataIdMatch[1] : "");
 
-        // Tìm endpoint AJAX nếu có khai báo trong script
-        var ajaxUrlMatch = srcHtml.match(/url\s*:\s*["']([^"']*ajax[^"']*|[^"']*player[^"']*)["']/i);
-        var ajaxUrl = ajaxUrlMatch ? resolveUrl(ajaxUrlMatch[1], BASE_URL) : (BASE_URL + "/ajax/player");
-
-        // Nếu trang detail đã có sẵn iframe embed trực tiếp
         var directIframeMatch = srcHtml.match(/<iframe[^>]*src=["']([^"']+)["'][^>]*>/i);
         if (directIframeMatch && directIframeMatch[1]) {
             return JSON.stringify({
                 url: resolveUrl(directIframeMatch[1], BASE_URL),
                 isEmbed: true,
                 headers: {
-                    "Referer": getRefererFromUrl(fullUrl, DEFAULT_SITE_REFERER),
-                    "User-Agent": DEFAULT_USER_AGENT
+                    "Referer": DEFAULT_SITE_REFERER,
+                    "User-Agent": MOBILE_UA
                 }
             });
         }
 
-        // Trả về thông tin request AJAX POST để host app thực hiện (nếu host app hỗ trợ)
+        var ajaxUrlMatch = srcHtml.match(/["'](\/[^"']*(?:ajax|player|get_link|stream)[^"']*)["']/i);
+        var ajaxUrl = ajaxUrlMatch ? resolveUrl(ajaxUrlMatch[1], BASE_URL) : (BASE_URL + "/ajax/player");
+
         if (videoId) {
             return JSON.stringify({
                 url: ajaxUrl,
@@ -421,8 +425,9 @@ function parseDetailResponse(html, episodeUrl) {
                 headers: {
                     "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
                     "X-Requested-With": "XMLHttpRequest",
+                    "Origin": BASE_URL,
                     "Referer": getRefererFromUrl(fullUrl, DEFAULT_SITE_REFERER),
-                    "User-Agent": DEFAULT_USER_AGENT
+                    "User-Agent": MOBILE_UA
                 }
             });
         }
@@ -433,15 +438,13 @@ function parseDetailResponse(html, episodeUrl) {
     }
 }
 
-// parseEmbedResponse:
-// Depth 1 - AJAX JSON: {"player":"<iframe src=\"...\">"} -> trích iframe URL
-// Depth 2 - Embed HTML: JWPlayer / stream (.vl, .m3u8, .mp4) -> trích stream URL
 function parseEmbedResponse(html, url) {
     try {
         var rawHtml = String(html || "");
+        var embedOrigin = getOriginFromUrl(url, DEFAULT_EMBED_ORIGIN);
         var embedReferer = getRefererFromUrl(url, DEFAULT_EMBED_REFERER);
 
-        // === CASE 1: AJAX JSON response (chứa "player" key) ===
+        // Depth 1: AJAX JSON chứa "player" -> trả về iframe URL
         if (rawHtml.indexOf('"player"') !== -1 || rawHtml.indexOf("'player'") !== -1) {
             try {
                 var jsonObj = JSON.parse(rawHtml);
@@ -454,7 +457,8 @@ function parseEmbedResponse(html, url) {
                             isEmbed: true,
                             headers: {
                                 "Referer": DEFAULT_SITE_REFERER,
-                                "User-Agent": DEFAULT_USER_AGENT
+                                "Origin": BASE_URL,
+                                "User-Agent": MOBILE_UA
                             }
                         });
                     }
@@ -468,26 +472,25 @@ function parseEmbedResponse(html, url) {
                         isEmbed: true,
                         headers: {
                             "Referer": DEFAULT_SITE_REFERER,
-                            "User-Agent": DEFAULT_USER_AGENT
+                            "Origin": BASE_URL,
+                            "User-Agent": MOBILE_UA
                         }
                     });
                 }
             }
         }
 
-        // === CASE 2: Embed page HTML (JWPlayer / .vl / .m3u8 / .mp4) ===
+        // Depth 2: Embed HTML -> tìm link .vl / .m3u8 / .mp4
         var normalizedHtml = unescapeCommon(rawHtml);
 
-        // 2a. Tìm trực tiếp trong file / sources / URL có .vl, .m3u8, .mp4
         var directStreamMatch =
             normalizedHtml.match(/["']?file["']?\s*:\s*["'](https?:\/\/[^"']+\.(?:vl|m3u8|mp4)[^"']*)["']/i)
             || normalizedHtml.match(/(https?:\/\/[^\s"'<>\\]+\.(?:vl|m3u8|mp4)[^\s"'<>\\]*)/i);
 
         if (directStreamMatch && directStreamMatch[1]) {
-            return buildStreamResult(directStreamMatch[1], embedReferer, "");
+            return buildStreamResult(directStreamMatch[1], embedReferer, embedOrigin, "");
         }
 
-        // 2b. Thử parse mảng sources của JWPlayer
         var sourcesMatch = normalizedHtml.match(/["']?sources["']?\s*:\s*(\[[\s\S]*?\])\s*(?:,|;|\})/i);
         if (sourcesMatch && sourcesMatch[1]) {
             var rawSources = sourcesMatch[1];
@@ -495,7 +498,7 @@ function parseEmbedResponse(html, url) {
                 var sources = JSON.parse(rawSources);
                 if (sources && sources.length > 0 && sources[0].file) {
                     var mimeFromType = sources[0].type === "hls" ? "application/x-mpegURL" : "";
-                    return buildStreamResult(sources[0].file, embedReferer, mimeFromType);
+                    return buildStreamResult(sources[0].file, embedReferer, embedOrigin, mimeFromType);
                 }
             } catch (e) {
                 var looseFileMatch = rawSources.match(/["']?file["']?\s*:\s*["']([^"']+)["']/i);
@@ -505,20 +508,20 @@ function parseEmbedResponse(html, url) {
                     return buildStreamResult(
                         looseFileMatch[1],
                         embedReferer,
+                        embedOrigin,
                         isHls ? "application/x-mpegURL" : ""
                     );
                 }
             }
         }
 
-        // 2c. Thử giải mã các chuỗi Base64 dài nếu trang nhúng link stream dưới dạng Base64
         var b64Regex = /["']([A-Za-z0-9+/=]{24,})["']/g;
         var b64Match;
         while ((b64Match = b64Regex.exec(normalizedHtml)) !== null) {
             var decoded = unescapeCommon(decodeBase64Safe(b64Match[1]));
             var innerStream = decoded.match(/(https?:\/\/[^\s"'<>\\]+\.(?:vl|m3u8|mp4)[^\s"'<>\\]*)/i);
             if (innerStream && innerStream[1]) {
-                return buildStreamResult(innerStream[1], embedReferer, "");
+                return buildStreamResult(innerStream[1], embedReferer, embedOrigin, "");
             }
         }
 
