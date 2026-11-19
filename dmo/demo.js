@@ -77,7 +77,7 @@ function getManifest() {
     return JSON.stringify({
         "id": "javhd",
         "name": "JavHD",
-        "version": "1.1.0",
+        "version": "1.1.1",
         "baseUrl": BASE_URL,
         "iconUrl": BASE_URL + "/favicon.ico",
         "isEnabled": true,
@@ -690,4 +690,88 @@ function parseEmbedResponse(html, fallbackUrl) {
 
         if (m3u8Match && m3u8Match[1]) {
             streamUrl = m3u8Match[1].replace(/\\\//g, "/");
-        } else if (mp4Match && mp4Match[1])
+        } else if (mp4Match && mp4Match[1]) {
+            streamUrl = mp4Match[1].replace(/\\\//g, "/");
+        }
+
+        return JSON.stringify({
+            url: streamUrl,
+            headers: {
+                "User-Agent": DEFAULT_USER_AGENT,
+                "Referer": BASE_URL + "/"
+            },
+            subtitles: [],
+            isEmbed: false
+        });
+    } catch (e) {
+        return JSON.stringify({
+            url: fallbackUrl || "",
+            headers: {},
+            subtitles: [],
+            isEmbed: false
+        });
+    }
+}
+
+function parseCategoriesResponse(html) {
+    var categories = [];
+    var seen = {};
+    var src = (html === null || html === undefined) ? "" : String(html);
+
+    var idols = parseIdolsMenuHtml(IDOLS_MENU_HTML);
+    var defaultEntries = [{ name: "Idols AV (Tất cả)", slug: "pornstar" }];
+    for (var k = 0; k < idols.length; k++) {
+        defaultEntries.push({
+            name: "Idol: " + idols[k].name,
+            slug: idols[k].slug
+        });
+    }
+
+    for (var d = 0; d < defaultEntries.length; d++) {
+        var dSlug = defaultEntries[d].slug;
+        if (dSlug && !seen[dSlug]) {
+            seen[dSlug] = true;
+            categories.push(defaultEntries[d]);
+        }
+    }
+
+    var parts = src.split(/<li[^>]*id=["']category-[^"']*["'][^>]*>/i);
+    for (var i = 1; i < parts.length; i++) {
+        var itemHtml = parts[i];
+        var linkMatch = itemHtml.match(/href=["']\/([^"']+)[\/]?["']/i);
+        var nameMatch = itemHtml.match(/<div[^>]*class=["'][^"']*category-title[^"']*["'][^>]*>([\s\S]*?)<\/div>/i);
+
+        if (linkMatch && nameMatch) {
+            var slug = linkMatch[1].replace(/^\/+|\/+$/g, '');
+            var name = PluginUtils.cleanText(nameMatch[1]);
+            if (slug && name && !seen[slug]) {
+                seen[slug] = true;
+                categories.push({
+                    name: name,
+                    slug: slug
+                });
+            }
+        }
+    }
+
+    if (categories.length <= defaultEntries.length) {
+        var aRe = /<a\b([^>]*)>([\s\S]*?)<\/a>/gi;
+        var m;
+        while ((m = aRe.exec(src)) !== null) {
+            var href = PluginUtils.extractAttr(m[1], "href");
+            var text = PluginUtils.cleanText(m[2]);
+            if (href && text && href.indexOf("/category/") !== -1) {
+                var cSlug = href.replace(/^https?:\/\/[^/]+/i, '').replace(/^\/+|\/+$/g, '');
+                if (cSlug && !seen[cSlug]) {
+                    seen[cSlug] = true;
+                    categories.push({ name: text, slug: cSlug });
+                }
+            }
+        }
+    }
+
+    return JSON.stringify(categories);
+}
+
+function parseCountriesResponse(html) { return "[]"; }
+function parseYearsResponse(html) { return "[]"; }
