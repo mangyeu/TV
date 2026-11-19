@@ -14,7 +14,7 @@ function getManifest() {
     return JSON.stringify({
         "id": "javhd",
         "name": "JavHD",
-        "version": "1.0.7",
+        "version": "1.0.8",
         "baseUrl": BASE_URL,
         "iconUrl": BASE_URL + "/favicon.ico",
         "isEnabled": true,
@@ -76,7 +76,7 @@ function getFilterConfig() {
 }
 
 // =============================================================================
-// UTILS & SERVER HELPERS
+// UTILS & HELPERS
 // =============================================================================
 
 var PluginUtils = {
@@ -271,7 +271,12 @@ function getUrlList(slug, filtersJson) {
         ? PluginUtils.extractSlug(filters.category)
         : (cleanInputSlug || "recent");
 
-    if (targetSlug.indexOf("pornstars") === 0 || targetSlug.indexOf("pornstar") === 0 || targetSlug.indexOf("models") === 0) {
+    // Danh sách diễn viên / model
+    if (
+        targetSlug.indexOf("pornstars") === 0 ||
+        targetSlug.indexOf("pornstar") === 0 ||
+        targetSlug.indexOf("models") === 0
+    ) {
         var pUrl = BASE_URL + "/" + targetSlug.replace(/\/+$/, "") + "/";
         if (page > 1) {
             pUrl += page + "/";
@@ -471,7 +476,7 @@ function parseListResponse(html) {
     }
 
     var moviesMap = {};
-    var parts = responseHtml.split(/<li[^>]*id=["']video-[^"']*["'][^>]*>/i);
+    var parts = responseHtml.split(/<(?:li|div|article)[^>]*(?:id=["'](?:video|post|vid)-[^"']*["']|class=["'][^"']*(?:video-item|video-block|thumb-block|item-video)[^"']*["'])[^>]*>/i);
 
     for (var i = 1; i < parts.length; i++) {
         var itemHtml = parts[i];
@@ -482,10 +487,10 @@ function parseListResponse(html) {
         var aMatch;
         while ((aMatch = aRegex.exec(itemHtml)) !== null) {
             var attrs = aMatch[1];
-            if (attrs.indexOf("thumbnail") !== -1) {
+            if (attrs.indexOf("thumbnail") !== -1 || attrs.indexOf("video-link") !== -1) {
                 fullUrl = PluginUtils.extractAttr(attrs, "href");
                 title = PluginUtils.extractAttr(attrs, "title");
-                break;
+                if (fullUrl) break;
             }
         }
 
@@ -506,11 +511,15 @@ function parseListResponse(html) {
 
         if (slug) {
             var rawTitle = PluginUtils.cleanText(title);
+            if (!rawTitle) {
+                var titleEl = itemHtml.match(/<(?:a|h2|h3|h4|div|span)[^>]*class=["'][^"']*(?:video-title|title|entry-title)[^"']*["'][^>]*>([\s\S]*?)<\/(?:a|h2|h3|h4|div|span)>/i);
+                if (titleEl) rawTitle = PluginUtils.cleanText(titleEl[1]);
+            }
             if (!rawTitle && imgMatch) {
                 rawTitle = PluginUtils.cleanText(PluginUtils.extractAttr(imgMatch[1], "alt"));
             }
 
-            var durationMatch = itemHtml.match(/<span[^>]*class=["'][^"']*video-overlay[^"']*["'][^>]*>([\s\S]*?)<\/span>/i);
+            var durationMatch = itemHtml.match(/<span[^>]*class=["'][^"']*video-overlay(?!1)[^"']*["'][^>]*>([\s\S]*?)<\/span>/i);
             var duration = durationMatch ? PluginUtils.cleanText(durationMatch[1]) : "";
 
             var codeMatch = itemHtml.match(/<span[^>]*class=["'][^"']*video-overlay1[^"']*["'][^>]*>([\s\S]*?)<\/span>/i);
@@ -572,7 +581,7 @@ function parseMovieDetail(html) {
             var btnAttrs = btnMatch[1];
             var b64url = PluginUtils.extractAttr(btnAttrs, "data-embed");
             var serverName = PluginUtils.cleanText(PluginUtils.extractAttr(btnAttrs, "data-name")) || "Server";
-            var decodedUrl = PluginUtils.normalizeStreamUrl(PluginUtils.decodeBase64Safe(b64url));
+            var decodedUrl = PluginUtils.normalizeUrl(PluginUtils.decodeBase64Safe(b64url));
 
             if (decodedUrl && !seenUrls[decodedUrl]) {
                 seenUrls[decodedUrl] = true;
@@ -590,7 +599,7 @@ function parseMovieDetail(html) {
         if (servers.length === 0) {
             var mainPlayerMatch = rawHtml.match(/<(?:iframe|video|embed)[^>]*id=["']main-player["'][^>]*>/i);
             if (mainPlayerMatch) {
-                var embedUrl = PluginUtils.normalizeStreamUrl(PluginUtils.extractAttr(mainPlayerMatch[0], "src"));
+                var embedUrl = PluginUtils.normalizeUrl(PluginUtils.extractAttr(mainPlayerMatch[0], "src"));
                 if (embedUrl && !seenUrls[embedUrl]) {
                     seenUrls[embedUrl] = true;
                     servers.push({
@@ -608,7 +617,7 @@ function parseMovieDetail(html) {
         if (servers.length === 0) {
             var ultimateMatch = rawHtml.match(/src=["'](https?:\/\/[a-z0-9A-Z.-]+\/(?:v|e|embed)\/[^"']+)["']/i);
             if (ultimateMatch) {
-                var fallbackEmbed = PluginUtils.normalizeStreamUrl(ultimateMatch[1]);
+                var fallbackEmbed = PluginUtils.normalizeUrl(ultimateMatch[1]);
                 if (fallbackEmbed) {
                     servers.push({
                         name: "Default Embed",
@@ -658,3 +667,101 @@ function parseMovieDetail(html) {
             servers: servers,
             quality: "HD",
             lang: "Vietsub",
+            year: 0,
+            rating: 0,
+            casts: "",
+            director: "",
+            country: "",
+            category: categoriesArr.join(", "),
+            status: code
+        });
+    } catch (e) {
+        return "null";
+    }
+}
+
+function parseDetailResponse(html, fallbackUrl) {
+    try {
+        var hostUrl = PluginUtils.normalizeUrl(fallbackUrl || "");
+        var rawHtml = String(html || "");
+
+        var mainPlayerMatch = rawHtml.match(/<(?:iframe|video|embed)[^>]*id=["']main-player["'][^>]*>/i);
+        if (mainPlayerMatch) {
+            var playerSrc = PluginUtils.normalizeUrl(PluginUtils.extractAttr(mainPlayerMatch[0], "src"));
+            if (playerSrc) {
+                hostUrl = playerSrc;
+            }
+        }
+
+        return JSON.stringify({
+            url: hostUrl,
+            headers: {
+                "User-Agent": DEFAULT_HEADERS["User-Agent"],
+                "Referer": hostUrl || (BASE_URL + "/")
+            },
+            subtitles: [],
+            isEmbed: true,
+            embedRegex: "['\"](https?:\\/\\/[^\\s'\"]+\\.(?:m3u8|mp4)[^'\"]*)['\"]"
+        });
+    } catch (e) {
+        return JSON.stringify({
+            url: PluginUtils.normalizeUrl(fallbackUrl || ""),
+            headers: DEFAULT_HEADERS,
+            subtitles: []
+        });
+    }
+}
+
+function parseEmbedResponse(html, fallbackUrl) {
+    var rawHtml = String(html || "");
+    var currentUrl = PluginUtils.normalizeUrl(fallbackUrl || "");
+    var resolvedUrl = currentUrl;
+    var foundDirectStream = false;
+
+    var directMatch = rawHtml.match(/https?:\\?\/\\?\/[^\s"'<>\\]+?\.(?:m3u8|mp4)(?:\?[^\s"'<>\\]*)?/i);
+    if (directMatch && directMatch[0]) {
+        resolvedUrl = PluginUtils.normalizeUrl(directMatch[0]);
+        foundDirectStream = true;
+    }
+
+    var isEmbed = !foundDirectStream && (
+        currentUrl.indexOf("/e/") !== -1 ||
+        currentUrl.indexOf("/v/") !== -1 ||
+        currentUrl.indexOf("embed") !== -1
+    );
+
+    return JSON.stringify({
+        url: resolvedUrl,
+        headers: {
+            "User-Agent": DEFAULT_HEADERS["User-Agent"],
+            "Referer": currentUrl || (BASE_URL + "/")
+        },
+        subtitles: [],
+        isEmbed: isEmbed
+    });
+}
+
+function parseCategoriesResponse(html) {
+    var categories = [];
+    var parts = String(html || "").split(/<li[^>]*id=["']category-[^"']*["'][^>]*>/i);
+    for (var i = 1; i < parts.length; i++) {
+        var itemHtml = parts[i];
+        var linkMatch = itemHtml.match(/href=["']\/([^"']+)[\/]?["']/i);
+        var nameMatch = itemHtml.match(/<div[^>]*class=["'][^"']*category-title[^"']*["'][^>]*>([\s\S]*?)<\/div>/i);
+
+        if (linkMatch && nameMatch) {
+            var slug = PluginUtils.extractSlug(linkMatch[1]);
+            var name = PluginUtils.cleanText(nameMatch[1]);
+            if (slug && name) {
+                categories.push({
+                    name: name,
+                    slug: slug
+                });
+            }
+        }
+    }
+    return JSON.stringify(categories);
+}
+
+function parseCountriesResponse(html) { return "[]"; }
+function parseYearsResponse(html) { return "[]"; }
