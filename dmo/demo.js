@@ -4,11 +4,8 @@
 
 var BASE_URL = "https://javhd.today";
 var DEFAULT_USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
-
-// Poster dự phòng khi trang danh sách idols hoặc mục HTML không có thẻ <img>
 var DEFAULT_IDOL_POSTER = BASE_URL + "/favicon.ico";
 
-// Tùy chọn bảng poster theo slug idol (vd: "pornstar/hatano-yui": "https://...")
 var IDOL_POSTERS = {
     "pornstar/hatano-yui": "",
     "pornstar/aika": "",
@@ -54,7 +51,7 @@ function getManifest() {
     return JSON.stringify({
         "id": "javhd",
         "name": "JavHD",
-        "version": "1.3.0",
+        "version": "1.3.2",
         "baseUrl": BASE_URL,
         "iconUrl": BASE_URL + "/favicon.ico",
         "isEnabled": true,
@@ -141,7 +138,6 @@ function parseIdolsMenuHtml(html) {
                 title: labelText,
                 value: slug,
                 slug: slug,
-                url: BASE_URL + "/" + slug + "/",
                 group: groupName,
                 posterUrl: poster,
                 backdropUrl: poster,
@@ -179,7 +175,6 @@ function getIdolsPosterPage(pageNum) {
             title: idol.name,
             name: idol.name,
             slug: idol.slug,
-            url: idol.url,
             group: idol.group,
             posterUrl: idol.posterUrl,
             backdropUrl: idol.backdropUrl,
@@ -264,7 +259,6 @@ function getUrlList(slug, filtersJson) {
     var chosenSlug = filters.idol || filters.category || slug || 'recent';
     var normalizedTarget = extractSlugFromHref(chosenSlug);
 
-    // Khi bấm vào một idol cụ thể (pornstar/<tên-idol>), trả về URL trang video của idol đó
     if (normalizedTarget.indexOf("pornstar/") === 0 &&
         normalizedTarget !== "pornstar/most-videos" &&
         normalizedTarget !== "pornstar/popular" &&
@@ -371,11 +365,6 @@ var PluginUtils = {
                 .replace(/'|'/g, "'")
                 .replace(/</g, "<")
                 .replace(/>/g, ">")
-                .replace(/–/g, "-")
-                .replace(/—/g, "--")
-                .replace(/‘|’/g, "'")
-                .replace(/“|”/g, '"')
-                .replace(/…/g, "...")
                 .replace(/ /g, " ")
                 .replace(/&#(\d+);/g, function (_, code) {
                     var num = parseInt(code, 10);
@@ -606,7 +595,6 @@ function parseIdolsPosterPageHtml(html) {
             title: name,
             name: name,
             slug: slug,
-            url: BASE_URL + "/" + slug + "/",
             posterUrl: poster,
             backdropUrl: poster,
             year: 0,
@@ -627,7 +615,6 @@ function parseIdolsPosterPageHtml(html) {
                     title: mIdol.name,
                     name: mIdol.name,
                     slug: mIdol.slug,
-                    url: mIdol.url,
                     posterUrl: mIdol.posterUrl,
                     backdropUrl: mIdol.backdropUrl,
                     year: 0,
@@ -880,149 +867,4 @@ function parseMovieDetail(html) {
 
 function parseDetailResponse(html, fallbackUrl) {
     try {
-        var srcHtml = (html === null || html === undefined) ? "" : String(html);
-        var hostUrl = PluginUtils.normalizeUrl(unescapeStreamUrl(fallbackUrl || ""));
-
-        var mainPlayerStr = 'id="main-player"';
-        var idxMain = srcHtml.indexOf(mainPlayerStr);
-        if (idxMain === -1) idxMain = srcHtml.indexOf("id='main-player'");
-        if (idxMain !== -1) {
-            var snippet = srcHtml.substring(idxMain, Math.min(srcHtml.length, idxMain + 800));
-            var srcAttr = PluginUtils.extractAttr(snippet, "src") || PluginUtils.extractAttr(snippet, "data-src");
-            if (srcAttr) {
-                hostUrl = PluginUtils.normalizeUrl(unescapeStreamUrl(srcAttr));
-            }
-        }
-
-        var directStream = extractStreamFromHtml(srcHtml);
-        var isDirectMedia = /\.(?:m3u8|mp4)(?:[?#]|$)/i.test(directStream || hostUrl);
-
-        return JSON.stringify({
-            url: directStream || hostUrl,
-            headers: {
-                "User-Agent": DEFAULT_USER_AGENT,
-                "Referer": hostUrl || (BASE_URL + "/")
-            },
-            subtitles: [],
-            isEmbed: !isDirectMedia,
-            embedRegex: "(?:https?:)?\\/\\/[^\\s\"'<>\\\\]+\\.(?:m3u8|mp4)(?:[^\\s\"'<>\\\\]*)?"
-        });
-    } catch (e) {
-        return JSON.stringify({
-            url: fallbackUrl || "",
-            headers: {},
-            subtitles: []
-        });
-    }
-}
-
-function parseEmbedResponse(html, fallbackUrl) {
-    try {
-        var srcHtml = (html === null || html === undefined) ? "" : String(html);
-        var cleanFallback = PluginUtils.normalizeUrl(unescapeStreamUrl(fallbackUrl || ""));
-        var extracted = extractStreamFromHtml(srcHtml);
-        var streamUrl = extracted || cleanFallback;
-
-        return JSON.stringify({
-            url: streamUrl,
-            headers: {
-                "User-Agent": DEFAULT_USER_AGENT,
-                "Referer": cleanFallback || (BASE_URL + "/")
-            },
-            subtitles: [],
-            isEmbed: false
-        });
-    } catch (e) {
-        return JSON.stringify({
-            url: fallbackUrl || "",
-            headers: {},
-            subtitles: [],
-            isEmbed: false
-        });
-    }
-}
-
-function parseCategoriesResponse(html) {
-    var categories = [];
-    var seen = {};
-    var src = (html === null || html === undefined) ? "" : String(html);
-
-    var idols = parseIdolsMenuHtml(IDOLS_MENU_HTML);
-    var defaultEntries = [
-        {
-            name: "AV Pornstars (All Idols)",
-            slug: "pornstar",
-            posterUrl: DEFAULT_IDOL_POSTER,
-            backdropUrl: DEFAULT_IDOL_POSTER
-        },
-        {
-            name: "Idols AV Most Videos",
-            slug: "pornstar/most-videos",
-            posterUrl: DEFAULT_IDOL_POSTER,
-            backdropUrl: DEFAULT_IDOL_POSTER
-        }
-    ];
-
-    for (var k = 0; k < idols.length; k++) {
-        defaultEntries.push({
-            name: idols[k].name,
-            slug: idols[k].slug,
-            posterUrl: idols[k].posterUrl,
-            backdropUrl: idols[k].backdropUrl,
-            group: idols[k].group
-        });
-    }
-
-    for (var d = 0; d < defaultEntries.length; d++) {
-        var dSlug = defaultEntries[d].slug;
-        if (dSlug && !seen[dSlug]) {
-            seen[dSlug] = true;
-            categories.push(defaultEntries[d]);
-        }
-    }
-
-    var parts = src.split(/<li[^>]*id=["']category-[^"']*["'][^>]*>/i);
-    for (var i = 1; i < parts.length; i++) {
-        var itemHtml = parts[i];
-        var linkMatch = itemHtml.match(/href=["']\/([^"']+)[\/]?["']/i);
-        var nameMatch = itemHtml.match(/<div[^>]*class=["'][^"']*category-title[^"']*["'][^>]*>([\s\S]*?)<\/div>/i);
-
-        if (linkMatch && nameMatch) {
-            var slug = linkMatch[1].replace(/^\/+|\/+$/g, '');
-            var name = PluginUtils.cleanText(nameMatch[1]);
-            var imgM = itemHtml.match(/<img\b([^>]*)>/i);
-            var catPoster = imgM ? PluginUtils.normalizeUrl(PluginUtils.extractAttr(imgM[1], "data-src") || PluginUtils.extractAttr(imgM[1], "src")) : "";
-
-            if (slug && name && !seen[slug]) {
-                seen[slug] = true;
-                categories.push({
-                    name: name,
-                    slug: slug,
-                    posterUrl: catPoster,
-                    backdropUrl: catPoster
-                });
-            }
-        }
-    }
-
-    if (categories.length <= defaultEntries.length) {
-        var aRe = /<a\b([^>]*)>([\s\S]*?)<\/a>/gi;
-        var m;
-        while ((m = aRe.exec(src)) !== null) {
-            var href = PluginUtils.extractAttr(m[1], "href");
-            var text = PluginUtils.cleanText(m[2]);
-            if (href && text && href.indexOf("/category/") !== -1) {
-                var cSlug = extractSlugFromHref(href);
-                if (cSlug && !seen[cSlug]) {
-                    seen[cSlug] = true;
-                    categories.push({ name: text, slug: cSlug });
-                }
-            }
-        }
-    }
-
-    return JSON.stringify(categories);
-}
-
-function parseCountriesResponse(html) { return "[]"; }
-function parseYearsResponse(html) { return "[]"; }
+        var srcHtml = (html === null || html === undefined) ? "" : String
