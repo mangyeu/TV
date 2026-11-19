@@ -1,12 +1,13 @@
 var BASE_URL = "https://vlxx.net";
 var DEFAULT_SITE_REFERER = "https://vlxx.net/";
 var DEFAULT_EMBED_REFERER = "https://play.vlstream.net/";
+var DEFAULT_USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36";
 
 function getManifest() {
     return JSON.stringify({
         "id": "vlxx",
         "name": "VLXX",
-        "version": "1.0.5",
+        "version": "1.0.6",
         "baseUrl": BASE_URL,
         "iconUrl": "https://raw.githubusercontent.com/youngbi/repo/main/plugins/vlxx.ico",
         "isEnabled": true,
@@ -48,7 +49,7 @@ function getFilterConfig() {
 }
 
 // =============================================================================
-// URL BUILDERS
+// HELPERS
 // =============================================================================
 
 function resolveUrl(rawUrl, base) {
@@ -79,6 +80,73 @@ function cleanText(str) {
         .replace(/\s+/g, " ")
         .trim();
 }
+
+function unescapeCommon(str) {
+    return String(str || "")
+        .replace(/\\\//g, "/")
+        .replace(/\\u002F/gi, "/")
+        .replace(/\\u003A/gi, ":")
+        .replace(/\\u003F/gi, "?")
+        .replace(/\\u0026/gi, "&")
+        .replace(/\\u003D/gi, "=")
+        .replace(/\\"/g, '"');
+}
+
+function decodeBase64Safe(b64) {
+    try {
+        if (typeof atob === "function") {
+            return atob(b64);
+        }
+        var chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=";
+        var output = "";
+        var input = String(b64).replace(/[^A-Za-z0-9+/=]/g, "");
+        var i = 0;
+        while (i < input.length) {
+            var enc1 = chars.indexOf(input.charAt(i++));
+            var enc2 = chars.indexOf(input.charAt(i++));
+            var enc3 = chars.indexOf(input.charAt(i++));
+            var enc4 = chars.indexOf(input.charAt(i++));
+            var chr1 = (enc1 << 2) | (enc2 >> 4);
+            var chr2 = ((enc2 & 15) << 4) | (enc3 >> 2);
+            var chr3 = ((enc3 & 3) << 6) | enc4;
+            output += String.fromCharCode(chr1);
+            if (enc3 !== 64) output += String.fromCharCode(chr2);
+            if (enc4 !== 64) output += String.fromCharCode(chr3);
+        }
+        return output;
+    } catch (e) {
+        return "";
+    }
+}
+
+function buildStreamResult(streamUrl, referer, mimeType) {
+    var cleanUrl = String(streamUrl || "").trim();
+    if (!cleanUrl) {
+        return JSON.stringify({ url: "", isEmbed: false, headers: {} });
+    }
+    var resolved = resolveUrl(cleanUrl, BASE_URL);
+    var detectedMime = mimeType;
+    if (!detectedMime) {
+        if (/\.mp4(\?|#|$)/i.test(resolved)) {
+            detectedMime = "video/mp4";
+        } else {
+            detectedMime = "application/x-mpegURL";
+        }
+    }
+    return JSON.stringify({
+        url: resolved,
+        isEmbed: false,
+        mimeType: detectedMime,
+        headers: {
+            "Referer": referer || DEFAULT_EMBED_REFERER,
+            "User-Agent": DEFAULT_USER_AGENT
+        }
+    });
+}
+
+// =============================================================================
+// URL BUILDERS
+// =============================================================================
 
 function getUrlList(slug, filtersJson) {
     var filters = {};
@@ -120,9 +188,13 @@ function getUrlSearch(keyword, filtersJson) {
 
 // getUrlDetail: App gọi với episode.id
 // episode.id = canonical URL (có thể kèm #s2 cho server 2)
-// Trả về URL as-is (starts with http) -> App fetch trang detail
+// Trả về URL sạch (bỏ #s...) để fetch trang detail
 function getUrlDetail(slug) {
-    return resolveUrl(slug, BASE_URL);
+    if (!slug) return "";
+    var raw = String(slug).trim();
+    var hashIdx = raw.indexOf("#");
+    var cleanSlug = hashIdx !== -1 ? raw.substring(0, hashIdx) : raw;
+    return resolveUrl(cleanSlug, BASE_URL);
 }
 
 function getUrlCategories() { return ""; }
@@ -257,13 +329,13 @@ function parseMovieDetail(html) {
 
         var canonicalMatch = srcHtml.match(/<link[^>]*rel=["']canonical["'][^>]*href=["']([^"']+)["']/i)
             || srcHtml.match(/<meta[^>]*property=["']og:url["'][^>]*content=["']([^"']+)["']/i);
-        var pageUrl = canonicalMatch ? resolveUrl(canonicalMatch[1], BASE_URL) : "";
+        var pageUrl = canonicalMatch ? resolveUrl(canonicalMatch[1], BASE_URL) : BASE_URL;
 
-        var serverRegex = /onclick=["']server\((\d+)\s*,\s*(\d+)\)["']/gi;
+        var serverRegex = /server\((\d+)\s*,\s*(\d+)\)/gi;
         var srvMatch;
         while ((srvMatch = serverRegex.exec(srcHtml)) !== null) {
             var serverId = srvMatch[1];
-            if (!seenServers[serverId] && pageUrl) {
+            if (!seenServers[serverId]) {
                 seenServers[serverId] = true;
                 servers.push({
                     name: "Server #" + serverId,
@@ -276,7 +348,7 @@ function parseMovieDetail(html) {
             }
         }
 
-        if (servers.length === 0 && pageUrl) {
+        if (servers.length === 0) {
             servers.push({
                 name: "Server #1",
                 episodes: [{
@@ -309,103 +381,145 @@ function parseMovieDetail(html) {
     }
 }
 
-// parseEmbedResponse: Xử lý 2 loại response:
+// Trích xuất thông tin AJAX/embed từ trang detail khi người dùng chọn tập (episodeUrl có thể chứa #s1, #s2)
+function parseDetailResponse(html, episodeUrl) {
+    try {
+        var srcHtml = String(html || "");
+        var fullUrl = String(episodeUrl || "");
+        var hashMatch = fullUrl.match(/#s(\d+)/i);
+        var targetServer = hashMatch ? hashMatch[1] : "1";
+
+        // Tìm videoId từ onclick="server(1, 3105)" hoặc data-id="..."
+        var srvCallMatch = srcHtml.match(/server\(\s*\d+\s*,\s*(\d+)\s*\)/i);
+        var dataIdMatch = srcHtml.match(/data-id=["'](\d+)["']/i);
+        var videoId = srvCallMatch ? srvCallMatch[1] : (dataIdMatch ? dataIdMatch[1] : "");
+
+        // Tìm endpoint AJAX nếu có khai báo trong script
+        var ajaxUrlMatch = srcHtml.match(/url\s*:\s*["']([^"']*ajax[^"']*|[^"']*player[^"']*)["']/i);
+        var ajaxUrl = ajaxUrlMatch ? resolveUrl(ajaxUrlMatch[1], BASE_URL) : (BASE_URL + "/ajax/player");
+
+        // Nếu trang detail đã có sẵn iframe embed trực tiếp
+        var directIframeMatch = srcHtml.match(/<iframe[^>]*src=["']([^"']+)["'][^>]*>/i);
+        if (directIframeMatch && directIframeMatch[1]) {
+            return JSON.stringify({
+                url: resolveUrl(directIframeMatch[1], BASE_URL),
+                isEmbed: true,
+                headers: {
+                    "Referer": getRefererFromUrl(fullUrl, DEFAULT_SITE_REFERER),
+                    "User-Agent": DEFAULT_USER_AGENT
+                }
+            });
+        }
+
+        // Trả về thông tin request AJAX POST để host app thực hiện (nếu host app hỗ trợ)
+        if (videoId) {
+            return JSON.stringify({
+                url: ajaxUrl,
+                method: "POST",
+                isEmbed: true,
+                body: "id=" + encodeURIComponent(videoId) + "&server=" + encodeURIComponent(targetServer),
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+                    "X-Requested-With": "XMLHttpRequest",
+                    "Referer": getRefererFromUrl(fullUrl, DEFAULT_SITE_REFERER),
+                    "User-Agent": DEFAULT_USER_AGENT
+                }
+            });
+        }
+
+        return JSON.stringify({ url: "", isEmbed: false, headers: {} });
+    } catch (e) {
+        return JSON.stringify({ url: "", isEmbed: false, headers: {} });
+    }
+}
+
+// parseEmbedResponse:
 // Depth 1 - AJAX JSON: {"player":"<iframe src=\"...\">"} -> trích iframe URL
-// Depth 2 - Embed HTML: JWPlayer sources với .vl URL -> trích stream URL
+// Depth 2 - Embed HTML: JWPlayer / stream (.vl, .m3u8, .mp4) -> trích stream URL
 function parseEmbedResponse(html, url) {
     try {
         var rawHtml = String(html || "");
         var embedReferer = getRefererFromUrl(url, DEFAULT_EMBED_REFERER);
 
         // === CASE 1: AJAX JSON response (chứa "player" key) ===
-        if (rawHtml.indexOf('"player"') !== -1) {
+        if (rawHtml.indexOf('"player"') !== -1 || rawHtml.indexOf("'player'") !== -1) {
             try {
                 var jsonObj = JSON.parse(rawHtml);
                 if (jsonObj && jsonObj.player) {
-                    var playerHtml = String(jsonObj.player);
+                    var playerHtml = unescapeCommon(String(jsonObj.player));
                     var srcMatch = playerHtml.match(/src=["']([^"']+)["']/i);
                     if (srcMatch && srcMatch[1]) {
                         return JSON.stringify({
                             url: resolveUrl(srcMatch[1], BASE_URL),
                             isEmbed: true,
                             headers: {
-                                "Referer": DEFAULT_SITE_REFERER
+                                "Referer": DEFAULT_SITE_REFERER,
+                                "User-Agent": DEFAULT_USER_AGENT
                             }
                         });
                     }
                 }
             } catch (parseErr) {
-                var cleaned = rawHtml.replace(/\\\//g, "/");
-                var iframeMatch = cleaned.match(/src=(?:\\+)?["'](https?:\/\/[^"'\\\s<>]+)(?:\\+)?["']/i);
+                var cleaned = unescapeCommon(rawHtml);
+                var iframeMatch = cleaned.match(/src=(?:\\+)?["'](https?:\/\/[^"'\\\s<>]+|\/\/[^"'\\\s<>]+)(?:\\+)?["']/i);
                 if (iframeMatch && iframeMatch[1]) {
                     return JSON.stringify({
-                        url: iframeMatch[1].trim(),
+                        url: resolveUrl(iframeMatch[1], BASE_URL),
                         isEmbed: true,
                         headers: {
-                            "Referer": DEFAULT_SITE_REFERER
+                            "Referer": DEFAULT_SITE_REFERER,
+                            "User-Agent": DEFAULT_USER_AGENT
                         }
                     });
                 }
             }
         }
 
-        // === CASE 2: Embed page HTML (JWPlayer with .vl sources) ===
-        var normalizedHtml = rawHtml.replace(/\\\//g, "/");
+        // === CASE 2: Embed page HTML (JWPlayer / .vl / .m3u8 / .mp4) ===
+        var normalizedHtml = unescapeCommon(rawHtml);
 
-        var fileMatch = normalizedHtml.match(/["']?file["']?\s*:\s*["'](https?[^"']+\.vl[^"']*)["']/i);
-        if (fileMatch && fileMatch[1]) {
-            return JSON.stringify({
-                url: fileMatch[1].trim(),
-                isEmbed: false,
-                mimeType: "application/x-mpegURL",
-                headers: {
-                    "Referer": embedReferer
-                }
-            });
+        // 2a. Tìm trực tiếp trong file / sources / URL có .vl, .m3u8, .mp4
+        var directStreamMatch =
+            normalizedHtml.match(/["']?file["']?\s*:\s*["'](https?:\/\/[^"']+\.(?:vl|m3u8|mp4)[^"']*)["']/i)
+            || normalizedHtml.match(/(https?:\/\/[^\s"'<>\\]+\.(?:vl|m3u8|mp4)[^\s"'<>\\]*)/i);
+
+        if (directStreamMatch && directStreamMatch[1]) {
+            return buildStreamResult(directStreamMatch[1], embedReferer, "");
         }
 
-        var sourcesMatch = normalizedHtml.match(/["']?sources["']?\s*:\s*(\[[\s\S]*?\])/i);
+        // 2b. Thử parse mảng sources của JWPlayer
+        var sourcesMatch = normalizedHtml.match(/["']?sources["']?\s*:\s*(\[[\s\S]*?\])\s*(?:,|;|\})/i);
         if (sourcesMatch && sourcesMatch[1]) {
             var rawSources = sourcesMatch[1];
             try {
                 var sources = JSON.parse(rawSources);
                 if (sources && sources.length > 0 && sources[0].file) {
-                    return JSON.stringify({
-                        url: String(sources[0].file).trim(),
-                        isEmbed: false,
-                        mimeType: sources[0].type === "hls" ? "application/x-mpegURL" : "",
-                        headers: {
-                            "Referer": embedReferer
-                        }
-                    });
+                    var mimeFromType = sources[0].type === "hls" ? "application/x-mpegURL" : "";
+                    return buildStreamResult(sources[0].file, embedReferer, mimeFromType);
                 }
             } catch (e) {
                 var looseFileMatch = rawSources.match(/["']?file["']?\s*:\s*["']([^"']+)["']/i);
                 var looseTypeMatch = rawSources.match(/["']?type["']?\s*:\s*["']([^"']+)["']/i);
                 if (looseFileMatch && looseFileMatch[1]) {
                     var isHls = looseTypeMatch && looseTypeMatch[1].toLowerCase() === "hls";
-                    return JSON.stringify({
-                        url: looseFileMatch[1].trim(),
-                        isEmbed: false,
-                        mimeType: isHls ? "application/x-mpegURL" : "",
-                        headers: {
-                            "Referer": embedReferer
-                        }
-                    });
+                    return buildStreamResult(
+                        looseFileMatch[1],
+                        embedReferer,
+                        isHls ? "application/x-mpegURL" : ""
+                    );
                 }
             }
         }
 
-        var vlMatch = normalizedHtml.match(/(https?:\/\/[^\s"'<>\\]+\.vl[^\s"'<>\\]*)/i);
-        if (vlMatch && vlMatch[1]) {
-            return JSON.stringify({
-                url: vlMatch[1].trim(),
-                isEmbed: false,
-                mimeType: "application/x-mpegURL",
-                headers: {
-                    "Referer": embedReferer
-                }
-            });
+        // 2c. Thử giải mã các chuỗi Base64 dài nếu trang nhúng link stream dưới dạng Base64
+        var b64Regex = /["']([A-Za-z0-9+/=]{24,})["']/g;
+        var b64Match;
+        while ((b64Match = b64Regex.exec(normalizedHtml)) !== null) {
+            var decoded = unescapeCommon(decodeBase64Safe(b64Match[1]));
+            var innerStream = decoded.match(/(https?:\/\/[^\s"'<>\\]+\.(?:vl|m3u8|mp4)[^\s"'<>\\]*)/i);
+            if (innerStream && innerStream[1]) {
+                return buildStreamResult(innerStream[1], embedReferer, "");
+            }
         }
 
         return JSON.stringify({ url: "", isEmbed: false, headers: {} });
