@@ -6,8 +6,8 @@
         "name": "TVHay",
         "version": "1.2.6",
         "baseUrl": "https://tvhay.buzz",
-            "scriptUrl": "https://raw.githubusercontent.com/mangyeu/TV/refs/heads/main/plugin_film/phimhdcss.js",
-            "iconUrl": "https://raw.githubusercontent.com/mangyeu/TV/refs/heads/main/plugin_film/favicon.ico"
+        "scriptUrl": "https://raw.githubusercontent.com/mangyeu/TV/refs/heads/main/plugin_film/phimhdcss.js",
+        "iconUrl": "https://raw.githubusercontent.com/mangyeu/TV/refs/heads/main/plugin_film/favicon.ico"
         },
         {
         "id": "phimmoichillz",
