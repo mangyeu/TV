@@ -14,7 +14,7 @@ function getManifest() {
     return JSON.stringify({
         "id": "javhd",
         "name": "JavHD",
-        "version": "1.0.8",
+        "version": "1.0.9",
         "baseUrl": BASE_URL,
         "iconUrl": BASE_URL + "/favicon.ico",
         "isEnabled": true,
@@ -187,32 +187,6 @@ var PluginUtils = {
             }
         }
         return output;
-    },
-
-    getServerPriority: function (urlOrName) {
-        var s = String(urlOrName || "").toLowerCase();
-        if (s.indexOf(".m3u8") !== -1 || s.indexOf(".mp4") !== -1) return 100;
-        if (
-            s.indexOf("streamwish") !== -1 ||
-            s.indexOf("filemoon") !== -1 ||
-            s.indexOf("voe") !== -1 ||
-            s.indexOf("vidhide") !== -1 ||
-            s.indexOf("lulustream") !== -1 ||
-            s.indexOf("dood") !== -1
-        ) return 80;
-        if (s.indexOf("embed") !== -1 || s.indexOf("/e/") !== -1 || s.indexOf("/v/") !== -1) return 50;
-        return 10;
-    },
-
-    prioritizeServers: function (servers) {
-        if (!servers || !servers.length) return servers;
-        return servers.slice().sort(function (a, b) {
-            var urlA = (a.episodes && a.episodes[0]) ? a.episodes[0].id : "";
-            var urlB = (b.episodes && b.episodes[0]) ? b.episodes[0].id : "";
-            var scoreA = PluginUtils.getServerPriority(urlA + " " + (a.name || ""));
-            var scoreB = PluginUtils.getServerPriority(urlB + " " + (b.name || ""));
-            return scoreB - scoreA;
-        });
     },
 
     unwrapPayload: function (rawInput) {
@@ -573,20 +547,22 @@ function parseMovieDetail(html) {
         var description = descMatch ? PluginUtils.cleanText(descMatch[1]) : "";
 
         var servers = [];
-        var seenUrls = {};
+        var serverIndex = 0;
 
-        var btnRegex = /<button([^>]*class=["'][^"']*button_choice_server[^"']*["'][^>]*)>/gi;
+        // Giữ nguyên thứ tự và tên nút chọn server như trên trang web
+        var fullBtnRegex = /<button([^>]*class=["'][^"']*button_choice_server[^"']*["'][^>]*)>([\s\S]*?)<\/button>/gi;
         var btnMatch;
-        while ((btnMatch = btnRegex.exec(rawHtml)) !== null) {
+        while ((btnMatch = fullBtnRegex.exec(rawHtml)) !== null) {
             var btnAttrs = btnMatch[1];
+            var btnInnerText = PluginUtils.cleanText(btnMatch[2]);
             var b64url = PluginUtils.extractAttr(btnAttrs, "data-embed");
-            var serverName = PluginUtils.cleanText(PluginUtils.extractAttr(btnAttrs, "data-name")) || "Server";
+            var rawName = PluginUtils.cleanText(PluginUtils.extractAttr(btnAttrs, "data-name")) || btnInnerText;
             var decodedUrl = PluginUtils.normalizeUrl(PluginUtils.decodeBase64Safe(b64url));
 
-            if (decodedUrl && !seenUrls[decodedUrl]) {
-                seenUrls[decodedUrl] = true;
+            if (decodedUrl) {
+                serverIndex++;
                 servers.push({
-                    name: serverName,
+                    name: rawName || ("Server " + serverIndex),
                     episodes: [{
                         id: decodedUrl,
                         name: "Full",
@@ -600,10 +576,9 @@ function parseMovieDetail(html) {
             var mainPlayerMatch = rawHtml.match(/<(?:iframe|video|embed)[^>]*id=["']main-player["'][^>]*>/i);
             if (mainPlayerMatch) {
                 var embedUrl = PluginUtils.normalizeUrl(PluginUtils.extractAttr(mainPlayerMatch[0], "src"));
-                if (embedUrl && !seenUrls[embedUrl]) {
-                    seenUrls[embedUrl] = true;
+                if (embedUrl) {
                     servers.push({
-                        name: "Embed Server",
+                        name: "Server 1",
                         episodes: [{
                             id: embedUrl,
                             name: "Full",
@@ -620,7 +595,7 @@ function parseMovieDetail(html) {
                 var fallbackEmbed = PluginUtils.normalizeUrl(ultimateMatch[1]);
                 if (fallbackEmbed) {
                     servers.push({
-                        name: "Default Embed",
+                        name: "Server 1",
                         episodes: [{
                             id: fallbackEmbed,
                             name: "Full",
@@ -633,15 +608,13 @@ function parseMovieDetail(html) {
 
         if (servers.length === 0) {
             servers.push({
-                name: "Unknown",
+                name: "Server 1",
                 episodes: [{
                     id: "",
                     name: "Full",
                     slug: "full"
                 }]
             });
-        } else {
-            servers = PluginUtils.prioritizeServers(servers);
         }
 
         var thumbMatch = rawHtml.match(/<meta[^>]*property=["']og:image["'][^>]*content=["']([^"']+)["']/i);
