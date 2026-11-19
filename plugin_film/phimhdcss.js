@@ -11,7 +11,7 @@ function getManifest() {
     return JSON.stringify({
         "id": "tvhay",
         "name": "TVHay",
-        "version": "1.2.1",
+        "version": "1.2.2",
         "baseUrl": BASE_URL,
         "iconUrl": BASE_URL + "/favicon.png",
         "isEnabled": true,
