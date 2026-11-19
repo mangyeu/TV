@@ -9,75 +9,66 @@ var IDOLS_MENU_HTML = [
     '<li class="dropdown dropdown-large">',
     '  <a href="#" class="dropdown-toggle" data-toggle="dropdown"><i class="fa fa-star"></i> Idols Av<b class="caret"></b></a>',
     '  <ul class="dropdown-menu dropdown-menu-large row">',
-    '    <li class="col-sm-4">',
-    '      <ul>',
-    '        <li class="dropdown-header" style="color: #000;">Top Idols</li>',
-    '        <li class="divider"></li>',
-    '        <li><a href="https://javhdz.today/pornstar/hatano-yui/"><i class="fa fa-caret-right"></i> Hatano Yui</a></li>',
-    '        <li><a href="https://javhdz.today/pornstar/aika/"><i class="fa fa-caret-right"></i> Aika</a></li>',
-    '        <li><a href="https://javhdz.today/pornstar/hasumi-kurea/"><i class="fa fa-caret-right"></i> Hasumi Kurea</a></li>',
-    '        <li><a href="https://javhdz.today/pornstar/iioka-kanako/"><i class="fa fa-caret-right"></i> Iioka Kanako</a></li>',
-    '        <li><a href="https://javhdz.today/pornstar/nagisa-mitsuki/"><i class="fa fa-caret-right"></i> Nagisa Mitsuki</a></li>',
-    '        <li><a href="https://javhdz.today/pornstar/shinoda-yuu/"><i class="fa fa-caret-right"></i> Shinoda Yuu</a></li>',
-    '        <li><a href="https://javhdz.today/pornstar/matsumoto-ichika/"><i class="fa fa-caret-right"></i> Matsumoto Ichika</a></li>',
-    '        <li><a href="https://javhdz.today/pornstar/hamasaki-mao/"><i class="fa fa-caret-right"></i> Hamasaki Mao</a></li>',
-    '        <li><a href="https://javhdz.today/pornstar/haruna-hana/"><i class="fa fa-caret-right"></i> Haruna Hana</a></li>',
-    '        <li><a href="https://javhdz.today/pornstar/mitani-akari/"><i class="fa fa-caret-right"></i> Mitani Akari</a></li>',
-    '        <li><a href="https://javhdz.today/pornstar/ootsuki-hibiki/"><i class="fa fa-caret-right"></i> Ootsuki Hibiki</a></li>',
-    '        <li><a href="https://javhdz.today/pornstar/uehara-ai/"><i class="fa fa-caret-right"></i> Uehara Ai</a></li>',
-    '        <li><a href="https://javhdz.today/pornstar/seina-arisa/"><i class="fa fa-caret-right"></i> Seina Arisa</a></li>',
-    '        <li><a href="https://javhdz.today/pornstar/hachino-tsubasa/"><i class="fa fa-caret-right"></i> Hachino Tsubasa</a></li>',
-    '        <li><a href="https://javhdz.today/pornstar/yayoi-mizuki/"><i class="fa fa-caret-right"></i> Yayoi Mizuki</a></li>',
-    '        <li><a href="https://javhdz.today/pornstar/kimijima-mio/"><i class="fa fa-caret-right"></i> Kimijima Mio</a></li>',
-    '        <li><a href="https://javhdz.today/pornstar"><i class="fa fa-caret-right"></i> <strong>All Idols Av</strong></a></li>',
-    '      </ul>',
-    '    </li>',
-    '    <li class="col-sm-4">',
-    '      <ul>',
-    '        <li class="dropdown-header" style="color: #000;">Newest Idols AV</li>',
-    '        <li class="divider"></li>',
-    '        <li><a href="https://javhdz.today/pornstar/kanade-miyu/" title="Kanade Miyu "><i class="fa fa-caret-right"></i> Kanade Miyu</a></li>',
-    '        <li><a href="https://javhdz.today/pornstar/hana-arisu/" title="Hana Arisu "><i class="fa fa-caret-right"></i> Hana Arisu</a></li>',
-    '        <li><a href="https://javhdz.today/pornstar/kanamatsu-toho/" title="Kanamatsu Toho "><i class="fa fa-caret-right"></i> Kanamatsu Toho</a></li>',
-    '        <li><a href="https://javhdz.today/pornstar/yu-sasamoto/" title="Yu Sasamoto "><i class="fa fa-caret-right"></i> Yu Sasamoto</a></li>',
-    '        <li><a href="https://javhdz.today/pornstar/hanazato-akari/" title="Hanazato Akari "><i class="fa fa-caret-right"></i> Hanazato Akari</a></li>',
-    '        <li><a href="https://javhdz.today/pornstar/yui-mita/" title="Yui Mita "><i class="fa fa-caret-right"></i> Yui Mita</a></li>',
-    '        <li><a href="https://javhdz.today/pornstar/riria-hido/" title="Riria Hido "><i class="fa fa-caret-right"></i> Riria Hido</a></li>',
-    '        <li><a href="https://javhdz.today/pornstar/marina-sina/" title="Marina Sina "><i class="fa fa-caret-right"></i> Marina Sina</a></li>',
-    '        <li><a href="https://javhdz.today/pornstar/rin-chibana/" title="Rin Chibana "><i class="fa fa-caret-right"></i> Rin Chibana</a></li>',
-    '        <li><a href="https://javhdz.today/pornstar/yui-tsubaki/" title="Yui Tsubaki "><i class="fa fa-caret-right"></i> Yui Tsubaki</a></li>',
-    '        <li><a href="https://javhdz.today/pornstar/yurina-shoji/" title="Yurina Shoji "><i class="fa fa-caret-right"></i> Yurina Shoji</a></li>',
-    '        <li><a href="https://javhdz.today/pornstar/nao-hayakawa/" title="Nao Hayakawa "><i class="fa fa-caret-right"></i> Nao Hayakawa</a></li>',
-    '        <li><a href="https://javhdz.today/pornstar/hikari-mizusumi/" title="Hikari Mizusumi "><i class="fa fa-caret-right"></i> Hikari Mizusumi</a></li>',
-    '        <li><a href="https://javhdz.today/pornstar/saki-no-kanna/" title="Saki no Kanna "><i class="fa fa-caret-right"></i> Saki no Kanna</a></li>',
-    '        <li><a href="https://javhdz.today/pornstar/yurina-momosaki/" title="Yurina Momosaki "><i class="fa fa-caret-right"></i> Yurina Momosaki</a></li>',
-    '        <li><a href="https://javhdz.today/pornstar/hasmi-claire/" title="Hasmi Claire "><i class="fa fa-caret-right"></i> Hasmi Claire</a></li>',
-    '        <li><a href="https://javhdz.today/pornstar/yui-higa/" title="Yui Higa "><i class="fa fa-caret-right"></i> Yui Higa</a></li>',
-    '      </ul>',
-    '    </li>',
-    '    <li class="col-sm-4">',
-    '      <ul>',
-    '        <li class="dropdown-header" style="color: #000;">Most Popular Idols AV</li>',
-    '        <li class="divider"></li>',
-    '        <li><a href="https://javhdz.today/pornstar/yumi-kazama/" title="Yumi Kazama "><i class="fa fa-caret-right"></i> Yumi Kazama</a></li>',
-    '        <li><a href="https://javhdz.today/pornstar/yui-hatano/" title="Yui Hatano"><i class="fa fa-caret-right"></i> Yui Hatano</a></li>',
-    '        <li><a href="https://javhdz.today/pornstar/hana-haruna/" title="Hana Haruna "><i class="fa fa-caret-right"></i> Hana Haruna</a></li>',
-    '        <li><a href="https://javhdz.today/pornstar/eimi-fukada/" title="Eimi Fukada "><i class="fa fa-caret-right"></i> Eimi Fukada</a></li>',
-    '        <li><a href="https://javhdz.today/pornstar/reiko-kobayakawa/" title="Reiko Kobayakawa "><i class="fa fa-caret-right"></i> Reiko Kobayakawa</a></li>',
-    '        <li><a href="https://javhdz.today/pornstar/asahi-mizuno/" title="Asahi Mizuno "><i class="fa fa-caret-right"></i> Asahi Mizuno</a></li>',
-    '        <li><a href="https://javhdz.today/pornstar/hitomi-tanaka/" title="Hitomi Tanaka "><i class="fa fa-caret-right"></i> Hitomi Tanaka</a></li>',
-    '        <li><a href="https://javhdz.today/pornstar/maria-nagai/" title="Maria Nagai "><i class="fa fa-caret-right"></i> Maria Nagai</a></li>',
-    '        <li><a href="https://javhdz.today/pornstar/ai-sayama/" title="Ai Sayama "><i class="fa fa-caret-right"></i> Ai Sayama</a></li>',
-    '        <li><a href="https://javhdz.today/pornstar/mako-oda/" title="Mako Oda "><i class="fa fa-caret-right"></i> Mako Oda</a></li>',
-    '        <li><a href="https://javhdz.today/pornstar/aimi-yoshikawa/" title="Aimi Yoshikawa "><i class="fa fa-caret-right"></i> Aimi Yoshikawa</a></li>',
-    '        <li><a href="https://javhdz.today/pornstar/mina-kitano/" title="Mina Kitano "><i class="fa fa-caret-right"></i> Mina Kitano</a></li>',
-    '        <li><a href="https://javhdz.today/pornstar/ai-uehara/" title="Ai Uehara "><i class="fa fa-caret-right"></i> Ai Uehara</a></li>',
-    '        <li><a href="https://javhdz.today/pornstar/anri-okita/" title="Anri Okita "><i class="fa fa-caret-right"></i> Anri Okita</a></li>',
-    '        <li><a href="https://javhdz.today/pornstar/kaho-shibuya/" title="Kaho Shibuya "><i class="fa fa-caret-right"></i> Kaho Shibuya</a></li>',
-    '        <li><a href="https://javhdz.today/pornstar/yua-mikami/" title="Yua Mikami "><i class="fa fa-caret-right"></i> Yua Mikami</a></li>',
-    '        <li><a href="https://javhdz.today/pornstar/yu-shinoda/" title="Yu Shinoda"><i class="fa fa-caret-right"></i> Yu Shinoda</a></li>',
-    '      </ul>',
-    '    </li>',
+    '    <li class="col-sm-4"><ul>',
+    '      <li class="dropdown-header" style="color: #000;">Top Idols</li><li class="divider"></li>',
+    '      <li><a href="https://javhdz.today/pornstar/hatano-yui/"><i class="fa fa-caret-right"></i> Hatano Yui</a></li>',
+    '      <li><a href="https://javhdz.today/pornstar/aika/"><i class="fa fa-caret-right"></i> Aika</a></li>',
+    '      <li><a href="https://javhdz.today/pornstar/hasumi-kurea/"><i class="fa fa-caret-right"></i> Hasumi Kurea</a></li>',
+    '      <li><a href="https://javhdz.today/pornstar/iioka-kanako/"><i class="fa fa-caret-right"></i> Iioka Kanako</a></li>',
+    '      <li><a href="https://javhdz.today/pornstar/nagisa-mitsuki/"><i class="fa fa-caret-right"></i> Nagisa Mitsuki</a></li>',
+    '      <li><a href="https://javhdz.today/pornstar/shinoda-yuu/"><i class="fa fa-caret-right"></i> Shinoda Yuu</a></li>',
+    '      <li><a href="https://javhdz.today/pornstar/matsumoto-ichika/"><i class="fa fa-caret-right"></i> Matsumoto Ichika</a></li>',
+    '      <li><a href="https://javhdz.today/pornstar/hamasaki-mao/"><i class="fa fa-caret-right"></i> Hamasaki Mao</a></li>',
+    '      <li><a href="https://javhdz.today/pornstar/haruna-hana/"><i class="fa fa-caret-right"></i> Haruna Hana</a></li>',
+    '      <li><a href="https://javhdz.today/pornstar/mitani-akari/"><i class="fa fa-caret-right"></i> Mitani Akari</a></li>',
+    '      <li><a href="https://javhdz.today/pornstar/ootsuki-hibiki/"><i class="fa fa-caret-right"></i> Ootsuki Hibiki</a></li>',
+    '      <li><a href="https://javhdz.today/pornstar/uehara-ai/"><i class="fa fa-caret-right"></i> Uehara Ai</a></li>',
+    '      <li><a href="https://javhdz.today/pornstar/seina-arisa/"><i class="fa fa-caret-right"></i> Seina Arisa</a></li>',
+    '      <li><a href="https://javhdz.today/pornstar/hachino-tsubasa/"><i class="fa fa-caret-right"></i> Hachino Tsubasa</a></li>',
+    '      <li><a href="https://javhdz.today/pornstar/yayoi-mizuki/"><i class="fa fa-caret-right"></i> Yayoi Mizuki</a></li>',
+    '      <li><a href="https://javhdz.today/pornstar/kimijima-mio/"><i class="fa fa-caret-right"></i> Kimijima Mio</a></li>',
+    '      <li><a href="https://javhdz.today/pornstar"><i class="fa fa-caret-right"></i> <strong>All Idols Av</strong></a></li>',
+    '    </ul></li>',
+    '    <li class="col-sm-4"><ul>',
+    '      <li class="dropdown-header" style="color: #000;">Newest Idols AV</li><li class="divider"></li>',
+    '      <li><a href="https://javhdz.today/pornstar/kanade-miyu/" title="Kanade Miyu "><i class="fa fa-caret-right"></i> Kanade Miyu</a></li>',
+    '      <li><a href="https://javhdz.today/pornstar/hana-arisu/" title="Hana Arisu "><i class="fa fa-caret-right"></i> Hana Arisu</a></li>',
+    '      <li><a href="https://javhdz.today/pornstar/kanamatsu-toho/" title="Kanamatsu Toho "><i class="fa fa-caret-right"></i> Kanamatsu Toho</a></li>',
+    '      <li><a href="https://javhdz.today/pornstar/yu-sasamoto/" title="Yu Sasamoto "><i class="fa fa-caret-right"></i> Yu Sasamoto</a></li>',
+    '      <li><a href="https://javhdz.today/pornstar/hanazato-akari/" title="Hanazato Akari "><i class="fa fa-caret-right"></i> Hanazato Akari</a></li>',
+    '      <li><a href="https://javhdz.today/pornstar/yui-mita/" title="Yui Mita "><i class="fa fa-caret-right"></i> Yui Mita</a></li>',
+    '      <li><a href="https://javhdz.today/pornstar/riria-hido/" title="Riria Hido "><i class="fa fa-caret-right"></i> Riria Hido</a></li>',
+    '      <li><a href="https://javhdz.today/pornstar/marina-sina/" title="Marina Sina "><i class="fa fa-caret-right"></i> Marina Sina</a></li>',
+    '      <li><a href="https://javhdz.today/pornstar/rin-chibana/" title="Rin Chibana "><i class="fa fa-caret-right"></i> Rin Chibana</a></li>',
+    '      <li><a href="https://javhdz.today/pornstar/yui-tsubaki/" title="Yui Tsubaki "><i class="fa fa-caret-right"></i> Yui Tsubaki</a></li>',
+    '      <li><a href="https://javhdz.today/pornstar/yurina-shoji/" title="Yurina Shoji "><i class="fa fa-caret-right"></i> Yurina Shoji</a></li>',
+    '      <li><a href="https://javhdz.today/pornstar/nao-hayakawa/" title="Nao Hayakawa "><i class="fa fa-caret-right"></i> Nao Hayakawa</a></li>',
+    '      <li><a href="https://javhdz.today/pornstar/hikari-mizusumi/" title="Hikari Mizusumi "><i class="fa fa-caret-right"></i> Hikari Mizusumi</a></li>',
+    '      <li><a href="https://javhdz.today/pornstar/saki-no-kanna/" title="Saki no Kanna "><i class="fa fa-caret-right"></i> Saki no Kanna</a></li>',
+    '      <li><a href="https://javhdz.today/pornstar/yurina-momosaki/" title="Yurina Momosaki "><i class="fa fa-caret-right"></i> Yurina Momosaki</a></li>',
+    '      <li><a href="https://javhdz.today/pornstar/hasmi-claire/" title="Hasmi Claire "><i class="fa fa-caret-right"></i> Hasmi Claire</a></li>',
+    '      <li><a href="https://javhdz.today/pornstar/yui-higa/" title="Yui Higa "><i class="fa fa-caret-right"></i> Yui Higa</a></li>',
+    '    </ul></li>',
+    '    <li class="col-sm-4"><ul>',
+    '      <li class="dropdown-header" style="color: #000;">Most Popular Idols AV</li><li class="divider"></li>',
+    '      <li><a href="https://javhdz.today/pornstar/yumi-kazama/" title="Yumi Kazama "><i class="fa fa-caret-right"></i> Yumi Kazama</a></li>',
+    '      <li><a href="https://javhdz.today/pornstar/yui-hatano/" title="Yui Hatano"><i class="fa fa-caret-right"></i> Yui Hatano</a></li>',
+    '      <li><a href="https://javhdz.today/pornstar/hana-haruna/" title="Hana Haruna "><i class="fa fa-caret-right"></i> Hana Haruna</a></li>',
+    '      <li><a href="https://javhdz.today/pornstar/eimi-fukada/" title="Eimi Fukada "><i class="fa fa-caret-right"></i> Eimi Fukada</a></li>',
+    '      <li><a href="https://javhdz.today/pornstar/reiko-kobayakawa/" title="Reiko Kobayakawa "><i class="fa fa-caret-right"></i> Reiko Kobayakawa</a></li>',
+    '      <li><a href="https://javhdz.today/pornstar/asahi-mizuno/" title="Asahi Mizuno "><i class="fa fa-caret-right"></i> Asahi Mizuno</a></li>',
+    '      <li><a href="https://javhdz.today/pornstar/hitomi-tanaka/" title="Hitomi Tanaka "><i class="fa fa-caret-right"></i> Hitomi Tanaka</a></li>',
+    '      <li><a href="https://javhdz.today/pornstar/maria-nagai/" title="Maria Nagai "><i class="fa fa-caret-right"></i> Maria Nagai</a></li>',
+    '      <li><a href="https://javhdz.today/pornstar/ai-sayama/" title="Ai Sayama "><i class="fa fa-caret-right"></i> Ai Sayama</a></li>',
+    '      <li><a href="https://javhdz.today/pornstar/mako-oda/" title="Mako Oda "><i class="fa fa-caret-right"></i> Mako Oda</a></li>',
+    '      <li><a href="https://javhdz.today/pornstar/aimi-yoshikawa/" title="Aimi Yoshikawa "><i class="fa fa-caret-right"></i> Aimi Yoshikawa</a></li>',
+    '      <li><a href="https://javhdz.today/pornstar/mina-kitano/" title="Mina Kitano "><i class="fa fa-caret-right"></i> Mina Kitano</a></li>',
+    '      <li><a href="https://javhdz.today/pornstar/ai-uehara/" title="Ai Uehara "><i class="fa fa-caret-right"></i> Ai Uehara</a></li>',
+    '      <li><a href="https://javhdz.today/pornstar/anri-okita/" title="Anri Okita "><i class="fa fa-caret-right"></i> Anri Okita</a></li>',
+    '      <li><a href="https://javhdz.today/pornstar/kaho-shibuya/" title="Kaho Shibuya "><i class="fa fa-caret-right"></i> Kaho Shibuya</a></li>',
+    '      <li><a href="https://javhdz.today/pornstar/yua-mikami/" title="Yua Mikami "><i class="fa fa-caret-right"></i> Yua Mikami</a></li>',
+    '      <li><a href="https://javhdz.today/pornstar/yu-shinoda/" title="Yu Shinoda"><i class="fa fa-caret-right"></i> Yu Shinoda</a></li>',
+    '    </ul></li>',
     '  </ul>',
     '</li>'
 ].join("\n");
@@ -86,7 +77,7 @@ function getManifest() {
     return JSON.stringify({
         "id": "javhd",
         "name": "JavHD",
-        "version": "1.0.7",
+        "version": "1.0.8",
         "baseUrl": BASE_URL,
         "iconUrl": BASE_URL + "/favicon.ico",
         "isEnabled": true,
@@ -123,7 +114,6 @@ function parseIdolsMenuHtml(html) {
     var items = [];
     var seen = {};
 
-    // Tách từng cột <li class="col-sm-4"> để gán nhóm (Top Idols / Newest Idols AV / Most Popular Idols AV)
     var colParts = src.split(/<li[^>]*class=["'][^"']*col-sm-4[^"']*["'][^>]*>/i);
     for (var c = 1; c < colParts.length; c++) {
         var colHtml = colParts[c];
@@ -167,12 +157,14 @@ function getIdolsList() {
 }
 
 function getFilterConfig() {
-    var idols = parseIdolsMenuHtml(IDOLS_MENU_HTML).map(function (idol) {
-        return {
-            name: idol.name + " (" + idol.group + ")",
-            value: idol.value
-        };
-    });
+    var rawIdols = parseIdolsMenuHtml(IDOLS_MENU_HTML);
+    var idolFilters = [];
+    for (var i = 0; i < rawIdols.length; i++) {
+        idolFilters.push({
+            name: rawIdols[i].name + " (" + rawIdols[i].group + ")",
+            value: rawIdols[i].value
+        });
+    }
 
     return JSON.stringify({
         sort: [
@@ -199,7 +191,7 @@ function getFilterConfig() {
             { name: "Nasty", value: "nasty" },
             { name: "Hardcore", value: "hardcore" }
         ],
-        idol: idols
+        idol: idolFilters
     });
 }
 
@@ -216,7 +208,7 @@ function getUrlList(slug, filtersJson) {
     }
 
     var page = parseInt(filters.page, 10) || 1;
-    var sortPath = (filters.sort && filters.sort !== 'recent') ? (filters.sort.replace(/^\/+|\/+$/g, '') + '/') : '';
+    var sortPath = (filters.sort && filters.sort !== 'recent') ? (String(filters.sort).replace(/^\/+|\/+$/g, '') + '/') : '';
 
     var chosenSlug = filters.idol || filters.category || slug || 'recent';
     var normalizedTarget = String(chosenSlug).replace(/^https?:\/\/[^/]+/i, '').replace(/^\/+|\/+$/g, '');
@@ -281,32 +273,38 @@ function getUrlYears() { return BASE_URL + "/"; }
 // =============================================================================
 
 var PluginUtils = {
+    trimStr: function (s) {
+        if (s === null || s === undefined) return "";
+        return String(s).replace(/^\s+|\s+$/g, "");
+    },
+
     cleanText: function (text) {
         if (!text) return "";
-        return String(text)
-            .replace(/<[^>]*>/g, "")
-            .replace(/&/g, "&")
-            .replace(/"/g, '"')
-            .replace(/'|'/g, "'")
-            .replace(/</g, "<")
-            .replace(/>/g, ">")
-            .replace(/–/g, "-")
-            .replace(/—/g, "--")
-            .replace(/‘|’/g, "'")
-            .replace(/“|”/g, '"')
-            .replace(/…/g, "...")
-            .replace(/ /g, " ")
-            .replace(/&#(\d+);/g, function (_, code) {
-                var num = parseInt(code, 10);
-                return isNaN(num) ? "" : String.fromCharCode(num);
-            })
-            .replace(/\s+/g, " ")
-            .trim();
+        return PluginUtils.trimStr(
+            String(text)
+                .replace(/<[^>]*>/g, "")
+                .replace(/&/g, "&")
+                .replace(/"/g, '"')
+                .replace(/'|'/g, "'")
+                .replace(/</g, "<")
+                .replace(/>/g, ">")
+                .replace(/–/g, "-")
+                .replace(/—/g, "--")
+                .replace(/‘|’/g, "'")
+                .replace(/“|”/g, '"')
+                .replace(/…/g, "...")
+                .replace(/ /g, " ")
+                .replace(/&#(\d+);/g, function (_, code) {
+                    var num = parseInt(code, 10);
+                    return isNaN(num) ? "" : String.fromCharCode(num);
+                })
+                .replace(/\s+/g, " ")
+        );
     },
 
     normalizeUrl: function (url) {
         if (!url) return "";
-        var u = String(url).trim();
+        var u = PluginUtils.trimStr(url);
         if (!u) return "";
         if (u.indexOf("//") === 0) return "https:" + u;
         if (u.indexOf("http") === 0) return u;
@@ -316,15 +314,13 @@ var PluginUtils = {
 
     decodeBase64: function (input) {
         if (!input) return "";
-        var b64url = String(input).trim().replace(/\s+/g, '');
+        var b64url = String(input).replace(/\s+/g, '');
         if (!b64url) return "";
         try {
             if (typeof atob === 'function') {
                 return atob(b64url);
             }
-        } catch (e) {
-            // Fallback to manual decode
-        }
+        } catch (e) { }
 
         var b64chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
         var decodedUrl = "";
@@ -347,30 +343,34 @@ var PluginUtils = {
         if (!tagHtml || !attrName) return "";
         var re = new RegExp(attrName + "\\s*=\\s*([\"'])([\\s\\S]*?)\\1", "i");
         var m = tagHtml.match(re);
-        return m ? m[2].trim() : "";
+        return m ? PluginUtils.trimStr(m[2]) : "";
     }
 };
 
 function parseListResponse(html) {
-    var responseHtml = html || "";
+    var responseHtml = (html === null || html === undefined) ? "" : String(html);
     var paginationHtml = "";
 
-    if (responseHtml.trim().indexOf('{') === 0) {
+    var trimmed = PluginUtils.trimStr(responseHtml);
+    if (trimmed.indexOf('{') === 0) {
         try {
-            var data = JSON.parse(responseHtml);
-            if (data && data.html) {
+            var data = JSON.parse(trimmed);
+            if (data && typeof data.html === "string") {
                 responseHtml = data.html;
                 if (data.pagination) {
-                    paginationHtml = data.pagination;
+                    paginationHtml = String(data.pagination);
                 }
             }
-        } catch (e) {
-            // Keep raw responseHtml
-        }
+        } catch (e) { }
     }
 
     var moviesMap = {};
     var parts = responseHtml.split(/<li[^>]*id=["']video-[^"']*["'][^>]*>/i);
+
+    // Fallback nếu site đổi sang <li class="...video..."> hoặc <div id="video-...">
+    if (parts.length <= 1) {
+        parts = responseHtml.split(/<(?:li|div)[^>]*(?:id=["']video-[^"']*["']|class=["'][^"']*video-item[^"']*["'])[^>]*>/i);
+    }
 
     for (var i = 1; i < parts.length; i++) {
         var itemHtml = parts[i];
@@ -381,10 +381,18 @@ function parseListResponse(html) {
         var aMatch;
         while ((aMatch = aRegex.exec(itemHtml)) !== null) {
             var attrs = aMatch[1];
-            if (attrs.indexOf('thumbnail') !== -1) {
-                fullUrl = PluginUtils.extractAttr(attrs, "href");
-                title = PluginUtils.extractAttr(attrs, "title");
-                break;
+            if (attrs.indexOf('thumbnail') !== -1 || !fullUrl) {
+                var hrefVal = PluginUtils.extractAttr(attrs, "href");
+                var titleVal = PluginUtils.extractAttr(attrs, "title");
+                if (attrs.indexOf('thumbnail') !== -1) {
+                    fullUrl = hrefVal;
+                    title = titleVal;
+                    break;
+                }
+                if (!fullUrl && hrefVal && hrefVal.indexOf("/video") !== -1) {
+                    fullUrl = hrefVal;
+                    if (!title) title = titleVal;
+                }
             }
         }
 
@@ -437,7 +445,7 @@ function parseListResponse(html) {
 
     var movies = [];
     for (var key in moviesMap) {
-        if (Object.prototype.hasOwnProperty.call(moviesMap, key)) {
+        if (moviesMap.hasOwnProperty(key)) {
             movies.push(moviesMap[key]);
         }
     }
@@ -513,7 +521,7 @@ function parseSearchResponse(html) {
 
 function parseMovieDetail(html) {
     try {
-        var srcHtml = html || "";
+        var srcHtml = (html === null || html === undefined) ? "" : String(html);
         var titleMatch = srcHtml.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i);
         var title = titleMatch ? PluginUtils.cleanText(titleMatch[1]) : "";
 
@@ -631,7 +639,7 @@ function parseMovieDetail(html) {
 
 function parseDetailResponse(html, fallbackUrl) {
     try {
-        var srcHtml = html || "";
+        var srcHtml = (html === null || html === undefined) ? "" : String(html);
         var hostUrl = PluginUtils.normalizeUrl(fallbackUrl || "");
 
         var mainPlayerStr = 'id="main-player"';
@@ -666,7 +674,7 @@ function parseDetailResponse(html, fallbackUrl) {
 
 function parseEmbedResponse(html, fallbackUrl) {
     try {
-        var srcHtml = html || "";
+        var srcHtml = (html === null || html === undefined) ? "" : String(html);
         var streamUrl = PluginUtils.normalizeUrl(fallbackUrl || "");
 
         var m3u8Match = srcHtml.match(/["'](https?:\/\/[^"'\s]+\.m3u8[^"'\s]*)["']/i);
@@ -694,3 +702,52 @@ function parseEmbedResponse(html, fallbackUrl) {
             subtitles: [],
             isEmbed: false
         });
+    }
+}
+
+function parseCategoriesResponse(html) {
+    var categories = [];
+    var seen = {};
+    var src = (html === null || html === undefined) ? "" : String(html);
+    var parts = src.split(/<li[^>]*id=["']category-[^"']*["'][^>]*>/i);
+
+    for (var i = 1; i < parts.length; i++) {
+        var itemHtml = parts[i];
+        var linkMatch = itemHtml.match(/href=["']\/([^"']+)[\/]?["']/i);
+        var nameMatch = itemHtml.match(/<div[^>]*class=["'][^"']*category-title[^"']*["'][^>]*>([\s\S]*?)<\/div>/i);
+
+        if (linkMatch && nameMatch) {
+            var slug = linkMatch[1].replace(/^\/+|\/+$/g, '');
+            var name = PluginUtils.cleanText(nameMatch[1]);
+            if (slug && name && !seen[slug]) {
+                seen[slug] = true;
+                categories.push({
+                    name: name,
+                    slug: slug
+                });
+            }
+        }
+    }
+
+    // Fallback nếu cấu trúc trang danh mục không có id="category-..."
+    if (categories.length === 0) {
+        var aRe = /<a\b([^>]*)>([\s\S]*?)<\/a>/gi;
+        var m;
+        while ((m = aRe.exec(src)) !== null) {
+            var href = PluginUtils.extractAttr(m[1], "href");
+            var text = PluginUtils.cleanText(m[2]);
+            if (href && text && href.indexOf("/category/") !== -1) {
+                var cSlug = href.replace(/^https?:\/\/[^/]+/i, '').replace(/^\/+|\/+$/g, '');
+                if (cSlug && !seen[cSlug]) {
+                    seen[cSlug] = true;
+                    categories.push({ name: text, slug: cSlug });
+                }
+            }
+        }
+    }
+
+    return JSON.stringify(categories);
+}
+
+function parseCountriesResponse(html) { return "[]"; }
+function parseYearsResponse(html) { return "[]"; }
