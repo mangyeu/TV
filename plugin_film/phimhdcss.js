@@ -679,4 +679,237 @@ function parseListResponse(htmlContent) {
 
                 var pAlt = /alt="([^"]*)"/i.exec(pImg[0]) || /title="([^"]*)"/i.exec(pCardMatch[0]);
                 var pTitle = pAlt ? stripTags(pAlt[1]) : stripTags(pInner);
-                if (!pTitle || pTitle.length
+                if (!pTitle || pTitle.length < 2) continue;
+
+                seenIds[pId] = true;
+                var pPoster = normalizeUrl(pImgSrc);
+                movies.push({
+                    id: pId,
+                    title: pTitle,
+                    posterUrl: pPoster,
+                    backdropUrl: pPoster,
+                    year: 0,
+                    quality: "",
+                    episode_current: "",
+                    lang: ""
+                });
+            }
+        }
+
+        log("parseListResponse parsed items: " + movies.length);
+
+        var totalPages = 1;
+        var pagePattern = /[?&]page=(\d+)/gi;
+        var pMatch;
+        while ((pMatch = pagePattern.exec(html)) !== null) {
+            var num = parseInt(pMatch[1], 10);
+            if (num > totalPages) totalPages = num;
+        }
+
+        var currentPage = 1;
+        var curMatch = /<a[^>]*class="[^"]*current[^"]*"[^>]*>(\d+)<\/a>/i.exec(html) || /<span[^>]*class="[^"]*current[^"]*"[^>]*>(\d+)<\/span>/i.exec(html);
+        if (curMatch) currentPage = parseInt(curMatch[1], 10) || 1;
+
+        return JSON.stringify({
+            items: movies,
+            pagination: {
+                currentPage: currentPage,
+                totalPages: totalPages,
+                totalItems: movies.length > 0 ? Math.max(movies.length, totalPages * 20) : 0,
+                itemsPerPage: 20
+            }
+        });
+    } catch (error) {
+        log("parseListResponse error: " + error);
+        return JSON.stringify({ items: [], pagination: { currentPage: 1, totalPages: 1, totalItems: 0, itemsPerPage: 20 } });
+    }
+}
+
+function parseSearchResponse(htmlContent) {
+    return parseListResponse(htmlContent);
+}
+
+function parseMovieDetail(htmlContent) {
+    try {
+        var html = String(htmlContent || "");
+        var posterUrl = "";
+        var ogImgMatch = /<meta[^>]+property="og:image"[^>]+content="([^"]+)"/i.exec(html);
+        if (ogImgMatch) posterUrl = normalizeUrl(ogImgMatch[1]);
+
+        var h1Match = /<h1[^>]*class="[^"]*movie-h1[^"]*"[^>]*>([\s\S]*?)<\/h1>/i.exec(html);
+        if (!h1Match) h1Match = /<h1[^>]*>([\s\S]*?)<\/h1>/i.exec(html);
+        var rawH1 = h1Match ? stripTags(h1Match[1]) : "";
+
+        var h2Match = /<h2[^>]*class="[^"]*movie-h2[^"]*"[^>]*>([\s\S]*?)<\/h2>/i.exec(html);
+        var rawH2 = h2Match ? stripTags(h2Match[1]) : "";
+
+        var year = 0;
+        var yearMatch = /\((\d{4})\)/.exec(rawH2) || /\b(19\d{2}|20\d{2})\b/.exec(rawH2);
+        if (yearMatch) year = parseInt(yearMatch[1], 10) || 0;
+
+        var originalTitle = rawH2.replace(/\s*\(\d{4}\)\s*$/, "").trim();
+        var title = rawH1
+            .replace(/\s+TẬP\s+Tập\s+\d+.*$/i, "")
+            .replace(/\s+TẬP\s+\d+.*$/i, "")
+            .replace(/\s+Tập\s+\d+.*$/i, "")
+            .replace(/\s+-\s+\d+\s*\[.*$/i, "")
+            .replace(/\s+(?:VIETSUB|THUYẾT MINH|THUYET MINH|LỒNG TIẾNG|LONG TIENG)\s*$/i, "")
+            .trim() || rawH1;
+
+        var descMatch = /<div[^>]*class="[^"]*movie-desc[^"]*"[^>]*>([\s\S]*?)<\/div>/i.exec(html);
+        var description = descMatch ? stripTags(descMatch[1]) : "";
+
+        var categories = [];
+        var catPattern = /<a[^>]+href="[^"]*\/the-loai\/[^"]+"[^>]*>([\s\S]*?)<\/a>/gi;
+        var cMatch;
+        while ((cMatch = catPattern.exec(html)) !== null) {
+            var cName = stripTags(cMatch[1]);
+            if (cName && categories.indexOf(cName) === -1) categories.push(cName);
+        }
+
+        var servers = [];
+        var epBlockMatch = /<div[^>]*class="[^"]*episode-block[^"]*"[^>]*>([\s\S]*?)<\/div>\s*<div[^>]*class="[^"]*movie-info-block[^"]*"/i.exec(html);
+        var epScope = epBlockMatch ? epBlockMatch[1] : html;
+        var sourceBlocks = extractBalancedDivs(epScope, '<div[^>]*class="[^"]*source-container[^"]*"[^>]*>');
+
+        for (var i = 0; i < sourceBlocks.length; i++) {
+            var sBlock = sourceBlocks[i];
+            var sTitleMatch = /<div[^>]*class="[^"]*source-title[^"]*"[^>]*>([\s\S]*?)<\/div>/i.exec(sBlock);
+            var serverName = sTitleMatch ? stripTags(sTitleMatch[1]) : ("Server #" + (i + 1));
+
+            var episodes = [];
+            var epPattern = /<a[^>]+href="([^"]+)"[^>]*class="[^"]*ep-btn[^"]*"[^>]*>([\s\S]*?)<\/a>/gi;
+            var epMatch;
+            var seenEp = {};
+            while ((epMatch = epPattern.exec(sBlock)) !== null) {
+                var epUrl = normalizeUrl(epMatch[1]);
+                if (!epUrl || seenEp[epUrl]) continue;
+                seenEp[epUrl] = true;
+                var epLabel = stripTags(epMatch[2]);
+                var epName = /^Tập\b/i.test(epLabel) ? epLabel : ("Tập " + epLabel);
+                episodes.push({
+                    id: epUrl,
+                    name: epName,
+                    slug: epUrl
+                });
+            }
+
+            if (episodes.length > 0) {
+                servers.push({
+                    name: serverName,
+                    episodes: episodes
+                });
+            }
+        }
+
+        if (servers.length === 0) {
+            var fallbackEps = [];
+            var fbPattern = /<a[^>]+href="([^"]+)"[^>]*class="[^"]*ep-btn[^"]*"[^>]*>([\s\S]*?)<\/a>/gi;
+            var fbMatch;
+            var seenFb = {};
+            while ((fbMatch = fbPattern.exec(html)) !== null) {
+                var fbUrl = normalizeUrl(fbMatch[1]);
+                if (!fbUrl || seenFb[fbUrl]) continue;
+                seenFb[fbUrl] = true;
+                var fbLabel = stripTags(fbMatch[2]);
+                fallbackEps.push({
+                    id: fbUrl,
+                    name: /^Tập\b/i.test(fbLabel) ? fbLabel : ("Tập " + fbLabel),
+                    slug: fbUrl
+                });
+            }
+            if (fallbackEps.length > 0) {
+                servers.push({
+                    name: "Lồng Tiếng #1",
+                    episodes: fallbackEps
+                });
+            }
+        }
+
+        var slug = "";
+        var canonMatch = /<link\s+rel="canonical"\s+href="([^"]+)"/i.exec(html);
+        if (canonMatch) {
+            slug = canonMatch[1].replace(/^https?:\/\/[^/]+\//i, "").replace(/^\/+/, "");
+        }
+
+        var lang = "";
+        if (/thuyết minh/i.test(rawH1 + " " + html)) lang = "Thuyết Minh";
+        else if (/lồng tiếng/i.test(rawH1 + " " + html)) lang = "Lồng Tiếng";
+        else if (/vietsub/i.test(rawH1 + " " + html)) lang = "Vietsub";
+
+        var epCurrentMatch = /<div[^>]*class="[^"]*breadcrumb-bar[^"]*"[^>]*>[\s\S]*?<span>([^<]+)<\/span>/i.exec(html);
+        var episodeCurrent = epCurrentMatch ? stripTags(epCurrentMatch[1]) : rawH1;
+
+        return JSON.stringify({
+            id: slug,
+            title: title,
+            originalTitle: originalTitle,
+            posterUrl: posterUrl,
+            backdropUrl: posterUrl,
+            description: description,
+            year: year,
+            rating: 0,
+            quality: "",
+            servers: servers,
+            episode_current: episodeCurrent,
+            lang: lang,
+            category: categories.join(", "),
+            country: "",
+            director: "",
+            casts: "",
+            extra: ""
+        });
+    } catch (error) {
+        log("parseMovieDetail error: " + error);
+        return "null";
+    }
+}
+
+function parseDetailResponse(htmlContent, pageUrl) {
+    try {
+        var detailJsonStr = parseMovieDetail(htmlContent);
+        var detailObj = (detailJsonStr && detailJsonStr !== "null") ? JSON.parse(detailJsonStr) : {};
+        var candidates = extractStreamCandidates(htmlContent);
+        var primary = candidates.length > 0 ? candidates[0] : null;
+        var refererUrl = pageUrl ? normalizeUrl(pageUrl) : PLAYER_REFERER;
+
+        detailObj.pageUrl = pageUrl || "";
+        detailObj.streamUrl = primary ? primary.url : "";
+        detailObj.streamType = primary ? primary.type : "";
+        detailObj.headers = {
+            "Referer": PLAYER_REFERER,
+            "Origin": PLAYER_ORIGIN,
+            "User-Agent": DEFAULT_USER_AGENT
+        };
+        detailObj.streamCandidates = candidates;
+
+        if (!detailObj.streamUrl && refererUrl) {
+            log("No direct stream found in HTML; call resolveStreamFromDetail for " + refererUrl);
+        }
+
+        return JSON.stringify(detailObj);
+    } catch (error) {
+        log("parseDetailResponse error: " + error);
+        return "null";
+    }
+}
+
+// =============================================================================
+// COMPATIBILITY ALIASES
+// =============================================================================
+
+function getList(slug, filtersJson) {
+    return getUrlList(slug, filtersJson);
+}
+
+function parseList(htmlContent) {
+    return parseListResponse(htmlContent);
+}
+
+function getDetail(slug) {
+    return getUrlDetail(slug);
+}
+
+function parseDetail(htmlContent, pageUrl) {
+    return parseDetailResponse(htmlContent, pageUrl);
+}
