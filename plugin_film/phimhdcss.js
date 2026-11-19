@@ -3,6 +3,9 @@
 // =============================================================================
 
 var BASE_URL = "https://tvhay.buzz";
+var PLAYER_ORIGIN = "https://player.phimapi.com";
+var PLAYER_REFERER = "https://player.phimapi.com/";
+var DEFAULT_USER_AGENT = "Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36";
 
 function getManifest() {
     return JSON.stringify({
@@ -111,9 +114,23 @@ function getFilterConfig() {
 // URL & TEXT HELPERS
 // =============================================================================
 
+function decodeEscapedUrl(str) {
+    if (!str) return "";
+    return String(str)
+        .replace(/\\\//g, "/")
+        .replace(/\\u0026/gi, "&")
+        .replace(/\\u003d/gi, "=")
+        .replace(/\\u003f/gi, "?")
+        .replace(/\\u002f/gi, "/")
+        .replace(/\\x2f/gi, "/")
+        .replace(/&/gi, "&")
+        .trim();
+}
+
 function normalizeUrl(url) {
     if (!url) return "";
-    url = String(url).trim().replace(/^http:\/\//i, "https://");
+    url = decodeEscapedUrl(url).replace(/^http:\/\//i, "https://");
+    if (!url) return "";
     if (/^https?:\/\//i.test(url)) return url;
     if (url.indexOf("//") === 0) return "https:" + url;
     return BASE_URL + (url.indexOf("/") === 0 ? "" : "/") + url;
@@ -123,10 +140,13 @@ function stripTags(html) {
     if (!html) return "";
     return String(html)
         .replace(/<[^>]*>/g, " ")
-        .replace(/&nbsp;/gi, " ")
-        .replace(/&amp;/gi, "&")
-        .replace(/&quot;/gi, '"')
-        .replace(/&#039;/gi, "'")
+        .replace(/ /gi, " ")
+        .replace(/&/gi, "&")
+        .replace(/"/gi, '"')
+        .replace(/'/gi, "'")
+        .replace(/'/gi, "'")
+        .replace(/</gi, "<")
+        .replace(/>/gi, ">")
         .replace(/\s+/g, " ")
         .trim();
 }
@@ -271,71 +291,107 @@ function isAdOrTrackerUrl(url) {
     return /(?:trafficstars|doubleclick|googlesyndication|googletagmanager|google-analytics|cloudflareinsights|bit\.ly|shortlink|omg10\.com|t\.co\/|154\.82\.109\.164|choitic88|c168n\.biz|blogger\.googleusercontent\.com|iili\.io|ibb\.co)/i.test(url || "");
 }
 
+function isMediaSegmentUrl(url) {
+    return /\.(?:ts|m4s|key|vtt|srt)(?:\?|$|#)/i.test(url || "");
+}
+
+function detectStreamType(url) {
+    if (!url) return "embed";
+    if (/\.m3u8(?:\?|$|#)/i.test(url)) return "hls";
+    if (/\.mp4(?:\?|$|#)/i.test(url)) return "mp4";
+    return "embed";
+}
+
+function scoreStreamCandidate(candidate) {
+    var score = 100;
+    if (!candidate || !candidate.url) return score;
+    var u = candidate.url.toLowerCase();
+
+    if (candidate.type === "hls") score = 10;
+    else if (candidate.type === "mp4") score = 30;
+    else if (candidate.type === "embed") score = 50;
+
+    if (candidate.type === "hls") {
+        if (/\/index\.m3u8(?:\?|$|#)/i.test(u) || /master\.m3u8/i.test(u)) {
+            score -= 5;
+        }
+        if (/\/\d+kb\/hls\//i.test(u) || /playlist\.m3u8/i.test(u)) {
+            score += 2;
+        }
+    }
+
+    if (candidate.server === "Direct") score -= 1;
+    return score;
+}
+
+function sortAndDedupeCandidates(list) {
+    var seen = {};
+    var unique = [];
+    for (var i = 0; i < list.length; i++) {
+        var item = list[i];
+        if (!item || !item.url || seen[item.url]) continue;
+        seen[item.url] = true;
+        unique.push(item);
+    }
+    unique.sort(function (a, b) {
+        return scoreStreamCandidate(a) - scoreStreamCandidate(b);
+    });
+    return unique;
+}
+
 function extractStreamCandidates(htmlContent) {
+    var html = decodeEscapedUrl(htmlContent || "");
     var candidates = [];
 
-    var varLinkRegex = /\b(linkHPro|linkSPro|embedUrl|streamUrl|videoUrl)\s*=\s*["']([^"']+)["']/gi;
+    function addCandidate(rawUrl, typeHint, serverLabel) {
+        var norm = normalizeUrl(rawUrl);
+        if (!norm || isAdOrTrackerUrl(norm) || isMediaSegmentUrl(norm)) return;
+        if (/1s_blank\.mp4|preview\.mp4/i.test(norm)) return;
+
+        var sType = typeHint || detectStreamType(norm);
+        candidates.push({
+            url: norm,
+            type: sType,
+            server: serverLabel || "Unknown"
+        });
+    }
+
+    // 1. Biến chứa link stream / embed trong inline script
+    var varLinkRegex = /\b(linkHPro|linkSPro|embedUrl|streamUrl|videoUrl|hlsUrl|m3u8Url|playUrl|source|file)\s*[:=]\s*["']([^"'\s<>]+)["']/gi;
     var vMatch;
-    while ((vMatch = varLinkRegex.exec(htmlContent)) !== null) {
-        var vName = vMatch[1];
-        var vUrl = normalizeUrl(vMatch[2]);
-        if (vUrl && !isAdOrTrackerUrl(vUrl)) {
-            candidates.push({
-                url: vUrl,
-                type: /\.m3u8/i.test(vUrl) ? "hls" : (/\.mp4/i.test(vUrl) ? "mp4" : "embed"),
-                server: vName
-            });
+    while ((vMatch = varLinkRegex.exec(html)) !== null) {
+        var val = vMatch[2];
+        if (/^(https?:\/\/|\/\/|\/)/i.test(val) || /\.m3u8|\.mp4|embed\.php/i.test(val)) {
+            addCandidate(val, "", vMatch[1]);
         }
     }
 
-    var iframeRegex = /<iframe[^>]+src=["']([^"']+)["']/gi;
-    var iMatch;
-    while ((iMatch = iframeRegex.exec(htmlContent)) !== null) {
-        var iUrl = normalizeUrl(iMatch[1]);
-        if (iUrl && !isAdOrTrackerUrl(iUrl)) {
-            candidates.push({
-                url: iUrl,
-                type: /\.m3u8/i.test(iUrl) ? "hls" : (/\.mp4/i.test(iUrl) ? "mp4" : "embed"),
-                server: "Iframe"
-            });
-        }
-    }
-
-    var mediaRegex = /(https?:\/\/[^\s"'<>\\]+\.(?:m3u8|mp4)(?:[^\s"'<>\\]*)?)/gi;
+    // 2. Link trực tiếp .m3u8 / .mp4 (ưu tiên bắt các luồng HLS/MP4 thực tế)
+    var mediaRegex = /((?:https?:\/\/|\/)[^\s"'<>\\()]+?\.(?:m3u8|mp4)(?:[^\s"'<>\\()]*)?)/gi;
     var mMatch;
-    while ((mMatch = mediaRegex.exec(htmlContent)) !== null) {
-        var mUrl = mMatch[1].replace(/\\\//g, "/");
-        if (mUrl && !isAdOrTrackerUrl(mUrl) && mUrl.indexOf("1s_blank.mp4") === -1) {
-            candidates.push({
-                url: mUrl,
-                type: /\.m3u8/i.test(mUrl) ? "hls" : "mp4",
-                server: "Direct"
-            });
-        }
+    while ((mMatch = mediaRegex.exec(html)) !== null) {
+        var mUrl = mMatch[1];
+        addCandidate(mUrl, /\.m3u8/i.test(mUrl) ? "hls" : "mp4", "Direct");
     }
 
-    var b64Regex = /(?:atob\(|base64,|data-link=|data-url=|source\s*[:=]\s*)["']([A-Za-z0-9+/=]{24,})["']/gi;
+    // 3. Thẻ <iframe> / <video> / <source> (ví dụ embed17.streamc.xyz/embed.php?hash=...)
+    var tagSrcRegex = /<(?:iframe|video|source)\b[^>]+(?:src|data-src|data-url|data-video)=["']([^"']+)["']/gi;
+    var tMatch;
+    while ((tMatch = tagSrcRegex.exec(html)) !== null) {
+        addCandidate(tMatch[1], "", "TagSrc");
+    }
+
+    // 4. Chuỗi Base64 dài có thể giải mã ra URL
+    var b64Regex = /(?:atob\(|base64,|data-link=|data-url=|data-src=|source\s*[:=]\s*)[\s"']*([A-Za-z0-9+/=]{24,})["']/gi;
     var bMatch;
-    while ((bMatch = b64Regex.exec(htmlContent)) !== null) {
+    while ((bMatch = b64Regex.exec(html)) !== null) {
         var decoded = decodeBase64(bMatch[1]).trim();
-        if (/^(https?:\/\/|\/)/i.test(decoded)) {
-            var decNorm = normalizeUrl(decoded);
-            if (!isAdOrTrackerUrl(decNorm)) {
-                candidates.push({
-                    url: decNorm,
-                    type: /\.m3u8/i.test(decNorm) ? "hls" : (/\.mp4/i.test(decNorm) ? "mp4" : "embed"),
-                    server: "Decoded"
-                });
-            }
+        if (/^(https?:\/\/|\/\/|\/)/i.test(decoded)) {
+            addCandidate(decoded, "", "Decoded");
         }
     }
 
-    var seen = {};
-    return candidates.filter(function (item) {
-        if (!item.url || seen[item.url]) return false;
-        seen[item.url] = true;
-        return true;
-    });
+    return sortAndDedupeCandidates(candidates);
 }
 
 // =============================================================================
@@ -391,7 +447,6 @@ function parseListResponse(htmlContent) {
             });
         }
 
-        // Fallback rộng nếu trang dùng cấu trúc thẻ khác
         if (movies.length === 0) {
             var aRegex = /<a[^>]+href="(\/(?:phim|xem)\/[^"]+)"[^>]*>([\s\S]*?)<\/a>/gi;
             var aMatch;
@@ -580,15 +635,21 @@ function parseDetailResponse(htmlContent, pageUrl) {
         var detailObj = (detailJsonStr && detailJsonStr !== "null") ? JSON.parse(detailJsonStr) : {};
         var candidates = extractStreamCandidates(htmlContent);
         var primary = candidates.length > 0 ? candidates[0] : null;
+        var refererUrl = pageUrl ? normalizeUrl(pageUrl) : PLAYER_REFERER;
 
         detailObj.pageUrl = pageUrl || "";
         detailObj.streamUrl = primary ? primary.url : "";
         detailObj.streamType = primary ? primary.type : "";
         detailObj.headers = {
-            "Referer": BASE_URL + "/",
-            "User-Agent": "Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36"
+            "Referer": PLAYER_REFERER,
+            "Origin": PLAYER_ORIGIN,
+            "User-Agent": DEFAULT_USER_AGENT
         };
         detailObj.streamCandidates = candidates;
+
+        if (!detailObj.streamUrl && refererUrl) {
+            log("No direct stream found in HTML; embed/player resolution may be required from " + refererUrl);
+        }
 
         return JSON.stringify(detailObj);
     } catch (error) {
