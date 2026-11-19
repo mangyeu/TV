@@ -2,8 +2,8 @@ function getManifest() {
     return JSON.stringify({
         "id": "missavmedia",
         "name": "MissAV Media",
-        "version": "1.0.4",
-        "versionCode": 4,
+        "version": "1.0.5",
+        "versionCode": 5,
         "baseUrl": "https://missav.media",
         "iconUrl": "",
         "description": "MissAV Media plugin",
@@ -84,16 +84,17 @@ function getUrlCountries() { return ""; }
 function getUrlYears() { return ""; }
 
 // =============================================================================
-// POSTER / IMAGE HELPERS (Xử lý poster bị ẩn, lazy-load, placeholder)
+// POSTER / IMAGE HELPERS
 // =============================================================================
 
 function decodeHtmlEntities(text) {
     return String(text || "")
-        .replace(/&/g, "&")
         .replace(/"/g, "\"")
         .replace(/'/g, "'")
+        .replace(/'/gi, "'")
         .replace(/</g, "<")
         .replace(/>/g, ">")
+        .replace(/&/g, "&")
         .replace(/^\s+|\s+$/g, "");
 }
 
@@ -130,7 +131,6 @@ function normalizeImageUrl(src, baseUrl) {
 function extractImageFromBlock(blockHtml, baseUrl) {
     var html = String(blockHtml || "");
 
-    // 1. Ưu tiên lấy từ thẻ <img> (data-src, data-original, data-lazy-src, data-poster, src)
     var imgRegex = /<img\b([^>]*)>/gi;
     var imgMatch;
     var fallbackCandidate = "";
@@ -156,7 +156,6 @@ function extractImageFromBlock(blockHtml, baseUrl) {
         }
     }
 
-    // 2. Nếu không có <img> hợp lệ, thử lấy từ background-image trong style hoặc data-bg
     var bgMatch = html.match(/background-image\s*:\s*url\(["']?([^"')]+)["']?\)/i)
         || html.match(/\b(?:data-bg|data-background)=["']([^"']+)["']/i);
     if (bgMatch && bgMatch[1]) {
@@ -173,6 +172,65 @@ function resolvePosterWithFallback(primary, secondary, baseUrl) {
     var s = normalizeImageUrl(secondary, baseUrl);
     if (s) return s;
     return "";
+}
+
+// =============================================================================
+// STREAM HELPERS
+// =============================================================================
+
+function extractServersFromHtml(htmlText) {
+    var html = String(htmlText || "");
+    var m3u8Matches = html.match(/https?:\/\/[^\s"'<>\\]+\.m3u8[^\s"'<>\\]*/gi) || [];
+    var mp4Matches = html.match(/https?:\/\/[^\s"'<>\\]+\.mp4[^\s"'<>\\]*/gi) || [];
+
+    var mainEpisodes = [];
+    var previewEpisodes = [];
+    var seen = {};
+
+    for (var i = 0; i < m3u8Matches.length; i++) {
+        var u1 = decodeHtmlEntities(m3u8Matches[i]).replace(/\\\//g, "/");
+        if (!u1 || seen[u1]) continue;
+        seen[u1] = true;
+        mainEpisodes.push({
+            id: u1,
+            name: mainEpisodes.length === 0 ? "HLS 1" : ("HLS " + (mainEpisodes.length + 1)),
+            slug: "hls-" + (mainEpisodes.length + 1),
+            m3u8: u1,
+            embed: ""
+        });
+    }
+
+    for (var j = 0; j < mp4Matches.length; j++) {
+        var u2 = decodeHtmlEntities(mp4Matches[j]).replace(/\\\//g, "/");
+        if (!u2 || seen[u2]) continue;
+        seen[u2] = true;
+        if (/\/preview\.mp4(\?|$)/i.test(u2)) {
+            previewEpisodes.push({
+                id: u2,
+                name: "Preview",
+                slug: "preview",
+                m3u8: "",
+                embed: u2
+            });
+        } else {
+            mainEpisodes.push({
+                id: u2,
+                name: "MP4 " + (mainEpisodes.length + 1),
+                slug: "mp4-" + (mainEpisodes.length + 1),
+                m3u8: "",
+                embed: u2
+            });
+        }
+    }
+
+    var servers = [];
+    if (mainEpisodes.length > 0) {
+        servers.push({ name: "Main", episodes: mainEpisodes });
+    }
+    if (previewEpisodes.length > 0) {
+        servers.push({ name: "Preview", episodes: previewEpisodes });
+    }
+    return servers;
 }
 
 // =============================================================================
@@ -258,6 +316,7 @@ function parseMovieDetail(htmlText) {
             "https://missav.media"
         );
         var desc = decodeHtmlEntities(descMatch ? descMatch[1] : "");
+        var servers = extractServersFromHtml(html);
 
         return JSON.stringify({
             id: "",
@@ -270,7 +329,7 @@ function parseMovieDetail(htmlText) {
             rating: 0,
             quality: "",
             duration: "",
-            servers: [],
+            servers: servers,
             episode_current: "",
             lang: "",
             category: "",
