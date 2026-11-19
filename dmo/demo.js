@@ -2,8 +2,8 @@ function getManifest() {
     return JSON.stringify({
         "id": "missavmedia",
         "name": "MissAV Media",
-        "version": "1.0.5",
-        "versionCode": 5,
+        "version": "1.0.7",
+        "versionCode": 7,
         "baseUrl": "https://missav.media",
         "iconUrl": "",
         "description": "MissAV Media plugin",
@@ -178,17 +178,50 @@ function resolvePosterWithFallback(primary, secondary, baseUrl) {
 // STREAM HELPERS
 // =============================================================================
 
-function extractServersFromHtml(htmlText) {
+function unpackDeanEdwards(htmlText) {
     var html = String(htmlText || "");
-    var m3u8Matches = html.match(/https?:\/\/[^\s"'<>\\]+\.m3u8[^\s"'<>\\]*/gi) || [];
-    var mp4Matches = html.match(/https?:\/\/[^\s"'<>\\]+\.mp4[^\s"'<>\\]*/gi) || [];
+    var match = html.match(/eval\(function\(p,a,c,k,e,[dr]\)\{[\s\S]*?\}\('([\s\S]*?)',(\d+),(\d+),'([\s\S]*?)'\.split\('\|'\)/i);
+    if (!match) return "";
+
+    var payload = match[1];
+    var radix = parseInt(match[2], 10) || 36;
+    var count = parseInt(match[3], 10) || 0;
+    var symtab = match[4].split("|");
+
+    function toBase(num, base) {
+        var chars = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+        var prefix = num < base ? "" : toBase(parseInt(num / base, 10), base);
+        var d = num % base;
+        return prefix + (d > 35 ? String.fromCharCode(d + 29) : chars.charAt(d));
+    }
+
+    var dict = {};
+    while (count--) {
+        var key = toBase(count, radix);
+        dict[key] = symtab[count] || key;
+    }
+
+    return payload.replace(/\b[0-9a-zA-Z]+\b/g, function (w) {
+        return dict.hasOwnProperty(w) && dict[w] ? dict[w] : w;
+    });
+}
+
+function extractServersFromHtml(htmlText) {
+    var rawHtml = String(htmlText || "");
+    var unpacked = unpackDeanEdwards(rawHtml);
+    var html = (rawHtml + "\n" + unpacked)
+        .replace(/\\u002F/gi, "/")
+        .replace(/\\\//g, "/");
+
+    var m3u8Matches = html.match(/https?:\/\/[^\s"'<>\\)]+\.m3u8[^\s"'<>\\)]*/gi) || [];
+    var mp4Matches = html.match(/https?:\/\/[^\s"'<>\\)]+\.mp4[^\s"'<>\\)]*/gi) || [];
 
     var mainEpisodes = [];
     var previewEpisodes = [];
     var seen = {};
 
     for (var i = 0; i < m3u8Matches.length; i++) {
-        var u1 = decodeHtmlEntities(m3u8Matches[i]).replace(/\\\//g, "/");
+        var u1 = decodeHtmlEntities(m3u8Matches[i]);
         if (!u1 || seen[u1]) continue;
         seen[u1] = true;
         mainEpisodes.push({
@@ -201,7 +234,7 @@ function extractServersFromHtml(htmlText) {
     }
 
     for (var j = 0; j < mp4Matches.length; j++) {
-        var u2 = decodeHtmlEntities(mp4Matches[j]).replace(/\\\//g, "/");
+        var u2 = decodeHtmlEntities(mp4Matches[j]);
         if (!u2 || seen[u2]) continue;
         seen[u2] = true;
         if (/\/preview\.mp4(\?|$)/i.test(u2)) {
@@ -219,6 +252,23 @@ function extractServersFromHtml(htmlText) {
                 slug: "mp4-" + (mainEpisodes.length + 1),
                 m3u8: "",
                 embed: u2
+            });
+        }
+    }
+
+    // Dò thêm URL CDN mrstcdn.store / surrit nếu không khớp trực tiếp đuôi .m3u8 / .mp4
+    if (mainEpisodes.length === 0) {
+        var cdnMatches = html.match(/https?:\/\/[^\s"'<>\\)]*(?:mrstcdn\.store|surrit)[^\s"'<>\\)]*/gi) || [];
+        for (var k = 0; k < cdnMatches.length; k++) {
+            var u3 = decodeHtmlEntities(cdnMatches[k]);
+            if (!u3 || seen[u3] || /\/preview\.mp4(\?|$)/i.test(u3)) continue;
+            seen[u3] = true;
+            mainEpisodes.push({
+                id: u3,
+                name: "CDN " + (mainEpisodes.length + 1),
+                slug: "cdn-" + (mainEpisodes.length + 1),
+                m3u8: u3,
+                embed: ""
             });
         }
     }
@@ -302,6 +352,7 @@ function parseMovieDetail(htmlText) {
         var ogImgMatch = html.match(/<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i);
         var videoPosterMatch = html.match(/<video\b[^>]*\bposter=["']([^"']+)["']/i);
         var descMatch = html.match(/<meta[^>]+(?:name=["']description["']|property=["']og:description["'])[^>]+content=["']([^"']+)["']/i);
+        var canonicalMatch = html.match(/<link[^>]+rel=["']canonical["'][^>]+href=["']([^"']+)["']/i);
 
         var title = decodeHtmlEntities(titleMatch ? titleMatch[1] : "");
         var bodyImg = extractImageFromBlock(html, "https://missav.media");
@@ -317,9 +368,12 @@ function parseMovieDetail(htmlText) {
         );
         var desc = decodeHtmlEntities(descMatch ? descMatch[1] : "");
         var servers = extractServersFromHtml(html);
+        var movieSlug = canonicalMatch && canonicalMatch[1]
+            ? canonicalMatch[1].replace(/^https?:\/\/[^/]+/i, "").replace(/^\/vi\/|\/$/g, "")
+            : "";
 
         return JSON.stringify({
-            id: "",
+            id: movieSlug,
             title: title,
             originName: "",
             posterUrl: poster,
