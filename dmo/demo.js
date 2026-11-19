@@ -1,21 +1,19 @@
 // =============================================================================
-// MANIFEST & CONFIG
+// CONFIGURATION & METADATA
 // =============================================================================
-
-var BASE_URL = "https://vlxx.net";
 
 function getManifest() {
     return JSON.stringify({
-        id: "vlxx",
-        name: "VLXX Pro",
-        version: "1.2.6",
-        baseUrl: BASE_URL,
-        iconUrl: "https://raw.githubusercontent.com/youngbi/repo/main/plugins/vlxx.ico",
-        isEnabled: true,
-        isAdult: true,
-        type: "MOVIE",
-        playerType: "exoplayer",
-        layoutType: "HORIZONTAL"
+        "id": "vlxx",
+        "name": "VLXX",
+        "version": "1.0.0",
+        "baseUrl": "https://vlxx.net",
+        "iconUrl": "https://raw.githubusercontent.com/youngbi/repo/main/plugins/vlxx.ico",
+        "isEnabled": true,
+        "isAdult": true,
+        "type": "MOVIE",
+        "playerType": "exoplayer",
+        "layoutType": "HORIZONTAL"
     });
 }
 
@@ -46,39 +44,50 @@ function getPrimaryCategories() {
 }
 
 function getFilterConfig() {
-    return JSON.stringify({
-        sort: [
-            { name: "Mới nhất", value: "moi-nhat" },
-            { name: "Xem nhiều", value: "xem-nhieu" }
-        ]
-    });
+    return JSON.stringify({});
 }
+
+// =============================================================================
+// URL GENERATION
+// =============================================================================
 
 function getUrlList(slug, filtersJson) {
     var filters = JSON.parse(filtersJson || "{}");
     var page = filters.page || 1;
-    
-    if (!slug || slug === 'home') {
-        return (page > 1) ? (BASE_URL + "/new/" + page + "/") : (BASE_URL + "/");
+    var baseUrl = "https://vlxx.net";
+
+    if (slug === '' || slug === 'home') {
+        if (page > 1) {
+            return baseUrl + "/new/" + page + "/";
+        }
+        return baseUrl + "/";
     }
-    
-    return (page > 1) ? (BASE_URL + "/" + slug + "/" + page + "/") : (BASE_URL + "/" + slug + "/");
+
+    if (page > 1) {
+        return baseUrl + "/" + slug + "/" + page + "/";
+    }
+    return baseUrl + "/" + slug + "/";
 }
 
 function getUrlSearch(keyword, filtersJson) {
     var filters = JSON.parse(filtersJson || "{}");
     var page = filters.page || 1;
-    var safeKeyword = encodeURIComponent(keyword.trim().replace(/\s+/g, '-'));
-    
-    return (page > 1) 
-        ? (BASE_URL + "/search/" + safeKeyword + "/" + page + "/") 
-        : (BASE_URL + "/search/" + safeKeyword + "/");
+    var safeKeyword = encodeURIComponent(keyword.replace(/\s+/g, '-'));
+    var url = "https://vlxx.net/search/" + safeKeyword + "/";
+    if (page > 1) {
+        url = "https://vlxx.net/search/" + safeKeyword + "/" + page + "/";
+    }
+    return url;
 }
 
+// getUrlDetail: App gọi với episode.id
+// episode.id = canonical URL (có thể kèm #s2 cho server 2)
+// Trả về URL as-is (starts with http) → App fetch trang detail
 function getUrlDetail(slug) {
     if (!slug) return "";
     if (slug.indexOf("http") === 0) return slug;
-    return (slug.charAt(0) === '/') ? (BASE_URL + slug) : (BASE_URL + "/" + slug);
+    if (slug.charAt(0) !== '/') slug = '/' + slug;
+    return "https://vlxx.net" + slug;
 }
 
 function getUrlCategories() { return ""; }
@@ -88,6 +97,7 @@ function getUrlYears() { return ""; }
 // =============================================================================
 // PARSERS
 // =============================================================================
+
 function parseListResponse(html) {
     var items = [];
     var blocks = html.split('class="video-item"');
@@ -96,11 +106,15 @@ function parseListResponse(html) {
         var block = blocks[i];
 
         var linkMatch = block.match(/href=["']([^"']+)["']/i);
-        var titleMatch = block.match(/title=["']([^"']+)["']/i);
-        var thumbMatch = block.match(/data-original=["']([^"']+)["']/i) || block.match(/<img[^>]*src=["']([^"']+)["']/i);
-
         var link = linkMatch ? linkMatch[1] : "";
-        var title = titleMatch ? titleMatch[1].replace(/<[^>]+>/g, '').trim() : "";
+
+        var titleMatch = block.match(/title=["']([^"']+)["']/i);
+        var title = titleMatch ? titleMatch[1] : "";
+
+        var thumbMatch = block.match(/data-original=["']([^"']+)["']/i);
+        if (!thumbMatch) {
+            thumbMatch = block.match(/<img[^>]*src=["']([^"']+)["']/i);
+        }
         var thumb = thumbMatch ? thumbMatch[1] : "";
 
         if (thumb && thumb.indexOf("data:image") === 0) thumb = "";
@@ -108,7 +122,7 @@ function parseListResponse(html) {
         if (link && title) {
             items.push({
                 id: link,
-                title: title,
+                title: title.replace(/<[^>]+>/g, '').trim(),
                 posterUrl: thumb,
                 backdropUrl: thumb,
                 year: 0
@@ -120,21 +134,23 @@ function parseListResponse(html) {
     var totalPages = 1;
 
     var cpMatch = html.match(/<a[^>]*class=["'][^"']*active[^"']*["'][^>]*data-page=["'](\d+)["']/i);
-    if (cpMatch) currentPage = parseInt(cpMatch[1], 10);
+    if (cpMatch) {
+        currentPage = parseInt(cpMatch[1]);
+    }
 
     var lpRegex = /<a[^>]*data-page=["'](\d+)["'][^>]*>[0-9]+<\/a>/gi;
     var lpMatch;
     while ((lpMatch = lpRegex.exec(html)) !== null) {
-        var pageNum = parseInt(lpMatch[1], 10);
+        var pageNum = parseInt(lpMatch[1]);
         if (pageNum > totalPages) totalPages = pageNum;
     }
     if (currentPage > totalPages) totalPages = currentPage;
 
     return JSON.stringify({
         items: items,
-        pagination: { 
-            currentPage: currentPage, 
-            totalPages: totalPages 
+        pagination: {
+            currentPage: currentPage,
+            totalPages: totalPages
         }
     });
 }
@@ -145,9 +161,9 @@ function parseSearchResponse(html) {
 
 function parseMovieDetail(html) {
     try {
-        var titleMatch = html.match(/<h1[^>]*page-title[^>]*>([\s\S]*?)<\/h1>/i) ||
-                         html.match(/<h2[^>]*page-title[^>]*>([\s\S]*?)<\/h2>/i) ||
-                         html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i);
+        var titleMatch = html.match(/<h1[^>]*page-title[^>]*>([\s\S]*?)<\/h1>/i)
+            || html.match(/<h2[^>]*page-title[^>]*>([\s\S]*?)<\/h2>/i)
+            || html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i);
         var title = titleMatch ? titleMatch[1].replace(/<[^>]+>/g, '').trim() : "";
 
         var descMatch = html.match(/<div[^>]*class=["']video-description["'][^>]*>([\s\S]*?)<\/div>/i);
@@ -173,48 +189,44 @@ function parseMovieDetail(html) {
         var categoriesArr = [];
         var catSectionMatch = html.match(/<div[^>]*class=["']category-tag["'][^>]*>([\s\S]*?)<\/div>/i);
         if (catSectionMatch) {
+            var catSection = catSectionMatch[1];
             var catRegex = /<a[^>]*>([\s\S]*?)<\/a>/gi;
             var cmMatch;
-            while ((cmMatch = catRegex.exec(catSectionMatch[1])) !== null) {
+            while ((cmMatch = catRegex.exec(catSection)) !== null) {
                 categoriesArr.push(cmMatch[1].replace(/<[^>]+>/g, '').trim());
             }
         }
 
-        var canonicalMatch = html.match(/<link[^>]*rel=["']canonical["'][^>]*href=["']([^"']+)["']/i) ||
-                             html.match(/<meta[^>]*property=["']og:url["'][^>]*content=["']([^"']+)["']/i);
-        var pageUrl = canonicalMatch ? canonicalMatch[1] : "";
+        // =====================================================================
+        // episode.id = canonical URL + #s{serverId}
+        // Khi user bấm xem → App gọi getUrlDetail(url#s1) → fetch trang detail
+        // → parseDetailResponse trích data-id + server từ fragment → trả AJAX POST
+        // =====================================================================
 
         var servers = [];
+
+        // Lấy canonical URL
+        var canonicalMatch = html.match(/<link[^>]*rel=["']canonical["'][^>]*href=["']([^"']+)["']/i)
+            || html.match(/<meta[^>]*property=["']og:url["'][^>]*content=["']([^"']+)["']/i);
+        var pageUrl = canonicalMatch ? canonicalMatch[1] : "";
+
+        // Tìm server buttons: onclick="server(1,3105)" onclick="server(2,3105)"
         var serverRegex = /onclick=["']server\((\d+),\s*(\d+)\)["']/gi;
         var srvMatch;
-        var addedServers = {};
 
         while ((srvMatch = serverRegex.exec(html)) !== null) {
             var serverId = srvMatch[1];
-            if (!addedServers[serverId]) {
-                addedServers[serverId] = true;
-                servers.push({
-                    name: "Server VIP #" + serverId + " (Tối ưu)",
-                    episodes: [{
-                        id: pageUrl + "#s" + serverId,
-                        name: "Full HD",
-                        slug: "full-s" + serverId
-                    }]
-                });
-            }
-        }
-
-        if (!addedServers["2"] && pageUrl) {
             servers.push({
-                name: "Server Dự Phòng #2",
+                name: "Server #" + serverId,
                 episodes: [{
-                    id: pageUrl + "#s2",
-                    name: "Full HD",
-                    slug: "full-s2"
+                    id: pageUrl + "#s" + serverId,
+                    name: "Full",
+                    slug: "full-s" + serverId
                 }]
             });
         }
 
+        // Fallback nếu không tìm thấy server buttons
         if (servers.length === 0 && pageUrl) {
             servers.push({
                 name: "Server #1",
@@ -228,7 +240,7 @@ function parseMovieDetail(html) {
 
         return JSON.stringify({
             id: "",
-            title: title,
+            title: title.replace(/<[^>]+>/g, '').trim(),
             posterUrl: posterUrl,
             backdropUrl: posterUrl,
             description: description,
@@ -250,146 +262,155 @@ function parseMovieDetail(html) {
 }
 
 // =============================================================================
-// STREAM RESOLUTION & PERFORMANCE OPTIMIZATION
+// STREAM RESOLUTION (3-step: detail page → AJAX POST → embed page)
 // =============================================================================
 
-function parseListResponse(html) {
-    var items = [];
-    
-    // Sử dụng Regex linh hoạt tìm các khối video bất kể tên class có thay đổi nhẹ
-    var blocks = html.split('class="video-item"');
-    if (blocks.length <= 1) {
-        // Fallback dự phòng nếu web đổi class thành 'item' hoặc 'box'
-        blocks = html.split('class="item"');
-    }
-    if (blocks.length <= 1) {
-        blocks = html.split('<article');
-    }
+// parseDetailResponse: Nhận HTML tĩnh từ detail page
+// Trích data-id + server number → trả AJAX POST config cho App
+function parseDetailResponse(html, fetchedUrl) {
+    try {
+        // Trích data-id từ HTML
+        var dataIdMatch = html.match(/data-id=["'](\d+)["']/i);
+        var videoId = dataIdMatch ? dataIdMatch[1] : "";
 
-    for (var i = 1; i < blocks.length; i++) {
-        var block = blocks[i];
-
-        var linkMatch = block.match(/href=["']([^"']+)["']/i);
-        var titleMatch = block.match(/title=["']([^"']+)["']/i) || block.match(/alt=["']([^"']+)["']/i) || block.match(/<h\d[^>]*>([\s\S]*?)<\/h\d>/i);
-        
-        // Mở rộng tìm kiếm ảnh: ưu tiên data-original, data-src, đến src thông thường
-        var thumbMatch = block.match(/data-original=["']([^"']+)["']/i) || 
-                         block.match(/data-src=["']([^"']+)["']/i) || 
-                         block.match(/<img[^>]*src=["']([^"']+)["']/i);
-
-        var link = linkMatch ? linkMatch[1] : "";
-        var title = titleMatch ? titleMatch[1].replace(/<[^>]+>/g, '').trim() : "";
-        var thumb = thumbMatch ? thumbMatch[1] : "";
-
-        if (thumb && (thumb.indexOf("data:image") === 0 || thumb.indexOf("pixel") !== -1)) {
-            thumb = "";
+        // Fallback: lấy ID từ URL path (ví dụ: /video/.../3105/)
+        if (!videoId && fetchedUrl) {
+            var urlIdMatch = fetchedUrl.match(/\/(\d+)\/?(?:#|$)/);
+            if (urlIdMatch) videoId = urlIdMatch[1];
         }
 
-        if (link && title) {
-            items.push({
-                id: link,
-                title: title,
-                posterUrl: thumb,
-                backdropUrl: thumb,
-                year: 0
-            });
+        if (!videoId) {
+            return JSON.stringify({ url: "", isEmbed: false, headers: {} });
         }
-    }
 
-    var currentPage = 1;
-    var totalPages = 1;
-
-    var cpMatch = html.match(/<a[^>]*class=["'][^"']*active[^"']*["'][^>]*data-page=["'](\d+)["']/i) ||
-                  html.match(/<span[^>]*class=["'][^"']*current[^"']*["'][^>]*>(\d+)<\/span>/i);
-    if (cpMatch) currentPage = parseInt(cpMatch[1], 10);
-
-    var lpRegex = /data-page=["'](\d+)["']/gi;
-    var lpMatch;
-    while ((lpMatch = lpRegex.exec(html)) !== null) {
-        var pageNum = parseInt(lpMatch[1], 10);
-        if (pageNum > totalPages) totalPages = pageNum;
-    }
-    if (currentPage > totalPages) totalPages = currentPage;
-
-    return JSON.stringify({
-        items: items,
-        pagination: { 
-            currentPage: currentPage, 
-            totalPages: totalPages 
+        // Trích server number từ URL fragment (#s1, #s2)
+        var serverId = "1";
+        if (fetchedUrl) {
+            var fragMatch = fetchedUrl.match(/#s(\d+)/);
+            if (fragMatch) serverId = fragMatch[1];
         }
-    });
+
+        // Trích device type từ HTML
+        var deviceMatch = html.match(/deviceType\s*=\s*['"](\w+)['"]/i);
+        var deviceType = deviceMatch ? deviceMatch[1] : "mobile";
+        var vlxxServer = (deviceType === "desktop") ? "1" : "2";
+
+        // Trả config để App POST tới /ajax.php
+        return JSON.stringify({
+            url: "https://vlxx.net/ajax.php",
+            isEmbed: true,
+            postBody: "vlxx_server=" + vlxxServer + "&id=" + videoId + "&server=" + serverId,
+            headers: {
+                "Referer": "https://vlxx.net/"
+            }
+        });
+    } catch (error) {
+        return JSON.stringify({ url: "", isEmbed: false, headers: {} });
+    }
 }
 
+// parseEmbedResponse: Xử lý 2 loại response:
+// Depth 1 - AJAX JSON: {"player":"<iframe src=\"...\">"}  → trích iframe URL
+// Depth 2 - Embed HTML: JWPlayer sources với .vl URL      → trích stream URL
 function parseEmbedResponse(html, url) {
-    var emptyResult = JSON.stringify({ url: "", isEmbed: false, headers: {} });
     try {
-        if (!html) return emptyResult;
-
-        // Làm sạch chuỗi HTML/JSON chống các ký tự escape ngược (\", \\)
-        var cleanHtml = html.replace(/\\"/g, '"').replace(/\\\\/g, '\\');
-
-        // 1. Quét sâu các biến cấu hình JSON/JS trong player (file, source, url, src, media)
-        var patterns = [
-            /"file"\s*:\s*"([^"]+)"/i,
-            /"source"\s*:\s*"([^"]+)"/i,
-            /"url"\s*:\s*"([^"]+)"/i,
-            /src=["'](https?:\/\/[^"']+\.(?:vl|m3u8|mp4|ts|m4v)[^"']*)["']/i,
-            /source\s*:\s*['"](https?:\/\/[^'"]+)['"]/i
-        ];
-
-        for (var i = 0; i < patterns.length; i++) {
-            var match = cleanHtml.match(patterns[i]);
-            if (match && match[1]) {
-                var foundUrl = match[1].replace(/\\/g, '');
-                if (foundUrl.indexOf("//") === 0) foundUrl = "https:" + foundUrl;
-
-                if (foundUrl.indexOf("http") === 0) {
-                    var isStream = /\.(?:vl|m3u8|ts|mp4|m4v)/i.test(foundUrl) || foundUrl.indexOf("manifest") !== -1;
+        // === CASE 1: AJAX JSON response (chứa "player" key) ===
+        // Response dạng: {"player":"<iframe src=\"https:\/\/play.vlstream.net\/embed\/hash\/s1\" ...>"}
+        // Cần JSON.parse để unescape \/ thành / và \" thành "
+        if (html.indexOf('"player"') !== -1) {
+            try {
+                var jsonObj = JSON.parse(html);
+                if (jsonObj && jsonObj.player) {
+                    var playerHtml = jsonObj.player;
+                    // playerHtml giờ là clean HTML: <iframe src="https://play.vlstream.net/embed/hash/s1" ...>
+                    var srcMatch = playerHtml.match(/src=["']([^"']+)["']/i);
+                    if (srcMatch) {
+                        return JSON.stringify({
+                            url: srcMatch[1],
+                            isEmbed: true,
+                            headers: {
+                                "Referer": "https://vlxx.net/"
+                            }
+                        });
+                    }
+                }
+            } catch (parseErr) {
+                // Fallback: regex trên raw JSON string
+                // Unescape \/ trước khi match
+                var cleaned = html.replace(/\\\//g, '/');
+                // Match src=\"URL\" hoặc src=\\"URL\\"
+                var iframeMatch = cleaned.match(/src=(?:\\\\)?["'](https?:\/\/[^"'\\]+)(?:\\\\)?["']/i);
+                if (iframeMatch) {
                     return JSON.stringify({
-                        url: foundUrl,
-                        isEmbed: !isStream,
-                        mimeType: isStream ? "application/x-mpegURL" : "",
-                        headers: { 
-                            "Referer": BASE_URL + "/",
-                            "Origin": BASE_URL,
-                            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
+                        url: iframeMatch[1],
+                        isEmbed: true,
+                        headers: {
+                            "Referer": "https://vlxx.net/"
                         }
                     });
                 }
             }
         }
 
-        // 2. Lưới vét sâu đa tầng (Universal Deep Regex): 
-        // Bắt mọi URL thuộc các CDN lưu trữ file trực tiếp (như vlstorage, googlevideo) hoặc có đuôi vl, mp4, m3u8
-        var universalRegex = /(https?:\/\/[^\s"'<>]+\b(?:vlstorage|googlevideo|vlstream)[^\s"'<>]*)/i;
-        var universalMatch = cleanHtml.match(universalRegex);
-
-        if (!universalMatch) {
-            // Lưới vét dự phòng tổng quát cho mọi link media/manifest
-            universalRegex = /(https?:\/\/[^\s"'<>]+\.(?:vl|m3u8|mp4|ts|m4v)[^\s"'<>]*)/i;
-            universalMatch = cleanHtml.match(universalRegex);
-        }
-
-        if (universalMatch && universalMatch[1]) {
-            var streamUrl = universalMatch[1].replace(/\\/g, '');
-            if (streamUrl.indexOf("//") === 0) streamUrl = "https:" + streamUrl;
-
-            var isStreamType = /\.(?:vl|m3u8|ts|mp4|m4v)/i.test(streamUrl) || streamUrl.indexOf("manifest") !== -1;
-            
+        // === CASE 2: Embed page HTML (JWPlayer with .vl sources) ===
+        var fileMatch = html.match(/"file"\s*:\s*"(https?[^"]+\.vl[^"]*)"/i);
+        if (fileMatch) {
             return JSON.stringify({
-                url: streamUrl,
-                isEmbed: !isStreamType,
-                mimeType: isStreamType ? "application/x-mpegURL" : "",
-                headers: { 
-                    "Referer": BASE_URL + "/",
-                    "Origin": BASE_URL,
-                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
+                url: fileMatch[1],
+                isEmbed: false,
+                mimeType: "application/x-mpegURL",
+                headers: {
+                    "Referer": "https://play.vlstream.net/"
                 }
             });
         }
 
-        return emptyResult;
+        // Thử parse sources array
+        var sourcesMatch = html.match(/sources\s*:\s*(\[[^\]]+\])/i);
+        if (sourcesMatch) {
+            try {
+                var sources = JSON.parse(sourcesMatch[1]);
+                if (sources && sources.length > 0 && sources[0].file) {
+                    return JSON.stringify({
+                        url: sources[0].file,
+                        isEmbed: false,
+                        mimeType: sources[0].type === 'hls' ? 'application/x-mpegURL' : '',
+                        headers: {
+                            "Referer": "https://play.vlstream.net/"
+                        }
+                    });
+                }
+            } catch (e) {
+                var regexFile = sourcesMatch[1].match(/"file"\s*:\s*"([^"]+)"/i);
+                if (regexFile) {
+                    return JSON.stringify({
+                        url: regexFile[1],
+                        isEmbed: false,
+                        mimeType: "application/x-mpegURL",
+                        headers: {
+                            "Referer": "https://play.vlstream.net/"
+                        }
+                    });
+                }
+            }
+        }
+
+        // Tìm bất kỳ URL .vl nào
+        var vlMatch = html.match(/(https?:\/\/[^\s"'\\]+\.vl[^\s"'\\]*)/i);
+        if (vlMatch) {
+            return JSON.stringify({
+                url: vlMatch[1],
+                isEmbed: false,
+                mimeType: "application/x-mpegURL",
+                headers: {
+                    "Referer": "https://play.vlstream.net/"
+                }
+            });
+        }
+
+        // Không tìm được gì → trả empty để dừng recursive loop
+        return JSON.stringify({ url: "", isEmbed: false, headers: {} });
     } catch (e) {
-        return emptyResult;
+        return JSON.stringify({ url: "", isEmbed: false, headers: {} });
     }
 }
