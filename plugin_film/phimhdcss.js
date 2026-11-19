@@ -2,7 +2,7 @@ function getManifest() {
     return JSON.stringify({
         "id": "kkphim",
         "name": "KKPhim",
-        "version": "1.0.2",
+        "version": "1.0.3",
         "baseUrl": "https://phimapi.com",
         "iconUrl": "https://raw.githubusercontent.com/youngbi/repo/main/plugins/kkphim.png",
         "isEnabled": true,
@@ -110,7 +110,6 @@ function getUrlCountries() {
 }
 
 function getUrlYears() {
-    // KKPhim không có endpoint trả về danh sách năm; dùng getLocalYearsJson() nếu cần danh sách tĩnh.
     return "";
 }
 
@@ -124,7 +123,7 @@ function getLocalYearsJson() {
 }
 
 // =============================================================================
-// PARSERS
+// PARSERS & HELPERS
 // =============================================================================
 
 function extractArrayItems(response) {
@@ -136,10 +135,38 @@ function extractArrayItems(response) {
     return [];
 }
 
+function extractCdnDomain(response) {
+    if (response && response.data && typeof response.data === "object" && response.data.APP_DOMAIN_CDN_IMAGE) {
+        return String(response.data.APP_DOMAIN_CDN_IMAGE).trim();
+    }
+    if (response && response.APP_DOMAIN_CDN_IMAGE) {
+        return String(response.APP_DOMAIN_CDN_IMAGE).trim();
+    }
+    return "https://phimimg.com";
+}
+
+function getPosterUrl(path, cdnDomain, fallbackPath) {
+    var raw = path || fallbackPath || "";
+    if (!raw) return "";
+
+    var str = String(raw).trim();
+    if (!str) return "";
+
+    if (str.indexOf("http://") === 0 || str.indexOf("https://") === 0) {
+        return str;
+    }
+
+    var baseCdn = String(cdnDomain || "https://phimimg.com").trim().replace(/\/+$/, "");
+    var cleanPath = str.replace(/^\/+/, "");
+
+    return baseCdn + "/" + cleanPath;
+}
+
 function parseListResponse(apiResponseJson) {
     try {
         var response = JSON.parse(apiResponseJson);
         var items = extractArrayItems(response);
+        var cdnDomain = extractCdnDomain(response);
         var data = (response && response.data && !Array.isArray(response.data)) ? response.data : {};
         var params = data.params || {};
         var pagination = response.pagination || params.pagination || {};
@@ -153,8 +180,8 @@ function parseListResponse(apiResponseJson) {
             return {
                 id: item.slug || "",
                 title: item.name || "",
-                posterUrl: getPosterUrl(item.poster_url),
-                backdropUrl: getPosterUrl(item.thumb_url),
+                posterUrl: getPosterUrl(item.poster_url, cdnDomain, item.thumb_url),
+                backdropUrl: getPosterUrl(item.thumb_url, cdnDomain, item.poster_url),
                 year: parseInt(item.year, 10) || 0,
                 quality: item.quality || "",
                 episode_current: item.episode_current || "",
@@ -188,6 +215,7 @@ function parseMovieDetail(apiResponseJson) {
         var response = JSON.parse(apiResponseJson);
         var movie = response.movie || {};
         var episodes = Array.isArray(response.episodes) ? response.episodes : [];
+        var cdnDomain = extractCdnDomain(response);
 
         var servers = [];
         for (var i = 0; i < episodes.length; i++) {
@@ -249,8 +277,8 @@ function parseMovieDetail(apiResponseJson) {
             id: movie.slug || "",
             title: movie.name || "",
             originName: movie.origin_name || "",
-            posterUrl: getPosterUrl(movie.poster_url),
-            backdropUrl: getPosterUrl(movie.thumb_url),
+            posterUrl: getPosterUrl(movie.poster_url, cdnDomain, movie.thumb_url),
+            backdropUrl: getPosterUrl(movie.thumb_url, cdnDomain, movie.poster_url),
             description: cleanDescription,
             year: parseInt(movie.year, 10) || 0,
             rating: ratingValue,
@@ -338,13 +366,4 @@ function parseYearsResponse(apiResponseJson) {
     } catch (e) {
         return "[]";
     }
-}
-
-function getPosterUrl(path) {
-    if (!path) return "";
-    var str = String(path).trim();
-    if (!str) return "";
-    if (str.indexOf("http://") === 0 || str.indexOf("https://") === 0) return str;
-    var cleanPath = str.replace(/^\/+/, "");
-    return "https://phimapi.com/image.php?url=" + encodeURIComponent("https://phimimg.com/" + cleanPath);
 }
