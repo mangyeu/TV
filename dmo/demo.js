@@ -77,7 +77,7 @@ function getManifest() {
     return JSON.stringify({
         "id": "javhd",
         "name": "JavHD",
-        "version": "1.0.8",
+        "version": "1.0.9",
         "baseUrl": BASE_URL,
         "iconUrl": BASE_URL + "/favicon.ico",
         "isEnabled": true,
@@ -213,6 +213,7 @@ function getUrlList(slug, filtersJson) {
     var chosenSlug = filters.idol || filters.category || slug || 'recent';
     var normalizedTarget = String(chosenSlug).replace(/^https?:\/\/[^/]+/i, '').replace(/^\/+|\/+$/g, '');
 
+    var isPornstar = (normalizedTarget.indexOf("pornstar") === 0);
     var isBrowse = false;
     var browsePrefixes = ['recent', 'popular', 'rated', 'discussed', 'downloaded', 'longest', 'watched'];
     for (var i = 0; i < browsePrefixes.length; i++) {
@@ -227,16 +228,23 @@ function getUrlList(slug, filtersJson) {
         finalUrl = String(chosenSlug).replace(/\/+$/, '') + '/';
     } else if (!normalizedTarget || normalizedTarget === 'recent') {
         finalUrl = BASE_URL + "/recent/" + sortPath;
+    } else if (isPornstar) {
+        finalUrl = BASE_URL + "/" + normalizedTarget + "/";
     } else {
         finalUrl = BASE_URL + "/" + normalizedTarget + "/" + sortPath;
     }
 
     var params = [];
-    params.push(isBrowse ? "ajax=browse_videos" : "ajax=1");
+    if (!isPornstar) {
+        params.push(isBrowse ? "ajax=browse_videos" : "ajax=1");
+    }
     if (page > 1) {
         params.push("page=" + page);
     }
 
+    if (params.length === 0) {
+        return finalUrl;
+    }
     var separator = (finalUrl.indexOf('?') !== -1) ? '&' : '?';
     return finalUrl + separator + params.join('&');
 }
@@ -367,7 +375,6 @@ function parseListResponse(html) {
     var moviesMap = {};
     var parts = responseHtml.split(/<li[^>]*id=["']video-[^"']*["'][^>]*>/i);
 
-    // Fallback nếu site đổi sang <li class="...video..."> hoặc <div id="video-...">
     if (parts.length <= 1) {
         parts = responseHtml.split(/<(?:li|div)[^>]*(?:id=["']video-[^"']*["']|class=["'][^"']*video-item[^"']*["'])[^>]*>/i);
     }
@@ -709,8 +716,25 @@ function parseCategoriesResponse(html) {
     var categories = [];
     var seen = {};
     var src = (html === null || html === undefined) ? "" : String(html);
-    var parts = src.split(/<li[^>]*id=["']category-[^"']*["'][^>]*>/i);
 
+    var idols = parseIdolsMenuHtml(IDOLS_MENU_HTML);
+    var defaultEntries = [{ name: "Idols AV (Tất cả)", slug: "pornstar" }];
+    for (var k = 0; k < idols.length; k++) {
+        defaultEntries.push({
+            name: "Idol: " + idols[k].name,
+            slug: idols[k].slug
+        });
+    }
+
+    for (var d = 0; d < defaultEntries.length; d++) {
+        var dSlug = defaultEntries[d].slug;
+        if (dSlug && !seen[dSlug]) {
+            seen[dSlug] = true;
+            categories.push(defaultEntries[d]);
+        }
+    }
+
+    var parts = src.split(/<li[^>]*id=["']category-[^"']*["'][^>]*>/i);
     for (var i = 1; i < parts.length; i++) {
         var itemHtml = parts[i];
         var linkMatch = itemHtml.match(/href=["']\/([^"']+)[\/]?["']/i);
@@ -729,8 +753,7 @@ function parseCategoriesResponse(html) {
         }
     }
 
-    // Fallback nếu cấu trúc trang danh mục không có id="category-..."
-    if (categories.length === 0) {
+    if (categories.length <= defaultEntries.length) {
         var aRe = /<a\b([^>]*)>([\s\S]*?)<\/a>/gi;
         var m;
         while ((m = aRe.exec(src)) !== null) {
