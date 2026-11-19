@@ -11,7 +11,7 @@ function getManifest() {
     return JSON.stringify({
         "id": "tvhay",
         "name": "TVHay",
-        "version": "1.2.7",
+        "version": "1.2.8",
         "baseUrl": BASE_URL,
         "iconUrl": BASE_URL + "/favicon.png",
         "isEnabled": true,
@@ -199,4 +199,484 @@ function decodeBase64(str) {
             if (c3 >= 0 && c3 !== 64) {
                 output.push(String.fromCharCode(((c2 & 15) << 4) | (c3 >> 2)));
             }
-            if (c4
+            if (c4 >= 0 && c4 !== 64) {
+                output.push(String.fromCharCode(((c3 & 3) << 6) | c4));
+            }
+        }
+
+        var raw = output.join('');
+        try {
+            return decodeURIComponent(escape(raw));
+        } catch (e) {
+            return raw;
+        }
+    } catch (e) {
+        return "";
+    }
+}
+
+function extractBalancedDivs(html, startPattern) {
+    var results = [];
+    var regex = new RegExp(startPattern, "gi");
+    var m;
+    while ((m = regex.exec(html)) !== null) {
+        var openIdx = m.index;
+        var tagEnd = html.indexOf(">", openIdx);
+        if (tagEnd === -1) break;
+
+        var depth = 1;
+        var pos = tagEnd + 1;
+        var divTokenRegex = /<\/?div\b[^>]*>/gi;
+        divTokenRegex.lastIndex = pos;
+        var tMatch;
+        while ((tMatch = divTokenRegex.exec(html)) !== null) {
+            if (tMatch[0].charAt(1) === "/") {
+                depth--;
+                if (depth === 0) {
+                    results.push(html.slice(tagEnd + 1, tMatch.index));
+                    regex.lastIndex = tMatch.index + tMatch[0].length;
+                    break;
+                }
+            } else {
+                depth++;
+            }
+        }
+        if (depth !== 0) break;
+    }
+    return results;
+}
+
+// =============================================================================
+// URL GENERATION
+// =============================================================================
+
+function getUrlList(slug, filtersJson) {
+    try {
+        var filters = parseFiltersArg(filtersJson);
+        var page = parseInt(filters.page || 1, 10) || 1;
+        var hasFilter = filters.sort || filters.category || filters.country || filters.year || filters.type || filters.language;
+
+        if (hasFilter) {
+            var params = [];
+            if (filters.sort) params.push("filter[sort]=" + encodeURIComponent(filters.sort));
+            if (filters.type) params.push("filter[type]=" + encodeURIComponent(filters.type));
+            if (filters.category) params.push("filter[category]=" + encodeURIComponent(filters.category));
+            if (filters.country) params.push("filter[region]=" + encodeURIComponent(filters.country));
+            if (filters.year) params.push("filter[year]=" + encodeURIComponent(filters.year));
+            if (filters.language) params.push("filter[language]=" + encodeURIComponent(filters.language));
+            if (page > 1) params.push("page=" + page);
+            var fUrl = BASE_URL + "/?" + params.join("&");
+            log("getUrlList -> " + fUrl);
+            return fUrl;
+        }
+
+        var cleanSlug = String(slug || "phim-moi").replace(/^\/+/, "");
+        var path = "";
+        if (
+            cleanSlug === "phim-moi" ||
+            cleanSlug === "phim-bo" ||
+            cleanSlug === "phim-le" ||
+            cleanSlug === "short-drama" ||
+            cleanSlug.indexOf("the-loai/") === 0 ||
+            cleanSlug.indexOf("quoc-gia/") === 0 ||
+            cleanSlug.indexOf("nam/") === 0
+        ) {
+            path = "/" + cleanSlug;
+        } else {
+            path = "/the-loai/" + cleanSlug;
+        }
+
+        var u = BASE_URL + path + (page > 1 ? "?page=" + page : "");
+        log("getUrlList -> " + u);
+        return u;
+    } catch (e) {
+        log("getUrlList error: " + e);
+        return BASE_URL + "/phim-moi";
+    }
+}
+
+function getUrlSearch(keyword, filtersJson) {
+    try {
+        var filters = parseFiltersArg(filtersJson);
+        var page = parseInt(filters.page || 1, 10) || 1;
+        var url = BASE_URL + "/index.php?view=tim-kiem&keyword=" + encodeURIComponent(keyword || "");
+        if (page > 1) url += "&page=" + page;
+        return url;
+    } catch (e) {
+        return BASE_URL + "/index.php?view=tim-kiem&keyword=" + encodeURIComponent(keyword || "");
+    }
+}
+
+function getUrlDetail(slug) {
+    if (!slug) return BASE_URL;
+    if (/^https?:\/\//i.test(slug)) return slug;
+    var path = String(slug).replace(/^\/+/, "");
+    return BASE_URL + "/" + path;
+}
+
+function getUrlCategories() { return BASE_URL + "/the-loai"; }
+function getUrlCountries() { return BASE_URL + "/quoc-gia"; }
+function getUrlYears() { return BASE_URL + "/nam"; }
+
+// =============================================================================
+// STREAM / EMBED EXTRACTION
+// =============================================================================
+
+function isAdOrTrackerUrl(url) {
+    return /(?:trafficstars|tsyndicate|doubleclick|googlesyndication|googletagmanager|google-analytics|cloudflareinsights|bit\.ly|shortlink|omg10\.com|t\.co\/|154\.82\.109\.164|choitic88|c168n\.biz|blogger\.googleusercontent\.com|iili\.io|ibb\.co)/i.test(url || "");
+}
+
+function isMediaSegmentUrl(url) {
+    return /\.(?:ts|m4s|key|vtt|srt)(?:\?|$|#)/i.test(url || "");
+}
+
+function detectStreamType(url) {
+    if (!url) return "embed";
+    if (/\.m3u8(?:\?|$|#)/i.test(url)) return "hls";
+    if (/\.mp4(?:\?|$|#)/i.test(url)) return "mp4";
+    return "embed";
+}
+
+function scoreStreamCandidate(candidate) {
+    var score = 100;
+    if (!candidate || !candidate.url) return score;
+    var u = candidate.url.toLowerCase();
+
+    if (candidate.type === "hls") score = 10;
+    else if (candidate.type === "mp4") score = 30;
+    else if (candidate.type === "embed") score = 50;
+
+    if (candidate.type === "hls") {
+        if (/\/index\.m3u8(?:\?|$|#)/i.test(u) || /master\.m3u8/i.test(u)) {
+            score -= 5;
+        }
+        if (/\/\d+kb\/hls\//i.test(u) || /playlist\.m3u8/i.test(u)) {
+            score += 2;
+        }
+    }
+
+    if (candidate.server === "Direct" || candidate.server.indexOf("Unwrapped") !== -1) {
+        score -= 2;
+    }
+    return score;
+}
+
+function sortAndDedupeCandidates(list) {
+    var seen = {};
+    var unique = [];
+    for (var i = 0; i < list.length; i++) {
+        var item = list[i];
+        if (!item || !item.url || seen[item.url]) continue;
+        seen[item.url] = true;
+        unique.push(item);
+    }
+    unique.sort(function (a, b) {
+        return scoreStreamCandidate(a) - scoreStreamCandidate(b);
+    });
+    return unique;
+}
+
+function extractStreamCandidates(htmlContent) {
+    var html = decodeEscapedUrl(htmlContent || "");
+    var candidates = [];
+
+    function addCandidate(rawUrl, typeHint, serverLabel) {
+        var unwrapped = unwrapPlayerUrl(rawUrl);
+        if (unwrapped) {
+            var uNorm = normalizeUrl(unwrapped);
+            if (uNorm && !isAdOrTrackerUrl(uNorm) && !isMediaSegmentUrl(uNorm)) {
+                candidates.push({
+                    url: uNorm,
+                    type: detectStreamType(uNorm),
+                    server: (serverLabel || "Player") + "-Unwrapped"
+                });
+            }
+        }
+
+        var norm = normalizeUrl(rawUrl);
+        if (!norm || isAdOrTrackerUrl(norm) || isMediaSegmentUrl(norm)) return;
+        if (/1s_blank\.mp4|preview\.mp4/i.test(norm)) return;
+
+        var sType = typeHint || detectStreamType(norm);
+        candidates.push({
+            url: norm,
+            type: sType,
+            server: serverLabel || "Unknown"
+        });
+    }
+
+    var varLinkRegex = /\b(linkHPro|linkSPro|embedUrl|streamUrl|videoUrl|hlsUrl|m3u8Url|playUrl|source|file)\s*[:=]\s*["']([^"'\s<>]+)["']/gi;
+    var vMatch;
+    while ((vMatch = varLinkRegex.exec(html)) !== null) {
+        var val = vMatch[2];
+        if (/^(https?:\/\/|\/\/|\/)/i.test(val) || /\.m3u8|\.mp4|embed\.php|player/i.test(val)) {
+            addCandidate(val, "", vMatch[1]);
+        }
+    }
+
+    var mediaRegex = /((?:https?:\/\/|\/)[^\s"'<>\\()]+?\.(?:m3u8|mp4)(?:[^\s"'<>\\()]*)?)/gi;
+    var mMatch;
+    while ((mMatch = mediaRegex.exec(html)) !== null) {
+        var mUrl = mMatch[1];
+        addCandidate(mUrl, /\.m3u8/i.test(mUrl) ? "hls" : "mp4", "Direct");
+    }
+
+    var wrapRegex = /(https?:\/\/[^\s"'<>\\()]*player[^\s"'<>\\()]*\?[^\s"'<>\\()]*url=[^\s"'<>\\()]+)/gi;
+    var wMatch;
+    while ((wMatch = wrapRegex.exec(html)) !== null) {
+        addCandidate(wMatch[1], "embed", "PlayerWrap");
+    }
+
+    var tagSrcRegex = /<(?:iframe|video|source)\b[^>]+(?:src|data-src|data-url|data-video)=["']([^"']+)["']/gi;
+    var tMatch;
+    while ((tMatch = tagSrcRegex.exec(html)) !== null) {
+        addCandidate(tMatch[1], "", "TagSrc");
+    }
+
+    var b64Regex = /(?:atob\(|base64,|data-link=|data-url=|data-src=|source\s*[:=]\s*)[\s"']*([A-Za-z0-9+/=]{24,})["']/gi;
+    var bMatch;
+    while ((bMatch = b64Regex.exec(html)) !== null) {
+        var decoded = decodeBase64(bMatch[1]).trim();
+        if (/^(https?:\/\/|\/\/|\/)/i.test(decoded)) {
+            addCandidate(decoded, "", "Decoded");
+        }
+    }
+
+    return sortAndDedupeCandidates(candidates);
+}
+
+// =============================================================================
+// ASYNC EMBED RESOLVER (ES5 + XMLHttpRequest)
+// =============================================================================
+
+function requestTextWithHeaders(url, refererUrl, onDone, onFail) {
+    try {
+        var xhr = new XMLHttpRequest();
+        xhr.open("GET", url, true);
+        xhr.setRequestHeader("User-Agent", DEFAULT_USER_AGENT);
+        if (refererUrl) {
+            try { xhr.setRequestHeader("Referer", refererUrl); } catch (e1) {}
+        }
+        try { xhr.setRequestHeader("Origin", PLAYER_ORIGIN); } catch (e2) {}
+        xhr.onreadystatechange = function () {
+            if (xhr.readyState === 4) {
+                if ((xhr.status >= 200 && xhr.status < 300) || xhr.status === 0) {
+                    onDone(xhr.responseText || "");
+                } else {
+                    onFail(new Error("HTTP " + xhr.status + " for " + url));
+                }
+            }
+        };
+        xhr.onerror = function () {
+            onFail(new Error("XHR error for " + url));
+        };
+        xhr.send();
+    } catch (err) {
+        onFail(err);
+    }
+}
+
+function resolveStreamFromDetail(detailOrJson, pageUrl, onSuccess, onError, depth, visited) {
+    var d = typeof depth === "number" ? depth : 0;
+    var maxDepth = 3;
+    var seen = visited || {};
+    var detailObj = detailOrJson;
+
+    if (typeof detailOrJson === "string") {
+        try {
+            detailObj = JSON.parse(detailOrJson);
+        } catch (e) {
+            detailObj = { streamUrl: detailOrJson, streamCandidates: [] };
+        }
+    }
+    if (!detailObj) detailObj = {};
+
+    var ref = pageUrl || detailObj.pageUrl || (BASE_URL + "/");
+    var candidates = sortAndDedupeCandidates(detailObj.streamCandidates || []);
+
+    for (var i = 0; i < candidates.length; i++) {
+        if (candidates[i] && (candidates[i].type === "hls" || candidates[i].type === "mp4")) {
+            detailObj.streamUrl = candidates[i].url;
+            detailObj.streamType = candidates[i].type;
+            detailObj.headers = {
+                "Referer": PLAYER_REFERER,
+                "Origin": PLAYER_ORIGIN,
+                "User-Agent": DEFAULT_USER_AGENT
+            };
+            detailObj.streamCandidates = candidates;
+            if (typeof onSuccess === "function") {
+                onSuccess(JSON.stringify(detailObj));
+            }
+            return;
+        }
+    }
+
+    if (d >= maxDepth) {
+        if (typeof onError === "function") {
+            onError(new Error("Max embed resolve depth reached"));
+        }
+        return;
+    }
+
+    var embedList = [];
+    for (var j = 0; j < candidates.length; j++) {
+        if (candidates[j] && candidates[j].type === "embed" && candidates[j].url) {
+            embedList.push(candidates[j].url);
+        }
+    }
+    if (embedList.length === 0 && detailObj.streamUrl && /\.(?:php|html?)|player/i.test(detailObj.streamUrl)) {
+        embedList.push(detailObj.streamUrl);
+    }
+
+    var idx = 0;
+    function nextEmbed() {
+        if (idx >= embedList.length) {
+            if (typeof onError === "function") {
+                onError(new Error("No playable stream found after resolving embeds"));
+            }
+            return;
+        }
+        var target = embedList[idx++];
+        var unwrappedTarget = unwrapPlayerUrl(target);
+        if (unwrappedTarget) {
+            detailObj.streamUrl = unwrappedTarget;
+            detailObj.streamType = detectStreamType(unwrappedTarget);
+            detailObj.headers = {
+                "Referer": PLAYER_REFERER,
+                "Origin": PLAYER_ORIGIN,
+                "User-Agent": DEFAULT_USER_AGENT
+            };
+            if (typeof onSuccess === "function") {
+                onSuccess(JSON.stringify(detailObj));
+            }
+            return;
+        }
+
+        if (seen[target]) {
+            nextEmbed();
+            return;
+        }
+        seen[target] = true;
+
+        requestTextWithHeaders(target, ref, function (embedHtml) {
+            var subCandidates = extractStreamCandidates(embedHtml);
+            if (subCandidates.length > 0) {
+                detailObj.streamCandidates = sortAndDedupeCandidates(subCandidates.concat(candidates));
+                resolveStreamFromDetail(detailObj, target, onSuccess, onError, d + 1, seen);
+            } else {
+                nextEmbed();
+            }
+        }, function () {
+            nextEmbed();
+        });
+    }
+
+    nextEmbed();
+}
+
+// =============================================================================
+// PARSERS
+// =============================================================================
+
+function parseListResponse(htmlContent) {
+    try {
+        var html = String(htmlContent || "");
+        if (!html || html.length < 50) {
+            log("parseListResponse received empty or too short HTML (length=" + html.length + ")");
+            return JSON.stringify({ items: [], pagination: { currentPage: 1, totalPages: 1, totalItems: 0, itemsPerPage: 20 } });
+        }
+
+        var movies = [];
+        var seenIds = {};
+
+        var cardBlocks = extractBalancedDivs(html, '<div[^>]*class="[^"]*movie-item[^"]*"[^>]*>');
+        for (var i = 0; i < cardBlocks.length; i++) {
+            var block = cardBlocks[i];
+            var linkMatch = /<a[^>]+href="([^"]+)"[^>]*>/i.exec(block);
+            if (!linkMatch) continue;
+
+            var href = linkMatch[1].trim();
+            var id = href.replace(/^https?:\/\/[^/]+\//i, "").replace(/^\/+/, "");
+            if (!id || seenIds[id]) continue;
+            seenIds[id] = true;
+
+            var imgMatch = /<img[^>]+(?:data-src|data-lazy-src|src)="([^"]+)"[^>]*>/i.exec(block);
+            var posterUrl = imgMatch ? normalizeUrl(imgMatch[1]) : "";
+
+            var titleMatch = /<div[^>]*class="[^"]*movie-title[^"]*"[^>]*>([\s\S]*?)<\/div>/i.exec(block);
+            var altMatch = /alt="([^"]+)"/i.exec(block);
+            var title = titleMatch ? stripTags(titleMatch[1]) : (altMatch ? stripTags(altMatch[1]) : "");
+            if (!title) continue;
+
+            var labelMatch = /<div[^>]*class="[^"]*movie-label[^"]*"[^>]*>([\s\S]*?)<\/div>/i.exec(block);
+            var epStatusMatch = /<div[^>]*class="[^"]*movie-ep-status[^"]*"[^>]*>([\s\S]*?)<\/div>/i.exec(block);
+            var metaMatch = /<div[^>]*class="[^"]*movie-meta-short[^"]*"[^>]*>([\s\S]*?)<\/div>/i.exec(block);
+
+            var labelText = labelMatch ? stripTags(labelMatch[1]) : "";
+            var epStatusText = epStatusMatch ? stripTags(epStatusMatch[1]) : "";
+            var metaText = metaMatch ? stripTags(metaMatch[1]) : "";
+
+            var year = 0;
+            var yearMatch = /\b(19\d{2}|20\d{2})\b/.exec(metaText + " " + title);
+            if (yearMatch) year = parseInt(yearMatch[1], 10) || 0;
+
+            movies.push({
+                id: id,
+                title: title,
+                posterUrl: posterUrl,
+                backdropUrl: posterUrl,
+                year: year,
+                quality: labelText,
+                episode_current: epStatusText,
+                lang: metaText
+            });
+        }
+
+        if (movies.length === 0) {
+            var aRegex = /<a[^>]+href="((?:https?:\/\/[^"'\s]+)?\/(?:phim|xem)\/[^"'\s?#]+)"[^>]*>([\s\S]*?)<\/a>/gi;
+            var aMatch;
+            while ((aMatch = aRegex.exec(html)) !== null) {
+                var aHref = aMatch[1].trim();
+                var aId = aHref.replace(/^https?:\/\/[^/]+\//i, "").replace(/^\/+/, "");
+                if (!aId || seenIds[aId]) continue;
+
+                var inner = aMatch[2];
+                var aImg = /<img[^>]+(?:data-src|data-lazy-src|src)="([^"]+)"[^>]*>/i.exec(inner);
+                var aPoster = aImg ? normalizeUrl(aImg[1]) : "";
+                var aAlt = /alt="([^"]+)"/i.exec(inner) || /title="([^"]+)"/i.exec(aMatch[0]);
+                var aTitle = aAlt ? stripTags(aAlt[1]) : stripTags(inner);
+
+                if (!aTitle || aTitle.length < 2 || /^\d+$/.test(aTitle)) continue;
+                seenIds[aId] = true;
+
+                movies.push({
+                    id: aId,
+                    title: aTitle,
+                    posterUrl: aPoster,
+                    backdropUrl: aPoster,
+                    year: 0,
+                    quality: "",
+                    episode_current: "",
+                    lang: ""
+                });
+            }
+        }
+
+        if (movies.length === 0) {
+            var posterCardRegex = /<a[^>]+href="((?:https?:\/\/(?:www\.)?tvhay\.buzz)?\/[^"'\s?#]+)"[^>]*>([\s\S]*?)<\/a>/gi;
+            var pCardMatch;
+            while ((pCardMatch = posterCardRegex.exec(html)) !== null) {
+                var pHref = pCardMatch[1].trim();
+                var pId = pHref.replace(/^https?:\/\/[^/]+\//i, "").replace(/^\/+/, "");
+                if (!pId || seenIds[pId]) continue;
+                if (/^(?:phim-moi|phim-bo|phim-le|short-drama|the-loai|quoc-gia|nam|index\.php|login|register|search|tim-kiem)/i.test(pId)) continue;
+
+                var pInner = pCardMatch[2];
+                var pImg = /<img[^>]+(?:data-src|data-lazy-src|src)="([^"]+)"[^>]*>/i.exec(pInner);
+                if (!pImg) continue;
+                var pImgSrc = pImg[1] || "";
+                if (/logo|favicon|banner|ads|placeholder|bit\.ly|c168n|choitic88|154\.82\.109\.164/i.test(pImgSrc)) continue;
+
+                var pAlt = /alt="([^"]*)"/i.exec(pImg[0]) || /title="([^"]*)"/i.exec(pCardMatch[0]);
+                var pTitle = pAlt ? stripTags(pAlt[1]) : stripTags(pInner);
+                if (!pTitle || pTitle.length
