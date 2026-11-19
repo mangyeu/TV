@@ -11,7 +11,7 @@ function getManifest() {
     return JSON.stringify({
         "id": "tvhay",
         "name": "TVHay",
-        "version": "1.3.0",
+        "version": "1.3.1",
         "baseUrl": BASE_URL,
         "iconUrl": BASE_URL + "/favicon.png",
         "isEnabled": true,
@@ -244,6 +244,29 @@ function extractBalancedDivs(html, startPattern) {
         if (depth !== 0) break;
     }
     return results;
+}
+
+function applyStreamFields(detailObj, streamUrl, streamType, candidates) {
+    var sUrl = streamUrl || "";
+    var sType = streamType || (sUrl ? detectStreamType(sUrl) : "");
+    var hdrs = {
+        "Referer": PLAYER_REFERER,
+        "Origin": PLAYER_ORIGIN,
+        "User-Agent": DEFAULT_USER_AGENT
+    };
+
+    detailObj.streamUrl = sUrl;
+    detailObj.streamType = sType;
+    detailObj.url = sUrl;
+    detailObj.videoUrl = sUrl;
+    detailObj.hlsUrl = sType === "hls" ? sUrl : "";
+    detailObj.playUrl = sUrl;
+    detailObj.headers = hdrs;
+    detailObj.header = hdrs;
+    if (candidates) {
+        detailObj.streamCandidates = candidates;
+    }
+    return detailObj;
 }
 
 // =============================================================================
@@ -496,14 +519,7 @@ function resolveStreamFromDetail(detailOrJson, pageUrl, onSuccess, onError, dept
 
     for (var i = 0; i < candidates.length; i++) {
         if (candidates[i] && (candidates[i].type === "hls" || candidates[i].type === "mp4")) {
-            detailObj.streamUrl = candidates[i].url;
-            detailObj.streamType = candidates[i].type;
-            detailObj.headers = {
-                "Referer": PLAYER_REFERER,
-                "Origin": PLAYER_ORIGIN,
-                "User-Agent": DEFAULT_USER_AGENT
-            };
-            detailObj.streamCandidates = candidates;
+            applyStreamFields(detailObj, candidates[i].url, candidates[i].type, candidates);
             if (typeof onSuccess === "function") {
                 onSuccess(JSON.stringify(detailObj));
             }
@@ -539,13 +555,7 @@ function resolveStreamFromDetail(detailOrJson, pageUrl, onSuccess, onError, dept
         var target = embedList[idx++];
         var unwrappedTarget = unwrapPlayerUrl(target);
         if (unwrappedTarget) {
-            detailObj.streamUrl = unwrappedTarget;
-            detailObj.streamType = detectStreamType(unwrappedTarget);
-            detailObj.headers = {
-                "Referer": PLAYER_REFERER,
-                "Origin": PLAYER_ORIGIN,
-                "User-Agent": DEFAULT_USER_AGENT
-            };
+            applyStreamFields(detailObj, unwrappedTarget, detectStreamType(unwrappedTarget), candidates);
             if (typeof onSuccess === "function") {
                 onSuccess(JSON.stringify(detailObj));
             }
@@ -593,13 +603,12 @@ function parseListResponse(htmlContent) {
         var seenIds = {};
 
         function cleanMovieId(rawHref) {
-            var h = decodeEscapedUrl(rawHref || "")
+            return decodeEscapedUrl(rawHref || "")
                 .replace(/^https?:\/\/[^/]+/i, "")
                 .replace(/#.*$/, "")
                 .replace(/\?.*$/, "")
                 .replace(/^\/+/, "")
                 .replace(/\/+$/, "");
-            return h;
         }
 
         function extractImgSrc(fragment) {
@@ -621,7 +630,6 @@ function parseListResponse(htmlContent) {
             return "";
         }
 
-        // 1. Ưu tiên khối .movie-item chuẩn
         var cardBlocks = extractBalancedDivs(html, '<div[^>]*class=["\'][^"\']*movie-item[^"\']*["\'][^>]*>');
         for (var i = 0; i < cardBlocks.length; i++) {
             var block = cardBlocks[i];
@@ -662,7 +670,6 @@ function parseListResponse(htmlContent) {
             });
         }
 
-        // 2. Fallback: các thẻ <a> trỏ tới /phim/... hoặc /xem/...
         if (movies.length === 0) {
             var aRegex = /<a\b[^>]*\bhref\s*=\s*["']((?:https?:\/\/[^"'\s]+)?\/(?:phim|xem)\/[^"'\s?#]+)["'][^>]*>([\s\S]*?)<\/a>/gi;
             var aMatch;
@@ -821,7 +828,7 @@ function parseMovieDetail(htmlContent) {
 
         for (var i = 0; i < sourceBlocks.length; i++) {
             var sBlock = sourceBlocks[i];
-            var sTitleMatch = /<div[^>]*class=["'][^"']*source-title[^"']*["\'][^>]*>([\s\S]*?)<\/div>/i.exec(sBlock);
+            var sTitleMatch = /<div[^>]*class=["\'][^"\']*source-title[^"\']*["\'][^>]*>([\s\S]*?)<\/div>/i.exec(sBlock);
             var serverName = sTitleMatch ? stripTags(sTitleMatch[1]) : ("Server #" + (i + 1));
             var episodes = extractEpisodeAnchors(sBlock);
 
@@ -921,14 +928,12 @@ function parseDetailResponse(htmlContent, pageUrl) {
         if (!detailObj.servers) detailObj.servers = [];
 
         detailObj.pageUrl = resolvedPageUrl;
-        detailObj.streamUrl = primary && primary.url ? primary.url : "";
-        detailObj.streamType = primary && primary.type ? primary.type : "";
-        detailObj.headers = {
-            "Referer": PLAYER_REFERER,
-            "Origin": PLAYER_ORIGIN,
-            "User-Agent": DEFAULT_USER_AGENT
-        };
-        detailObj.streamCandidates = candidates;
+        applyStreamFields(
+            detailObj,
+            primary && primary.url ? primary.url : "",
+            primary && primary.type ? primary.type : "",
+            candidates
+        );
 
         if (!detailObj.streamUrl) {
             log("parseDetailResponse: no streamUrl found for " + (resolvedPageUrl || "unknown"));
@@ -944,6 +949,7 @@ function parseDetailResponse(htmlContent, pageUrl) {
         return "null";
     }
 }
+
 // =============================================================================
 // COMPATIBILITY ALIASES
 // =============================================================================
