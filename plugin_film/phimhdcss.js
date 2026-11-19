@@ -8,7 +8,7 @@ function getManifest() {
     return JSON.stringify({
         "id": "phimhdcs",
         "name": "PhimHDCS",
-        "version": "1.1.4",
+        "version": "1.1.5",
         "baseUrl": BASE_URL,
         "iconUrl": BASE_URL + "/favicon.ico",
         "isEnabled": true,
@@ -99,12 +99,12 @@ function getFilterConfig() {
 }
 
 // =============================================================================
-// URL GENERATION
+// URL & TEXT HELPERS
 // =============================================================================
 
 function normalizeUrl(url) {
     if (!url) return "";
-    url = String(url).trim();
+    url = String(url).trim().replace(/^http:\/\//i, "https://");
     if (/^https?:\/\//i.test(url)) return url;
     if (url.indexOf("//") === 0) return "https:" + url;
     return BASE_URL + (url.indexOf("/") === 0 ? "" : "/") + url;
@@ -115,82 +115,15 @@ function stripTags(html) {
     return String(html).replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
 }
 
-function getUrlList(slug, filtersJson) {
-    try {
-        var filters = JSON.parse(filtersJson || "{}");
-        var page = parseInt(filters.page || 1, 10) || 1;
-
-        var hasFilter = filters.sort || filters.category || filters.country || filters.year || filters.type || filters.language;
-
-        if (hasFilter) {
-            var params = [];
-            if (filters.sort) params.push("filter[sort]=" + encodeURIComponent(filters.sort));
-            if (filters.type) params.push("filter[type]=" + encodeURIComponent(filters.type));
-            if (filters.category) params.push("filter[category]=" + encodeURIComponent(filters.category));
-            if (filters.country) params.push("filter[region]=" + encodeURIComponent(filters.country));
-            if (filters.year) params.push("filter[year]=" + encodeURIComponent(filters.year));
-            if (filters.language) params.push("filter[language]=" + encodeURIComponent(filters.language));
-            if (page > 1) params.push("page=" + page);
-
-            return BASE_URL + "/?" + params.join("&");
-        }
-
-        var path = "";
-        if (slug === 'phim-de-cu') {
-            path = "/danh-sach/bang-xep-hang";
-        } else if (slug === 'bang-xep-hang' || slug === 'top-phim-ngay' || slug === 'phim-chieu-rap' || slug === 'phim-moi') {
-            path = "/danh-sach/" + slug;
-        } else {
-            path = "/the-loai/" + slug;
-        }
-
-        var url = BASE_URL + path;
-        if (page > 1) {
-            url += "?page=" + page;
-        }
-
-        return url;
-    } catch (e) {
-        return BASE_URL + "/danh-sach/phim-moi";
-    }
+function getServerPriority(name) {
+    var s = String(name || "").trim().toUpperCase();
+    if (s.indexOf("FHDC") === 0) return 1;
+    if (s.indexOf("HDC") === 0) return 2;
+    if (s.indexOf("NC") === 0) return 3;
+    if (s.indexOf("HD") === 0) return 4;
+    if (s.indexOf("OP") === 0) return 5;
+    return 999;
 }
-
-function getUrlSearch(keyword, filtersJson) {
-    try {
-        var filters = JSON.parse(filtersJson || "{}");
-        var page = parseInt(filters.page || 1, 10) || 1;
-        var url = BASE_URL + "/?search=" + encodeURIComponent(keyword || "").replace(/%20/g, "+");
-        if (page > 1) {
-            url += "&page=" + page;
-        }
-        return url;
-    } catch (e) {
-        return BASE_URL + "/?search=" + encodeURIComponent(keyword || "");
-    }
-}
-
-function getUrlDetail(slug) {
-    if (!slug) return BASE_URL;
-    if (/^https?:\/\//i.test(slug)) return slug;
-    var path = slug.indexOf("/") === 0 ? slug.substring(1) : slug;
-    return BASE_URL + "/" + path;
-}
-
-function getUrlCategories() {
-    return BASE_URL + "/the-loai";
-}
-
-function getUrlCountries() {
-    return BASE_URL + "/quoc-gia";
-}
-
-function getUrlYears() {
-    return BASE_URL + "/nam";
-}
-
-// =============================================================================
-// HTML & STREAM PARSERS
-// =============================================================================
 
 function decodeBase64(str) {
     try {
@@ -204,19 +137,14 @@ function decodeBase64(str) {
             var c2 = lookup.indexOf(clean.charAt(i + 1));
             var c3 = lookup.indexOf(clean.charAt(i + 2));
             var c4 = lookup.indexOf(clean.charAt(i + 3));
-
             if (c1 < 0 || c2 < 0) break;
 
-            var b1 = (c1 << 2) | (c2 >> 4);
-            output.push(String.fromCharCode(b1));
-
+            output.push(String.fromCharCode((c1 << 2) | (c2 >> 4)));
             if (c3 >= 0 && c3 !== 64) {
-                var b2 = ((c2 & 15) << 4) | (c3 >> 2);
-                output.push(String.fromCharCode(b2));
+                output.push(String.fromCharCode(((c2 & 15) << 4) | (c3 >> 2)));
             }
             if (c4 >= 0 && c4 !== 64) {
-                var b3 = ((c3 & 3) << 6) | c4;
-                output.push(String.fromCharCode(b3));
+                output.push(String.fromCharCode(((c3 & 3) << 6) | c4));
             }
         }
 
@@ -231,6 +159,148 @@ function decodeBase64(str) {
     }
 }
 
+// =============================================================================
+// URL GENERATION
+// =============================================================================
+
+function getUrlList(slug, filtersJson) {
+    try {
+        var filters = JSON.parse(filtersJson || "{}");
+        var page = parseInt(filters.page || 1, 10) || 1;
+        var hasFilter = filters.sort || filters.category || filters.country || filters.year || filters.type || filters.language;
+
+        if (hasFilter) {
+            var params = [];
+            if (filters.sort) params.push("filter[sort]=" + encodeURIComponent(filters.sort));
+            if (filters.type) params.push("filter[type]=" + encodeURIComponent(filters.type));
+            if (filters.category) params.push("filter[category]=" + encodeURIComponent(filters.category));
+            if (filters.country) params.push("filter[region]=" + encodeURIComponent(filters.country));
+            if (filters.year) params.push("filter[year]=" + encodeURIComponent(filters.year));
+            if (filters.language) params.push("filter[language]=" + encodeURIComponent(filters.language));
+            if (page > 1) params.push("page=" + page);
+            return BASE_URL + "/?" + params.join("&");
+        }
+
+        var path = "";
+        if (slug === 'phim-de-cu') {
+            path = "/danh-sach/bang-xep-hang";
+        } else if (slug === 'bang-xep-hang' || slug === 'top-phim-ngay' || slug === 'phim-chieu-rap' || slug === 'phim-moi') {
+            path = "/danh-sach/" + slug;
+        } else {
+            path = "/the-loai/" + slug;
+        }
+
+        return BASE_URL + path + (page > 1 ? "?page=" + page : "");
+    } catch (e) {
+        return BASE_URL + "/danh-sach/phim-moi";
+    }
+}
+
+function getUrlSearch(keyword, filtersJson) {
+    try {
+        var filters = JSON.parse(filtersJson || "{}");
+        var page = parseInt(filters.page || 1, 10) || 1;
+        var url = BASE_URL + "/?search=" + encodeURIComponent(keyword || "").replace(/%20/g, "+");
+        if (page > 1) url += "&page=" + page;
+        return url;
+    } catch (e) {
+        return BASE_URL + "/?search=" + encodeURIComponent(keyword || "");
+    }
+}
+
+function getUrlDetail(slug) {
+    if (!slug) return BASE_URL;
+    if (/^https?:\/\//i.test(slug)) return slug;
+    var path = slug.indexOf("/") === 0 ? slug.substring(1) : slug;
+    return BASE_URL + "/" + path;
+}
+
+function getUrlCategories() { return BASE_URL + "/the-loai"; }
+function getUrlCountries() { return BASE_URL + "/quoc-gia"; }
+function getUrlYears() { return BASE_URL + "/nam"; }
+
+// =============================================================================
+// STREAM / EMBED EXTRACTION
+// =============================================================================
+
+function extractStreamCandidates(htmlContent, streamingServers) {
+    var candidates = [];
+
+    // 1. Link trực tiếp từ data-link của các nút .streaming-server (nếu có)
+    if (streamingServers && streamingServers.length > 0) {
+        streamingServers.slice().sort(function (a, b) {
+            return getServerPriority(a.name) - getServerPriority(b.name);
+        }).forEach(function (sv) {
+            if (sv.link) {
+                candidates.push({
+                    url: normalizeUrl(sv.link),
+                    type: sv.type || "embed",
+                    server: sv.name || "",
+                    id: sv.id || ""
+                });
+            }
+        });
+    }
+
+    // 2. Link m3u8 / mp4 trực tiếp trong HTML hoặc script
+    var mediaRegex = /(https?:\/\/[^\s"'<>\\]+\.(?:m3u8|mp4)(?:[^\s"'<>\\]*)?)/gi;
+    var mMatch;
+    while ((mMatch = mediaRegex.exec(htmlContent)) !== null) {
+        var mediaUrl = mMatch[1].replace(/\\\//g, "/");
+        if (mediaUrl.indexOf("1s_blank.mp4") === -1) {
+            candidates.push({
+                url: mediaUrl,
+                type: /\.m3u8/i.test(mediaUrl) ? "hls" : "mp4",
+                server: "Direct",
+                id: ""
+            });
+        }
+    }
+
+    // 3. Link iframe / embed player (phimhdc.com, streamxemphimhd.site hoặc thẻ iframe trong #player)
+    var iframeRegex = /(?:<iframe[^>]+src=["']([^"']+)["']|(?:["']?(?:embed|iframe|stream|player)_?(?:url|link|src)["']?\s*[:=]\s*["'](https?:\/\/[^"'\s<>]+)["']))/gi;
+    var iMatch;
+    while ((iMatch = iframeRegex.exec(htmlContent)) !== null) {
+        var rawEmbed = (iMatch[1] || iMatch[2] || "").replace(/\\\//g, "/");
+        if (rawEmbed) {
+            candidates.push({
+                url: normalizeUrl(rawEmbed),
+                type: "embed",
+                server: "Embed",
+                id: ""
+            });
+        }
+    }
+
+    // 4. Base64 khả nghi
+    var b64Regex = /(?:atob\(|base64,|data-link=|data-url=|source\s*[:=]\s*)["']([A-Za-z0-9+/=]{24,})["']/gi;
+    var bMatch;
+    while ((bMatch = b64Regex.exec(htmlContent)) !== null) {
+        var decoded = decodeBase64(bMatch[1]).trim();
+        if (/^(https?:\/\/|\/)/i.test(decoded)) {
+            var norm = normalizeUrl(decoded);
+            candidates.push({
+                url: norm,
+                type: /\.m3u8/i.test(norm) ? "hls" : (/\.mp4/i.test(norm) ? "mp4" : "embed"),
+                server: "Decoded",
+                id: ""
+            });
+        }
+    }
+
+    // Khử trùng lặp theo URL
+    var seen = {};
+    return candidates.filter(function (item) {
+        if (!item.url || seen[item.url]) return false;
+        seen[item.url] = true;
+        return true;
+    });
+}
+
+// =============================================================================
+// LIST, DETAIL & WATCH PARSERS
+// =============================================================================
+
 function parseDynamicFilters(html) {
     var result = {};
     try {
@@ -238,10 +308,9 @@ function parseDynamicFilters(html) {
             var list = [];
             var selectMatch = new RegExp('<select[^>]+name="' + namePattern + '"[\\s\\S]*?>([\\s\\S]*?)<\\/select>', 'i').exec(html);
             if (selectMatch) {
-                var optionsHtml = selectMatch[1];
                 var optionPattern = /<option\s+value="([^"]*)"[^>]*>([\s\S]*?)<\/option>/gi;
                 var optMatch;
-                while ((optMatch = optionPattern.exec(optionsHtml)) !== null) {
+                while ((optMatch = optionPattern.exec(selectMatch[1])) !== null) {
                     var val = optMatch[1].trim();
                     var name = stripTags(optMatch[2]);
                     if (val && name) list.push({ name: name, value: val });
@@ -264,12 +333,8 @@ function sortEpisodesAscending(episodes) {
     if (!episodes || episodes.length <= 1) return episodes || [];
     var firstMatch = /(?:Tập|Ep|Episode)?\s*(\d+)/i.exec(episodes[0].name);
     var lastMatch = /(?:Tập|Ep|Episode)?\s*(\d+)/i.exec(episodes[episodes.length - 1].name);
-    if (firstMatch && lastMatch) {
-        var firstNum = parseInt(firstMatch[1], 10);
-        var lastNum = parseInt(lastMatch[1], 10);
-        if (firstNum > lastNum) {
-            episodes.reverse();
-        }
+    if (firstMatch && lastMatch && parseInt(firstMatch[1], 10) > parseInt(lastMatch[1], 10)) {
+        episodes.reverse();
     }
     return episodes;
 }
@@ -289,7 +354,7 @@ function parseListResponse(htmlContent) {
 
             var year = 0;
             var yearMatch = /(\d{4})/.exec(fullTitle);
-            if (yearMatch) year = parseInt(yearMatch[1], 10);
+            if (yearMatch) year = parseInt(yearMatch[1], 10) || 0;
 
             var episodeCurrent = "";
             var epMatch = /(Tập\s*\d+|Hoàn\s*[tT]ất\s*\(\d+\/\d+\)|Full)/i.exec(label);
@@ -327,9 +392,7 @@ function parseListResponse(htmlContent) {
 
         var currentPage = 1;
         var currentPageMatch = /<a[^>]*class="[^"]*current[^"]*"[^>]*>(\d+)<\/a>/i.exec(htmlContent);
-        if (currentPageMatch) currentPage = parseInt(currentPageMatch[1], 10);
-
-        var filterOptions = parseDynamicFilters(htmlContent);
+        if (currentPageMatch) currentPage = parseInt(currentPageMatch[1], 10) || 1;
 
         return JSON.stringify({
             items: movies,
@@ -339,7 +402,7 @@ function parseListResponse(htmlContent) {
                 totalItems: totalPages * 20,
                 itemsPerPage: 20
             },
-            filterOptions: filterOptions
+            filterOptions: parseDynamicFilters(htmlContent)
         });
     } catch (error) {
         log("parseListResponse error: " + error);
@@ -403,22 +466,16 @@ function parseMovieDetail(htmlContent) {
         var categories = [];
         var catPattern = /<a\s+href="https:\/\/phimhdcss\.com\/the-loai\/[^"]+"\s+(?:tite|title)="([^"]+)">/gi;
         var match;
-        while ((match = catPattern.exec(htmlContent)) !== null) {
-            categories.push(match[1].trim());
-        }
+        while ((match = catPattern.exec(htmlContent)) !== null) categories.push(match[1].trim());
 
         var countries = [];
         var countryPattern = /<a\s+href="https:\/\/phimhdcss\.com\/quoc-gia\/[^"]+"\s+(?:tite|title)="([^"]+)">/gi;
-        while ((match = countryPattern.exec(htmlContent)) !== null) {
-            countries.push(match[1].trim());
-        }
+        while ((match = countryPattern.exec(htmlContent)) !== null) countries.push(match[1].trim());
         if (countries.length === 0 && countryTag) countries.push(countryTag);
 
         var actors = [];
         var actorPattern = /<a\s+href="https:\/\/phimhdcss\.com\/dien-vien\/[^"]+"\s+(?:tite|title)="Diễn viên ([^"]+)">/gi;
-        while ((match = actorPattern.exec(htmlContent)) !== null) {
-            actors.push(match[1].trim());
-        }
+        while ((match = actorPattern.exec(htmlContent)) !== null) actors.push(match[1].trim());
 
         var servers = [];
         var serverPattern = /<div[^>]*class="server-episode-block"[^>]*>[\s\S]*?Danh sách\s*(?:Sever)?\s*([^:<]+)[\s\S]*?<div[^>]*class="list-episode[^"]*"[^>]*>([\s\S]*?)<\/div>/gi;
@@ -430,17 +487,14 @@ function parseMovieDetail(htmlContent) {
                 .replace(/\s*#\d+$/, '')
                 .trim();
 
-            var episodesHtml = match[2];
             var episodes = [];
             var epPattern = /<a\s+href="([^"]+)"[^>]*title="([^"]*)"[^>]*>([\s\S]*?)<\/a>/gi;
             var epMatch;
-            while ((epMatch = epPattern.exec(episodesHtml)) !== null) {
-                var epUrl = normalizeUrl(epMatch[1]);
-                var epName = (epMatch[2] || stripTags(epMatch[3])).trim();
+            while ((epMatch = epPattern.exec(match[2])) !== null) {
                 episodes.push({
-                    id: epUrl,
-                    name: epName,
-                    slug: epUrl
+                    id: normalizeUrl(epMatch[1]),
+                    name: (epMatch[2] || stripTags(epMatch[3])).trim(),
+                    slug: normalizeUrl(epMatch[1])
                 });
             }
 
@@ -498,7 +552,6 @@ function parseWatchPage(htmlContent, pageUrl) {
     var detailUrl = "";
     var countries = [];
 
-    // 1. Breadcrumb
     var crumbPattern = /<li[^>]*itemprop="itemListElement"[^>]*>([\s\S]*?)<\/li>/gi;
     var crumbMatch;
     while ((crumbMatch = crumbPattern.exec(htmlContent)) !== null) {
@@ -515,14 +568,12 @@ function parseWatchPage(htmlContent, pageUrl) {
         }
     }
 
-    // 2. Khối .details
     var h1Match = /<h1[^>]*itemprop="name"[^>]*>([\s\S]*?)<\/h1>/i.exec(htmlContent);
     if (h1Match) {
-        var h1Html = h1Match[1];
-        var chapterMatch = /<span[^>]*class="chapter-name"[^>]*>([\s\S]*?)<\/span>/i.exec(h1Html);
+        var chapterMatch = /<span[^>]*class="chapter-name"[^>]*>([\s\S]*?)<\/span>/i.exec(h1Match[1]);
         if (chapterMatch) episodeCurrent = stripTags(chapterMatch[1]);
 
-        var h1LinkMatch = /<a[^>]*href="([^"]+)"[^>]*>([\s\S]*?)<\/a>/i.exec(h1Html);
+        var h1LinkMatch = /<a[^>]*href="([^"]+)"[^>]*>([\s\S]*?)<\/a>/i.exec(h1Match[1]);
         if (h1LinkMatch) {
             detailUrl = normalizeUrl(h1LinkMatch[1]);
             var h1Title = stripTags(h1LinkMatch[2]);
@@ -543,9 +594,7 @@ function parseWatchPage(htmlContent, pageUrl) {
     }
 
     var shortDescMatch = /<p[^>]*class="[^"]*short-description[^"]*"[^>]*>([\s\S]*?)<\/p>/i.exec(htmlContent);
-    if (shortDescMatch) {
-        description = stripTags(shortDescMatch[1]);
-    }
+    if (shortDescMatch) description = stripTags(shortDescMatch[1]);
 
     var ratingMatch = /itemprop="ratingValue"[^>]*>([^<]+)</i.exec(htmlContent);
     if (ratingMatch) {
@@ -556,15 +605,11 @@ function parseWatchPage(htmlContent, pageUrl) {
     }
 
     var rateCountMatch = /itemprop="ratingCount"[^>]*>([^<]+)</i.exec(htmlContent);
-    if (rateCountMatch) {
-        ratingCount = parseInt(rateCountMatch[1].replace(/[^\d]/g, ""), 10) || 0;
-    }
+    if (rateCountMatch) ratingCount = parseInt(rateCountMatch[1].replace(/[^\d]/g, ""), 10) || 0;
 
-    // 3. Player metadata & danh sách server phát (FHDC, HDC, NC, HD...)
     var playerEndpoint = "";
     var playerSignature = "";
     var currentEpisodeId = "";
-
     var playerBoxMatch = /<div[^>]*id="player-video"[^>]*>/i.exec(htmlContent);
     if (playerBoxMatch) {
         var playerTag = playerBoxMatch[0];
@@ -576,6 +621,10 @@ function parseWatchPage(htmlContent, pageUrl) {
         if (curIdAttr) currentEpisodeId = curIdAttr[1].trim();
     }
 
+    var posterUrl = "";
+    var posterCfgMatch = /poster\s*:\s*["']([^"']+)["']/i.exec(htmlContent);
+    if (posterCfgMatch) posterUrl = normalizeUrl(posterCfgMatch[1].replace(/\\\//g, "/"));
+
     var streamingServers = [];
     var svPattern = /<a[^>]*class="[^"]*streaming-server[^"]*"[^>]*>([\s\S]*?)<\/a>/gi;
     var svMatch;
@@ -583,17 +632,16 @@ function parseWatchPage(htmlContent, pageUrl) {
         var svTag = svMatch[0];
         var idM = /data-id="([^"]*)"/i.exec(svTag);
         var typeM = /data-type="([^"]*)"/i.exec(svTag);
-        var active = /\bactive\b/i.test(svTag);
-        var svName = stripTags(svMatch[1]);
+        var linkM = /data-link="([^"]*)"/i.exec(svTag);
         streamingServers.push({
             id: idM ? idM[1].trim() : "",
             type: typeM ? typeM[1].trim() : "embed",
-            name: svName,
-            active: active
+            link: linkM ? normalizeUrl(linkM[1]) : "",
+            name: stripTags(svMatch[1]),
+            active: /\bactive\b/i.test(svTag)
         });
     }
 
-    // 4. Danh sách tập theo từng khối .episodes
     var servers = [];
     var epContainerPattern = /<div[^>]*class="episodes[^"]*"[^>]*>([\s\S]*?)<\/div>\s*<\/div>\s*<\/div>/gi;
     var epContainerMatch;
@@ -607,76 +655,29 @@ function parseWatchPage(htmlContent, pageUrl) {
         var epLinkPattern = /<a\s+href="([^"]+)"[^>]*title="([^"]*)"[^>]*>([\s\S]*?)<\/a>/gi;
         var epLinkMatch;
         while ((epLinkMatch = epLinkPattern.exec(containerHtml)) !== null) {
-            var epUrl = normalizeUrl(epLinkMatch[1]);
-            var epTitle = (epLinkMatch[2] || stripTags(epLinkMatch[3])).trim();
             episodes.push({
-                id: epUrl,
-                name: epTitle,
-                slug: epUrl
+                id: normalizeUrl(epLinkMatch[1]),
+                name: (epLinkMatch[2] || stripTags(epLinkMatch[3])).trim(),
+                slug: normalizeUrl(epLinkMatch[1])
             });
         }
 
         if (episodes.length > 0) {
             sortEpisodesAscending(episodes);
-            servers.push({
-                name: serverName,
-                episodes: episodes
-            });
+            servers.push({ name: serverName, episodes: episodes });
         }
     }
 
-    // Fallback nếu không khớp cấu trúc container trên
-    if (servers.length === 0) {
-        var fallbackEps = [];
-        var fallbackPattern = /<a\s+href="(https:\/\/phimhdcss\.com\/[^"]+\/tap-[^"]+)"[^>]*title="([^"]*)"[^>]*>([\s\S]*?)<\/a>/gi;
-        var fbMatch;
-        while ((fbMatch = fallbackPattern.exec(htmlContent)) !== null) {
-            fallbackEps.push({
-                id: normalizeUrl(fbMatch[1]),
-                name: (fbMatch[2] || stripTags(fbMatch[3])).trim(),
-                slug: normalizeUrl(fbMatch[1])
-            });
-        }
-        if (fallbackEps.length > 0) {
-            sortEpisodesAscending(fallbackEps);
-            servers.push({
-                name: "Vietsub",
-                episodes: fallbackEps
-            });
-        }
-    }
-
-    // 5. Dò link stream trực tiếp nếu có nhúng sẵn trong HTML/script
-    var streamUrl = "";
-    var m3u8Match = /(https?:\/\/[^\s"'<>]+\.m3u8[^\s"'<>]*)/i.exec(htmlContent);
-    var mp4Match = /(https?:\/\/[^\s"'<>]+\.mp4[^\s"'<>]*)/i.exec(htmlContent);
-    var iframeMatch = /<div[^>]*id="player"[^>]*>[\s\S]*?<iframe[^>]+src="([^"]+)"/i.exec(htmlContent);
-
-    if (m3u8Match) {
-        streamUrl = m3u8Match[1];
-    } else if (mp4Match) {
-        streamUrl = mp4Match[1];
-    } else if (iframeMatch) {
-        streamUrl = normalizeUrl(iframeMatch[1]);
-    } else {
-        var b64Match = /(?:atob\(|base64,|data-link=|data-url=|source\s*[:=]\s*)["']([A-Za-z0-9+/=]{24,})["']/i.exec(htmlContent);
-        if (b64Match) {
-            var decoded = decodeBase64(b64Match[1]).trim();
-            if (/^(https?:\/\/|\/)/i.test(decoded)) {
-                streamUrl = normalizeUrl(decoded);
-            }
-        }
-    }
-
-    var slug = "";
-    if (detailUrl) {
-        slug = detailUrl.replace(BASE_URL + "/", "").replace(/^\/+/, "");
-    }
+    var streamCandidates = extractStreamCandidates(htmlContent, streamingServers);
+    var primaryStream = streamCandidates.length > 0 ? streamCandidates[0] : null;
+    var slug = detailUrl ? detailUrl.replace(BASE_URL + "/", "").replace(/^\/+/, "") : "";
 
     return {
         id: slug,
         title: title,
         originalTitle: originalTitle,
+        posterUrl: posterUrl,
+        backdropUrl: posterUrl,
         description: description,
         year: year,
         rating: rating,
@@ -684,7 +685,9 @@ function parseWatchPage(htmlContent, pageUrl) {
         episode_current: episodeCurrent,
         country: countries.join(", "),
         servers: servers,
-        streamUrl: streamUrl,
+        streamUrl: primaryStream ? primaryStream.url : "",
+        streamType: primaryStream ? primaryStream.type : "",
+        streamCandidates: streamCandidates,
         pageUrl: pageUrl || "",
         playerMeta: {
             endpoint: playerEndpoint,
@@ -697,35 +700,20 @@ function parseWatchPage(htmlContent, pageUrl) {
 
 function parseDetailResponse(htmlContent, pageUrl) {
     try {
-        var hasWatchMarkers = /id="player-video"|class="streaming-server"|class="chapter-name"|class="js-episode-list"/i.test(htmlContent);
-
+        var hasWatchMarkers = /id="player-video"|class="streaming-server"|class="chapter-name"|class="js-episode-list"|HDCPlayerConfig/i.test(htmlContent);
         if (hasWatchMarkers) {
-            var watchObj = parseWatchPage(htmlContent, pageUrl);
-            return JSON.stringify(watchObj);
+            return JSON.stringify(parseWatchPage(htmlContent, pageUrl));
         }
 
         var detailJsonStr = parseMovieDetail(htmlContent);
         var detailObj = (detailJsonStr && detailJsonStr !== "null") ? JSON.parse(detailJsonStr) : {};
-
-        var streamUrl = "";
-        var m3u8Match = /(https?:\/\/[^\s"'<>]+\.m3u8[^\s"'<>]*)/i.exec(htmlContent);
-        var mp4Match = /(https?:\/\/[^\s"'<>]+\.mp4[^\s"'<>]*)/i.exec(htmlContent);
-        if (m3u8Match) {
-            streamUrl = m3u8Match[1];
-        } else if (mp4Match) {
-            streamUrl = mp4Match[1];
-        } else {
-            var b64Match = /(?:atob\(|base64,|data-link=|data-url=|source\s*[:=]\s*)["']([A-Za-z0-9+/=]{24,})["']/i.exec(htmlContent);
-            if (b64Match) {
-                var decoded = decodeBase64(b64Match[1]).trim();
-                if (/^(https?:\/\/|\/)/i.test(decoded)) {
-                    streamUrl = normalizeUrl(decoded);
-                }
-            }
-        }
+        var streamCandidates = extractStreamCandidates(htmlContent, []);
+        var primaryStream = streamCandidates.length > 0 ? streamCandidates[0] : null;
 
         detailObj.pageUrl = pageUrl || "";
-        detailObj.streamUrl = streamUrl;
+        detailObj.streamUrl = primaryStream ? primaryStream.url : "";
+        detailObj.streamType = primaryStream ? primaryStream.type : "";
+        detailObj.streamCandidates = streamCandidates;
 
         return JSON.stringify(detailObj);
     } catch (error) {
