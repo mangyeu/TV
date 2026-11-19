@@ -2,10 +2,10 @@
   "version": 1,
   "plugins": [
     {
-       "id": "missav",
-        "name": "MissAV",
-        "version": "1.1.2",
-        "baseUrl": "https://missav.media",
+       "id": "javhd",
+        "name": "JavHD",
+        "version": "1.0.7",
+        "baseUrl": "https://javhdz.today",
         "scriptUrl": "https://raw.githubusercontent.com/mangyeu/TV/refs/heads/main/dmo/demo.js",
       "iconUrl": "https://static.iw01.xyz/static/av01-icon-export.svg"
     }
