@@ -1,938 +1,462 @@
 var BASE_URL = "https://missav.media/en";
-var SITE_ORIGIN = "https://missav.media";
-var SITE_REFERER = "https://missav.media/en/";
-var EMBED_REFERER = "https://missav.media/en/";
+var CDN_URL = "https://fourhoi.mrstcdn.store";
 
 function trimStr(str) {
-    if (!str || typeof str !== "string") {
-        return "";
-    }
-    return str.replace(/^\s+|\s+$/g, "");
+  return String(str == null ? "" : str).replace(/^\s+|\s+$/g, "");
 }
 
-function getOriginReferer(targetUrl, fallbackUrl) {
-    var source = targetUrl || fallbackUrl || "";
-    var match = source.match(/^(https?:\/\/[^/]+)\//i);
-    return match ? match[1] + "/" : fallbackUrl;
+function collapseSpaces(str) {
+  return trimStr(String(str == null ? "" : str).replace(/\s+/g, " "));
 }
 
-function resolveUrl(rawUrl, baseUrl) {
-    var trimmed = trimStr(rawUrl);
-    if (!trimmed) {
-        return "";
-    }
-    if (/^https?:\/\//i.test(trimmed)) {
-        return trimmed;
-    }
-    if (/^\/\//.test(trimmed)) {
-        var protoMatch = (baseUrl || BASE_URL).match(/^(https?:)/i);
-        var proto = protoMatch ? protoMatch[1] : "https:";
-        return proto + trimmed;
-    }
-    var origin = getOriginReferer(baseUrl, SITE_REFERER);
-    if (trimmed.charAt(0) === "/") {
-        return origin.replace(/\/$/, "") + trimmed;
-    }
-    return BASE_URL.replace(/\/$/, "") + "/" + trimmed.replace(/^\/+/, "");
+function decodeEntities(str) {
+  if (str == null) return "";
+  return String(str)
+    .replace(/'/g, "'")
+    .replace(/'/g, "'")
+    .replace(/"/g, '"')
+    .replace(/&/g, "&")
+    .replace(/</g, "<")
+    .replace(/>/g, ">")
+    .replace(/ /g, " ");
 }
 
-function parsePageNumber(filtersJson) {
-    var filters = {};
-    try {
-        filters = JSON.parse(filtersJson || "{}");
-    } catch (e) {
-        filters = {};
-    }
-    var page = filters && filters.page ? parseInt(filters.page, 10) : 1;
-    return (!isNaN(page) && page > 0) ? page : 1;
+function escapeRegExp(str) {
+  return String(str).replace(/[-/\\^$*+?.()|[\]{}]/g, "\\$&");
 }
 
-// === 1. MANIFEST & ĐIỀU HƯỚNG ===
+function cleanTitleText(raw, code) {
+  var s = collapseSpaces(decodeEntities(raw));
+  if (code) {
+    var upperCode = String(code).toUpperCase();
+    var rePrefix = new RegExp("^" + escapeRegExp(upperCode) + "\\s+", "i");
+    s = trimStr(s.replace(rePrefix, ""));
+  }
+  return s;
+}
+
+function normalizeUrl(url, baseUrl) {
+  var raw = trimStr(url);
+  if (!raw || raw.indexOf("javascript:") === 0 || raw.indexOf("#") === 0) {
+    return "";
+  }
+  if (/^https?:\/\//i.test(raw)) {
+    return raw;
+  }
+  if (raw.indexOf("//") === 0) {
+    return "https:" + raw;
+  }
+  var root = trimStr(baseUrl || BASE_URL).replace(/\/+$/, "");
+  if (raw.charAt(0) === "/") {
+    return root.replace(/\/en$/i, "") + raw;
+  }
+  return root + "/" + raw.replace(/^\/+/, "");
+}
+
+function httpGetText(url, onSuccess, onError) {
+  try {
+    var xhr = new XMLHttpRequest();
+    xhr.open("GET", url, true);
+    xhr.onreadystatechange = function () {
+      if (xhr.readyState === 4) {
+        if ((xhr.status >= 200 && xhr.status < 300) || xhr.status === 0) {
+          if (typeof onSuccess === "function") {
+            onSuccess(xhr.responseText || "", xhr.status);
+          }
+        } else if (typeof onError === "function") {
+          onError(new Error("HTTP status " + xhr.status + " for " + url));
+        }
+      }
+    };
+    xhr.onerror = function () {
+      if (typeof onError === "function") {
+        onError(new Error("Network error for " + url));
+      }
+    };
+    xhr.send();
+  } catch (err) {
+    if (typeof onError === "function") {
+      onError(err);
+    }
+  }
+}
 
 function getManifest() {
-    return JSON.stringify({
-        "id": "missav2",
-        "name": "MissAV 2",
-        "version": "1.1.3",
-        "baseUrl": BASE_URL,
-        "fallbackUrls": ["https://missav123.com", "https://missav.media"],
-        "iconUrl": "https://raw.githubusercontent.com/youngbi/repo/main/plugins/missav.ico",
-        "isEnabled": true,
-        "isAdult": true,
-        "type": "VIDEO",
-        "layoutType": "HORIZONTAL",
-        "subtitleCat": true,
-        "imageReferer": SITE_REFERER
-    });
+  return {
+    id: "missav-media-en",
+    name: "MissAV (EN)",
+    version: "1.0.0",
+    baseUrl: BASE_URL,
+    cdnUrl: CDN_URL,
+    locale: "en"
+  };
 }
 
 function getHomeSections() {
-    return JSON.stringify([
-        { slug: "today-hot", title: "Hot Hôm Nay", type: "Horizontal", path: "" },
-        { slug: "weekly-hot", title: "Hot Trong Tuần", type: "Horizontal", path: "" },
-        { slug: "monthly-hot", title: "Hot Trong Tháng", type: "Horizontal", path: "" },
-        { slug: "uncensored-leak", title: "Không Che (Rò Rỉ)", type: "Horizontal", path: "" },
-        { slug: "release", title: "Mới Cập Nhật", type: "Grid", path: "" }
-    ]);
+  return [
+    { id: "new-releases", title: "New Releases", path: "/release" },
+    { id: "recent-update", title: "Recent update", path: "/new" },
+    { id: "english-subtitle", title: "English subtitle", path: "/english-subtitle" },
+    { id: "uncensored-leak", title: "Uncensored leak", path: "/uncensored-leak" },
+    { id: "fc2", title: "FC2", path: "/fc2" },
+    { id: "today-hot", title: "Most viewed today", path: "/today-hot" },
+    { id: "weekly-hot", title: "Most viewed by week", path: "/weekly-hot" },
+    { id: "monthly-hot", title: "Most viewed by month", path: "/monthly-hot" }
+  ];
 }
 
 function getPrimaryCategories() {
-    return JSON.stringify([
-        { name: "Mới cập nhật", slug: "new" },
-        { name: "Nữ diễn viên", slug: "actresses" },
-        { name: "Thể loại", slug: "genres" },
-        { name: "Không che", slug: "uncensored-leak" },
-        { name: "FC2", slug: "fc2" },
-        { name: "HEYZO", slug: "heyzo" },
-        { name: "Tokyo Hot", slug: "tokyohot" },
-        { name: "1pondo", slug: "1pondo" },
-        { name: "Caribbeancom", slug: "caribbeancom" },
-        { name: "Caribbeancompr", slug: "caribbeancompr" },
-        { name: "10musume", slug: "10musume" },
-        { name: "pacopacomama", slug: "pacopacomama" },
-        { name: "Gachinco", slug: "gachinco" },
-        { name: "XXX-AV", slug: "xxx-av" },
-        { name: "MarriedSlash", slug: "marriedslash" },
-        { name: "Naughty4610", slug: "naughty4610" },
-        { name: "Naughty0930", slug: "naughty0930" }
-    ]);
+  return [
+    { id: "release", title: "New Releases", path: "/release" },
+    { id: "new", title: "Recent update", path: "/new" },
+    { id: "english-subtitle", title: "English subtitle", path: "/english-subtitle" },
+    { id: "uncensored-leak", title: "Uncensored leak", path: "/uncensored-leak" },
+    { id: "fc2", title: "FC2", path: "/fc2" },
+    { id: "siro", title: "SIRO", path: "/siro" },
+    { id: "luxu", title: "LUXU", path: "/luxu" },
+    { id: "gana", title: "GANA", path: "/gana" },
+    { id: "maan", title: "PRESTIGE PREMIUM", path: "/maan" },
+    { id: "scute", title: "S-CUTE", path: "/scute" },
+    { id: "ara", title: "ARA", path: "/ara" },
+    { id: "heyzo", title: "HEYZO", path: "/heyzo" },
+    { id: "tokyohot", title: "Tokyo Hot", path: "/tokyohot" },
+    { id: "1pondo", title: "1pondo", path: "/1pondo" },
+    { id: "caribbeancom", title: "Caribbeancom", path: "/caribbeancom" },
+    { id: "caribbeancompr", title: "Caribbeancompr", path: "/caribbeancompr" },
+    { id: "10musume", title: "10musume", path: "/10musume" },
+    { id: "pacopacomama", title: "pacopacomama", path: "/pacopacomama" },
+    { id: "gachinco", title: "Gachinco", path: "/gachinco" },
+    { id: "xxxav", title: "XXX-AV", path: "/xxxav" },
+    { id: "marriedslash", title: "Married Slash", path: "/marriedslash" },
+    { id: "naughty4610", title: "Naughty 4610", path: "/naughty4610" },
+    { id: "naughty0930", title: "Naughty 0930", path: "/naughty0930" },
+    { id: "madou", title: "Madou", path: "/madou" },
+    { id: "twav", title: "TWAV", path: "/twav" },
+    { id: "furuke", title: "Furuke", path: "/furuke" },
+    { id: "klive", title: "Korean Live", path: "/klive" },
+    { id: "clive", title: "Chinese Live", path: "/clive" }
+  ];
 }
 
 function getFilterConfig() {
-    return JSON.stringify({
-        sort: [
-            { name: "Mới nhất", value: "new" },
-            { name: "Xem nhiều", value: "views" },
-            { name: "Hôm nay", value: "today_views" },
-            { name: "Tuần này", value: "weekly_views" },
-            { name: "Tháng này", value: "monthly_views" }
-        ],
-        category: [
-            { name: "Tất cả thể loại", value: "genres" },
-            { name: "Mới cập nhật", value: "new" },
-            { name: "Phát hành mới", value: "release" },
-            { name: "Không che (Rò rỉ)", value: "uncensored-leak" },
-            { name: "Nữ diễn viên", value: "actresses" },
-            { name: "BXH Diễn viên", value: "actresses/ranking" },
-            { name: "Nhà sản xuất", value: "makers" },
-            { name: "VR", value: "genres/VR" },
-            { name: "Xem nhiều hôm nay", value: "today-hot" },
-            { name: "Xem nhiều tuần", value: "weekly-hot" },
-            { name: "Xem nhiều tháng", value: "monthly-hot" },
-            { name: "Phụ đề Anh", value: "english-subtitle" },
-            { name: "Phụ đề China", value: "chinese-subtitle" },
-
-            // Amateur
-            { name: "SIRO", value: "series/SIRO" },
-            { name: "LUXU", value: "series/LUXU" },
-            { name: "GANA", value: "series/GANA" },
-            { name: "MAAN", value: "series/MAAN" },
-            { name: "S-CUTE", value: "series/S-CUTE" },
-            { name: "ARA", value: "series/ARA" },
-
-            // Uncensored Brands
-            { name: "FC2", value: "series/FC2" },
-            { name: "HEYZO", value: "series/HEYZO" },
-            { name: "Tokyo Hot", value: "series/Tokyo-Hot" },
-            { name: "1pondo", value: "series/1pondo" },
-            { name: "Caribbeancom", value: "series/Caribbeancom" },
-            { name: "Caribbeancompr", value: "series/Caribbeancompr" },
-            { name: "10musume", value: "series/10musume" },
-            { name: "pacopacomama", value: "series/pacopacomama" },
-            { name: "Gachinco", value: "series/Gachinco" },
-            { name: "XXX-AV", value: "series/XXX-AV" },
-            { name: "MarriedSlash", value: "series/MarriedSlash" },
-            { name: "Naughty4610", value: "series/naughty4610" },
-            { name: "Naughty0930", value: "series/naughty0930" }
-        ]
-    });
+  return {
+    groups: [
+      { id: "jav", title: "Watch JAV", path: "/new" },
+      { id: "amateur", title: "Amateur", path: "/siro" },
+      { id: "uncensored", title: "Uncensored", path: "/uncensored-leak" },
+      { id: "asia-av", title: "Asia AV", path: "/madou" }
+    ],
+    directories: [
+      { id: "actresses", title: "Actress list", path: "/actresses" },
+      { id: "actress-ranking", title: "Actress ranking", path: "/actresses/ranking" },
+      { id: "genres", title: "Genre", path: "/genres" },
+      { id: "makers", title: "Maker", path: "/makers" }
+    ]
+  };
 }
 
-// === 2. BỘ SINH URL ===
-
-function normalizeSlugForEn(rawSlug) {
-    var clean = trimStr(rawSlug || "");
-    clean = clean.replace(/^https?:\/\/[^/]+/i, "");
-    clean = clean.replace(/^\/?(?:vi|en)\//i, "");
-    clean = clean.replace(/^\/+|\/+$/g, "");
-    return clean;
-}
-
-function getUrlList(slug, filtersJson) {
-    var filters = {};
-    try {
-        filters = JSON.parse(filtersJson || "{}");
-    } catch (e) {
-        filters = {};
-    }
-    var page = parsePageNumber(filtersJson);
-    var relPath = normalizeSlugForEn(slug || "new") || "new";
-
-    var url = BASE_URL + "/" + relPath + "?page=" + page;
-    if (filters.sort && filters.sort !== "new" && filters.sort !== "hot") {
-        url += "&sort=" + encodeURIComponent(filters.sort);
-    } else if (filters.sort === "hot") {
-        url += "&sort=views";
-    }
+function appendPageQuery(url, page) {
+  var p = parseInt(page, 10);
+  if (!p || p < 1) {
+    p = 1;
+  }
+  if (p === 1) {
     return url;
+  }
+  return url + (url.indexOf("?") === -1 ? "?page=" + p : "&page=" + p);
 }
 
-function getUrlSearch(keyword, filtersJson) {
-    var page = parsePageNumber(filtersJson);
-    var safeKeyword = encodeURIComponent(trimStr(typeof keyword === "string" ? keyword : ""));
-    return BASE_URL + "/search/" + safeKeyword + "?page=" + page;
+function getUrlList(categoryOrSection, page) {
+  var path = "";
+  if (!categoryOrSection) {
+    path = "";
+  } else if (typeof categoryOrSection === "string") {
+    path = categoryOrSection;
+  } else {
+    path = categoryOrSection.path || categoryOrSection.url || categoryOrSection.id || "";
+  }
+
+  var url = BASE_URL;
+  if (path) {
+    if (/^https?:\/\//i.test(path)) {
+      url = path;
+    } else {
+      var cleanPath = String(path).replace(/^\/+/, "");
+      if (cleanPath.indexOf("en/") === 0) {
+        cleanPath = cleanPath.substring(3);
+      }
+      url = BASE_URL + "/" + cleanPath;
+    }
+  }
+  return appendPageQuery(url, page);
 }
 
-function getUrlDetail(slug) {
-    var clean = trimStr(slug);
-    if (!clean) {
-        return "";
-    }
-    if (/^https?:\/\//i.test(clean)) {
-        return clean;
-    }
-    var relPath = normalizeSlugForEn(clean);
-    if (!relPath) {
-        return BASE_URL;
-    }
-    return BASE_URL + "/" + relPath;
+function getUrlSearch(keyword, page) {
+  var q = encodeURIComponent(collapseSpaces(keyword));
+  return appendPageQuery(BASE_URL + "/search/" + q, page);
 }
 
-function getUrlCategories() { return BASE_URL + "/genres"; }
-function getUrlCountries() { return ""; }
-function getUrlYears() { return ""; }
-
-// === 3. UTILS & PARSE DANH SÁCH / CHI TIẾT ===
-
-var PluginUtils = {
-    normalizeHtml: function (html) {
-        if (!html) {
-            return "";
-        }
-        return html.replace(/class="([^"]*)"/g, function (fullMatch, classValue) {
-            var normalized = classValue.replace(/missav_media-/g, "");
-            return 'class="' + normalized + '"';
-        });
-    },
-    cleanText: function (text) {
-        if (!text) {
-            return "";
-        }
-        return trimStr(
-            String(text)
-                .replace(/<[^>]*>/g, "")
-                .replace(/&/g, "&")
-                .replace(/"/g, '"')
-                .replace(/'/g, "'")
-                .replace(/</g, "<")
-                .replace(/>/g, ">")
-                .replace(/\s+/g, " ")
-        );
-    },
-    toRelativeSlug: function (url) {
-        if (!url) {
-            return "";
-        }
-        var clean = String(url).replace(/^https?:\/\/[^/]+/i, "");
-        if (clean.indexOf("/") !== 0) {
-            clean = "/" + clean;
-        }
-        return clean;
-    },
-    getMeta: function (html, property) {
-        var regex = new RegExp('property="' + property + '"\\s+content="([^"]+)"', "i");
-        var match = html.match(regex);
-        return match ? match[1] : "";
+function getUrlDetail(itemOrId) {
+  var id = "";
+  if (typeof itemOrId === "string") {
+    id = itemOrId;
+  } else if (itemOrId) {
+    if (itemOrId.url) {
+      return normalizeUrl(itemOrId.url, BASE_URL);
     }
-};
+    id = itemOrId.id || itemOrId.dvd_id || itemOrId.slug || "";
+  }
+  id = trimStr(id).replace(/^\/+|\/+$/g, "");
+  if (!id) return "";
+  if (/^https?:\/\//i.test(id)) return id;
+  if (id.indexOf("en/") === 0) {
+    return BASE_URL + "/" + id.substring(3);
+  }
+  return BASE_URL + "/" + id;
+}
 
-function parseListResponse(html) {
-    html = PluginUtils.normalizeHtml(html || "");
-    var movies = [];
+function getUrlCategories() {
+  return BASE_URL + "/genres";
+}
 
-    var isSearchPage = html.indexOf("window.recombeeClient.send(new recombee.SearchItems") !== -1 ||
-        (html.indexOf('x-data="{') !== -1 && html.indexOf("recommendItems") !== -1);
+function getUrlCountries() {
+  return BASE_URL + "/makers";
+}
 
-    if (isSearchPage) {
-        return JSON.stringify({
-            items: [{
-                id: "/en",
-                title: "Tìm kiếm MissAV chưa hỗ trợ",
-                posterUrl: "",
-                backdropUrl: "",
-                description: "Trang tìm kiếm tải động bằng JavaScript/Recombee nên không thể parse từ HTML tĩnh. Hãy duyệt theo Thể loại hoặc các mục Hot/Mới cập nhật.",
-                year: 0,
-                quality: "INFO",
-                episode_current: "",
-                lang: ""
-            }],
-            pagination: {
-                currentPage: 1,
-                totalPages: 1,
-                totalItems: 1,
-                itemsPerPage: 1
-            }
-        });
+function getUrlYears() {
+  return BASE_URL + "/release";
+}
+
+function parseListResponse(html, baseUrl) {
+  var text = String(html == null ? "" : html);
+  var items = [];
+  var seen = {};
+  var root = trimStr(baseUrl || BASE_URL).replace(/\/+$/, "");
+
+  var blocks = text.split(/class="thumbnail group"/i);
+  for (var i = 1; i < blocks.length; i++) {
+    var block = blocks[i];
+
+    if (block.indexOf("data-src=") === -1 && block.indexOf("/en/") === -1) {
+      continue;
     }
 
-    var actressLinkMatch = html.match(/href="[^"]*\/actresses\/[^"]+"/g);
-    var isActressesPage = !!(actressLinkMatch && actressLinkMatch.length > 5);
-
-    var isAllGenresPage = !isActressesPage &&
-        html.indexOf('class="text-nord13"') !== -1 &&
-        (html.indexOf(":đếm video") !== -1 || html.indexOf("videos") !== -1);
-
-    if (isActressesPage) {
-        var gridMatch = html.match(/<ul[^>]*class="[^"]*grid-cols-2[^"]*"[^>]*>([\s\S]*?)<\/ul>/);
-        var searchScope = gridMatch ? gridMatch[1] : html;
-        var blockedNames = [
-            "Tiếng Việt", "English", "繁體中文", "简体中文", "日本語", "한국의",
-            "Melayu", "ไทย", "Deutsch", "Français", "Bahasa Indonesia", "Filipino",
-            "Português", "MissAV"
-        ];
-        var foundActresses = {};
-        var liRegex = /<li[\s\S]*?<\/li>/gi;
-        var match;
-
-        while ((match = liRegex.exec(searchScope)) !== null) {
-            var itemHtml = match[0];
-            var urlMatch = itemHtml.match(/href="([^"]*\/actresses\/[^"]+)"/);
-            if (!urlMatch) {
-                continue;
-            }
-            var url = urlMatch[1];
-            if (url.indexOf("?") !== -1) {
-                continue;
-            }
-
-            var nameMatch = itemHtml.match(/<h4[^>]*>([\s\S]*?)<\/h4>/);
-            var nameRaw = nameMatch ? nameMatch[1] : "";
-            if (!nameRaw) {
-                var altMatch = itemHtml.match(/<img[^>]+alt="([^"]+)"/);
-                if (altMatch) {
-                    nameRaw = altMatch[1];
-                }
-            }
-
-            var name = PluginUtils.cleanText(nameRaw);
-            if (!name || name.length < 2 || name.indexOf(":đếm") !== -1) {
-                continue;
-            }
-
-            var isBlocked = false;
-            for (var k = 0; k < blockedNames.length; k++) {
-                if (name === blockedNames[k]) {
-                    isBlocked = true;
-                    break;
-                }
-            }
-            if (isBlocked) {
-                continue;
-            }
-
-            var imgMatch = itemHtml.match(/<img[^>]+src="([^"]+)"/);
-            var img = imgMatch ? resolveUrl(imgMatch[1], BASE_URL) : "";
-            if (img.indexOf("flag") !== -1 || img.indexOf("icon") !== -1) {
-                img = "";
-            }
-
-            var slug = PluginUtils.toRelativeSlug(url);
-            if (!foundActresses[slug]) {
-                movies.push({
-                    id: slug,
-                    title: name,
-                    posterUrl: img,
-                    backdropUrl: img,
-                    description: "Nữ diễn viên",
-                    year: 0,
-                    quality: "ACTRESS",
-                    episode_current: "",
-                    lang: ""
-                });
-                foundActresses[slug] = true;
-            }
-        }
-    } else if (isAllGenresPage) {
-        var genreRegex = /<a[^>]+href="([^"]+)"[^>]*>([\s\S]*?)<\/a>/gi;
-        var foundSlugs = {};
-        var gMatch;
-
-        while ((gMatch = genreRegex.exec(html)) !== null) {
-            var gUrl = gMatch[1];
-            var innerContent = gMatch[2];
-            if (gUrl.indexOf("/genres/") !== -1 && innerContent.indexOf(":đếm video") === -1) {
-                var gName = PluginUtils.cleanText(innerContent);
-                if (!gName || gName.length < 2) {
-                    continue;
-                }
-                var gSlug = PluginUtils.toRelativeSlug(gUrl);
-                if (!foundSlugs[gSlug]) {
-                    movies.push({
-                        id: gSlug,
-                        title: gName,
-                        posterUrl: "",
-                        backdropUrl: "",
-                        description: "Thể loại",
-                        year: 0,
-                        quality: "CAT",
-                        episode_current: "",
-                        lang: ""
-                    });
-                    foundSlugs[gSlug] = true;
-                }
-            }
-        }
+    var hrefMatch = block.match(/href="(https?:\/\/[^"]*\/en\/([^"#?]+)|\/en\/([^"#?]+))"/i);
+    if (!hrefMatch) {
+      continue;
     }
 
-    if (movies.length === 0) {
-        var parts = html.split("thumbnail group");
-        if (parts.length <= 1) {
-            parts = html.split('class="thumbnail');
-        }
-
-        for (var i = 1; i < parts.length; i++) {
-            var itemPart = parts[i];
-            var fullLinkMatch = itemPart.match(/<a[^>]+href="([^"]+)"/);
-            var slug = fullLinkMatch ? PluginUtils.toRelativeSlug(fullLinkMatch[1]) : "";
-
-            var codeMatch = itemPart.match(/class="[^"]*text-nord13[^"]*"[^>]*>([\s\S]*?)<\/a>/);
-            var code = codeMatch ? PluginUtils.cleanText(codeMatch[1]) : "";
-            if (!code && slug) {
-                var slugParts = slug.split("/");
-                code = slugParts[slugParts.length - 1];
-            }
-
-            var titleCandidates = [];
-            var imgFullMatch = itemPart.match(/<img[^>]+(?:alt|title)="([^"]+)"/i);
-            if (imgFullMatch) {
-                titleCandidates.push(PluginUtils.cleanText(imgFullMatch[1]));
-            }
-
-            var otherTitleRegex = /title="([^"]+)"/gi;
-            var tMatch;
-            while ((tMatch = otherTitleRegex.exec(itemPart)) !== null) {
-                var val = PluginUtils.cleanText(tMatch[1]);
-                if (val.toUpperCase() !== code.toUpperCase()) {
-                    titleCandidates.push(val);
-                }
-            }
-
-            var bestTitle = "";
-            for (var c = 0; c < titleCandidates.length; c++) {
-                if (titleCandidates[c].length > bestTitle.length) {
-                    bestTitle = titleCandidates[c];
-                }
-            }
-
-            var cleanTitle = bestTitle || code;
-            if (code && cleanTitle.toUpperCase().indexOf(code.toUpperCase()) === 0) {
-                var stripped = trimStr(cleanTitle.substring(code.length));
-                if (stripped.indexOf("-") === 0 || stripped.indexOf(" ") === 0) {
-                    stripped = trimStr(stripped.substring(1));
-                }
-                if (stripped.length > 3) {
-                    cleanTitle = stripped;
-                }
-            }
-            if (!cleanTitle) {
-                cleanTitle = code || "No Title";
-            }
-
-            var thumbMatch = itemPart.match(/<img[\s\S]*?data-src="([^"]+)"/) ||
-                itemPart.match(/<img[\s\S]*?src="([^"]+)"/);
-            var thumb = thumbMatch ? resolveUrl(thumbMatch[1], BASE_URL) : "";
-            if (thumb && thumb.indexOf("cover-t.jpg") !== -1) {
-                thumb = thumb.replace("/cover-t.jpg", "/cover.jpg");
-            }
-
-            if (slug && slug.indexOf("/actresses") === -1 && slug.indexOf("/genres") === -1) {
-                if (slug.indexOf("item.") !== -1 || slug.indexOf("{{") !== -1 || slug === "/" || slug === "#") {
-                    continue;
-                }
-                if (cleanTitle.indexOf("item.") !== -1 || cleanTitle.indexOf("{{") !== -1) {
-                    continue;
-                }
-                if (thumb.indexOf("item.") !== -1 || thumb.indexOf("itemUrl") !== -1) {
-                    continue;
-                }
-
-                var durationMatch = itemPart.match(/<span[^>]*>\s*(\d+:\d+:\d+)\s*<\/span>/);
-                var duration = durationMatch ? durationMatch[1] : "";
-
-                var isUncensored = itemPart.indexOf("Không kiểm duyệt") !== -1 ||
-                    itemPart.indexOf("Uncensored") !== -1 ||
-                    itemPart.indexOf("bg-blue-800") !== -1;
-
-                var previewMatch = itemPart.match(/<video[^>]+data-src="([^"]+)"/);
-                var previewUrl = previewMatch ? resolveUrl(previewMatch[1], BASE_URL) : "";
-
-                movies.push({
-                    id: slug,
-                    title: cleanTitle,
-                    posterUrl: thumb,
-                    backdropUrl: thumb,
-                    description: duration,
-                    year: 0,
-                    quality: isUncensored ? "K.K.Duyệt" : "HD",
-                    episode_current: isUncensored ? "K.K.Duyệt" : "Full",
-                    lang: code,
-                    previewUrl: previewUrl
-                });
-            }
-        }
+    var rawHref = hrefMatch[1];
+    var slug = trimStr(hrefMatch[2] || hrefMatch[3] || "").replace(/^\/+|\/+$/g, "");
+    if (!slug || slug.indexOf("javascript:") === 0) {
+      continue;
     }
 
-    var totalPages = 1;
-    var currentPage = 1;
+    var fullUrl = normalizeUrl(rawHref, root);
+    if (!fullUrl || seen[fullUrl]) {
+      continue;
+    }
+    seen[fullUrl] = true;
 
-    var currentMatch = html.match(/<(?:span|a)[^>]+class="[^"]*(?:bg-nord8|active|current)[^"]*"[^>]*>\s*(\d+)\s*<\/(?:span|a)>/i);
-    if (currentMatch) {
-        currentPage = parseInt(currentMatch[1], 10);
+    var imgMatch = block.match(/<img[^>]*\bdata-src="([^"]+)"[^>]*>/i);
+    var cover = imgMatch ? normalizeUrl(decodeEntities(imgMatch[1]), root) : "";
+
+    var vidMatch = block.match(/<video[^>]*\bdata-src="([^"]+)"[^>]*>/i);
+    var preview = vidMatch ? normalizeUrl(decodeEntities(vidMatch[1]), root) : "";
+
+    var titleMatch = block.match(/<a[^>]*class="[^"]*text-secondary[^"]*"[^>]*>([\s\S]*?)<\/a>/i);
+    var rawTitle = titleMatch ? titleMatch[1].replace(/<[^>]+>/g, " ") : "";
+    if (!trimStr(rawTitle)) {
+      var altMatch = block.match(/<img[^>]*\balt="([^"]*)"[^>]*>/i);
+      rawTitle = altMatch ? altMatch[1] : slug;
     }
 
-    var allPageNums = html.match(/page=(\d+)/g);
-    if (allPageNums) {
-        for (var j = 0; j < allPageNums.length; j++) {
-            var pMatch = allPageNums[j].match(/\d+/);
-            if (pMatch) {
-                var p = parseInt(pMatch[0], 10);
-                if (p > totalPages) {
-                    totalPages = p;
-                }
-            }
-        }
-    }
+    var durMatch = block.match(/>\s*(\d+:\d{2}:\d{2})\s*</);
+    var duration = durMatch ? durMatch[1] : "";
 
-    var inputPageMatch = html.match(/name="page"[^>]*value="(\d+)"/) || html.match(/type="number"[^>]*value="(\d+)"/);
-    if (inputPageMatch) {
-        var pVal = parseInt(inputPageMatch[1], 10);
-        if (pVal > currentPage) {
-            currentPage = pVal;
-        }
-    }
+    var isUncensored = /Uncensored/i.test(block) || /-uncensored-leak/i.test(slug);
 
-    var totalLabelMatch = html.match(/\/\s*(\d+)\s*<\/span>/) ||
-        html.match(/>(\d+)<\/a>\s*<a[^>]*aria-label="Next"/i) ||
-        html.match(/page=(\d+)[^>]*aria-label="Last"/i);
-    if (totalLabelMatch) {
-        var tVal = parseInt(totalLabelMatch[1], 10);
-        if (tVal > totalPages) {
-            totalPages = tVal;
-        }
-    }
-
-    return JSON.stringify({
-        items: movies,
-        pagination: {
-            currentPage: currentPage,
-            totalPages: totalPages || 1,
-            totalItems: movies.length,
-            itemsPerPage: 20
-        }
+    items.push({
+      id: slug,
+      title: cleanTitleText(rawTitle, slug),
+      url: fullUrl,
+      cover: cover,
+      preview: preview,
+      duration: duration,
+      isUncensored: isUncensored
     });
+  }
+
+  return items;
 }
 
-function parseSearchResponse(html) {
-    return parseListResponse(html);
-}
-
-function extractStreamFromHtml(html) {
-    var uuid = "";
-    var streamUrl = "";
-    if (!html || typeof html !== "string") {
-        return { uuid: "", streamUrl: "" };
-    }
-
-    var evalMatch = html.match(/eval\(function\(p,a,c,k,e,d\)[\s\S]*?'([^']+)'\.split\('\|'\)/i);
-    if (evalMatch) {
-        var parts = evalMatch[1].split("|");
-        var hasSurrit = false;
-        for (var i = 0; i < parts.length; i++) {
-            if (parts[i] === "surrit" || parts[i] === "sixyik") {
-                hasSurrit = true;
-                break;
-            }
-        }
-        if (hasSurrit) {
-            var uuidParts = [];
-            for (var uIdx = 0; uIdx < parts.length; uIdx++) {
-                if (/^[0-9a-f]{8,12}$/i.test(parts[uIdx])) {
-                    uuidParts.push(parts[uIdx]);
-                }
-            }
-            if (uuidParts.length >= 5) {
-                uuid = uuidParts[0] + "-" + uuidParts[1] + "-" + uuidParts[2] + "-" + uuidParts[3] + "-" + uuidParts[4];
-            }
-        }
-    }
-
-    if (!uuid) {
-        var domainMatch = html.match(/(?:surrit|sixyik|nineyu|fourhoi)\.com\/([0-9a-f-]{36})/i);
-        if (domainMatch) {
-            uuid = domainMatch[1];
-        }
-    }
-
-    if (!uuid) {
-        var directM3u8 = html.match(/(https?:\/\/[^\s"'\\<>]+\.m3u8(?:\?[^\s"'\\<>]*)?)/i);
-        if (directM3u8 && directM3u8[1]) {
-            streamUrl = directM3u8[1];
-        }
-    }
-
-    if (!uuid && !streamUrl) {
-        var uuidMatches = html.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi) || [];
-        var blacklist = ["snaptrckr", "user_uuid", "popunder", "banner", "monitoring", "crypto", "randomUUID", "generateUUID"];
-        for (var mIdx = 0; mIdx < uuidMatches.length; mIdx++) {
-            var candidate = uuidMatches[mIdx];
-            var isBad = false;
-            var pos = html.indexOf(candidate);
-            if (pos !== -1) {
-                var ctx = html.substring(Math.max(0, pos - 50), Math.min(html.length, pos + 50));
-                for (var bIdx = 0; bIdx < blacklist.length; bIdx++) {
-                    if (ctx.indexOf(blacklist[bIdx]) !== -1) {
-                        isBad = true;
-                        break;
-                    }
-                }
-            }
-            if (!isBad) {
-                uuid = candidate;
-                break;
-            }
-        }
-    }
-
-    if (uuid && !streamUrl) {
-        streamUrl = "https://surrit.com/" + uuid + "/playlist.m3u8";
-    }
-
-    return { uuid: uuid, streamUrl: streamUrl };
+function parseSearchResponse(html, baseUrl) {
+  return parseListResponse(html, baseUrl);
 }
 
 function parseMovieDetail(html, pageUrl) {
-    html = PluginUtils.normalizeHtml(html || "");
-    try {
-        var getField = function (labelKey) {
-            var regex = new RegExp("<span>" + labelKey + ":<\\/span>([\\s\\S]*?)<\\/div>", "i");
-            var match = html.match(regex);
-            if (!match) {
-                return "";
-            }
-            var content = match[1];
-            var linkMatch = content.match(/<a[^>]+href="([^"]+)"[^>]*>([^<]+)<\/a>/i);
-            if (linkMatch) {
-                return "[" + PluginUtils.cleanText(linkMatch[2]) + "](" + PluginUtils.toRelativeSlug(linkMatch[1]) + ")";
-            }
-            var timeMatch = content.match(/<time[^>]*>([^<]+)<\/time>/i);
-            if (timeMatch) {
-                return PluginUtils.cleanText(timeMatch[1]);
-            }
-            var spanMatch = content.match(/<span[^>]*>([^<]+)<\/span>/i);
-            if (spanMatch) {
-                return PluginUtils.cleanText(spanMatch[1]);
-            }
-            return PluginUtils.cleanText(content);
-        };
+  var text = String(html == null ? "" : html);
+  var h1Match = text.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i);
+  var ogTitleMatch = text.match(/<meta[^>]*property="og:title"[^>]*content="([^"]*)"[^>]*>/i);
+  var ogImageMatch = text.match(/<meta[^>]*property="og:image"[^>]*content="([^"]*)"[^>]*>/i);
+  var posterMatch = text.match(/<video[^>]*\bposter="([^"]*)"[^>]*>/i);
 
-        var getMultiField = function (labelKey) {
-            var regexStart = new RegExp("<span>" + labelKey + ":<\\/span>", "i");
-            var matchStart = html.match(regexStart);
-            if (!matchStart) {
-                return "";
-            }
-            var startIndex = matchStart.index + matchStart[0].length;
-            var searchArea = html.substring(startIndex);
-            var divEnd = searchArea.indexOf("</div>");
-            var content = divEnd !== -1 ? searchArea.substring(0, divEnd) : searchArea;
+  var title = "";
+  if (h1Match && trimStr(h1Match[1].replace(/<[^>]+>/g, " "))) {
+    title = collapseSpaces(decodeEntities(h1Match[1].replace(/<[^>]+>/g, " ")));
+  } else if (ogTitleMatch) {
+    title = collapseSpaces(decodeEntities(ogTitleMatch[1]));
+  }
 
-            var items = [];
-            var linkRegex = /<a[^>]+href="([^"]+)"[^>]*>([\s\S]*?)<\/a>/g;
-            var linkMatch;
-            while ((linkMatch = linkRegex.exec(content)) !== null) {
-                var rawInner = linkMatch[2];
-                if (rawInner.indexOf("<img") !== -1) {
-                    continue;
-                }
-                var text = PluginUtils.cleanText(rawInner);
-                if (text) {
-                    items.push("[" + text + "](" + PluginUtils.toRelativeSlug(linkMatch[1]) + ")");
-                }
-            }
-            return items.join(", ");
-        };
+  var cover = "";
+  if (posterMatch && trimStr(posterMatch[1])) {
+    cover = normalizeUrl(decodeEntities(posterMatch[1]), pageUrl);
+  } else if (ogImageMatch && trimStr(ogImageMatch[1])) {
+    cover = normalizeUrl(decodeEntities(ogImageMatch[1]), pageUrl);
+  }
 
-        var code = getField("Mã số") || getField("Code");
-        var releaseDate = getField("Ngày phát hành") || getField("Release date");
-        var studio = getField("nhà sản xuất") || getField("Maker");
-        var director = getField("Giám đốc") || getField("Director");
-        var label = getField("Nhãn") || getField("Label");
+  var streams = [];
+  var seenStream = {};
 
-        var casts = getMultiField("Nữ diễn viên") || getMultiField("Actresses");
-        var genres = getMultiField("thể loại") || getMultiField("Genre") || getMultiField("Genres");
-        var series = getMultiField("Loạt") || getMultiField("Series");
+  function addStream(u, quality) {
+    var cleanU = normalizeUrl(decodeEntities(u), pageUrl);
+    if (!cleanU || seenStream[cleanU]) return;
+    seenStream[cleanU] = true;
+    streams.push({
+      url: cleanU,
+      quality: quality || "auto",
+      type: cleanU.indexOf(".m3u8") !== -1 ? "hls" : "video"
+    });
+  }
 
-        if (!code) {
-            var dvdIdMatch = html.match(/dvdId:\s*'([^']+)'/);
-            code = dvdIdMatch ? dvdIdMatch[1] : "";
-        }
+  var m3u8Matches = text.match(/https?:\/\/[^"'\\\s<>]+\.m3u8[^"'\\\s<>]*/gi) || [];
+  for (var i = 0; i < m3u8Matches.length; i++) {
+    addStream(m3u8Matches[i], "auto");
+  }
 
-        var title = PluginUtils.getMeta(html, "og:title");
-        var thumb = resolveUrl(PluginUtils.getMeta(html, "og:image"), BASE_URL);
-        var desc = PluginUtils.getMeta(html, "og:description");
-
-        var previewMatch = html.match(/<video[^>]+data-src="([^"]+)"/) || html.match(/video_url:\s*'([^']+)'/);
-        var previewUrl = previewMatch ? resolveUrl(previewMatch[1], BASE_URL) : "";
-        if (!previewUrl && thumb && thumb.indexOf("cover.jpg") !== -1) {
-            previewUrl = thumb.replace("cover.jpg", "preview.mp4");
-        }
-
-        var displayTitle = title;
-        if (code && displayTitle.toUpperCase().indexOf(code.toUpperCase()) === 0) {
-            var stripped = trimStr(displayTitle.substring(code.length));
-            if (stripped.indexOf("-") === 0 || stripped.indexOf(" ") === 0) {
-                stripped = trimStr(stripped.substring(1));
-            }
-            if (stripped.length > 0) {
-                displayTitle = stripped;
-            }
-        }
-        if (code) {
-            displayTitle = "[" + code.toUpperCase() + "] " + displayTitle;
-        }
-
-        var titleWords = displayTitle.split(" ");
-        if (titleWords.length > 25) {
-            displayTitle = titleWords.slice(0, 25).join(" ") + "...";
-        }
-
-        var extracted = extractStreamFromHtml(html);
-        var servers = [];
-        if (extracted.streamUrl) {
-            var episodeId = pageUrl || extracted.streamUrl;
-            servers.push({
-                name: "Stream",
-                episodes: [{
-                    id: episodeId,
-                    name: "Full",
-                    slug: "full"
-                }]
-            });
-        }
-
-        var statusLine = "";
-        if (studio) {
-            statusLine += "Studio: " + studio;
-        }
-        if (label) {
-            statusLine += (statusLine ? " | " : "") + "Label: " + label;
-        }
-        if (!statusLine && releaseDate) {
-            statusLine = "Released: " + releaseDate;
-        }
-
-        var year = releaseDate ? (parseInt(releaseDate.substring(0, 4), 10) || 0) : 0;
-
-        return JSON.stringify({
-            id: code || "",
-            title: PluginUtils.cleanText(displayTitle),
-            posterUrl: thumb,
-            backdropUrl: thumb,
-            description: PluginUtils.cleanText(desc),
-            servers: servers,
-            quality: "HD",
-            lang: "Vietsub",
-            year: year,
-            rating: 0,
-            casts: casts,
-            director: director,
-            category: genres,
-            status: statusLine,
-            duration: series ? "Series: " + series : "",
-            previewUrl: previewUrl || ""
-        });
-    } catch (e) {
-        return "null";
+  var mp4Matches = text.match(/https?:\/\/[^"'\\\s<>]+\.mp4[^"'\\\s<>]*/gi) || [];
+  for (var j = 0; j < mp4Matches.length; j++) {
+    if (mp4Matches[j].indexOf("/preview.mp4") === -1) {
+      addStream(mp4Matches[j], "mp4");
     }
+  }
+
+  var embedUrls = [];
+  var seenEmbed = {};
+  var iframeMatches = text.match(/<iframe[^>]*\b(?:src|data-src)="([^"]+)"[^>]*>/gi) || [];
+  for (var k = 0; k < iframeMatches.length; k++) {
+    var srcM = iframeMatches[k].match(/\b(?:src|data-src)="([^"]+)"/i);
+    if (srcM && srcM[1]) {
+      var eUrl = normalizeUrl(decodeEntities(srcM[1]), pageUrl);
+      if (eUrl && !seenEmbed[eUrl]) {
+        seenEmbed[eUrl] = true;
+        embedUrls.push(eUrl);
+      }
+    }
+  }
+
+  return {
+    title: title,
+    cover: cover,
+    streams: streams,
+    embedUrls: embedUrls
+  };
 }
 
-// === 4. PARSE EMBED / STREAM ===
-
-function parseDetailResponse(html, fetchedUrl) {
-    try {
-        if (!html || typeof html !== "string") {
-            return JSON.stringify({ url: "", isEmbed: false, headers: {} });
-        }
-
-        var referer = getOriginReferer(fetchedUrl, SITE_REFERER);
-        var extracted = extractStreamFromHtml(html);
-        if (extracted.streamUrl) {
-            return JSON.stringify({
-                url: extracted.streamUrl,
-                isEmbed: false,
-                mimeType: "application/x-mpegURL",
-                headers: {
-                    "Referer": referer
-                }
-            });
-        }
-
-        return parseEmbedResponse(html, fetchedUrl || BASE_URL);
-    } catch (error) {
-        return JSON.stringify({ url: "", isEmbed: false, headers: {} });
-    }
+function parseDetailResponse(html, pageUrl) {
+  return parseMovieDetail(html, pageUrl);
 }
 
-function parseEmbedResponse(html, url) {
-    try {
-        if (!html || typeof html !== "string") {
-            return JSON.stringify({ url: "", isEmbed: false, headers: {} });
-        }
-
-        var referer = getOriginReferer(url, EMBED_REFERER);
-        var unescaped = html.replace(/\\\//g, "/");
-
-        var extracted = extractStreamFromHtml(unescaped);
-        if (extracted.streamUrl) {
-            var isHls = /\.m3u8/i.test(extracted.streamUrl);
-            return JSON.stringify({
-                url: extracted.streamUrl,
-                isEmbed: false,
-                mimeType: isHls ? "application/x-mpegURL" : "video/mp4",
-                headers: {
-                    "Referer": referer
-                }
-            });
-        }
-
-        var iframeMatch = unescaped.match(/<iframe[^>]*src=["']([^"']+)["']/i);
-        if (iframeMatch && iframeMatch[1]) {
-            return JSON.stringify({
-                url: resolveUrl(iframeMatch[1], referer),
-                isEmbed: true,
-                headers: {
-                    "Referer": referer
-                }
-            });
-        }
-
-        return JSON.stringify({ url: "", isEmbed: false, headers: {} });
-    } catch (e) {
-        return JSON.stringify({ url: "", isEmbed: false, headers: {} });
-    }
+function parseEmbedResponse(html, embedUrl) {
+  return parseMovieDetail(html, embedUrl);
 }
 
-// === 5. BỘ CHẠY ĐỆ QUY QUA XHR ===
+function resolveStreamFromDetail(detailOrUrl, onSuccess, onError, depth, visited) {
+  var currentDepth = typeof depth === "number" ? depth : 0;
+  var maxDepth = 4;
+  var seenPages = visited || {};
 
-function requestTextEs5(reqConfig, onSuccess, onError) {
-    if (typeof XMLHttpRequest === "undefined") {
-        onError(new Error("XMLHttpRequest is not available in this runtime; use host HTTP client."));
-        return;
+  if (currentDepth > maxDepth) {
+    if (typeof onError === "function") {
+      onError(new Error("Max recursion depth reached while resolving stream"));
     }
-    try {
-        var method = reqConfig.postBody ? "POST" : "GET";
-        var xhr = new XMLHttpRequest();
-        xhr.open(method, reqConfig.url, true);
+    return;
+  }
 
-        var headers = reqConfig.headers || {};
-        for (var key in headers) {
-            if (headers.hasOwnProperty(key) && headers[key]) {
-                try {
-                    xhr.setRequestHeader(key, headers[key]);
-                } catch (hdrErr) {}
-            }
+  if (detailOrUrl && typeof detailOrUrl === "object" && detailOrUrl.streams && detailOrUrl.streams.length > 0) {
+    if (typeof onSuccess === "function") {
+      onSuccess(detailOrUrl.streams[0], detailOrUrl.streams);
+    }
+    return;
+  }
+
+  var targetUrl = typeof detailOrUrl === "string" ? detailOrUrl : getUrlDetail(detailOrUrl);
+  targetUrl = normalizeUrl(targetUrl, BASE_URL);
+
+  if (!targetUrl) {
+    if (typeof onError === "function") {
+      onError(new Error("Invalid detail or stream URL"));
+    }
+    return;
+  }
+
+  if (/\.(m3u8|mp4)(\?.*)?$/i.test(targetUrl)) {
+    if (typeof onSuccess === "function") {
+      onSuccess({
+        url: targetUrl,
+        quality: "auto",
+        type: targetUrl.indexOf(".m3u8") !== -1 ? "hls" : "video"
+      }, [{
+        url: targetUrl,
+        quality: "auto",
+        type: targetUrl.indexOf(".m3u8") !== -1 ? "hls" : "video"
+      }]);
+    }
+    return;
+  }
+
+  if (seenPages[targetUrl]) {
+    if (typeof onError === "function") {
+      onError(new Error("Circular URL detected while resolving stream: " + targetUrl));
+    }
+    return;
+  }
+  seenPages[targetUrl] = true;
+
+  httpGetText(targetUrl, function (html) {
+    var parsed = parseMovieDetail(html, targetUrl);
+    if (parsed.streams && parsed.streams.length > 0) {
+      if (typeof onSuccess === "function") {
+        onSuccess(parsed.streams[0], parsed.streams);
+      }
+      return;
+    }
+
+    if (parsed.embedUrls && parsed.embedUrls.length > 0) {
+      var idx = 0;
+      function tryNextEmbed() {
+        if (idx >= parsed.embedUrls.length) {
+          if (typeof onError === "function") {
+            onError(new Error("No playable stream found in embed URLs"));
+          }
+          return;
         }
-
-        xhr.onreadystatechange = function () {
-            if (xhr.readyState === 4) {
-                if (xhr.status >= 200 && xhr.status < 300) {
-                    onSuccess(xhr.responseText);
-                } else {
-                    onError(new Error("HTTP status " + xhr.status));
-                }
-            }
-        };
-
-        xhr.send(reqConfig.postBody || null);
-    } catch (err) {
-        onError(err);
-    }
-}
-
-function resolveStreamFromDetail(detailHtml, fetchedUrl, options, callback) {
-    var opts = options || {};
-    var maxDepth = typeof opts.maxDepth === "number" ? opts.maxDepth : 5;
-    var visited = opts.visited || {};
-
-    var firstStepJson = parseDetailResponse(detailHtml, fetchedUrl);
-    var firstStep;
-    try {
-        firstStep = JSON.parse(firstStepJson);
-    } catch (e) {
-        callback({ url: "", isEmbed: false, headers: {}, error: "Invalid detail parse JSON" });
-        return;
+        var nextEmbed = parsed.embedUrls[idx];
+        idx += 1;
+        resolveStreamFromDetail(nextEmbed, onSuccess, function () {
+          tryNextEmbed();
+        }, currentDepth + 1, seenPages);
+      }
+      tryNextEmbed();
+      return;
     }
 
-    if (!firstStep || !firstStep.url) {
-        callback({ url: "", isEmbed: false, headers: {} });
-        return;
+    if (typeof onError === "function") {
+      onError(new Error("Stream not found in response: " + targetUrl));
     }
-
-    if (!firstStep.isEmbed) {
-        callback(firstStep);
-        return;
+  }, function (err) {
+    if (typeof onError === "function") {
+      onError(err);
     }
-
-    function loopEmbed(reqSpec, depth) {
-        if (depth > maxDepth) {
-            callback({ url: "", isEmbed: false, headers: {}, error: "Max depth exceeded" });
-            return;
-        }
-
-        var visitKey = reqSpec.url + "|" + (reqSpec.postBody || "");
-        if (visited[visitKey]) {
-            callback({ url: "", isEmbed: false, headers: {}, error: "Circular request detected" });
-            return;
-        }
-        visited[visitKey] = true;
-
-        requestTextEs5(
-            reqSpec,
-            function (respText) {
-                var parsed;
-                try {
-                    parsed = JSON.parse(parseEmbedResponse(respText, reqSpec.url));
-                } catch (parseErr) {
-                    callback({ url: "", isEmbed: false, headers: {}, error: "Invalid embed parse JSON" });
-                    return;
-                }
-
-                if (!parsed || !parsed.url) {
-                    callback({ url: "", isEmbed: false, headers: {} });
-                    return;
-                }
-
-                if (!parsed.isEmbed) {
-                    callback(parsed);
-                    return;
-                }
-
-                loopEmbed({
-                    url: parsed.url,
-                    postBody: "",
-                    headers: parsed.headers || {}
-                }, depth + 1);
-            },
-            function (err) {
-                callback({
-                    url: "",
-                    isEmbed: false,
-                    headers: {},
-                    error: err && err.message ? err.message : "Request failed"
-                });
-            }
-        );
-    }
-
-    loopEmbed(firstStep, 0);
+  });
 }
