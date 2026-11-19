@@ -2,7 +2,7 @@
   "version": 1,
   "plugins": [
     {
-       "id": "javhd",
+        "id": "javhd",
         "name": "JavHD",
         "version": "1.0.8",
         "baseUrl": "https://javhdz.today",
