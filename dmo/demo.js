@@ -188,31 +188,52 @@ function parseSearchResponse(apiResponseJson) {
     return parseListResponse(apiResponseJson);
 }
 
+function getOriginFromUrl(url) {
+    if (!url || typeof url !== "string") return "";
+    var match = url.match(/^(https?:\/\/[^\/?#]+)/i);
+    return match ? (match[1] + "/") : "https://embed.streamc.xyz/";
+}
+
+function normalizeStreamUrl(rawUrl) {
+    if (!rawUrl || typeof rawUrl !== "string") return "";
+    return rawUrl.replace(/\\\//g, "/").replace(/&/g, "&").trim();
+}
+
 function parseMovieDetail(apiResponseJson) {
     try {
-        var response = apiResponseJson ? JSON.parse(apiResponseJson) : {};
-        var dataObj = response.data || {};
-        var movie = response.movie || dataObj.item || (dataObj.name ? dataObj : (response.name ? response : {}));
+        var response = JSON.parse(apiResponseJson);
+        var dataObj = (response && typeof response.data === "object" && response.data !== null) ? response.data : null;
+        var dataItem = (dataObj && dataObj.item) ? dataObj.item : null;
+        var movie = response.movie || dataItem || (!Array.isArray(response.data) && dataObj) || {};
 
-        var rawEpisodes = movie.episodes || response.episodes || (dataObj.item && dataObj.item.episodes) || [];
+        var rawEpisodes = movie.episodes
+            || response.episodes
+            || (dataItem && dataItem.episodes)
+            || [];
 
         var servers = [];
         if (Array.isArray(rawEpisodes)) {
-            rawEpisodes.forEach(function (server) {
+            rawEpisodes.forEach(function (server, sIdx) {
                 var episodes = [];
                 var serverItems = server.items || server.server_data || [];
 
                 if (Array.isArray(serverItems)) {
-                    serverItems.forEach(function (ep) {
-                        var embed = ep.embed || ep.link_embed || "";
-                        var m3u8 = ep.m3u8 || ep.link_m3u8 || "";
-                        var link = embed || m3u8;
+                    serverItems.forEach(function (ep, eIdx) {
+                        var embed = normalizeStreamUrl(ep.embed || ep.link_embed || "");
+                        var m3u8 = normalizeStreamUrl(ep.m3u8 || ep.link_m3u8 || "");
 
-                        if (link) {
+                        // Giữ embed làm id để parseDetailResponse tải HTML và bóc m3u8 + Referer;
+                        // nếu không có embed thì dùng trực tiếp m3u8.
+                        var playTarget = embed || m3u8;
+
+                        if (playTarget) {
                             episodes.push({
-                                id: link,
-                                name: ep.name || ep.episode_name || "Tập 1",
-                                slug: ep.slug || ep.episode_slug || "tap-1"
+                                id: playTarget,
+                                name: ep.name || ep.episode_name || ("Tập " + (eIdx + 1)),
+                                slug: ep.slug || ep.episode_slug || ("tap-" + (eIdx + 1)),
+                                embedUrl: embed,
+                                m3u8Url: m3u8,
+                                serverName: server.server_name || server.name || ("Server " + (sIdx + 1))
                             });
                         }
                     });
@@ -220,42 +241,20 @@ function parseMovieDetail(apiResponseJson) {
 
                 if (episodes.length > 0) {
                     servers.push({
-                        name: server.server_name || server.name || "Server",
+                        name: server.server_name || server.name || ("Server " + (sIdx + 1)),
                         episodes: episodes
                     });
                 }
             });
         }
 
-        // Thêm server dự phòng MP4 (hoạt động ngay cả khi API chi tiết lỗi hoặc trống)
-        if (BACKUP_MP4_URL) {
-            servers.push({
-                name: "Backup MP4",
-                episodes: [
-                    {
-                        id: BACKUP_MP4_URL,
-                        name: "Full",
-                        slug: "full"
-                    }
-                ]
-            });
-        }
-
         var extractGroup = function (categoryObj, groupName) {
-            if (!categoryObj || typeof categoryObj !== "object") return "";
-
-            if (Array.isArray(categoryObj)) {
-                return categoryObj.map(function (item) {
-                    return typeof item === "string" ? item : (item.name || "");
-                }).filter(Boolean).join(", ");
-            }
-
+            if (!categoryObj) return "";
             for (var key in categoryObj) {
-                if (Object.prototype.hasOwnProperty.call(categoryObj, key)) {
-                    var group = categoryObj[key];
-                    if (group && group.group && group.group.name === groupName && Array.isArray(group.list) && group.list.length > 0) {
-                        return group.list.map(function (item) { return item.name; }).join(", ");
-                    }
+                if (!Object.prototype.hasOwnProperty.call(categoryObj, key)) continue;
+                var group = categoryObj[key];
+                if (group && group.group && group.group.name === groupName && Array.isArray(group.list) && group.list.length > 0) {
+                    return group.list.map(function (item) { return item.name; }).join(", ");
                 }
             }
             return "";
@@ -264,84 +263,98 @@ function parseMovieDetail(apiResponseJson) {
         var extractedYear = extractGroup(movie.category, "Năm");
 
         return JSON.stringify({
-            id: movie.slug || movie.id || "backup-movie",
-            title: movie.name || movie.title || "Phim NguonC",
-            posterUrl: getImageUrl(movie.thumb_url || movie.posterUrl),
-            backdropUrl: getImageUrl(movie.poster_url || movie.backdropUrl),
+            id: movie.slug || movie.id || "",
+            title: movie.name || "",
+            original_name: movie.original_name || "",
+            posterUrl: getImageUrl(movie.thumb_url || movie.thumb_url_webp),
+            backdropUrl: getImageUrl(movie.poster_url || movie.poster_url_webp),
             description: (movie.description || movie.content || "").replace(/<[^>]*>/g, "").trim(),
             year: parseInt(movie.year || extractedYear, 10) || 0,
             rating: parseFloat(movie.view) || 0,
-            quality: movie.quality || "HD",
+            quality: movie.quality || "",
+            time: movie.time || "",
+            total_episodes: parseInt(movie.total_episodes, 10) || 0,
             servers: servers,
-            episode_current: movie.current_episode || movie.episode_current || "Full",
+            episode_current: movie.current_episode || movie.episode_current || "",
             lang: movie.language || movie.lang || "",
-            casts: Array.isArray(movie.casts) ? movie.casts.join(", ") : (movie.casts || movie.actor || ""),
-            director: Array.isArray(movie.director) ? movie.director.join(", ") : (movie.director || ""),
+            casts: movie.casts || movie.actor || "",
+            director: movie.director || "",
             category: extractGroup(movie.category, "Thể loại"),
             country: extractGroup(movie.category, "Quốc gia"),
             view: parseInt(movie.view, 10) || 0,
             status: movie.status || ""
         });
     } catch (error) {
-        return JSON.stringify({
-            id: "backup-movie",
-            title: "Phim NguonC",
-            posterUrl: "",
-            backdropUrl: "",
-            description: "",
-            year: 0,
-            rating: 0,
-            quality: "HD",
-            servers: BACKUP_MP4_URL ? [{
-                name: "Backup MP4",
-                episodes: [{ id: BACKUP_MP4_URL, name: "Full", slug: "full" }]
-            }] : []
-        });
+        return "{}";
     }
 }
 
-function parseDetailResponse(html) {
+function parseDetailResponse(html, sourceUrl) {
     try {
-        if (!html) return "{}";
+        if (!html || typeof html !== "string") return "{}";
 
-        var headers = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-            "Referer": "https://embed.streamc.xyz/"
-        };
+        var cleanHtml = html.replace(/\\\//g, "/");
 
-        var trimmed = html.trim();
-
-        // Nếu đầu vào là URL trực tiếp (chưa phải mã nguồn HTML)
-        if (trimmed.indexOf("http") === 0 && trimmed.indexOf("<") === -1) {
-            if (trimmed.indexOf("githubusercontent.com") !== -1) {
-                headers["Referer"] = "https://raw.githubusercontent.com/";
-            }
-            return JSON.stringify({
-                url: trimmed,
-                headers: headers
-            });
-        }
-
-        // Tìm link stream (.m3u8 hoặc .mp4) trong HTML/config
-        var streamRegex = /(?:file|source|src)\s*:\s*["']([^"']+\.(?:m3u8|mp4)[^"']*)["']|["'](https?:\/\/[^"']+\.(?:m3u8|mp4)[^"']*)["']/i;
-        var match = html.match(streamRegex);
+        // 1. Ưu tiên bắt link .m3u8 gắn với player / nguồn phát (file:, source:, src:, hoặc URL https có .m3u8)
+        var patterns = [
+            /(?:file|source|src|hls|url)\s*[:=]\s*["'](https?:\/\/[^"'\s]+\.m3u8[^"'\s]*)["']/i,
+            /["'](https?:\/\/[^"'\s]+\.m3u8(?:\?[^"'\s]*)?)["']/i,
+            /(?:file|source|src)\s*[:=]\s*["']([^"'\s]+\.m3u8[^"'\s]*)["']/i
+        ];
 
         var streamUrl = "";
-        if (match) {
-            streamUrl = (match[1] || match[2] || "").replace(/\\\//g, "/");
+        for (var i = 0; i < patterns.length; i++) {
+            var m = cleanHtml.match(patterns[i]);
+            if (m && m[1]) {
+                streamUrl = normalizeStreamUrl(m[1]);
+                break;
+            }
         }
 
-        var refererMatch = html.match(/<meta[^>]+property=["']og:url["'][^>]+content=["'](https?:\/\/[^\/"']+)/i);
-        if (refererMatch && refererMatch[1]) {
-            headers["Referer"] = refererMatch[1] + "/";
-        } else if (streamUrl.indexOf("githubusercontent.com") !== -1) {
-            headers["Referer"] = "https://raw.githubusercontent.com/";
+        // 2. Nếu HTML chứa iframe embed lồng bên trong thay vì m3u8 trực tiếp
+        var iframeUrl = "";
+        if (!streamUrl) {
+            var iframeMatch = cleanHtml.match(/<iframe[^>]+src=["']([^"']+)["']/i);
+            if (iframeMatch && iframeMatch[1]) {
+                iframeUrl = normalizeStreamUrl(iframeMatch[1]);
+            }
         }
+
+        // Xác định Referer theo đúng host của link embed/iframe nếu có, fallback về embed.streamc.xyz
+        var refUrl = sourceUrl || iframeUrl || "";
+        var referer = getOriginFromUrl(refUrl);
 
         if (streamUrl) {
             return JSON.stringify({
                 url: streamUrl,
-                headers: headers
+                type: "hls",
+                headers: {
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+                    "Referer": referer
+                }
+            });
+        }
+
+        if (iframeUrl) {
+            return JSON.stringify({
+                url: iframeUrl,
+                type: "embed",
+                headers: {
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+                    "Referer": sourceUrl || "https://phim.nguonc.com/"
+                }
+            });
+        }
+
+        // Fallback trả về sourceUrl nếu có để app mở trực tiếp thay vì chết hẳn
+        if (sourceUrl) {
+            return JSON.stringify({
+                url: normalizeStreamUrl(sourceUrl),
+                type: "embed",
+                headers: {
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+                    "Referer": "https://phim.nguonc.com/"
+                }
             });
         }
 
