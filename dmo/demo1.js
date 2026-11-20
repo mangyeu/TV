@@ -18,7 +18,7 @@ function getManifest() {
     return JSON.stringify({
         "id": "tvhay",
         "name": "TVHAY",
-        "version": "2.4.5",
+        "version": "2.4.6",
         "baseUrl": BASE_URL,
         "iconUrl": BASE_URL + "/favicon.ico",
         "isEnabled": true,
@@ -139,6 +139,13 @@ function toAbsUrl(url, base) {
     return root + "/" + u;
 }
 
+function extractMovieId(url) {
+    var raw = trimStr(unescapeStreamStr(url || ""));
+    if (!raw) return "";
+    var clean = raw.replace(/^https?:\/\/[^/]+/i, "");
+    return clean || raw;
+}
+
 function extractSlug(url) {
     var s = String(url || "").split("?")[0].split("#")[0].replace(/\/+$/, "");
     if (!s) return "";
@@ -151,7 +158,7 @@ function isMoviePageUrl(url) {
     var u = String(url).toLowerCase();
     if (u === BASE_URL || u === BASE_URL + "/") return false;
     if (u.indexOf(BASE_URL) !== 0) return false;
-    if (/\/(?:the-loai|quoc-gia|nam|nam-phat-hanh|danh-sach|tag|page|wp-content|wp-admin|wp-json|feed|xem)\//i.test(u)) {
+    if (/\/(?:the-loai|quoc-gia|nam|nam-phat-hanh|danh-sach|tag|page|wp-content|wp-admin|wp-json|feed)\//i.test(u)) {
         return false;
     }
     if (/\?(?:s|page|paged|filter)=/i.test(u)) return false;
@@ -283,8 +290,14 @@ function getUrlSearch(keyword, filtersJson) {
 
 function getUrlDetail(slug) {
     if (!slug) return "";
-    if (/^https?:\/\//i.test(slug)) return slug;
-    return BASE_URL + "/" + String(slug).replace(/^\/+/, "");
+    var s = trimStr(unescapeStreamStr(slug));
+    if (/^https?:\/\//i.test(s)) {
+        log("getUrlDetail -> " + s);
+        return s;
+    }
+    var full = BASE_URL + "/" + s.replace(/^\/+/, "");
+    log("getUrlDetail -> " + full);
+    return full;
 }
 
 function getUrlCategories() {
@@ -321,7 +334,7 @@ function buildMovieItem(url, title, posterUrl, rawHtml) {
     else if (/lồng\s*tiếng/i.test(rawHtml)) lang = "Lồng Tiếng";
 
     return {
-        id: extractSlug(url),
+        id: extractMovieId(url) || extractSlug(url),
         title: title,
         posterUrl: posterUrl,
         backdropUrl: posterUrl,
@@ -504,28 +517,15 @@ function parseServersFromWatchHtml(src, pageUrl) {
         }
     }
 
-    if (servers.length === 0) {
-        var epLinks = src.match(/<a[^>]+href=["'][^"']*\/xem\/[^"']+["'][^>]*>[\s\S]*?<\/a>/gi) || [];
-        var fallbackEps = [];
-        var seenLink = {};
-        for (var i = 0; i < epLinks.length; i++) {
-            var href = toAbsUrl((epLinks[i].match(/href=["']([^"']+)["']/i) || [])[1] || "", pageUrl);
-            if (!href || seenLink[href]) continue;
-            seenLink[href] = true;
-
-            var lbl = cleanText(epLinks[i]) || ("Tập " + (fallbackEps.length + 1));
-            fallbackEps.push({
-                id: href,
-                name: lbl,
-                slug: href
-            });
-        }
-        if (fallbackEps.length > 0) {
-            servers.push({
-                name: "Server #1",
-                episodes: fallbackEps
-            });
-        }
+    if (servers.length === 0 && pageUrl && (extractPlayerLinkFromVars(src, pageUrl) || extractPlayerIframe(src, pageUrl))) {
+        servers.push({
+            name: "Server #1",
+            episodes: [{
+                id: pageUrl,
+                name: "Tập 1",
+                slug: pageUrl
+            }]
+        });
     }
 
     return servers;
@@ -580,8 +580,10 @@ function parseMovieDetail(htmlContent, pageUrl) {
         else if (/thuyết\s*minh/i.test(srcTitleText)) lang = "Thuyết Minh";
         else if (/vietsub/i.test(srcTitleText)) lang = "Vietsub";
 
-        var slug = extractSlug(cleanUrl) ||
+        var slug = extractMovieId(cleanUrl) ||
             extractSlug((src.match(/<link[^>]+rel=["']canonical["'][^>]+href=["']([^"']+)["']/i) || [])[1] || "");
+
+        log("parseMovieDetail servers: " + servers.length + ", firstEps: " + firstServerEps.length);
 
         return JSON.stringify({
             id: slug,
