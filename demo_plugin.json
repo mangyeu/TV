@@ -12,7 +12,7 @@
     {
         "id": "tvhay",
         "name": "TVHAY",
-        "version": "2.1.0",
+        "version": "2.1.1",
         "baseUrl": "https://tvhay.buzz",
         "scriptUrl": "https://raw.githubusercontent.com/mangyeu/TV/refs/heads/main/dmo/demo1.js",
       "iconUrl": "https://tvhay.buzz/favicon.png"
