@@ -13,6 +13,13 @@
  * - Movie details
  * - Episode lists
  * - Watch page metadata
+ * var detailImages = extractImages(html);
+
+   *result.poster =
+   * getMeta(html, "og:image") ||
+    * (detailImages.length > 0
+   *     ? detailImages[0].src
+     *   : "");
  *
  * Does not resolve or extract video streams.
  */
