@@ -56,6 +56,47 @@ function getHomeSections() {
     ]);
 }
 
+function fetchHTML(url, callback) {
+    var xhr = new XMLHttpRequest();
+
+    xhr.open("GET", url, true);
+    xhr.timeout = 30000;
+
+    xhr.onreadystatechange = function () {
+        if (xhr.readyState !== 4) return;
+
+        var status = xhr.status;
+        var response = xhr.responseText || "";
+
+        if (status >= 200 && status < 300 && response.length > 0) {
+            callback(null, response);
+        } else {
+            callback({
+                message: "HTTP Error",
+                status: status,
+                response: response.substring(0, 500),
+                url: url
+            }, null);
+        }
+    };
+
+    xhr.onerror = function () {
+        callback({
+            message: "Network error",
+            status: xhr.status,
+            url: url
+        }, null);
+    };
+
+    xhr.ontimeout = function () {
+        callback({
+            message: "Timeout",
+            url: url
+        }, null);
+    };
+
+    xhr.send();
+}
 /* =========================================================
    3. PRIMARY CATEGORIES
 ========================================================= */
