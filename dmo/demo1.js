@@ -18,7 +18,7 @@ function getManifest() {
     return JSON.stringify({
         "id": "tvhay",
         "name": "TVHAY",
-        "version": "2.4.6",
+        "version": "2.5.0",
         "baseUrl": BASE_URL,
         "iconUrl": BASE_URL + "/favicon.ico",
         "isEnabled": true,
@@ -183,6 +183,22 @@ function defaultHeaders(referer) {
     };
 }
 
+function embedHeaders(embedUrl, refererUrl) {
+    var origin = "https://v13.streamvsmov.com";
+    var mOrigin = String(embedUrl || "").match(/^(https?:\/\/[^/]+)/i);
+    if (mOrigin && mOrigin[1]) {
+        origin = mOrigin[1];
+    }
+
+    return {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+        "Accept": "*/*",
+        "Accept-Language": "vi-VN,vi;q=0.9,en-US;q=0.8,en;q=0.7",
+        "Origin": origin,
+        "Referer": refererUrl || (origin + "/")
+    };
+}
+
 function getImgSrcFromTag(imgTag) {
     if (!imgTag) return "";
     var attrs = ["data-src", "data-lazy-src", "data-original", "data-srcset", "src"];
@@ -229,13 +245,85 @@ function extractPlayerIframe(html, pageUrl) {
 
 function findMediaUrl(html, baseUrl) {
     var raw = unescapeStreamStr(String(html || ""));
-    var m = raw.match(/https?:\/\/[^"'<> \r\n\\]+\.(?:m3u8|mp4)(?:\?[^"'<> \r\n\\]*)?/i);
-    if (m) return m[0];
+    var base = baseUrl || "https://v13.streamvsmov.com/";
 
-    var rel = raw.match(/\/[^"'<> \r\n\\]+\.(?:m3u8|mp4)(?:\?[^"'<> \r\n\\]*)?/i);
-    if (rel) return toAbsUrl(rel[0], baseUrl || "https://v13.streamvsmov.com/");
+    var absMedia = raw.match(/https?:\/\/[^"'<> \r\n\\]+\.(?:m3u8|mp4|vl)(?:\?[^"'<> \r\n\\]*)?/i);
+    if (absMedia) return absMedia[0];
+
+    var propPatterns = [
+        /(?:file|src|source|url|stream|hls|playlist)\s*[:=]\s*["']([^"']+(?:\.m3u8|\.mp4|\.vl|\/playlist|\/stream|\/manifest)[^"']*)["']/i,
+        /"(?:file|src|source|url|stream|hls|playlist)"\s*:\s*"([^"]+)"/i
+    ];
+
+    for (var i = 0; i < propPatterns.length; i++) {
+        var pm = raw.match(propPatterns[i]);
+        if (pm && pm[1]) {
+            var candidate = unescapeStreamStr(pm[1]);
+            if (/^https?:\/\//i.test(candidate) || candidate.charAt(0) === "/") {
+                return toAbsUrl(candidate, base);
+            }
+        }
+    }
+
+    var relMedia = raw.match(/\/[^"'<> \r\n\\]+\.(?:m3u8|mp4|vl)(?:\?[^"'<> \r\n\\]*)?/i);
+    if (relMedia) return toAbsUrl(relMedia[0], base);
 
     return "";
+}
+
+function extractSegmentIndex(url) {
+    var m = String(url || "").match(/_(\d+)(?:\.[a-z0-9]+)?(?:\?|$)/i);
+    return m ? parseInt(m[1], 10) : 0;
+}
+
+function collectMediaSegments(html, baseUrl) {
+    var raw = unescapeStreamStr(String(html || ""));
+    var base = baseUrl || "https://v13.streamvsmov.com/";
+    var found = [];
+    var seen = {};
+
+    var re = /(?:https?:\/\/[^\s"'<>\\]+|\/[^\s"'<>\\]+?\/file\/[^\s"'<>\\]+)(?:\.(?:png|ts|m4s|vl))(?:\?[^\s"'<>\\]*)?/gi;
+    var m;
+    while ((m = re.exec(raw)) !== null) {
+        var abs = toAbsUrl(m[0], base);
+        if (abs && !seen[abs]) {
+            seen[abs] = true;
+            found.push(abs);
+        }
+    }
+
+    found.sort(function (a, b) {
+        return extractSegmentIndex(a) - extractSegmentIndex(b);
+    });
+
+    return found;
+}
+
+function buildHlsDataUriFromSegments(segments, targetDuration) {
+    if (!segments || segments.length === 0) return "";
+    var dur = targetDuration || 6;
+    var lines = [
+        "#EXTM3U",
+        "#EXT-X-VERSION:3",
+        "#EXT-X-TARGETDURATION:" + dur,
+        "#EXT-X-MEDIA-SEQUENCE:0"
+    ];
+
+    for (var i = 0; i < segments.length; i++) {
+        lines.push("#EXTINF:" + dur + ".0,");
+        lines.push(segments[i]);
+    }
+
+    lines.push("#EXT-X-ENDLIST");
+    var m3u8Content = lines.join("\n");
+
+    if (typeof btoa === "function") {
+        try {
+            return "data:application/vnd.apple.mpegurl;base64," + btoa(unescape(encodeURIComponent(m3u8Content)));
+        } catch (e) {}
+    }
+
+    return "data:application/vnd.apple.mpegurl;charset=utf-8," + encodeURIComponent(m3u8Content);
 }
 
 // =============================================================================
@@ -634,7 +722,7 @@ function parseDetailResponse(htmlContent, pageUrl) {
                 url: playerVarUrl,
                 isEmbed: !isDirectVar,
                 mimeType: isDirectVar ? (/\.m3u8/i.test(playerVarUrl) ? "application/x-mpegURL" : "video/mp4") : undefined,
-                headers: defaultHeaders(ref),
+                headers: isDirectVar ? defaultHeaders(ref) : embedHeaders(playerVarUrl, ref),
                 subtitles: []
             });
         }
@@ -645,7 +733,7 @@ function parseDetailResponse(htmlContent, pageUrl) {
             return JSON.stringify({
                 url: embedUrl,
                 isEmbed: true,
-                headers: defaultHeaders(ref),
+                headers: embedHeaders(embedUrl, ref),
                 subtitles: []
             });
         }
@@ -661,16 +749,31 @@ function parseEmbedResponse(htmlContent, url) {
     try {
         var src = unescapeStreamStr(String(htmlContent || ""));
         var ref = unescapeStreamStr(url || "") || "https://v13.streamvsmov.com/";
+        var hdrs = embedHeaders(ref, ref);
         log("parseEmbedResponse: " + ref);
 
         var streamUrl = findMediaUrl(src, ref);
         if (streamUrl) {
+            var isHlsOrMp4 = /\.(?:m3u8|mp4)(?:\?|$)/i.test(streamUrl);
             log("parseEmbedResponse stream: " + streamUrl);
             return JSON.stringify({
                 url: streamUrl,
                 isEmbed: false,
-                mimeType: /\.m3u8(?:\?|$)/i.test(streamUrl) ? "application/x-mpegURL" : "video/mp4",
-                headers: defaultHeaders(ref),
+                mimeType: isHlsOrMp4 ? (/\.m3u8/i.test(streamUrl) ? "application/x-mpegURL" : "video/mp4") : undefined,
+                headers: hdrs,
+                subtitles: []
+            });
+        }
+
+        var segments = collectMediaSegments(src, ref);
+        if (segments.length > 0) {
+            var playlistUri = buildHlsDataUriFromSegments(segments, 6);
+            log("parseEmbedResponse stitched segments: " + segments.length);
+            return JSON.stringify({
+                url: playlistUri,
+                isEmbed: false,
+                mimeType: "application/x-mpegURL",
+                headers: hdrs,
                 subtitles: []
             });
         }
@@ -681,7 +784,17 @@ function parseEmbedResponse(htmlContent, url) {
             return JSON.stringify({
                 url: nestedIframe,
                 isEmbed: true,
-                headers: defaultHeaders(ref),
+                headers: hdrs,
+                subtitles: []
+            });
+        }
+
+        if (/^https?:\/\//i.test(ref)) {
+            log("parseEmbedResponse fallback embed: " + ref);
+            return JSON.stringify({
+                url: ref,
+                isEmbed: true,
+                headers: hdrs,
                 subtitles: []
             });
         }
