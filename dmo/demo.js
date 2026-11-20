@@ -3,12 +3,13 @@
 // =============================================================================
 
 var BACKUP_MP4_URL = "https://raw.githubusercontent.com/bbbiiii12/kiiyu/d5157ae0a44be124a47fa3305126750919414a39/output.mp4";
+var DEFAULT_USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
 
 function getManifest() {
     return JSON.stringify({
         "id": "nguonc",
         "name": "Phim NguonC",
-        "version": "1.1.9",
+        "version": "1.2.0",
         "baseUrl": "https://phim.nguonc.com",
         "iconUrl": "https://raw.githubusercontent.com/youngbi/repo/main/plugins/nguonC.png",
         "isEnabled": true,
@@ -118,6 +119,35 @@ function getUrlCountries() { return "https://phim.nguonc.com"; }
 function getUrlYears() { return "https://phim.nguonc.com"; }
 
 // =============================================================================
+// HELPERS
+// =============================================================================
+
+function getOriginFromUrl(url) {
+    if (!url || typeof url !== "string") return "https://embed.streamc.xyz/";
+    var match = url.match(/^(https?:\/\/[^\/?#]+)/i);
+    return match ? (match[1] + "/") : "https://embed.streamc.xyz/";
+}
+
+function normalizeStreamUrl(rawUrl) {
+    if (!rawUrl || typeof rawUrl !== "string") return "";
+    return rawUrl
+        .replace(/\\\//g, "/")
+        .replace(/&/g, "&")
+        .replace(/\\u0026/g, "&")
+        .trim();
+}
+
+function buildStreamResult(url, referer) {
+    return JSON.stringify({
+        url: url,
+        headers: {
+            "User-Agent": DEFAULT_USER_AGENT,
+            "Referer": referer || "https://embed.streamc.xyz/"
+        }
+    });
+}
+
+// =============================================================================
 // PARSERS
 // =============================================================================
 
@@ -188,17 +218,6 @@ function parseSearchResponse(apiResponseJson) {
     return parseListResponse(apiResponseJson);
 }
 
-function getOriginFromUrl(url) {
-    if (!url || typeof url !== "string") return "";
-    var match = url.match(/^(https?:\/\/[^\/?#]+)/i);
-    return match ? (match[1] + "/") : "https://embed.streamc.xyz/";
-}
-
-function normalizeStreamUrl(rawUrl) {
-    if (!rawUrl || typeof rawUrl !== "string") return "";
-    return rawUrl.replace(/\\\//g, "/").replace(/&/g, "&").trim();
-}
-
 function parseMovieDetail(apiResponseJson) {
     try {
         var response = JSON.parse(apiResponseJson);
@@ -221,9 +240,6 @@ function parseMovieDetail(apiResponseJson) {
                     serverItems.forEach(function (ep, eIdx) {
                         var embed = normalizeStreamUrl(ep.embed || ep.link_embed || "");
                         var m3u8 = normalizeStreamUrl(ep.m3u8 || ep.link_m3u8 || "");
-
-                        // Giữ embed làm id để parseDetailResponse tải HTML và bóc m3u8 + Referer;
-                        // nếu không có embed thì dùng trực tiếp m3u8.
                         var playTarget = embed || m3u8;
 
                         if (playTarget) {
@@ -291,76 +307,42 @@ function parseMovieDetail(apiResponseJson) {
 
 function parseDetailResponse(html, sourceUrl) {
     try {
-        if (!html || typeof html !== "string") return "{}";
+        var cleanHtml = (typeof html === "string") ? html.replace(/\\\//g, "/") : "";
+        var referer = getOriginFromUrl(sourceUrl);
 
-        var cleanHtml = html.replace(/\\\//g, "/");
-
-        // 1. Ưu tiên bắt link .m3u8 gắn với player / nguồn phát (file:, source:, src:, hoặc URL https có .m3u8)
         var patterns = [
-            /(?:file|source|src|hls|url)\s*[:=]\s*["'](https?:\/\/[^"'\s]+\.m3u8[^"'\s]*)["']/i,
-            /["'](https?:\/\/[^"'\s]+\.m3u8(?:\?[^"'\s]*)?)["']/i,
-            /(?:file|source|src)\s*[:=]\s*["']([^"'\s]+\.m3u8[^"'\s]*)["']/i
+            /(?:file|source|src|hls|url|stream)\s*[:=]\s*["'](https?:\/\/[^"'\s]+\.(?:m3u8|mp4)[^"'\s]*)["']/i,
+            /["'](https?:\/\/[^"'\s]+\.(?:m3u8|mp4)(?:\?[^"'\s]*)?)["']/i,
+            /(?:file|source|src)\s*[:=]\s*["']([^"'\s]+\.(?:m3u8|mp4)[^"'\s]*)["']/i
         ];
 
         var streamUrl = "";
-        for (var i = 0; i < patterns.length; i++) {
-            var m = cleanHtml.match(patterns[i]);
-            if (m && m[1]) {
-                streamUrl = normalizeStreamUrl(m[1]);
-                break;
+        if (cleanHtml) {
+            for (var i = 0; i < patterns.length; i++) {
+                var m = cleanHtml.match(patterns[i]);
+                if (m && m[1]) {
+                    streamUrl = normalizeStreamUrl(m[1]);
+                    break;
+                }
             }
         }
 
-        // 2. Nếu HTML chứa iframe embed lồng bên trong thay vì m3u8 trực tiếp
+        if (streamUrl) {
+            return buildStreamResult(streamUrl, referer);
+        }
+
         var iframeUrl = "";
-        if (!streamUrl) {
+        if (cleanHtml) {
             var iframeMatch = cleanHtml.match(/<iframe[^>]+src=["']([^"']+)["']/i);
             if (iframeMatch && iframeMatch[1]) {
                 iframeUrl = normalizeStreamUrl(iframeMatch[1]);
             }
         }
 
-        // Xác định Referer theo đúng host của link embed/iframe nếu có, fallback về embed.streamc.xyz
-        var refUrl = sourceUrl || iframeUrl || "";
-        var referer = getOriginFromUrl(refUrl);
-
-        if (streamUrl) {
-            return JSON.stringify({
-                url: streamUrl,
-                type: "hls",
-                headers: {
-                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-                    "Referer": referer
-                }
-            });
-        }
-
-        if (iframeUrl) {
-            return JSON.stringify({
-                url: iframeUrl,
-                type: "embed",
-                headers: {
-                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-                    "Referer": sourceUrl || "https://phim.nguonc.com/"
-                }
-            });
-        }
-
-        // Fallback trả về sourceUrl nếu có để app mở trực tiếp thay vì chết hẳn
-        if (sourceUrl) {
-            return JSON.stringify({
-                url: normalizeStreamUrl(sourceUrl),
-                type: "embed",
-                headers: {
-                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-                    "Referer": "https://phim.nguonc.com/"
-                }
-            });
-        }
-
-        return "{}";
+        var fallbackUrl = iframeUrl || normalizeStreamUrl(sourceUrl || "") || BACKUP_MP4_URL;
+        return buildStreamResult(fallbackUrl, referer);
     } catch (error) {
-        return "{}";
+        return buildStreamResult(BACKUP_MP4_URL, "https://embed.streamc.xyz/");
     }
 }
 
@@ -427,5 +409,5 @@ function getImageUrl(path) {
     if (!path) return "";
     if (path.indexOf("http") === 0) return path;
     var cleanPath = path.replace(/^\/+/, "");
-    return "https://img.phimapi.com/" + cleanPath;
+    return "https://img.nguonc.com/" + cleanPath;
 }
