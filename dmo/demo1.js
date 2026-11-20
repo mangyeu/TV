@@ -4,7 +4,7 @@
    JavaScript ES5 / Android WebView
 ========================================================= */
 
-var BASE_URL = "https://tvhay.buzz";
+var BASE_URL = "https://tvhay.buzz/";
 var PLUGIN_ID = "tvhay";
 
 /* =========================================================
