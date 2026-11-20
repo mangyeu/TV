@@ -16,7 +16,7 @@ function getManifest() {
     return JSON.stringify({
         "id": "tvhay",
         "name": "TVHAY",
-        "version": "2.4.3",
+        "version": "2.4.4",
         "baseUrl": BASE_URL,
         "iconUrl": BASE_URL + "/favicon.ico",
         "isEnabled": true,
@@ -99,18 +99,18 @@ function trimStr(s) {
     return String(s || "").replace(/^\s+|\s+$/g, "");
 }
 
-function decodeText(s) {
-    if (!s) return "";
-    return String(s)
-        .replace(/&/g, "&")
-        .replace(/&/g, "&")
-        .replace(/\\u0026/g, "&")
+function unescapeStreamStr(str) {
+    return String(str || "")
+        .replace(/\\u0026/gi, "&")
+        .replace(/\\u002F/gi, "/")
         .replace(/\\x3D/gi, "=")
         .replace(/\\\//g, "/")
-        .replace(/"/g, '"')
-        .replace(/'/g, "'")
-        .replace(/</g, "<")
-        .replace(/>/g, ">")
+        .replace(/&/gi, "&")
+        .replace(/&/gi, "&")
+        .replace(/"/gi, '"')
+        .replace(/'/gi, "'")
+        .replace(/</gi, "<")
+        .replace(/>/gi, ">")
         .replace(/&#(\d+);/g, function (m, n) {
             return String.fromCharCode(parseInt(n, 10));
         });
@@ -118,7 +118,7 @@ function decodeText(s) {
 
 function cleanText(html) {
     return trimStr(
-        decodeText(
+        unescapeStreamStr(
             String(html || "")
                 .replace(/<script[\s\S]*?<\/script>/gi, "")
                 .replace(/<style[\s\S]*?<\/style>/gi, "")
@@ -129,7 +129,7 @@ function cleanText(html) {
 
 function toAbsUrl(url, base) {
     var root = (base || BASE_URL).replace(/\/+$/, "");
-    var u = trimStr(decodeText(url));
+    var u = trimStr(unescapeStreamStr(url));
     if (!u || u.indexOf("data:") === 0 || u.indexOf("javascript:") === 0) return "";
     if (/^https?:\/\//i.test(u)) return u;
     if (u.indexOf("//") === 0) return "https:" + u;
@@ -190,8 +190,24 @@ function getImgSrcFromTag(imgTag) {
     return "";
 }
 
+function extractPlayerLinkFromVars(html, pageUrl) {
+    var src = unescapeStreamStr(String(html || ""));
+
+    var mHPro = src.match(/\blinkHPro\s*=\s*["']([^"']+)["']/i);
+    if (mHPro && mHPro[1]) {
+        return toAbsUrl(mHPro[1], pageUrl);
+    }
+
+    var mSPro = src.match(/\blinkSPro\s*=\s*["']([^"']+)["']/i);
+    if (mSPro && mSPro[1]) {
+        return toAbsUrl(mSPro[1], pageUrl);
+    }
+
+    return "";
+}
+
 function extractPlayerIframe(html, pageUrl) {
-    var src = decodeText(String(html || ""));
+    var src = unescapeStreamStr(String(html || ""));
 
     var idMatch = src.match(/<iframe[^>]+id=["']movie-iframe["'][^>]*>/i);
     if (idMatch) {
@@ -208,10 +224,15 @@ function extractPlayerIframe(html, pageUrl) {
     return anyMatch && anyMatch[1] ? toAbsUrl(anyMatch[1], pageUrl) : "";
 }
 
-function extractDirectStream(html) {
-    var src = decodeText(String(html || ""));
-    var m = src.match(/https?:\/\/[^"'<> \r\n\\]+\.(?:m3u8|mp4)(?:\?[^"'<> \r\n\\]*)?/i);
-    return m ? decodeText(m[0]) : "";
+function findMediaUrl(html, baseUrl) {
+    var raw = unescapeStreamStr(String(html || ""));
+    var m = raw.match(/https?:\/\/[^"'<> \r\n\\]+\.(?:m3u8|mp4)(?:\?[^"'<> \r\n\\]*)?/i);
+    if (m) return m[0];
+
+    var rel = raw.match(/\/[^"'<> \r\n\\]+\.(?:m3u8|mp4)(?:\?[^"'<> \r\n\\]*)?/i);
+    if (rel) return toAbsUrl(rel[0], baseUrl || "https://v13.streamvsmov.com/");
+
+    return "";
 }
 
 // =============================================================================
@@ -317,7 +338,7 @@ function buildMovieItem(url, title, posterUrl, rawHtml) {
 
 function parseListResponse(htmlContent) {
     try {
-        var src = decodeText(String(htmlContent || ""));
+        var src = unescapeStreamStr(String(htmlContent || ""));
         log("parseListResponse html length: " + src.length);
 
         var movies = [];
@@ -344,7 +365,7 @@ function parseListResponse(htmlContent) {
                 (imgMatch ? ((imgMatch[0].match(/alt=["']([^"']+)["']/i) || [])[1] || "") : "") ||
                 cleanText((box.match(/<h[1-6][^>]*>([\s\S]*?)<\/h[1-6]>/i) || [])[1] || "") ||
                 cleanText(box);
-            title = trimStr(decodeText(title));
+            title = trimStr(unescapeStreamStr(title));
 
             if (!title) continue;
             seen[url] = true;
@@ -367,7 +388,7 @@ function parseListResponse(htmlContent) {
                     (am[0].match(/title=["']([^"']+)["']/i) || [])[1] ||
                     (cardImgMatch ? ((cardImgMatch[0].match(/alt=["']([^"']+)["']/i) || [])[1] || "") : "") ||
                     cleanText(inner);
-                cardTitle = trimStr(decodeText(cardTitle));
+                cardTitle = trimStr(unescapeStreamStr(cardTitle));
 
                 if (!cardTitle || cardTitle.length < 2) continue;
                 seen[cardUrl] = true;
@@ -413,12 +434,12 @@ function parseSearchResponse(htmlContent) {
 
 function parseMovieDetail(htmlContent, pageUrl) {
     try {
-        var src = decodeText(String(htmlContent || ""));
+        var src = unescapeStreamStr(String(htmlContent || ""));
         var cleanUrl = toAbsUrl(pageUrl || "");
 
         var ogTitle = (src.match(/<meta[^>]+(?:property|name)=["']og:title["'][^>]+content=["']([^"']*)["']/i) || [])[1] || "";
         var docTitle = cleanText((src.match(/<title[^>]*>([\s\S]*?)<\/title>/i) || [])[1] || "");
-        var title = trimStr(decodeText(ogTitle || docTitle).replace(/\s*(?:\||-)\s*TVHAY.*$/i, ""));
+        var title = trimStr(unescapeStreamStr(ogTitle || docTitle).replace(/\s*(?:\||-)\s*TVHAY.*$/i, ""));
 
         var posterUrl = toAbsUrl(
             (src.match(/<meta[^>]+(?:property|name)=["']og:image["'][^>]+content=["']([^"']*)["']/i) || [])[1] ||
@@ -438,32 +459,29 @@ function parseMovieDetail(htmlContent, pageUrl) {
 
         var episodes = [];
         var seenEp = {};
-        var epLinks = src.match(/<a[^>]+href=["'][^"']*\/xem\/[^"']+["'][^>]*>[\s\S]*?<\/a>/gi) || [];
+        var epPatterns = [
+            /<a[^>]+href=["']([^"']*\/xem\/[^"']+)["'][^>]*>[\s\S]*?<\/a>/gi,
+            /<a[^>]+href=["']([^"']*(?:tap-|episode|ep-|watch|xem-phim)[^"']*)["'][^>]*>[\s\S]*?<\/a>/gi
+        ];
 
-        for (var i = 0; i < epLinks.length; i++) {
-            var epHref = toAbsUrl((epLinks[i].match(/href=["']([^"']+)["']/i) || [])[1] || "");
-            if (!epHref || seenEp[epHref]) continue;
-            seenEp[epHref] = true;
+        for (var p = 0; p < epPatterns.length && episodes.length === 0; p++) {
+            var epLinks = src.match(epPatterns[p]) || [];
+            for (var i = 0; i < epLinks.length; i++) {
+                var epHref = toAbsUrl((epLinks[i].match(/href=["']([^"']+)["']/i) || [])[1] || "");
+                if (!epHref || seenEp[epHref]) continue;
+                seenEp[epHref] = true;
 
-            var epName = cleanText(epLinks[i]) || ("Tập " + (episodes.length + 1));
-            episodes.push({
-                id: epHref,
-                name: epName,
-                slug: epHref
-            });
+                var epName = cleanText(epLinks[i]) || ("Tập " + (episodes.length + 1));
+                episodes.push({
+                    id: epHref,
+                    name: epName,
+                    slug: epHref
+                });
+            }
         }
 
         var slug = extractSlug(cleanUrl) ||
             extractSlug((src.match(/<link[^>]+rel=["']canonical["'][^>]+href=["']([^"']+)["']/i) || [])[1] || "");
-
-        if (episodes.length === 0 && slug) {
-            var fallbackWatch = BASE_URL + "/xem/" + slug + "/tap-1";
-            episodes.push({
-                id: fallbackWatch,
-                name: "Tập 1",
-                slug: fallbackWatch
-            });
-        }
 
         var servers = [
             { name: "H.PRO", episodes: episodes },
@@ -496,16 +514,29 @@ function parseMovieDetail(htmlContent, pageUrl) {
 
 function parseDetailResponse(htmlContent, pageUrl) {
     try {
-        var src = decodeText(String(htmlContent || ""));
-        var ref = decodeText(pageUrl || "") || (BASE_URL + "/");
+        var src = unescapeStreamStr(String(htmlContent || ""));
+        var ref = unescapeStreamStr(pageUrl || "") || (BASE_URL + "/");
         log("parseDetailResponse: " + ref);
 
-        var directStream = extractDirectStream(src);
-        if (directStream) {
+        var directUrl = findMediaUrl(src, ref);
+        if (directUrl) {
             return JSON.stringify({
-                url: directStream,
+                url: directUrl,
                 isEmbed: false,
-                mimeType: /\.m3u8(?:\?|$)/i.test(directStream) ? "application/x-mpegURL" : "video/mp4",
+                mimeType: /\.m3u8(?:\?|$)/i.test(directUrl) ? "application/x-mpegURL" : "video/mp4",
+                headers: defaultHeaders(ref),
+                subtitles: []
+            });
+        }
+
+        var playerVarUrl = extractPlayerLinkFromVars(src, ref);
+        if (playerVarUrl) {
+            var isDirectVar = /\.(?:m3u8|mp4)(?:\?|$)/i.test(playerVarUrl);
+            log("parseDetailResponse var link: " + playerVarUrl);
+            return JSON.stringify({
+                url: playerVarUrl,
+                isEmbed: !isDirectVar,
+                mimeType: isDirectVar ? (/\.m3u8/i.test(playerVarUrl) ? "application/x-mpegURL" : "video/mp4") : undefined,
                 headers: defaultHeaders(ref),
                 subtitles: []
             });
@@ -531,11 +562,11 @@ function parseDetailResponse(htmlContent, pageUrl) {
 
 function parseEmbedResponse(htmlContent, url) {
     try {
-        var src = decodeText(String(htmlContent || ""));
-        var ref = decodeText(url || "") || (BASE_URL + "/");
+        var src = unescapeStreamStr(String(htmlContent || ""));
+        var ref = unescapeStreamStr(url || "") || "https://v13.streamvsmov.com/";
         log("parseEmbedResponse: " + ref);
 
-        var streamUrl = extractDirectStream(src);
+        var streamUrl = findMediaUrl(src, ref);
         if (streamUrl) {
             log("parseEmbedResponse stream: " + streamUrl);
             return JSON.stringify({
@@ -567,7 +598,7 @@ function parseEmbedResponse(htmlContent, url) {
 
 function parseCategoriesResponse(htmlContent) {
     try {
-        var src = decodeText(String(htmlContent || ""));
+        var src = unescapeStreamStr(String(htmlContent || ""));
         var list = [];
         var seen = {};
         var re = /<a[^>]+href=["'][^"']*\/(?:the-loai|danh-sach)\/([^"'/?#]+)\/?["'][^>]*>([\s\S]*?)<\/a>/gi;
@@ -588,7 +619,7 @@ function parseCategoriesResponse(htmlContent) {
 
 function parseCountriesResponse(htmlContent) {
     try {
-        var src = decodeText(String(htmlContent || ""));
+        var src = unescapeStreamStr(String(htmlContent || ""));
         var list = [];
         var seen = {};
         var re = /<a[^>]+href=["'][^"']*\/quoc-gia\/([^"'/?#]+)\/?["'][^>]*>([\s\S]*?)<\/a>/gi;
@@ -609,7 +640,7 @@ function parseCountriesResponse(htmlContent) {
 
 function parseYearsResponse(htmlContent) {
     try {
-        var src = decodeText(String(htmlContent || ""));
+        var src = unescapeStreamStr(String(htmlContent || ""));
         var list = [];
         var seen = {};
         var re = /<a[^>]+href=["'][^"']*\/(?:nam|nam-phat-hanh)\/(\d{4})\/?["'][^>]*>([\s\S]*?)<\/a>/gi;
