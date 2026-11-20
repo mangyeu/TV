@@ -4,7 +4,7 @@
     {
         "id": "nguonc",
         "name": "Phim NguonC",
-        "version": "1.1.9",
+        "version": "1.2.0",
         "baseUrl": "https://phim.nguonc.com",
         "scriptUrl": "https://raw.githubusercontent.com/mangyeu/TV/refs/heads/main/dmo/demo.js",
       "iconUrl": "https://static.iw01.xyz/static/av01-icon-export.svg"
