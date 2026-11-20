@@ -135,7 +135,7 @@ function getManifest() {
         id: PLUGIN_ID,
         name: "TVHAY",
         title: "TVHAY.BUZZ",
-        version: "2.4.0",
+        version: "2.4.1",
         baseUrl: BASE_URL,
         url: BASE_URL,
         language: "vi",
@@ -655,60 +655,276 @@ function extractStreamURL(html) {
         if (/\.m3u8/i.test(iframeURL)) {
             return iframeURL;
         }
+// =============================================================================
+// TVHAY.BUZZ - VIDEO STREAM EXTRACTION
+// Compatible with VAXPlayer embed parsing
+// =============================================================================
+
+function tvhayLog(msg) {
+    if (typeof nativeLog !== "undefined") {
+        nativeLog("[TVHAY] " + msg);
+    } else if (typeof console !== "undefined") {
+        console.log("[TVHAY] " + msg);
+    }
+}
+
+function tvhayDecode(html) {
+    return String(html || "")
+        .replace(/&amp;/g, "&")
+        .replace(/\\u0026/g, "&")
+        .replace(/\\\//g, "/")
+        .replace(/&quot;/g, '"')
+        .replace(/&#39;/g, "'");
+}
+
+function tvhayAbsoluteURL(url) {
+    url = tvhayDecode(url).trim();
+
+    if (!url) return "";
+
+    if (/^https?:\/\//i.test(url)) {
+        return url;
     }
 
-    /*
-     * Raw video URL
-     */
-    m = html.match(
-        /https?:\/\/[^"'<> \s]*\/video\/[a-z0-9-]+/i
-    );
+    if (url.indexOf("//") === 0) {
+        return "https:" + url;
+    }
 
-    if (m) {
-        return convertVideoToHLS(m[0]);
+    if (url.charAt(0) === "/") {
+        return "https://tvhay.buzz" + url;
+    }
+
+    return "https://tvhay.buzz/" + url;
+}
+
+function tvhayExtractVideoID(url) {
+    url = String(url || "");
+
+    var patterns = [
+        /streamvsmov\.com\/video\/([a-zA-Z0-9-]+)/i,
+        /streamvsmov\.com\/stream\/([a-zA-Z0-9-]+)/i,
+        /\/video\/([a-zA-Z0-9-]+)/i,
+        /\/stream\/([a-zA-Z0-9-]+)/i
+    ];
+
+    for (var i = 0; i < patterns.length; i++) {
+        var match = url.match(patterns[i]);
+
+        if (match && match[1]) {
+            return match[1];
+        }
     }
 
     return "";
 }
 
-/* =========================
-   WATCH PAGE
-========================= */
+function tvhayExtractIframe(html) {
+    html = tvhayDecode(html);
 
-function parseWatchPage(html, pageURL) {
-    html = normalizeStreamHTML(html);
+    var patterns = [
+        /<iframe[^>]+src=["']([^"']+)["']/i,
+        /<iframe[^>]+data-src=["']([^"']+)["']/i,
+        /movie-iframe[^>]*src=["']([^"']+)["']/i
+    ];
 
-    pageURL = absoluteURL(pageURL);
+    for (var i = 0; i < patterns.length; i++) {
+        var match = html.match(patterns[i]);
 
-    var iframeURL = extractIframeURL(html);
+        if (match && match[1]) {
+            return tvhayAbsoluteURL(match[1]);
+        }
+    }
 
-    var streamURL = extractStreamURL(html);
+    return "";
+}
 
-    var title = getMovieTitle(html);
+function tvhayExtractM3U8(html) {
+    html = tvhayDecode(html);
 
-    /*
-     * IMPORTANT:
-     * page is the TVHAY watch page.
-     * embedUrl is the iframe page.
-     * url is the direct HLS stream.
-     */
+    var match = html.match(
+        /https?:\/\/[^"'<> \r\n]+\.m3u8(?:\?[^"'<> \r\n]*)?/i
+    );
 
-    return {
-        page: pageURL,
-        watchPage: pageURL,
-        embedUrl: iframeURL,
-        iframe: iframeURL,
-        url: streamURL,
-        streamUrl: streamURL,
-        title: title,
-        isDirectStream: !!streamURL,
-        type: streamURL ? "hls" : "embed",
-        headers: {
-            Referer: BASE_URL + "/",
-            Origin: BASE_URL
-        },
-        subtitles: []
-    };
+    if (match) {
+        return match[0].replace(/&amp;/g, "&");
+    }
+
+    return "";
+}
+
+
+// =============================================================================
+// DETAIL RESPONSE
+// =============================================================================
+
+function parseDetailResponse(htmlContent, pageUrl) {
+    try {
+        tvhayLog("parseDetailResponse: " + pageUrl);
+
+        htmlContent = tvhayDecode(htmlContent);
+
+        // 1. Tìm link HLS trực tiếp nếu trang đã chứa
+        var directStream = tvhayExtractM3U8(htmlContent);
+
+        if (directStream) {
+            tvhayLog("Found direct M3U8");
+
+            return JSON.stringify({
+                url: directStream,
+                isEmbed: false,
+                mimeType: "application/x-mpegURL",
+                headers: {
+                    "User-Agent": "Mozilla/5.0",
+                    "Referer": "https://tvhay.buzz/"
+                },
+                subtitles: []
+            });
+        }
+
+        // 2. Tìm iframe player
+        var embedUrl = tvhayExtractIframe(htmlContent);
+
+        if (!embedUrl) {
+            tvhayLog("No iframe found");
+
+            return JSON.stringify({
+                url: "",
+                isEmbed: false,
+                headers: {},
+                subtitles: []
+            });
+        }
+
+        tvhayLog("Found iframe: " + embedUrl);
+
+        // 3. Trả iframe để VAXPlayer tải tiếp
+        return JSON.stringify({
+            url: embedUrl,
+            isEmbed: true,
+            headers: {
+                "User-Agent": "Mozilla/5.0",
+                "Referer": pageUrl || "https://tvhay.buzz/"
+            },
+            subtitles: []
+        });
+
+    } catch (e) {
+        tvhayLog("parseDetailResponse error: " + e);
+
+        return JSON.stringify({
+            url: "",
+            isEmbed: false,
+            headers: {},
+            subtitles: []
+        });
+    }
+}
+
+
+// =============================================================================
+// EMBED RESPONSE
+// =============================================================================
+
+function parseEmbedResponse(htmlContent, url) {
+    try {
+        tvhayLog("parseEmbedResponse: " + url);
+
+        htmlContent = tvhayDecode(htmlContent);
+        url = tvhayDecode(url || "");
+
+        // 1. Tìm M3U8 trực tiếp trong trang embed
+        var streamUrl = tvhayExtractM3U8(htmlContent);
+
+        if (streamUrl) {
+            tvhayLog("Found M3U8: " + streamUrl);
+
+            return JSON.stringify({
+                url: streamUrl,
+                isEmbed: false,
+                mimeType: "application/x-mpegURL",
+                headers: {
+                    "User-Agent": "Mozilla/5.0",
+                    "Referer": url
+                },
+                subtitles: []
+            });
+        }
+
+        // 2. Tìm Video ID từ URL iframe
+        var videoID = tvhayExtractVideoID(url);
+
+        // 3. Nếu URL không chứa ID, tìm trong HTML
+        if (!videoID) {
+            var videoMatch = htmlContent.match(
+                /streamvsmov\.com\/video\/([a-zA-Z0-9-]+)/i
+            );
+
+            if (videoMatch) {
+                videoID = videoMatch[1];
+            }
+        }
+
+        // 4. Tìm iframe con nếu có
+        if (!videoID) {
+            var nestedIframe = tvhayExtractIframe(htmlContent);
+
+            if (nestedIframe) {
+                tvhayLog("Found nested iframe");
+
+                return JSON.stringify({
+                    url: nestedIframe,
+                    isEmbed: true,
+                    headers: {
+                        "User-Agent": "Mozilla/5.0",
+                        "Referer": url
+                    },
+                    subtitles: []
+                });
+            }
+        }
+
+        // 5. Chuyển UUID thành link HLS
+        if (videoID) {
+            streamUrl =
+                "https://v13.streamvsmov.com/stream/" +
+                videoID +
+                "/master.m3u8";
+
+            tvhayLog("Generated stream: " + streamUrl);
+
+            return JSON.stringify({
+                url: streamUrl,
+                isEmbed: false,
+                mimeType: "application/x-mpegURL",
+                headers: {
+                    "User-Agent": "Mozilla/5.0",
+                    "Referer": url,
+                    "Origin": "https://v13.streamvsmov.com"
+                },
+                subtitles: []
+            });
+        }
+
+        // 6. Không tìm thấy luồng
+        tvhayLog("Cannot extract video stream");
+
+        return JSON.stringify({
+            url: "",
+            isEmbed: false,
+            headers: {},
+            subtitles: []
+        });
+
+    } catch (e) {
+        tvhayLog("parseEmbedResponse error: " + e);
+
+        return JSON.stringify({
+            url: "",
+            isEmbed: false,
+            headers: {},
+            subtitles: []
+        });
+    }
 }
 
 /*
