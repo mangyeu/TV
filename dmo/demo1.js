@@ -16,7 +16,7 @@ function getManifest() {
     return JSON.stringify({
         "id": "tvhay",
         "name": "TVHAY",
-        "version": "2.4.2",
+        "version": "2.4.3",
         "baseUrl": BASE_URL,
         "iconUrl": BASE_URL + "/favicon.ico",
         "isEnabled": true,
@@ -105,6 +105,7 @@ function decodeText(s) {
         .replace(/&/g, "&")
         .replace(/&/g, "&")
         .replace(/\\u0026/g, "&")
+        .replace(/\\x3D/gi, "=")
         .replace(/\\\//g, "/")
         .replace(/"/g, '"')
         .replace(/'/g, "'")
@@ -189,6 +190,30 @@ function getImgSrcFromTag(imgTag) {
     return "";
 }
 
+function extractPlayerIframe(html, pageUrl) {
+    var src = decodeText(String(html || ""));
+
+    var idMatch = src.match(/<iframe[^>]+id=["']movie-iframe["'][^>]*>/i);
+    if (idMatch) {
+        var s1 = (idMatch[0].match(/(?:src|data-src)=["']([^"']+)["']/i) || [])[1];
+        if (s1) return toAbsUrl(s1, pageUrl);
+    }
+
+    var boxMatch = src.match(/(?:player-frame|watch-wrapper)[\s\S]*?<iframe[^>]+(?:src|data-src)=["']([^"']+)["']/i);
+    if (boxMatch && boxMatch[1]) {
+        return toAbsUrl(boxMatch[1], pageUrl);
+    }
+
+    var anyMatch = src.match(/<iframe[^>]+(?:src|data-src)=["']([^"']+)["']/i);
+    return anyMatch && anyMatch[1] ? toAbsUrl(anyMatch[1], pageUrl) : "";
+}
+
+function extractDirectStream(html) {
+    var src = decodeText(String(html || ""));
+    var m = src.match(/https?:\/\/[^"'<> \r\n\\]+\.(?:m3u8|mp4)(?:\?[^"'<> \r\n\\]*)?/i);
+    return m ? decodeText(m[0]) : "";
+}
+
 // =============================================================================
 // URL GENERATION
 // =============================================================================
@@ -210,12 +235,9 @@ function getUrlList(slug, filtersJson) {
             return appendPage(BASE_URL + "/?" + params.join("&"), page);
         }
 
-        var path = "";
-        if (!slug || slug === "phim-moi-cap-nhat" || slug === "phim-moi") {
-            path = "";
-        } else {
-            path = "/" + String(slug).replace(/^\/+/, "");
-        }
+        var path = (!slug || slug === "phim-moi-cap-nhat" || slug === "phim-moi")
+            ? ""
+            : "/" + String(slug).replace(/^\/+/, "");
 
         var finalUrl = appendPage(BASE_URL + path, page);
         log("getUrlList -> " + finalUrl);
@@ -245,8 +267,7 @@ function getUrlSearch(keyword, filtersJson) {
 function getUrlDetail(slug) {
     if (!slug) return "";
     if (/^https?:\/\//i.test(slug)) return slug;
-    var path = String(slug).replace(/^\/+/, "");
-    return BASE_URL + "/" + path;
+    return BASE_URL + "/" + String(slug).replace(/^\/+/, "");
 }
 
 function getUrlCategories() {
@@ -302,7 +323,6 @@ function parseListResponse(htmlContent) {
         var movies = [];
         var seen = {};
 
-        // Tầng 1: <article> hoặc <li> item
         var blocks = src.match(/<article[\s\S]*?<\/article>/gi);
         if (!blocks || blocks.length === 0) {
             blocks = src.match(/<li[^>]+class=["'][^"']*(?:item|movie|film|post|grid)[^"']*["'][\s\S]*?<\/li>/gi) || [];
@@ -331,7 +351,6 @@ function parseListResponse(htmlContent) {
             movies.push(buildMovieItem(url, title, posterUrl, box));
         }
 
-        // Tầng 2 (Fallback): Quét trực tiếp các thẻ <a ...><img ...></a> dẫn tới trang phim
         if (movies.length === 0) {
             var anchorCardRe = /<a[^>]+href=["']([^"']+)["'][^>]*>([\s\S]*?<img[^>]+>[\s\S]*?)<\/a>/gi;
             var am;
@@ -481,36 +500,23 @@ function parseDetailResponse(htmlContent, pageUrl) {
         var ref = decodeText(pageUrl || "") || (BASE_URL + "/");
         log("parseDetailResponse: " + ref);
 
-        var m3u8Match = src.match(/https?:\/\/[^"'<> \r\n]+\.m3u8(?:\?[^"'<> \r\n]*)?/i);
-        if (m3u8Match) {
+        var directStream = extractDirectStream(src);
+        if (directStream) {
             return JSON.stringify({
-                url: m3u8Match[0],
+                url: directStream,
                 isEmbed: false,
-                mimeType: "application/x-mpegURL",
+                mimeType: /\.m3u8(?:\?|$)/i.test(directStream) ? "application/x-mpegURL" : "video/mp4",
                 headers: defaultHeaders(ref),
                 subtitles: []
             });
         }
 
-        var iframeMatch = src.match(/<iframe[^>]+(?:src|data-src)=["']([^"']+)["']/i);
-        if (iframeMatch && iframeMatch[1]) {
-            var embedUrl = toAbsUrl(iframeMatch[1], ref);
-            var isDirect = /\.(?:m3u8|mp4)(?:\?|$)/i.test(embedUrl);
+        var embedUrl = extractPlayerIframe(src, ref);
+        if (embedUrl) {
+            log("parseDetailResponse iframe: " + embedUrl);
             return JSON.stringify({
                 url: embedUrl,
-                isEmbed: !isDirect,
-                mimeType: isDirect ? "application/x-mpegURL" : undefined,
-                headers: defaultHeaders(ref),
-                subtitles: []
-            });
-        }
-
-        var vidMatch = src.match(/\/(?:video|stream)\/([a-zA-Z0-9-]{8,})/i);
-        if (vidMatch && vidMatch[1]) {
-            return JSON.stringify({
-                url: "https://v13.streamvsmov.com/stream/" + vidMatch[1] + "/master.m3u8",
-                isEmbed: false,
-                mimeType: "application/x-mpegURL",
+                isEmbed: true,
                 headers: defaultHeaders(ref),
                 subtitles: []
             });
@@ -529,32 +535,23 @@ function parseEmbedResponse(htmlContent, url) {
         var ref = decodeText(url || "") || (BASE_URL + "/");
         log("parseEmbedResponse: " + ref);
 
-        var m3u8Match = src.match(/https?:\/\/[^"'<> \r\n]+\.m3u8(?:\?[^"'<> \r\n]*)?/i);
-        if (m3u8Match) {
+        var streamUrl = extractDirectStream(src);
+        if (streamUrl) {
+            log("parseEmbedResponse stream: " + streamUrl);
             return JSON.stringify({
-                url: m3u8Match[0],
+                url: streamUrl,
                 isEmbed: false,
-                mimeType: "application/x-mpegURL",
+                mimeType: /\.m3u8(?:\?|$)/i.test(streamUrl) ? "application/x-mpegURL" : "video/mp4",
                 headers: defaultHeaders(ref),
                 subtitles: []
             });
         }
 
-        var vidMatch = (ref + " " + src).match(/\/(?:video|stream)\/([a-zA-Z0-9-]{8,})/i);
-        if (vidMatch && vidMatch[1]) {
+        var nestedIframe = extractPlayerIframe(src, ref);
+        if (nestedIframe && nestedIframe !== ref) {
+            log("parseEmbedResponse nested iframe: " + nestedIframe);
             return JSON.stringify({
-                url: "https://v13.streamvsmov.com/stream/" + vidMatch[1] + "/master.m3u8",
-                isEmbed: false,
-                mimeType: "application/x-mpegURL",
-                headers: defaultHeaders(ref),
-                subtitles: []
-            });
-        }
-
-        var nestedIframe = src.match(/<iframe[^>]+(?:src|data-src)=["']([^"']+)["']/i);
-        if (nestedIframe && nestedIframe[1]) {
-            return JSON.stringify({
-                url: toAbsUrl(nestedIframe[1], ref),
+                url: nestedIframe,
                 isEmbed: true,
                 headers: defaultHeaders(ref),
                 subtitles: []
