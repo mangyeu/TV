@@ -9,7 +9,7 @@ function getManifest() {
     return JSON.stringify({
         "id": "nguonc",
         "name": "Phim NguonC",
-        "version": "1.2.0",
+        "version": "1.1.9",
         "baseUrl": "https://phim.nguonc.com",
         "iconUrl": "https://raw.githubusercontent.com/youngbi/repo/main/plugins/nguonC.png",
         "isEnabled": true,
@@ -92,7 +92,6 @@ function getUrlList(slug, filtersJson) {
         }
 
         return "https://phim.nguonc.com/api/films/the-loai/" + slug + "?page=" + page + "&sort=" + sort;
-
     } catch (e) {
         return "https://phim.nguonc.com/api/films/phim-moi-cap-nhat?page=1";
     }
@@ -128,23 +127,54 @@ function getOriginFromUrl(url) {
     return match ? (match[1] + "/") : "https://embed.streamc.xyz/";
 }
 
-function normalizeStreamUrl(rawUrl) {
+function normalizeUrl(rawUrl) {
     if (!rawUrl || typeof rawUrl !== "string") return "";
-    return rawUrl
+    var cleaned = rawUrl
         .replace(/\\\//g, "/")
         .replace(/&/g, "&")
         .replace(/\\u0026/g, "&")
         .trim();
+    if (cleaned.indexOf("//") === 0) {
+        cleaned = "https:" + cleaned;
+    }
+    return cleaned;
 }
 
-function buildStreamResult(url, referer) {
+function buildPlayerPayload(url, referer) {
     return JSON.stringify({
         url: url,
+        streamUrl: url,
         headers: {
             "User-Agent": DEFAULT_USER_AGENT,
             "Referer": referer || "https://embed.streamc.xyz/"
         }
     });
+}
+
+function extractDirectStreamUrl(input) {
+    if (!input || typeof input !== "string") return "";
+    var clean = input.replace(/\\\//g, "/");
+
+    var patterns = [
+        /(?:file|source|src|hls|url|stream)\s*[:=]\s*["'](https?:\/\/[^"'\s]+\.(?:m3u8|mp4)[^"'\s]*)["']/i,
+        /["'](https?:\/\/[^"'\s]+\.(?:m3u8|mp4)(?:\?[^"'\s]*)?)["']/i,
+        /^(https?:\/\/[^\s"']+\.(?:m3u8|mp4)(?:\?[^\s"']*)?)$/i
+    ];
+
+    for (var i = 0; i < patterns.length; i++) {
+        var match = clean.match(patterns[i]);
+        if (match && match[1]) {
+            return normalizeUrl(match[1]);
+        }
+    }
+    return "";
+}
+
+function extractIframeUrl(html) {
+    if (!html || typeof html !== "string") return "";
+    var clean = html.replace(/\\\//g, "/");
+    var match = clean.match(/<iframe[^>]+src=["']([^"']+)["']/i);
+    return (match && match[1]) ? normalizeUrl(match[1]) : "";
 }
 
 // =============================================================================
@@ -154,7 +184,10 @@ function buildStreamResult(url, referer) {
 function parseListResponse(apiResponseJson) {
     try {
         if (!apiResponseJson) {
-            return JSON.stringify({ items: [], pagination: { currentPage: 1, totalPages: 1, totalItems: 0, itemsPerPage: 24 } });
+            return JSON.stringify({
+                items: [],
+                pagination: { currentPage: 1, totalPages: 1, totalItems: 0, itemsPerPage: 24 }
+            });
         }
 
         var response = JSON.parse(apiResponseJson);
@@ -171,7 +204,12 @@ function parseListResponse(apiResponseJson) {
             items = data.items;
         }
 
-        var paginate = response.paginate || response.pagination || data.paginate || data.pagination || (data.params && data.params.pagination) || {};
+        var paginate = response.paginate
+            || response.pagination
+            || data.paginate
+            || data.pagination
+            || (data.params && data.params.pagination)
+            || {};
 
         var movies = items.map(function (item) {
             var slugOrId = item.slug || item.id || "";
@@ -238,8 +276,8 @@ function parseMovieDetail(apiResponseJson) {
 
                 if (Array.isArray(serverItems)) {
                     serverItems.forEach(function (ep, eIdx) {
-                        var embed = normalizeStreamUrl(ep.embed || ep.link_embed || "");
-                        var m3u8 = normalizeStreamUrl(ep.m3u8 || ep.link_m3u8 || "");
+                        var embed = normalizeUrl(ep.embed || ep.link_embed || "");
+                        var m3u8 = normalizeUrl(ep.m3u8 || ep.link_m3u8 || "");
                         var playTarget = embed || m3u8;
 
                         if (playTarget) {
@@ -305,44 +343,68 @@ function parseMovieDetail(apiResponseJson) {
     }
 }
 
-function parseDetailResponse(html, sourceUrl) {
+function parseDetailResponse(rawInput, sourceUrl) {
     try {
-        var cleanHtml = (typeof html === "string") ? html.replace(/\\\//g, "/") : "";
-        var referer = getOriginFromUrl(sourceUrl);
+        if (!rawInput) {
+            return buildPlayerPayload(BACKUP_MP4_URL, "https://embed.streamc.xyz/");
+        }
 
-        var patterns = [
-            /(?:file|source|src|hls|url|stream)\s*[:=]\s*["'](https?:\/\/[^"'\s]+\.(?:m3u8|mp4)[^"'\s]*)["']/i,
-            /["'](https?:\/\/[^"'\s]+\.(?:m3u8|mp4)(?:\?[^"'\s]*)?)["']/i,
-            /(?:file|source|src)\s*[:=]\s*["']([^"'\s]+\.(?:m3u8|mp4)[^"'\s]*)["']/i
-        ];
+        var strInput = String(rawInput).trim();
+        var candidateUrl = "";
+        var htmlContent = "";
+        var resolvedSource = sourceUrl || "";
 
-        var streamUrl = "";
-        if (cleanHtml) {
-            for (var i = 0; i < patterns.length; i++) {
-                var m = cleanHtml.match(patterns[i]);
-                if (m && m[1]) {
-                    streamUrl = normalizeStreamUrl(m[1]);
-                    break;
-                }
+        if (strInput.indexOf("{") === 0 || strInput.indexOf("[") === 0) {
+            var parsed = JSON.parse(strInput);
+            if (parsed && typeof parsed === "object") {
+                candidateUrl = normalizeUrl(
+                    parsed.url
+                    || parsed.streamUrl
+                    || parsed.link_m3u8
+                    || parsed.m3u8Url
+                    || parsed.link_embed
+                    || parsed.embedUrl
+                    || ""
+                );
+                htmlContent = parsed.html || parsed.body || parsed.content || "";
+                resolvedSource = resolvedSource || normalizeUrl(parsed.sourceUrl || parsed.referer || "");
+            }
+        } else {
+            var directStream = extractDirectStreamUrl(strInput);
+            if (directStream) {
+                candidateUrl = directStream;
+            } else if (/^https?:\/\//i.test(strInput)) {
+                candidateUrl = normalizeUrl(strInput);
+                if (!resolvedSource) resolvedSource = candidateUrl;
+            } else {
+                htmlContent = strInput;
             }
         }
 
-        if (streamUrl) {
-            return buildStreamResult(streamUrl, referer);
+        var referer = getOriginFromUrl(resolvedSource || candidateUrl);
+
+        // 1. Kiểm tra trực tiếp link stream (.m3u8 / .mp4)
+        var streamFromCandidate = extractDirectStreamUrl(candidateUrl);
+        if (streamFromCandidate) {
+            return buildPlayerPayload(streamFromCandidate, referer);
         }
 
-        var iframeUrl = "";
-        if (cleanHtml) {
-            var iframeMatch = cleanHtml.match(/<iframe[^>]+src=["']([^"']+)["']/i);
-            if (iframeMatch && iframeMatch[1]) {
-                iframeUrl = normalizeStreamUrl(iframeMatch[1]);
-            }
+        var streamFromHtml = extractDirectStreamUrl(htmlContent);
+        if (streamFromHtml) {
+            return buildPlayerPayload(streamFromHtml, referer);
         }
 
-        var fallbackUrl = iframeUrl || normalizeStreamUrl(sourceUrl || "") || BACKUP_MP4_URL;
-        return buildStreamResult(fallbackUrl, referer);
+        // 2. Nếu có HTML và chứa iframe bên trong
+        var iframeUrl = extractIframeUrl(htmlContent);
+        if (iframeUrl) {
+            return buildPlayerPayload(iframeUrl, referer);
+        }
+
+        // 3. Trả về candidateUrl (ví dụ link embed.php?hash=...) hoặc fallback video dự phòng
+        var finalUrl = candidateUrl || BACKUP_MP4_URL;
+        return buildPlayerPayload(finalUrl, referer);
     } catch (error) {
-        return buildStreamResult(BACKUP_MP4_URL, "https://embed.streamc.xyz/");
+        return buildPlayerPayload(BACKUP_MP4_URL, "https://embed.streamc.xyz/");
     }
 }
 
