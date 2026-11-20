@@ -8,7 +8,7 @@ function getManifest() {
     return JSON.stringify({
         "id": "nguonc",
         "name": "Phim NguonC",
-        "version": "1.1.7",
+        "version": "1.1.8",
         "baseUrl": "https://phim.nguonc.com",
         "iconUrl": "https://raw.githubusercontent.com/youngbi/repo/main/plugins/nguonC.png",
         "isEnabled": true,
@@ -101,9 +101,9 @@ function getUrlSearch(keyword, filtersJson) {
     try {
         var filters = JSON.parse(filtersJson || "{}");
         var page = filters.page || 1;
-        return "https://phim.nguonc.com/api/films/search?keyword=" + encodeURIComponent(keyword) + "&page=" + page;
+        return "https://phim.nguonc.com/api/films/search?keyword=" + encodeURIComponent(keyword || "") + "&page=" + page;
     } catch (e) {
-        return "https://phim.nguonc.com/api/films/search?keyword=" + encodeURIComponent(keyword) + "&page=1";
+        return "https://phim.nguonc.com/api/films/search?keyword=" + encodeURIComponent(keyword || "") + "&page=1";
     }
 }
 
@@ -123,11 +123,17 @@ function getUrlYears() { return "https://phim.nguonc.com"; }
 
 function parseListResponse(apiResponseJson) {
     try {
+        if (!apiResponseJson) {
+            return JSON.stringify({ items: [], pagination: { currentPage: 1, totalPages: 1, totalItems: 0, itemsPerPage: 24 } });
+        }
+
         var response = JSON.parse(apiResponseJson);
         var data = response.data || {};
         var items = [];
 
-        if (Array.isArray(data)) {
+        if (Array.isArray(response)) {
+            items = response;
+        } else if (Array.isArray(data)) {
             items = data;
         } else if (Array.isArray(response.items)) {
             items = response.items;
@@ -135,14 +141,15 @@ function parseListResponse(apiResponseJson) {
             items = data.items;
         }
 
-        var paginate = response.paginate || response.pagination || (data.params && data.params.pagination) || {};
+        var paginate = response.paginate || response.pagination || data.paginate || data.pagination || (data.params && data.params.pagination) || {};
 
         var movies = items.map(function (item) {
+            var slugOrId = item.slug || item.id || "";
             return {
-                id: item.slug || "",
-                title: item.name || "",
-                posterUrl: getImageUrl(item.thumb_url),
-                backdropUrl: getImageUrl(item.poster_url),
+                id: slugOrId,
+                title: item.name || item.title || "",
+                posterUrl: getImageUrl(item.thumb_url || item.posterUrl),
+                backdropUrl: getImageUrl(item.poster_url || item.backdropUrl),
                 year: parseInt(item.year, 10) || 0,
                 quality: item.quality || "",
                 episode_current: item.current_episode || item.episode_current || "",
@@ -150,11 +157,11 @@ function parseListResponse(apiResponseJson) {
             };
         });
 
-        var currentPage = paginate.current_page || paginate.currentPage || 1;
-        var totalItems = paginate.total_items || paginate.totalItems || 0;
-        var itemsPerPage = paginate.items_per_page || paginate.itemsPerPage || paginate.totalItemsPerPage || 24;
+        var currentPage = parseInt(paginate.current_page || paginate.currentPage, 10) || 1;
+        var totalItems = parseInt(paginate.total_items || paginate.totalItems, 10) || movies.length;
+        var itemsPerPage = parseInt(paginate.items_per_page || paginate.itemsPerPage || paginate.totalItemsPerPage, 10) || 24;
 
-        var totalPages = paginate.total_page || paginate.totalPages || 0;
+        var totalPages = parseInt(paginate.total_page || paginate.totalPages, 10) || 0;
         if (totalPages === 0 && itemsPerPage > 0 && totalItems > 0) {
             totalPages = Math.ceil(totalItems / itemsPerPage);
         }
@@ -183,9 +190,9 @@ function parseSearchResponse(apiResponseJson) {
 
 function parseMovieDetail(apiResponseJson) {
     try {
-        var response = JSON.parse(apiResponseJson);
+        var response = apiResponseJson ? JSON.parse(apiResponseJson) : {};
         var dataObj = response.data || {};
-        var movie = response.movie || dataObj.item || response.data || {};
+        var movie = response.movie || dataObj.item || (dataObj.name ? dataObj : (response.name ? response : {}));
 
         var rawEpisodes = movie.episodes || response.episodes || (dataObj.item && dataObj.item.episodes) || [];
 
@@ -204,8 +211,8 @@ function parseMovieDetail(apiResponseJson) {
                         if (link) {
                             episodes.push({
                                 id: link,
-                                name: ep.name || ep.episode_name || "",
-                                slug: ep.slug || ep.episode_slug || ""
+                                name: ep.name || ep.episode_name || "Tập 1",
+                                slug: ep.slug || ep.episode_slug || "tap-1"
                             });
                         }
                     });
@@ -220,7 +227,7 @@ function parseMovieDetail(apiResponseJson) {
             });
         }
 
-        // Thêm server dự phòng MP4
+        // Thêm server dự phòng MP4 (hoạt động ngay cả khi API chi tiết lỗi hoặc trống)
         if (BACKUP_MP4_URL) {
             servers.push({
                 name: "Backup MP4",
@@ -237,6 +244,12 @@ function parseMovieDetail(apiResponseJson) {
         var extractGroup = function (categoryObj, groupName) {
             if (!categoryObj || typeof categoryObj !== "object") return "";
 
+            if (Array.isArray(categoryObj)) {
+                return categoryObj.map(function (item) {
+                    return typeof item === "string" ? item : (item.name || "");
+                }).filter(Boolean).join(", ");
+            }
+
             for (var key in categoryObj) {
                 if (Object.prototype.hasOwnProperty.call(categoryObj, key)) {
                     var group = categoryObj[key];
@@ -251,16 +264,16 @@ function parseMovieDetail(apiResponseJson) {
         var extractedYear = extractGroup(movie.category, "Năm");
 
         return JSON.stringify({
-            id: movie.slug || "",
-            title: movie.name || "",
-            posterUrl: getImageUrl(movie.thumb_url),
-            backdropUrl: getImageUrl(movie.poster_url),
+            id: movie.slug || movie.id || "backup-movie",
+            title: movie.name || movie.title || "Phim NguonC",
+            posterUrl: getImageUrl(movie.thumb_url || movie.posterUrl),
+            backdropUrl: getImageUrl(movie.poster_url || movie.backdropUrl),
             description: (movie.description || movie.content || "").replace(/<[^>]*>/g, "").trim(),
             year: parseInt(movie.year || extractedYear, 10) || 0,
             rating: parseFloat(movie.view) || 0,
-            quality: movie.quality || "",
+            quality: movie.quality || "HD",
             servers: servers,
-            episode_current: movie.current_episode || movie.episode_current || "",
+            episode_current: movie.current_episode || movie.episode_current || "Full",
             lang: movie.language || movie.lang || "",
             casts: Array.isArray(movie.casts) ? movie.casts.join(", ") : (movie.casts || movie.actor || ""),
             director: Array.isArray(movie.director) ? movie.director.join(", ") : (movie.director || ""),
@@ -270,7 +283,20 @@ function parseMovieDetail(apiResponseJson) {
             status: movie.status || ""
         });
     } catch (error) {
-        return "{}";
+        return JSON.stringify({
+            id: "backup-movie",
+            title: "Phim NguonC",
+            posterUrl: "",
+            backdropUrl: "",
+            description: "",
+            year: 0,
+            rating: 0,
+            quality: "HD",
+            servers: BACKUP_MP4_URL ? [{
+                name: "Backup MP4",
+                episodes: [{ id: BACKUP_MP4_URL, name: "Full", slug: "full" }]
+            }] : []
+        });
     }
 }
 
@@ -285,8 +311,8 @@ function parseDetailResponse(html) {
 
         var trimmed = html.trim();
 
-        // Nếu đầu vào đã là link stream trực tiếp (.m3u8 hoặc .mp4)
-        if (trimmed.indexOf("http") === 0 && trimmed.indexOf("<") === -1 && /\.(m3u8|mp4)(\?.*)?$/i.test(trimmed)) {
+        // Nếu đầu vào là URL trực tiếp (chưa phải mã nguồn HTML)
+        if (trimmed.indexOf("http") === 0 && trimmed.indexOf("<") === -1) {
             if (trimmed.indexOf("githubusercontent.com") !== -1) {
                 headers["Referer"] = "https://raw.githubusercontent.com/";
             }
@@ -389,4 +415,4 @@ function getImageUrl(path) {
     if (path.indexOf("http") === 0) return path;
     var cleanPath = path.replace(/^\/+/, "");
     return "https://img.phimapi.com/" + cleanPath;
-            }
+}
