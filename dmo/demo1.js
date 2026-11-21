@@ -8,7 +8,7 @@ function getManifest() {
     return JSON.stringify({
         "id": "tvhay",
         "name": "TVHAY",
-        "version": "1.0.4",
+        "version": "1.0.5",
         "baseUrl": TVHAY_BASE_URL,
         "iconUrl": "https://tvhay.buzz/favicon.png",
         "isEnabled": true,
@@ -210,6 +210,42 @@ function _tvhayExtractImageFromBlock(block) {
         return "";
     }
     return url;
+}
+
+function _tvhayFallbackParseMovieLinks(html) {
+    var items = [];
+    var seen = {};
+    if (!html) return items;
+
+    var linkRegex = /<a[^>]*href=["'](\/(?:phim|xem)\/[^"'#?]+[^"']*)["'][^>]*>([\s\S]*?)<\/a>/gi;
+    var match;
+    while ((match = linkRegex.exec(html)) !== null) {
+        var href = _tvhayAbsUrl(match[1]);
+        var inner = match[2] || "";
+        if (!href || seen[href]) continue;
+
+        var startIdx = match.index;
+        var windowText = html.slice(Math.max(0, startIdx - 250), Math.min(html.length, startIdx + match[0].length + 350));
+
+        var titleAttr = match[0].match(/title=["']([^"']+)["']/i) || windowText.match(/title=["']([^"']+)["']/i);
+        var title = _tvhayDecodeHtml(_tvhayStripTags(inner)) || (titleAttr ? _tvhayDecodeHtml(_tvhayStripTags(titleAttr[1])) : "");
+
+        var thumb = _tvhayExtractImageFromBlock(inner) || _tvhayExtractImageFromBlock(windowText);
+
+        if (title && title.length > 1) {
+            seen[href] = true;
+            items.push({
+                id: href,
+                title: title,
+                posterUrl: thumb,
+                poster: thumb,
+                backdropUrl: thumb,
+                year: 0,
+                lang: ""
+            });
+        }
+    }
+    return items;
 }
 
 // --- 1. BỘ QUÉT TĨNH ---
@@ -453,18 +489,24 @@ function parseListResponse(html) {
         });
     }
 
-    if (_tvhayTrim(html).charAt(0) === "[") {
+    var trimmed = _tvhayTrim(html);
+
+    if (trimmed.charAt(0) === "[" || trimmed.charAt(0) === "{") {
         try {
-            var arr = JSON.parse(html);
+            var parsed = JSON.parse(trimmed);
+            var arr = parsed && parsed.constructor === Array
+                ? parsed
+                : (parsed.items || parsed.data || parsed.movies || []);
             for (var j = 0; j < arr.length; j++) {
                 var m = arr[j] || {};
-                var mUrl = m.slug ? _tvhayAbsUrl("/phim/" + m.slug) : _tvhayAbsUrl(m.url || m.link || "");
-                var mThumb = _tvhayAbsUrl(m.thumb || m.poster || m.posterUrl || m.image || "");
-                if (mUrl && m.name && !seenIds[mUrl]) {
+                var mUrl = m.slug ? _tvhayAbsUrl("/phim/" + m.slug) : _tvhayAbsUrl(m.url || m.link || m.id || "");
+                var mName = m.name || m.title || "";
+                var mThumb = _tvhayAbsUrl(m.thumb || m.poster || m.posterUrl || m.image || m.avatar || "");
+                if (mUrl && mName && !seenIds[mUrl]) {
                     seenIds[mUrl] = true;
                     items.push({
                         id: mUrl,
-                        title: _tvhayDecodeHtml(_tvhayStripTags(String(m.name))),
+                        title: _tvhayDecodeHtml(_tvhayStripTags(String(mName))),
                         posterUrl: mThumb,
                         poster: mThumb,
                         backdropUrl: mThumb,
@@ -473,10 +515,12 @@ function parseListResponse(html) {
                     });
                 }
             }
-            return JSON.stringify({
-                items: items,
-                pagination: { currentPage: 1, totalPages: 1 }
-            });
+            if (items.length > 0) {
+                return JSON.stringify({
+                    items: items,
+                    pagination: { currentPage: 1, totalPages: 1 }
+                });
+            }
         } catch (jsonErr) {}
     }
 
@@ -519,6 +563,10 @@ function parseListResponse(html) {
                 status: status
             });
         }
+    }
+
+    if (items.length === 0) {
+        items = _tvhayFallbackParseMovieLinks(html);
     }
 
     var currentPage = 1;
