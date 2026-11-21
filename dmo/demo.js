@@ -1,4 +1,3 @@
-
 /*
  * JavHDZ Catalog Plugin
  * Based on the KKPhim plugin architecture
@@ -7,13 +6,32 @@
  * Does not extract video stream or player URLs.
  */
 
+// ============================================================
+// CONSTANTS
+// ============================================================
+
+var BASE_URL = "https://javhdz.today";
+
+// Regex cache cho getAttribute (tránh compile lại nhiều lần)
+var ATTR_REGEX_CACHE = {};
+
+// Path pattern để lọc anchor là phim (tránh false-positive từ nav/footer)
+var MOVIE_PATH_REGEX = /\/(?:phim|video|jav|xem|watch|movie)\//i;
+
+// Path cần loại bỏ (không phải phim)
+var EXCLUDED_PATH_REGEX = /\/(?:the-loai|quoc-gia|nam|tag|category|country|year|search|login|register|dang-nhap|dang-ky)\b/i;
+
+// ============================================================
+// MANIFEST
+// ============================================================
+
 function getManifest() {
     return JSON.stringify({
         id: "javhdz",
         name: "JavHDZ",
-        version: "1.0.0",
-        baseUrl: "https://javhdz.today",
-        iconUrl: "https://javhdz.today/favicon.ico",
+        version: "1.0.1",
+        baseUrl: BASE_URL,
+        iconUrl: BASE_URL + "/favicon.ico",
         isEnabled: true,
         type: "MOVIE"
     });
@@ -35,7 +53,7 @@ function getHomeSections() {
             slug: "popular",
             title: "Popular",
             type: "Grid",
-            path: ""
+            path: "popular"
         }
     ]);
 }
@@ -60,8 +78,6 @@ function getFilterConfig() {
 // URL HELPERS
 // ============================================================
 
-var BASE_URL = "https://javhdz.today";
-
 function normalizeUrl(url, base) {
     if (!url) return "";
 
@@ -83,14 +99,17 @@ function getUrlList(slug, filtersJson) {
         var filters = JSON.parse(filtersJson || "{}");
 
         var page = Math.max(1, parseInt(filters.page, 10) || 1);
-
         var route = slug || "recent";
 
+        // Trường hợp slug là absolute URL
         if (/^https?:\/\//i.test(route)) {
             var customUrl = new URL(route);
 
-            if (filters.page) {
+            if (page > 1) {
                 customUrl.searchParams.set("page", page);
+            }
+            if (filters.sort) {
+                customUrl.searchParams.set("sort", filters.sort);
             }
 
             return customUrl.href;
@@ -105,6 +124,9 @@ function getUrlList(slug, filtersJson) {
 
         if (page > 1) {
             url.searchParams.set("page", page);
+        }
+        if (filters.sort) {
+            url.searchParams.set("sort", filters.sort);
         }
 
         return url.href;
@@ -124,8 +146,9 @@ function getUrlSearch(keyword, filtersJson) {
             url.searchParams.set("q", keyword.trim());
         }
 
-        if (filters.page) {
-            url.searchParams.set("page", filters.page);
+        var page = Math.max(1, parseInt(filters.page, 10) || 1);
+        if (page > 1) {
+            url.searchParams.set("page", page);
         }
 
         return url.href;
@@ -138,6 +161,12 @@ function getUrlSearch(keyword, filtersJson) {
 function getUrlDetail(slug) {
     if (!slug) return "";
 
+    // Nếu slug đã là absolute URL → giữ nguyên
+    if (/^https?:\/\//i.test(slug)) {
+        return slug;
+    }
+
+    // Nếu là path tương đối → resolve
     return normalizeUrl(slug);
 }
 
@@ -155,7 +184,6 @@ function getUrlYears() {
 
 function getLocalYearsJson() {
     var years = [];
-
     var currentYear = new Date().getFullYear();
 
     for (var y = currentYear; y >= 1970; y--) {
@@ -179,10 +207,15 @@ function decodeHtml(text) {
         .replace(/&amp;/g, "&")
         .replace(/&quot;/g, '"')
         .replace(/&#39;/g, "'")
+        .replace(/&apos;/g, "'")
         .replace(/&lt;/g, "<")
         .replace(/&gt;/g, ">")
+        .replace(/&nbsp;/g, " ")
         .replace(/&#(\d+);/g, function (_, n) {
             return String.fromCharCode(parseInt(n, 10));
+        })
+        .replace(/&#x([0-9a-f]+);/gi, function (_, h) {
+            return String.fromCharCode(parseInt(h, 16));
         });
 }
 
@@ -198,16 +231,24 @@ function stripHtml(text) {
 }
 
 function getAttribute(tag, attribute) {
-    var escaped = attribute.replace(
-        /[.*+?^${}()|[\]\\]/g,
-        "\\$&"
-    );
+    if (!tag || !attribute) return "";
 
-    var regex = new RegExp(
-        escaped +
-        "\\s*=\\s*(?:\"([^\"]*)\"|'([^']*)'|([^\\s>]+))",
-        "i"
-    );
+    var regex = ATTR_REGEX_CACHE[attribute];
+
+    if (!regex) {
+        var escaped = attribute.replace(
+            /[.*+?^${}()|[\]\\]/g,
+            "\\$&"
+        );
+
+        regex = new RegExp(
+            escaped +
+            "\\s*=\\s*(?:\"([^\"]*)\"|'([^']*)'|([^\\s>]+))",
+            "i"
+        );
+
+        ATTR_REGEX_CACHE[attribute] = regex;
+    }
 
     var match = tag.match(regex);
 
@@ -217,7 +258,10 @@ function getAttribute(tag, attribute) {
 }
 
 function getMeta(html, property) {
+    if (!html || !property) return "";
+
     var tags = html.match(/<meta\b[^>]*>/gi) || [];
+    var target = property.toLowerCase();
 
     for (var i = 0; i < tags.length; i++) {
         var tag = tags[i];
@@ -226,7 +270,7 @@ function getMeta(html, property) {
             getAttribute(tag, "property") ||
             getAttribute(tag, "name");
 
-        if (key.toLowerCase() === property.toLowerCase()) {
+        if ((key || "").toLowerCase() === target) {
             return getAttribute(tag, "content");
         }
     }
@@ -235,13 +279,15 @@ function getMeta(html, property) {
 }
 
 function getCanonical(html) {
+    if (!html) return "";
+
     var tags = html.match(/<link\b[^>]*>/gi) || [];
 
     for (var i = 0; i < tags.length; i++) {
         var tag = tags[i];
 
         if (
-            getAttribute(tag, "rel")
+            (getAttribute(tag, "rel") || "")
                 .toLowerCase()
                 .indexOf("canonical") !== -1
         ) {
@@ -255,6 +301,8 @@ function getCanonical(html) {
 }
 
 function getTitle(html) {
+    if (!html) return "";
+
     var match = html.match(
         /<title[^>]*>([\s\S]*?)<\/title>/i
     );
@@ -262,22 +310,55 @@ function getTitle(html) {
     return stripHtml(match ? match[1] : "");
 }
 
+function extractYear(text) {
+    var m = String(text || "").match(/(?:19|20)\d{2}/);
+    return m ? parseInt(m[0], 10) : 0;
+}
+
+function parseNextPage(html) {
+    if (!html) return 0;
+
+    // rel="next"
+    var linkTags = html.match(/<link\b[^>]*>/gi) || [];
+    for (var i = 0; i < linkTags.length; i++) {
+        if (
+            (getAttribute(linkTags[i], "rel") || "")
+                .toLowerCase()
+                .indexOf("next") !== -1
+        ) {
+            var href = getAttribute(linkTags[i], "href");
+            var pageMatch = href.match(/[?&]page=(\d+)/i);
+            if (pageMatch) return parseInt(pageMatch[1], 10);
+        }
+    }
+
+    // anchor rel="next"
+    var anchors = html.match(/<a\b[^>]*>[\s\S]*?<\/a>/gi) || [];
+    for (var j = 0; j < anchors.length; j++) {
+        if (
+            (getAttribute(anchors[j], "rel") || "")
+                .toLowerCase()
+                .indexOf("next") !== -1
+        ) {
+            var aHref = getAttribute(anchors[j], "href");
+            var m = aHref.match(/[?&]page=(\d+)/i);
+            if (m) return parseInt(m[1], 10);
+        }
+    }
+
+    return 0;
+}
+
 // ============================================================
 // CATALOG PARSER
 // ============================================================
 
 function parseCatalogResponse(html) {
+    var items = [];
+    var seen = {};
+
     try {
-        var items = [];
-
-        var seen = {};
-
-        /*
-         * HTML snapshot supplied:
-         * Homepage cards are rendered as skeletons.
-         * This parser therefore supports normal anchor/card HTML
-         * if actual items are present in the response.
-         */
+        if (!html) throw new Error("empty html");
 
         var anchors = html.match(
             /<a\b[^>]*>[\s\S]*?<\/a>/gi
@@ -287,14 +368,18 @@ function parseCatalogResponse(html) {
             var anchor = anchors[i];
 
             var href = getAttribute(anchor, "href");
-
             if (!href) continue;
 
             var url = normalizeUrl(href);
-
             if (!url) continue;
 
-            // Ignore duplicate URLs
+            // Loại bỏ link không phải phim
+            if (EXCLUDED_PATH_REGEX.test(url)) continue;
+
+            // Yêu cầu có path khớp pattern phim
+            if (!MOVIE_PATH_REGEX.test(url)) continue;
+
+            // Loại duplicate
             if (seen[url]) continue;
 
             var title =
@@ -305,23 +390,23 @@ function parseCatalogResponse(html) {
                 title = stripHtml(anchor);
             }
 
-            var imgMatch = anchor.match(
-                /<img\b[^>]*>/i
-            );
+            // Bỏ anchor không có title hoặc title quá ngắn
+            if (!title || title.length < 3) continue;
 
+            var imgMatch = anchor.match(/<img\b[^>]*>/i);
             var image = "";
 
             if (imgMatch) {
                 var img = imgMatch[0];
-
                 image =
                     getAttribute(img, "data-src") ||
                     getAttribute(img, "data-original") ||
-                    getAttribute(img, "src") ||
-                    getAttribute(img, "data-lazy-src");
+                    getAttribute(img, "data-lazy-src") ||
+                    getAttribute(img, "data-srcset") ||
+                    getAttribute(img, "src");
             }
 
-            // Ignore navigation links without catalog images
+            // Bắt buộc có ảnh poster
             if (!image) continue;
 
             seen[url] = true;
@@ -333,20 +418,22 @@ function parseCatalogResponse(html) {
                 posterUrl: normalizeUrl(image),
                 backdropUrl: normalizeUrl(image),
                 description: "",
-                year: 0,
+                year: extractYear(title),
                 duration: "",
                 category: "",
                 quality: ""
             });
         }
 
+        var nextPage = parseNextPage(html);
+
         return JSON.stringify({
             items: items,
             pagination: {
                 currentPage: 1,
-                totalPages: 1,
+                totalPages: nextPage > 1 ? Math.max(nextPage, 2) : 1,
                 totalItems: items.length,
-                itemsPerPage: items.length
+                itemsPerPage: items.length || 24
             }
         });
 
@@ -377,6 +464,8 @@ function parseSearchResponse(html) {
 
 function parseMovieDetail(html) {
     try {
+        if (!html) return "null";
+
         var title =
             getMeta(html, "og:title") ||
             getTitle(html);
@@ -385,46 +474,51 @@ function parseMovieDetail(html) {
             getCanonical(html) ||
             getMeta(html, "og:url");
 
-        var poster =
-            getMeta(html, "og:image");
+        var poster = getMeta(html, "og:image");
 
         var description =
             getMeta(html, "og:description") ||
             getMeta(html, "description");
 
-        var duration =
-            getMeta(html, "og:video:duration");
+        var durationRaw = getMeta(html, "og:video:duration");
+        var duration = durationRaw ? parseInt(durationRaw, 10) || 0 : 0;
 
-        var releaseDate =
-            getMeta(html, "og:video:release_date");
+        var releaseDate = getMeta(html, "og:video:release_date");
 
+        // Rating
+        var ratingRaw =
+            getMeta(html, "og:rating") ||
+            getMeta(html, "rating");
+        var rating = ratingRaw ? parseFloat(ratingRaw) || 0 : 0;
+
+        // H1
         var contentTitle = "";
-
-        var h1 = html.match(
-            /<h1[^>]*>([\s\S]*?)<\/h1>/i
-        );
-
+        var h1 = html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i);
         if (h1) {
             contentTitle = stripHtml(h1[1]);
         }
 
+        // Tags
         var tags = [];
-
         var tagRegex =
             /<meta\b[^>]*property=["']video:tag["'][^>]*>/gi;
-
         var tagMatch;
 
         while ((tagMatch = tagRegex.exec(html)) !== null) {
-            var tag = getAttribute(
-                tagMatch[0],
-                "content"
-            );
-
-            if (tag) {
+            var tag = getAttribute(tagMatch[0], "content");
+            if (tag && tags.indexOf(tag) === -1) {
                 tags.push(tag);
             }
         }
+
+        // Category (fallback từ breadcrumb nếu không có tags)
+        var category = tags.join(", ");
+
+        // Year từ releaseDate hoặc title
+        var year =
+            extractYear(releaseDate) ||
+            extractYear(title) ||
+            extractYear(contentTitle);
 
         return JSON.stringify({
             id: canonical,
@@ -433,20 +527,18 @@ function parseMovieDetail(html) {
             posterUrl: normalizeUrl(poster),
             backdropUrl: normalizeUrl(poster),
             description: stripHtml(description),
-            year: 0,
-            rating: 0,
+            year: year,
+            rating: rating,
             quality: "",
-            duration: duration
-                ? parseInt(duration, 10)
-                : 0,
+            duration: duration,
             episode_current: "",
             lang: "",
-            category: tags.join(", "),
+            category: category,
             country: "",
             director: "",
             casts: "",
             status: "",
-            releaseDate: releaseDate,
+            releaseDate: releaseDate || "",
             tags: tags,
             url: canonical
         });
@@ -462,37 +554,56 @@ function parseMovieDetail(html) {
 
 function parseDetailResponse(input) {
     /*
-     * Return metadata only.
-     * Does not resolve player links or streams.
+     * KHÔNG extract stream.
+     * Chỉ trả về metadata-only response.
      */
 
+    var fallback = JSON.stringify({
+        url: "",
+        isDirectStream: false,
+        headers: {},
+        subtitles: []
+    });
+
     try {
-        var parsed = JSON.parse(input || "{}");
+        if (!input) return fallback;
+
+        var parsed;
+
+        // Thử parse JSON trước
+        try {
+            parsed = JSON.parse(input);
+        } catch (_) {
+            // Nếu không phải JSON → coi là HTML, không extract stream
+            parsed = null;
+        }
+
+        if (!parsed || typeof parsed !== "object") {
+            return fallback;
+        }
 
         return JSON.stringify({
             url: parsed.url || "",
-            isDirectStream: false,
-            headers: {},
-            subtitles: []
+            isDirectStream: !!parsed.isDirectStream,
+            headers: parsed.headers || {},
+            subtitles: Array.isArray(parsed.subtitles) ? parsed.subtitles : []
         });
 
     } catch (e) {
-        return JSON.stringify({
-            url: "",
-            isDirectStream: false,
-            headers: {},
-            subtitles: []
-        });
+        return fallback;
     }
 }
 
 // ============================================================
-// CATEGORIES
+// CATEGORIES / COUNTRIES / YEARS
 // ============================================================
 
 function parseCategoriesResponse(html) {
     try {
+        if (!html) return JSON.stringify({ categories: [] });
+
         var items = [];
+        var seen = {};
 
         var anchors = html.match(
             /<a\b[^>]*>[\s\S]*?<\/a>/gi
@@ -502,21 +613,30 @@ function parseCategoriesResponse(html) {
             var tag = anchors[i];
 
             var href = getAttribute(tag, "href");
-
             var name = stripHtml(tag);
 
             if (!href || !name) continue;
+            if (name.length < 2) continue;
 
-            items.push({
-                name: name,
-                slug: normalizeUrl(href)
-            });
+            var slug = normalizeUrl(href);
+            if (!slug || seen[slug]) continue;
+
+            // Chỉ giữ link category/country
+            if (
+                !/\/(?:the-loai|quoc-gia|category|country|tag)\//i.test(slug) &&
+                !/^https?:\/\/[^/]+\/?$/.test(slug)
+            ) {
+                continue;
+            }
+
+            seen[slug] = true;
+            items.push({ name: name, slug: slug });
         }
 
-        return JSON.stringify(items);
+        return JSON.stringify({ categories: items });
 
     } catch (e) {
-        return "[]";
+        return JSON.stringify({ categories: [] });
     }
 }
 
