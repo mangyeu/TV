@@ -8,7 +8,7 @@ function getManifest() {
     return JSON.stringify({
         "id": "tvhay",
         "name": "TVHAY",
-        "version": "1.0.3",
+        "version": "1.0.4",
         "baseUrl": TVHAY_BASE_URL,
         "iconUrl": "https://tvhay.buzz/favicon.png",
         "isEnabled": true,
@@ -190,6 +190,28 @@ function _tvhayDeriveM3u8FromAnyUrl(candidateUrl, baseUrl) {
     return "";
 }
 
+function _tvhayExtractImageFromBlock(block) {
+    if (!block) return "";
+    var imgMatch = block.match(/<img[^>]*>/i);
+    var tag = imgMatch ? imgMatch[0] : block;
+
+    var attrMatch = tag.match(/(?:data-src|data-original|data-lazy-src|data-url|src)=["']([^"']+)["']/i);
+    var raw = attrMatch ? attrMatch[1] : "";
+
+    if (!raw) {
+        var srcsetMatch = tag.match(/srcset=["']([^"'\s,]+)/i);
+        if (srcsetMatch && srcsetMatch[1]) {
+            raw = srcsetMatch[1];
+        }
+    }
+
+    var url = _tvhayAbsUrl(_tvhayDecodeHtml(raw));
+    if (!url || url.indexOf("data:image") === 0 || url.indexOf("placehold.co") !== -1) {
+        return "";
+    }
+    return url;
+}
+
 // --- 1. BỘ QUÉT TĨNH ---
 function _tvhayStaticScanM3u8(text, baseUrl) {
     if (!text) return "";
@@ -326,7 +348,7 @@ function _tvhayDynamicResolveOrNext(html, refererUrl) {
         };
     }
 
-    var apiMatch = cleaned.match(/(?:fetch|axios\.(?:get|post)|\$\.(?:ajax|get|post)|\.open\s*\(\s*["'](?:GET|POST)["']\s*,)\s*["'](\/[^"']+|https?:\/\/[^"']+)["']/i);
+    var apiMatch = cleaned.match(/(?:fetch|axios\.(?:get|post)|\$\.(?:ajax|get|post)|\.open\s*\(\s*["'](?:GET|POST)["']\s*,)\s*["']([^"']*(?:stream|source|play|video|link|playlist|m3u8|hash|token|api|embed)[^"']*)["']/i);
     if (apiMatch && apiMatch[1]) {
         return {
             url: _tvhayJoinBaseAndPath(refererUrl, apiMatch[1]),
@@ -436,14 +458,15 @@ function parseListResponse(html) {
             var arr = JSON.parse(html);
             for (var j = 0; j < arr.length; j++) {
                 var m = arr[j] || {};
-                var mUrl = m.slug ? _tvhayAbsUrl("/phim/" + m.slug) : "";
-                var mThumb = m.thumb ? _tvhayAbsUrl(m.thumb) : "";
+                var mUrl = m.slug ? _tvhayAbsUrl("/phim/" + m.slug) : _tvhayAbsUrl(m.url || m.link || "");
+                var mThumb = _tvhayAbsUrl(m.thumb || m.poster || m.posterUrl || m.image || "");
                 if (mUrl && m.name && !seenIds[mUrl]) {
                     seenIds[mUrl] = true;
                     items.push({
                         id: mUrl,
                         title: _tvhayDecodeHtml(_tvhayStripTags(String(m.name))),
                         posterUrl: mThumb,
+                        poster: mThumb,
                         backdropUrl: mThumb,
                         year: parseInt(m.year, 10) || 0,
                         lang: m.lang || ""
@@ -457,24 +480,21 @@ function parseListResponse(html) {
         } catch (jsonErr) {}
     }
 
-    var blocks = html.split("movie-item");
+    var blocks = html.split(/class=["'][^"']*movie-item[^"']*["']/i);
     for (var i = 1; i < blocks.length; i++) {
         var block = blocks[i];
+        var prevTail = blocks[i - 1].slice(-300);
+        var searchScope = prevTail + block;
 
-        var linkMatch = block.match(/href=["']([^"']+)["']/i);
+        var linkMatch = block.match(/href=["']([^"']+)["']/i) || prevTail.match(/href=["']([^"']+)["']/i);
         var fullLink = _tvhayAbsUrl(linkMatch ? linkMatch[1] : "");
 
         var titleMatch = block.match(/class=["'][^"']*movie-title[^"']*["'][^>]*>([\s\S]*?)<\/div>/i)
-            || block.match(/title=["']([^"']+)["']/i);
+            || block.match(/title=["']([^"']+)["']/i)
+            || prevTail.match(/title=["']([^"']+)["']/i);
         var cleanTitle = _tvhayDecodeHtml(_tvhayStripTags(titleMatch ? titleMatch[1] : ""));
 
-        var thumbMatch = block.match(/data-src=["']([^"']+)["']/i)
-            || block.match(/data-original=["']([^"']+)["']/i)
-            || block.match(/<img[^>]*src=["']([^"']+)["']/i);
-        var thumb = thumbMatch ? _tvhayAbsUrl(thumbMatch[1]) : "";
-        if (thumb.indexOf("data:image") === 0 || thumb.indexOf("placehold.co") !== -1) {
-            thumb = "";
-        }
+        var thumb = _tvhayExtractImageFromBlock(block) || _tvhayExtractImageFromBlock(searchScope);
 
         var yearMatch = block.match(/<span[^>]*font-weight:\s*bold[^>]*>(\d{4})<\/span>/i)
             || block.match(/\b(19\d{2}|20\d{2})\b/);
@@ -492,6 +512,7 @@ function parseListResponse(html) {
                 id: fullLink,
                 title: cleanTitle,
                 posterUrl: thumb,
+                poster: thumb,
                 backdropUrl: thumb,
                 year: year,
                 lang: lang,
@@ -691,6 +712,7 @@ function parseMovieDetail(html) {
             id: "",
             title: title,
             posterUrl: posterUrl,
+            poster: posterUrl,
             backdropUrl: posterUrl,
             description: description,
             servers: servers,
