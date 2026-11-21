@@ -8,7 +8,7 @@ function getManifest() {
     return JSON.stringify({
         "id": "tvhay",
         "name": "TVHAY",
-        "version": "1.0.1",
+        "version": "1.0.2",
         "baseUrl": TVHAY_BASE_URL,
         "iconUrl": "https://tvhay.buzz/favicon.png",
         "isEnabled": true,
@@ -63,15 +63,15 @@ function getPrimaryCategories() {
 function getFilterConfig() {
     return JSON.stringify({
         countries: [
+            { name: "Anh", slug: "anh" },
             { name: "Hàn Quốc", slug: "han-quoc" },
-            { name: "Trung Quốc", slug: "trung-quoc" },
-            { name: "Âu Mỹ", slug: "au-my" },
+            { name: "Hồng Kông", slug: "hong-kong" },
             { name: "Nhật Bản", slug: "nhat-ban" },
             { name: "Thái Lan", slug: "thai-lan" },
+            { name: "Trung Quốc", slug: "trung-quoc" },
             { name: "Việt Nam", slug: "viet-nam" },
+            { name: "Âu Mỹ", slug: "au-my" },
             { name: "Đài Loan", slug: "dai-loan" },
-            { name: "Hồng Kông", slug: "hong-kong" },
-            { name: "Anh", slug: "anh" },
             { name: "Ấn Độ", slug: "an-do" }
         ],
         years: [
@@ -91,7 +91,7 @@ function _tvhayTrim(str) {
     return String(str).replace(/^\s+|\s+$/g, "");
 }
 
-function _tvhayAbsUrl(href) {
+function _tvhayAbsUrl(href, baseOrigin) {
     if (!href) return "";
     href = _tvhayTrim(href);
     if (href.indexOf("http://") === 0 || href.indexOf("https://") === 0) {
@@ -100,10 +100,11 @@ function _tvhayAbsUrl(href) {
     if (href.indexOf("//") === 0) {
         return "https:" + href;
     }
+    var origin = baseOrigin || TVHAY_BASE_URL;
     if (href.charAt(0) !== "/") {
         href = "/" + href;
     }
-    return TVHAY_BASE_URL + href;
+    return origin + href;
 }
 
 function _tvhayStripTags(str) {
@@ -119,6 +120,128 @@ function _tvhayDecodeHtml(str) {
         .replace(/'/g, "'")
         .replace(/</g, "<")
         .replace(/>/g, ">");
+}
+
+function _tvhayCleanEmbedHtml(html) {
+    return String(html || "")
+        .replace(/\\\//g, "/")
+        .replace(/\\u0026/gi, "&")
+        .replace(/&/g, "&");
+}
+
+function _tvhayPickStreamUrl(text) {
+    if (!text) return "";
+
+    // 1. Link trực tiếp .m3u8 hoặc .mp4 (ví dụ: https://v7.kkphimplayer7.com/.../index.m3u8)
+    var mediaMatch = text.match(/(https?:\/\/[^\s"'<>\\`]+\.(?:m3u8|mp4)(?:\?[^\s"'<>\\`]*)?)/i);
+    if (mediaMatch && mediaMatch[1]) {
+        return mediaMatch[1];
+    }
+
+    // 2. Link stream/playlist không có đuôi mở rộng rõ ràng
+    var streamPathMatch = text.match(/(https?:\/\/[^\s"'<>\\`]+(?:\/(?:playlist|master|manifest|stream|hls|index)\.(?:m3u8|php|txt)|(?:playlist|master|hls|stream)[a-zA-Z0-9_\-\/]*))/i);
+    if (streamPathMatch && streamPathMatch[1]) {
+        return streamPathMatch[1];
+    }
+
+    // 3. Thuộc tính file / src / url / m3u8 / stream trong cấu hình player JS/JSON
+    var cfgMatch = text.match(/(?:["']?(?:file|src|url|hls|stream|m3u8|video_url|source)["']?\s*[:=]\s*["'])(https?:\/\/[^"'\\`]+)(?:["'])/i);
+    if (cfgMatch && cfgMatch[1]) {
+        var candidate = cfgMatch[1];
+        if (!/\.(?:jpg|jpeg|png|gif|webp|css|js)(\?|$)/i.test(candidate)) {
+            return candidate;
+        }
+    }
+
+    return "";
+}
+
+function _tvhayBuildStreamResult(streamUrl, refererUrl) {
+    var finalUrl = _tvhayAbsUrl(streamUrl);
+    if (!finalUrl) {
+        return { url: "", isEmbed: false, headers: {} };
+    }
+    var isHls = /\.m3u8(\?|$)/i.test(finalUrl) || finalUrl.indexOf("m3u8") !== -1;
+    var isMp4 = /\.mp4(\?|$)/i.test(finalUrl);
+    return {
+        url: finalUrl,
+        isEmbed: false,
+        mimeType: isHls ? "application/x-mpegURL" : (isMp4 ? "video/mp4" : ""),
+        headers: {
+            "Referer": refererUrl || (TVHAY_BASE_URL + "/")
+        }
+    };
+}
+
+function _tvhayExtractEmbedStreamOrNext(html, refererUrl) {
+    var cleaned = _tvhayCleanEmbedHtml(html);
+
+    // 1. Tìm link stream trực tiếp hoặc trong config JS
+    var direct = _tvhayPickStreamUrl(cleaned);
+    if (direct) {
+        return _tvhayBuildStreamResult(direct, refererUrl);
+    }
+
+    // 2. Thử giải mã chuỗi base64 trong atob("...")
+    var b64Regex = /atob\(\s*["']([A-Za-z0-9+/=]{16,})["']\s*\)/gi;
+    var b64Match;
+    while ((b64Match = b64Regex.exec(cleaned)) !== null) {
+        try {
+            if (typeof atob === "function") {
+                var decoded = atob(b64Match[1]);
+                var bUrl = _tvhayPickStreamUrl(decoded);
+                if (!bUrl && /^https?:\/\//i.test(decoded)) {
+                    bUrl = _tvhayTrim(decoded);
+                }
+                if (bUrl) {
+                    var bAbs = _tvhayAbsUrl(bUrl);
+                    var bHls = /\.m3u8(\?|$)/i.test(bAbs) || bAbs.indexOf("m3u8") !== -1;
+                    var bMp4 = /\.mp4(\?|$)/i.test(bAbs);
+                    return {
+                        url: bAbs,
+                        isEmbed: !bHls && !bMp4,
+                        mimeType: bHls ? "application/x-mpegURL" : (bMp4 ? "video/mp4" : ""),
+                        headers: { "Referer": refererUrl }
+                    };
+                }
+            }
+        } catch (e) {}
+    }
+
+    // 3. Nếu có iframe lồng bên trong embed
+    var nestedIframe = cleaned.match(/<iframe[^>]*src=["']([^"']+)["']/i);
+    if (nestedIframe && nestedIframe[1]) {
+        return {
+            url: _tvhayAbsUrl(nestedIframe[1]),
+            isEmbed: true,
+            headers: { "Referer": refererUrl }
+        };
+    }
+
+    // 4. Nếu trang embed gọi endpoint/API trung gian để lấy link stream
+    var apiMatch = cleaned.match(/(?:fetch|axios\.(?:get|post)|\$\.(?:ajax|get|post)|open\(\s*["'](?:GET|POST)["']\s*,)\s*["']([^"']*(?:stream|source|play|video|link|playlist|m3u8|hash|api)[^"']*)["']/i);
+    if (apiMatch && apiMatch[1]) {
+        var apiUrl = apiMatch[1];
+        if (apiUrl.indexOf("http") !== 0) {
+            if (apiUrl.charAt(0) !== "/") {
+                var baseDir = refererUrl.replace(/[^\/?#]+([?#].*)?$/, "");
+                apiUrl = baseDir + apiUrl;
+            } else {
+                var originMatch = refererUrl.match(/^(https?:\/\/[^\/]+)/i);
+                apiUrl = (originMatch ? originMatch[1] : TVHAY_BASE_URL) + apiUrl;
+            }
+        }
+        return {
+            url: apiUrl,
+            isEmbed: true,
+            headers: {
+                "Referer": refererUrl,
+                "X-Requested-With": "XMLHttpRequest"
+            }
+        };
+    }
+
+    return null;
 }
 
 // =============================================================================
@@ -215,7 +338,6 @@ function parseListResponse(html) {
         });
     }
 
-    // Hỗ trợ JSON từ ajax-search nếu trả về dạng mảng
     if (_tvhayTrim(html).charAt(0) === "[") {
         try {
             var arr = JSON.parse(html);
@@ -239,9 +361,7 @@ function parseListResponse(html) {
                 items: items,
                 pagination: { currentPage: 1, totalPages: 1 }
             });
-        } catch (jsonErr) {
-            // Tiếp tục parse dưới dạng HTML
-        }
+        } catch (jsonErr) {}
     }
 
     var blocks = html.split("movie-item");
@@ -359,7 +479,6 @@ function parseMovieDetail(html) {
         var yearMatch = yearText.match(/\b(19\d{2}|20\d{2})\b/);
         var year = yearMatch ? (parseInt(yearMatch[1], 10) || 0) : 0;
 
-        // Trích các nhóm tập trong .episode-block (ví dụ: "Lồng tiếng #1", các nút .ep-btn)
         var episodeBlockMatch = html.match(/<div[^>]*class=["'][^"']*episode-block["'][^>]*>([\s\S]*?)<\/div>\s*<div[^>]*class=["'][^"']*movie-info-block["']/i);
         var epScope = episodeBlockMatch ? episodeBlockMatch[1] : html;
 
@@ -430,7 +549,6 @@ function parseMovieDetail(html) {
             });
         }
 
-        // Trích các chế độ server player (S.PRO, H.PRO)
         var playerModes = [];
         var modeRegex = /onclick=["']changePlayerMode\(['"]([^'"]+)['"]\)["'][^>]*>([\s\S]*?)<\/button>/gi;
         var modeMatch;
@@ -508,6 +626,7 @@ function parseDetailResponse(html, fetchedUrl) {
             return JSON.stringify({ url: "", isEmbed: false, headers: {} });
         }
 
+        var cleaned = _tvhayCleanEmbedHtml(html);
         var mode = "hpro";
         if (fetchedUrl) {
             var modeMatch = fetchedUrl.match(/[#&]mode=([a-zA-Z0-9_-]+)/);
@@ -516,10 +635,10 @@ function parseDetailResponse(html, fetchedUrl) {
             }
         }
 
-        var hProMatch = html.match(/var\s+linkHPro\s*=\s*["']([^"']+)["']/i);
-        var sProMatch = html.match(/var\s+linkSPro\s*=\s*["']([^"']+)["']/i);
-        var iframeMatch = html.match(/<iframe[^>]*id=["']movie-iframe["'][^>]*src=["']([^"']+)["']/i)
-            || html.match(/<iframe[^>]*src=["']([^"']+)["']/i);
+        var hProMatch = cleaned.match(/var\s+linkHPro\s*=\s*["']([^"']+)["']/i);
+        var sProMatch = cleaned.match(/var\s+linkSPro\s*=\s*["']([^"']+)["']/i);
+        var iframeMatch = cleaned.match(/<iframe[^>]*id=["']movie-iframe["'][^>]*src=["']([^"']+)["']/i)
+            || cleaned.match(/<iframe[^>]*src=["']([^"']+)["']/i);
 
         var chosenUrl = "";
         if (mode === "spro" && sProMatch && sProMatch[1]) {
@@ -539,11 +658,14 @@ function parseDetailResponse(html, fetchedUrl) {
             return JSON.stringify({ url: "", isEmbed: false, headers: {} });
         }
 
-        var isDirectStream = /\.(m3u8|mp4)(\?|$)/i.test(chosenUrl);
+        var isHls = /\.m3u8(\?|$)/i.test(chosenUrl);
+        var isMp4 = /\.mp4(\?|$)/i.test(chosenUrl);
+        var isDirect = isHls || isMp4;
+
         return JSON.stringify({
             url: chosenUrl,
-            isEmbed: !isDirectStream,
-            mimeType: chosenUrl.indexOf(".m3u8") !== -1 ? "application/x-mpegURL" : (chosenUrl.indexOf(".mp4") !== -1 ? "video/mp4" : ""),
+            isEmbed: !isDirect,
+            mimeType: isHls ? "application/x-mpegURL" : (isMp4 ? "video/mp4" : ""),
             headers: {
                 "Referer": TVHAY_BASE_URL + "/"
             }
@@ -559,41 +681,52 @@ function parseEmbedResponse(html, url) {
             return JSON.stringify({ url: "", isEmbed: false, headers: {} });
         }
 
-        var cleaned = String(html).replace(/\\\//g, "/");
+        var refererUrl = url || (TVHAY_BASE_URL + "/");
+        var cleaned = _tvhayCleanEmbedHtml(html);
+        var trimmed = _tvhayTrim(cleaned);
 
-        var hlsMatch = cleaned.match(/(https?:\/\/[^\s"'<>\\]+\.m3u8(?:\?[^\s"'<>\\]*)?)/i);
-        if (hlsMatch) {
+        // Nếu response chính là nội dung playlist HLS (.m3u8)
+        if (/^#EXTM3U/i.test(trimmed) && url) {
             return JSON.stringify({
-                url: hlsMatch[1],
+                url: url,
                 isEmbed: false,
                 mimeType: "application/x-mpegURL",
                 headers: {
-                    "Referer": url || (TVHAY_BASE_URL + "/")
+                    "Referer": TVHAY_BASE_URL + "/"
                 }
             });
         }
 
-        var mp4Match = cleaned.match(/(https?:\/\/[^\s"'<>\\]+\.mp4(?:\?[^\s"'<>\\]*)?)/i);
-        if (mp4Match) {
-            return JSON.stringify({
-                url: mp4Match[1],
-                isEmbed: false,
-                mimeType: "video/mp4",
-                headers: {
-                    "Referer": url || (TVHAY_BASE_URL + "/")
-                }
-            });
+        // Bắt trực tiếp link .m3u8 / .mp4
+        var mediaMatch = cleaned.match(/(https?:\/\/[^\s"'<>\\`]+\.(?:m3u8|mp4)(?:\?[^\s"'<>\\`]*)?)/i);
+        if (mediaMatch && mediaMatch[1]) {
+            return JSON.stringify(_tvhayBuildStreamResult(mediaMatch[1], refererUrl));
         }
 
-        var nestedIframe = cleaned.match(/<iframe[^>]*src=["']([^"']+)["']/i);
-        if (nestedIframe) {
-            return JSON.stringify({
-                url: _tvhayAbsUrl(nestedIframe[1]),
-                isEmbed: true,
-                headers: {
-                    "Referer": url || (TVHAY_BASE_URL + "/")
+        // Nếu response là JSON
+        if (trimmed.charAt(0) === "{") {
+            try {
+                var obj = JSON.parse(trimmed);
+                var jsonUrl = obj.url || obj.link || obj.stream || obj.file || obj.m3u8 || obj.src || obj.iframe || obj.playlist || "";
+                if (jsonUrl) {
+                    var jAbs = _tvhayAbsUrl(jsonUrl);
+                    var jHls = /\.m3u8(\?|$)/i.test(jAbs) || jAbs.indexOf("m3u8") !== -1;
+                    var jMp4 = /\.mp4(\?|$)/i.test(jAbs);
+                    return JSON.stringify({
+                        url: jAbs,
+                        isEmbed: !jHls && !jMp4,
+                        mimeType: jHls ? "application/x-mpegURL" : (jMp4 ? "video/mp4" : ""),
+                        headers: {
+                            "Referer": refererUrl
+                        }
+                    });
                 }
-            });
+            } catch (jsonErr) {}
+        }
+
+        var found = _tvhayExtractEmbedStreamOrNext(cleaned, refererUrl);
+        if (found && found.url) {
+            return JSON.stringify(found);
         }
 
         return JSON.stringify({ url: "", isEmbed: false, headers: {} });
