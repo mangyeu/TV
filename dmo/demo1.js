@@ -18,7 +18,7 @@ function getManifest() {
     return JSON.stringify({
         "id": "tvhay",
         "name": "TVHAY",
-        "version": "2.7.0",
+        "version": "2.8.0",
         "baseUrl": BASE_URL,
         "iconUrl": BASE_URL + "/favicon.ico",
         "isEnabled": true,
@@ -118,6 +118,20 @@ function unescapeStreamStr(str) {
         });
 }
 
+function decodeUrlDeep(val) {
+    var cur = trimStr(unescapeStreamStr(String(val || "")));
+    for (var i = 0; i < 3; i++) {
+        try {
+            var next = decodeURIComponent(cur);
+            if (next === cur) break;
+            cur = next;
+        } catch (e) {
+            break;
+        }
+    }
+    return trimStr(unescapeStreamStr(cur));
+}
+
 function cleanText(html) {
     return trimStr(
         unescapeStreamStr(
@@ -215,16 +229,40 @@ function getImgSrcFromTag(imgTag) {
     return "";
 }
 
+function extractWatchPageUrl(html, pageUrl) {
+    var src = unescapeStreamStr(String(html || ""));
+    var base = pageUrl || BASE_URL;
+
+    // 1. Tìm link có /xem/ hoặc /watch/
+    var watchRe = /<a[^>]+href=["']([^"']*\/(?:xem|watch)\/[^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi;
+    var wm;
+    while ((wm = watchRe.exec(src)) !== null) {
+        var u = toAbsUrl(wm[1], base);
+        if (u) return u;
+    }
+
+    // 2. Tìm nút/link có chữ "Xem phim" hoặc "Xem ngay"
+    var btnRe = /<a[^>]+href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi;
+    var bm;
+    while ((bm = btnRe.exec(src)) !== null) {
+        var txt = cleanText(bm[2]).toLowerCase();
+        if (txt.indexOf("xem phim") !== -1 || txt.indexOf("xem ngay") !== -1) {
+            var uBtn = toAbsUrl(bm[1], base);
+            if (uBtn && uBtn !== toAbsUrl(base)) return uBtn;
+        }
+    }
+
+    return "";
+}
+
 function extractStreamFromIframeQuery(iframeUrl) {
     var raw = unescapeStreamStr(String(iframeUrl || ""));
-    var m = raw.match(/[?&]url=([^&?#]+)/i);
+    var m = raw.match(/[?&]url=([^&#]+)/i);
     if (!m || !m[1]) return "";
-    try {
-        var decoded = trimStr(unescapeStreamStr(decodeURIComponent(m[1])));
-        if (/^https?:\/\/.+\.(?:m3u8|mp4)(?:\?.*)?$/i.test(decoded)) {
-            return decoded;
-        }
-    } catch (e) {}
+    var decoded = decodeUrlDeep(m[1]);
+    if (/^https?:\/\/[^\s"'<>]+\.(?:m3u8|mp4)(?:\?[^\s"'<>]*)?$/i.test(decoded)) {
+        return decoded;
+    }
     return "";
 }
 
@@ -282,61 +320,6 @@ function findMediaUrl(html, baseUrl) {
     if (relMedia) return toAbsUrl(relMedia[0], base);
 
     return "";
-}
-
-function extractSegmentIndex(url) {
-    var m = String(url || "").match(/_(\d+)(?:\.[a-z0-9]+)?(?:\?|$)/i);
-    return m ? parseInt(m[1], 10) : 0;
-}
-
-function collectMediaSegments(html, baseUrl) {
-    var raw = unescapeStreamStr(String(html || ""));
-    var base = baseUrl || "https://v13.streamvsmov.com/";
-    var found = [];
-    var seen = {};
-
-    var re = /(?:https?:\/\/[^\s"'<>\\]+|\/[^\s"'<>\\]+?\/file\/[^\s"'<>\\]+)(?:\.(?:png|ts|m4s|vl))(?:\?[^\s"'<>\\]*)?/gi;
-    var m;
-    while ((m = re.exec(raw)) !== null) {
-        var abs = toAbsUrl(m[0], base);
-        if (abs && !seen[abs]) {
-            seen[abs] = true;
-            found.push(abs);
-        }
-    }
-
-    found.sort(function (a, b) {
-        return extractSegmentIndex(a) - extractSegmentIndex(b);
-    });
-
-    return found;
-}
-
-function buildHlsDataUriFromSegments(segments, targetDuration) {
-    if (!segments || segments.length === 0) return "";
-    var dur = targetDuration || 6;
-    var lines = [
-        "#EXTM3U",
-        "#EXT-X-VERSION:3",
-        "#EXT-X-TARGETDURATION:" + dur,
-        "#EXT-X-MEDIA-SEQUENCE:0"
-    ];
-
-    for (var i = 0; i < segments.length; i++) {
-        lines.push("#EXTINF:" + dur + ".0,");
-        lines.push(segments[i]);
-    }
-
-    lines.push("#EXT-X-ENDLIST");
-    var m3u8Content = lines.join("\n");
-
-    if (typeof btoa === "function") {
-        try {
-            return "data:application/vnd.apple.mpegurl;base64," + btoa(unescape(encodeURIComponent(m3u8Content)));
-        } catch (e) {}
-    }
-
-    return "data:application/vnd.apple.mpegurl;charset=utf-8," + encodeURIComponent(m3u8Content);
 }
 
 // =============================================================================
@@ -711,6 +694,20 @@ function parseMovieDetail(htmlContent, pageUrl) {
         if (yearMatch) year = parseInt(yearMatch[1] || yearMatch[2], 10);
 
         var servers = parseServersFromWatchHtml(src, cleanUrl);
+        if (servers.length === 0) {
+            var watchUrl = extractWatchPageUrl(src, cleanUrl);
+            if (watchUrl) {
+                servers.push({
+                    name: "Server #1",
+                    episodes: [{
+                        id: watchUrl,
+                        name: "Xem phim",
+                        slug: watchUrl
+                    }]
+                });
+            }
+        }
+
         var firstServerEps = servers.length > 0 ? servers[0].episodes : [];
 
         var lang = "";
@@ -756,6 +753,7 @@ function parseDetailResponse(htmlContent, pageUrl) {
 
         var directUrl = findMediaUrl(src, ref);
         if (directUrl) {
+            log("parseDetailResponse direct: " + directUrl);
             return JSON.stringify({
                 url: directUrl,
                 isEmbed: false,
@@ -811,6 +809,17 @@ function parseDetailResponse(htmlContent, pageUrl) {
             });
         }
 
+        var watchPage = extractWatchPageUrl(src, ref);
+        if (watchPage && watchPage !== ref) {
+            log("parseDetailResponse watch page: " + watchPage);
+            return JSON.stringify({
+                url: watchPage,
+                isEmbed: true,
+                headers: defaultHeaders(ref),
+                subtitles: []
+            });
+        }
+
         return JSON.stringify({ url: "", isEmbed: false, headers: {}, subtitles: [] });
     } catch (error) {
         log("parseDetailResponse error: " + error);
@@ -850,19 +859,6 @@ function parseEmbedResponse(htmlContent, url) {
             });
         }
 
-        var segments = collectMediaSegments(src, ref);
-        if (segments.length > 0) {
-            var playlistUri = buildHlsDataUriFromSegments(segments, 6);
-            log("parseEmbedResponse stitched segments: " + segments.length);
-            return JSON.stringify({
-                url: playlistUri,
-                isEmbed: false,
-                mimeType: "application/x-mpegURL",
-                headers: hdrs,
-                subtitles: []
-            });
-        }
-
         var nestedIframe = extractPlayerIframe(src, ref);
         if (nestedIframe && nestedIframe !== ref) {
             var nestedQ = extractStreamFromIframeQuery(nestedIframe);
@@ -881,6 +877,17 @@ function parseEmbedResponse(htmlContent, url) {
                 url: nestedIframe,
                 isEmbed: true,
                 headers: hdrs,
+                subtitles: []
+            });
+        }
+
+        var watchPage = extractWatchPageUrl(src, ref);
+        if (watchPage && watchPage !== ref) {
+            log("parseEmbedResponse watch page: " + watchPage);
+            return JSON.stringify({
+                url: watchPage,
+                isEmbed: true,
+                headers: defaultHeaders(ref),
                 subtitles: []
             });
         }
