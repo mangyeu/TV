@@ -18,7 +18,7 @@ function getManifest() {
     return JSON.stringify({
         "id": "tvhay",
         "name": "TVHAY",
-        "version": "2.8.0",
+        "version": "2.9.0",
         "baseUrl": BASE_URL,
         "iconUrl": BASE_URL + "/favicon.ico",
         "isEnabled": true,
@@ -179,6 +179,10 @@ function isMoviePageUrl(url) {
     return true;
 }
 
+function isVidsrcUrl(url) {
+    return /vidsrc\.(?:xyz|to|me|in|net|pro|cc|vip)|cloudnestra\.com/i.test(String(url || ""));
+}
+
 function appendPage(url, page) {
     var p = parseInt(page || 1, 10);
     if (isNaN(p) || p <= 1) return url;
@@ -198,18 +202,23 @@ function defaultHeaders(referer) {
 }
 
 function embedHeaders(embedUrl, refererUrl) {
-    var origin = "https://v13.streamvsmov.com";
+    var origin = BASE_URL;
     var mOrigin = String(embedUrl || "").match(/^(https?:\/\/[^/]+)/i);
     if (mOrigin && mOrigin[1]) {
         origin = mOrigin[1];
     }
 
+    var ref = refererUrl || (BASE_URL + "/");
+    if (isVidsrcUrl(embedUrl) && ref.indexOf("tvhay") === -1 && ref === embedUrl) {
+        ref = BASE_URL + "/";
+    }
+
     return {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
-        "Accept": "*/*",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
         "Accept-Language": "vi-VN,vi;q=0.9,en-US;q=0.8,en;q=0.7",
-        "Origin": origin,
-        "Referer": refererUrl || (origin + "/")
+        "Origin": isVidsrcUrl(embedUrl) ? BASE_URL : origin,
+        "Referer": ref
     };
 }
 
@@ -233,7 +242,6 @@ function extractWatchPageUrl(html, pageUrl) {
     var src = unescapeStreamStr(String(html || ""));
     var base = pageUrl || BASE_URL;
 
-    // 1. Tìm link có /xem/ hoặc /watch/
     var watchRe = /<a[^>]+href=["']([^"']*\/(?:xem|watch)\/[^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi;
     var wm;
     while ((wm = watchRe.exec(src)) !== null) {
@@ -241,7 +249,6 @@ function extractWatchPageUrl(html, pageUrl) {
         if (u) return u;
     }
 
-    // 2. Tìm nút/link có chữ "Xem phim" hoặc "Xem ngay"
     var btnRe = /<a[^>]+href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi;
     var bm;
     while ((bm = btnRe.exec(src)) !== null) {
@@ -269,14 +276,18 @@ function extractStreamFromIframeQuery(iframeUrl) {
 function extractPlayerLinkFromVars(html, pageUrl) {
     var src = unescapeStreamStr(String(html || ""));
     var mHPro = src.match(/\blinkHPro\s*=\s*["']([^"']+)["']/i);
-    if (mHPro && mHPro[1]) {
-        return toAbsUrl(mHPro[1], pageUrl);
-    }
     var mSPro = src.match(/\blinkSPro\s*=\s*["']([^"']+)["']/i);
-    if (mSPro && mSPro[1]) {
-        return toAbsUrl(mSPro[1], pageUrl);
+
+    var hPro = (mHPro && mHPro[1]) ? toAbsUrl(mHPro[1], pageUrl) : "";
+    var sPro = (mSPro && mSPro[1]) ? toAbsUrl(mSPro[1], pageUrl) : "";
+
+    if (hPro && (/phimapi|\.m3u8/i.test(hPro) || !sPro || isVidsrcUrl(sPro))) {
+        return hPro;
     }
-    return "";
+    if (sPro) {
+        return sPro;
+    }
+    return hPro || "";
 }
 
 function extractPlayerIframe(html, pageUrl) {
@@ -830,7 +841,7 @@ function parseDetailResponse(htmlContent, pageUrl) {
 function parseEmbedResponse(htmlContent, url) {
     try {
         var src = unescapeStreamStr(String(htmlContent || ""));
-        var ref = unescapeStreamStr(url || "") || "https://v13.streamvsmov.com/";
+        var ref = unescapeStreamStr(url || "") || (BASE_URL + "/");
         var hdrs = embedHeaders(ref, ref);
         log("parseEmbedResponse: " + ref);
 
@@ -876,7 +887,11 @@ function parseEmbedResponse(htmlContent, url) {
             return JSON.stringify({
                 url: nestedIframe,
                 isEmbed: true,
-                headers: hdrs,
+                headers: {
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+                    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+                    "Referer": ref
+                },
                 subtitles: []
             });
         }
