@@ -18,7 +18,7 @@ function getManifest() {
     return JSON.stringify({
         "id": "tvhay",
         "name": "TVHAY",
-        "version": "2.5.0",
+        "version": "2.7.0",
         "baseUrl": BASE_URL,
         "iconUrl": BASE_URL + "/favicon.ico",
         "isEnabled": true,
@@ -177,7 +177,7 @@ function appendPage(url, page) {
 function defaultHeaders(referer) {
     return {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
-        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "Accept": "*/*",
         "Accept-Language": "vi-VN,vi;q=0.9,en-US;q=0.8,en;q=0.7",
         "Referer": referer || (BASE_URL + "/")
     };
@@ -212,6 +212,19 @@ function getImgSrcFromTag(imgTag) {
             }
         }
     }
+    return "";
+}
+
+function extractStreamFromIframeQuery(iframeUrl) {
+    var raw = unescapeStreamStr(String(iframeUrl || ""));
+    var m = raw.match(/[?&]url=([^&?#]+)/i);
+    if (!m || !m[1]) return "";
+    try {
+        var decoded = trimStr(unescapeStreamStr(decodeURIComponent(m[1])));
+        if (/^https?:\/\/.+\.(?:m3u8|mp4)(?:\?.*)?$/i.test(decoded)) {
+            return decoded;
+        }
+    } catch (e) {}
     return "";
 }
 
@@ -365,14 +378,14 @@ function getUrlSearch(keyword, filtersJson) {
         var page = parseInt(filters.page || 1, 10);
         if (isNaN(page) || page < 1) page = 1;
 
-        var url = BASE_URL + "/?s=" + encodeURIComponent(keyword || "");
+        var url = BASE_URL + "/index.php?view=ajax-search&keyword=" + encodeURIComponent(keyword || "");
         if (page > 1) {
             url += "&paged=" + page;
         }
         log("getUrlSearch -> " + url);
         return url;
     } catch (e) {
-        return BASE_URL + "/?s=" + encodeURIComponent(keyword || "");
+        return BASE_URL + "/index.php?view=ajax-search&keyword=" + encodeURIComponent(keyword || "");
     }
 }
 
@@ -526,6 +539,44 @@ function parseListResponse(htmlContent) {
 }
 
 function parseSearchResponse(htmlContent) {
+    try {
+        var raw = trimStr(unescapeStreamStr(String(htmlContent || "")));
+        if (raw.charAt(0) === "[") {
+            var arr = JSON.parse(raw);
+            var items = [];
+            for (var i = 0; i < arr.length; i++) {
+                var m = arr[i] || {};
+                var slug = trimStr(m.slug || "");
+                var href = slug ? ("/phim/" + slug.replace(/^\/+/, "")) : "";
+                var title = trimStr(unescapeStreamStr(m.name || ""));
+                if (!title) continue;
+                var poster = toAbsUrl(m.thumb || "");
+                var yr = parseInt(m.year || 0, 10) || 0;
+                var lang = trimStr(m.lang || "");
+                items.push({
+                    id: href || slug,
+                    title: title,
+                    posterUrl: poster,
+                    backdropUrl: poster,
+                    year: yr,
+                    quality: "",
+                    episode_current: "",
+                    lang: lang
+                });
+            }
+            return JSON.stringify({
+                items: items,
+                pagination: {
+                    currentPage: 1,
+                    totalPages: 1,
+                    totalItems: items.length,
+                    itemsPerPage: items.length || 20
+                }
+            });
+        }
+    } catch (e) {
+        log("parseSearchResponse json error: " + e);
+    }
     return parseListResponse(htmlContent);
 }
 
@@ -716,6 +767,17 @@ function parseDetailResponse(htmlContent, pageUrl) {
 
         var playerVarUrl = extractPlayerLinkFromVars(src, ref);
         if (playerVarUrl) {
+            var qStreamVar = extractStreamFromIframeQuery(playerVarUrl);
+            if (qStreamVar) {
+                log("parseDetailResponse var query stream: " + qStreamVar);
+                return JSON.stringify({
+                    url: qStreamVar,
+                    isEmbed: false,
+                    mimeType: /\.m3u8(?:\?|$)/i.test(qStreamVar) ? "application/x-mpegURL" : "video/mp4",
+                    headers: defaultHeaders(ref),
+                    subtitles: []
+                });
+            }
             var isDirectVar = /\.(?:m3u8|mp4)(?:\?|$)/i.test(playerVarUrl);
             log("parseDetailResponse var link: " + playerVarUrl);
             return JSON.stringify({
@@ -729,6 +791,17 @@ function parseDetailResponse(htmlContent, pageUrl) {
 
         var embedUrl = extractPlayerIframe(src, ref);
         if (embedUrl) {
+            var qStreamIframe = extractStreamFromIframeQuery(embedUrl);
+            if (qStreamIframe) {
+                log("parseDetailResponse iframe query stream: " + qStreamIframe);
+                return JSON.stringify({
+                    url: qStreamIframe,
+                    isEmbed: false,
+                    mimeType: /\.m3u8(?:\?|$)/i.test(qStreamIframe) ? "application/x-mpegURL" : "video/mp4",
+                    headers: defaultHeaders(ref),
+                    subtitles: []
+                });
+            }
             log("parseDetailResponse iframe: " + embedUrl);
             return JSON.stringify({
                 url: embedUrl,
@@ -751,6 +824,18 @@ function parseEmbedResponse(htmlContent, url) {
         var ref = unescapeStreamStr(url || "") || "https://v13.streamvsmov.com/";
         var hdrs = embedHeaders(ref, ref);
         log("parseEmbedResponse: " + ref);
+
+        var qStream = extractStreamFromIframeQuery(ref);
+        if (qStream) {
+            log("parseEmbedResponse query stream: " + qStream);
+            return JSON.stringify({
+                url: qStream,
+                isEmbed: false,
+                mimeType: /\.m3u8(?:\?|$)/i.test(qStream) ? "application/x-mpegURL" : "video/mp4",
+                headers: defaultHeaders(BASE_URL + "/"),
+                subtitles: []
+            });
+        }
 
         var streamUrl = findMediaUrl(src, ref);
         if (streamUrl) {
@@ -780,6 +865,17 @@ function parseEmbedResponse(htmlContent, url) {
 
         var nestedIframe = extractPlayerIframe(src, ref);
         if (nestedIframe && nestedIframe !== ref) {
+            var nestedQ = extractStreamFromIframeQuery(nestedIframe);
+            if (nestedQ) {
+                log("parseEmbedResponse nested query stream: " + nestedQ);
+                return JSON.stringify({
+                    url: nestedQ,
+                    isEmbed: false,
+                    mimeType: /\.m3u8(?:\?|$)/i.test(nestedQ) ? "application/x-mpegURL" : "video/mp4",
+                    headers: defaultHeaders(ref),
+                    subtitles: []
+                });
+            }
             log("parseEmbedResponse nested iframe: " + nestedIframe);
             return JSON.stringify({
                 url: nestedIframe,
