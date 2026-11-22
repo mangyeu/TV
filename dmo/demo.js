@@ -6,7 +6,7 @@ function getManifest() {
     return JSON.stringify({
         "id": "javhd",
         "name": "JavHD",
-        "version": "1.0.6",
+        "version": "1.0.7",
         "baseUrl": "https://javhdz.today",
         "iconUrl": "https://javhdz.today/favicon.ico",
         "isEnabled": true,
@@ -343,39 +343,31 @@ function parseMovieDetail(html) {
     try {
         var safeHtml = html || "";
 
-        // Tiêu đề phim
         var titleMatch = safeHtml.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i);
         var title = titleMatch ? PluginUtils.cleanText(titleMatch[1]) : "";
 
-        // Mô tả phim
+        var originMatch = safeHtml.match(/(?:Original\s*Title|Tên\s*gốc)[^<]*:\s*<[^>]*>([\s\S]*?)<\/[^>]*>/i);
+        var originName = originMatch ? PluginUtils.cleanText(originMatch[1]) : "";
+
         var descMatch = safeHtml.match(/<p[^>]*class=["'][^"']*description[^"']*["'][^>]*>([\s\S]*?)<\/p>/i);
         var description = descMatch ? PluginUtils.cleanText(descMatch[1]) : "";
 
-        // Ảnh thumbnail / poster
         var thumbMatch = safeHtml.match(/<meta[^>]*property=["']og:image["'][^>]*content=["']([^"']+)["']/i);
         var thumb = thumbMatch ? thumbMatch[1] : "";
 
-        // Mã phim / Label
         var codeMatch = safeHtml.match(/Label:\s*<a[^>]*>([\s\S]*?)<\/a>/i);
-        var code = codeMatch ? PluginUtils.cleanText(codeMatch[1]) : "Full";
+        var code = codeMatch ? PluginUtils.cleanText(codeMatch[1]) : "";
 
-        // Thời lượng nếu có
-        var durationMatch = safeHtml.match(/(?:Duration|Thời lượng)[^<]*:\s*<[^>]*>([^<]+)<\/[^>]*>/i)
+        var durationMatch = safeHtml.match(/(?:Duration|Thời\s*lượng)[^<]*:\s*<[^>]*>([\s\S]*?)<\/[^>]*>/i)
             || safeHtml.match(/<span[^>]*class=["'][^"']*duration[^"']*["'][^>]*>([\s\S]*?)<\/span>/i);
         var duration = durationMatch ? PluginUtils.cleanText(durationMatch[1]) : "";
 
-        // Diễn viên / Casts nếu có
-        var castLinks = [];
-        var castRegex = /<a[^>]*href=["']\/(?:actor|model|actress|cast|pornstar)\/[^"']*["'][^>]*>([\s\S]*?)<\/a>/gi;
-        var castMatch;
-        while ((castMatch = castRegex.exec(safeHtml)) !== null) {
-            var cName = PluginUtils.cleanText(castMatch[1]);
-            if (cName && castLinks.indexOf(cName) === -1) {
-                castLinks.push(cName);
-            }
-        }
+        var yearMatch = safeHtml.match(/(?:Year|Release\s*Year|Năm)[^<]*:\s*<[^>]*>(\d{4})<\/[^>]*>/i);
+        var year = yearMatch ? (parseInt(yearMatch[1], 10) || 0) : 0;
 
-        // Thể loại / Categories
+        var ratingMatch = safeHtml.match(/(?:Rating|Đánh\s*giá)[^<]*:\s*<[^>]*>([0-9]+(?:\.[0-9]+)?)/i);
+        var rating = ratingMatch ? (parseFloat(ratingMatch[1]) || 0) : 0;
+
         var categoryRegex = /<a[^>]*href=["']\/([^"']+)["'][^>]*><i[^>]*class=["']fa fa-th-list["'][^>]*><\/i>([^<]+)<\/a>/gi;
         var categoriesArr = [];
         var catMatch;
@@ -386,9 +378,37 @@ function parseMovieDetail(html) {
             }
         }
 
-        // Danh sách server & chi tiết server
+        var countryArr = [];
+        var countryRegex = /<a[^>]*href=["']\/(?:country|quoc-gia)\/[^"']*["'][^>]*>([\s\S]*?)<\/a>/gi;
+        var countryMatch;
+        while ((countryMatch = countryRegex.exec(safeHtml)) !== null) {
+            var cName = PluginUtils.cleanText(countryMatch[1]);
+            if (cName && countryArr.indexOf(cName) === -1) {
+                countryArr.push(cName);
+            }
+        }
+
+        var directorArr = [];
+        var directorRegex = /<a[^>]*href=["']\/(?:director|dao-dien)\/[^"']*["'][^>]*>([\s\S]*?)<\/a>/gi;
+        var dirMatch;
+        while ((dirMatch = directorRegex.exec(safeHtml)) !== null) {
+            var dName = PluginUtils.cleanText(dirMatch[1]);
+            if (dName && directorArr.indexOf(dName) === -1) {
+                directorArr.push(dName);
+            }
+        }
+
+        var castsArr = [];
+        var castRegex = /<a[^>]*href=["']\/(?:actor|model|actress|cast|pornstar)\/[^"']*["'][^>]*>([\s\S]*?)<\/a>/gi;
+        var castMatch;
+        while ((castMatch = castRegex.exec(safeHtml)) !== null) {
+            var actorName = PluginUtils.cleanText(castMatch[1]);
+            if (actorName && castsArr.indexOf(actorName) === -1) {
+                castsArr.push(actorName);
+            }
+        }
+
         var servers = [];
-        var serverDetails = [];
         var foundServer = false;
 
         var btnRegex = /<button([^>]*\bclass=["'][^"']*\bbutton_choice_server\b[^"']*["'][^>]*)>([\s\S]*?)<\/button>/gi;
@@ -400,20 +420,16 @@ function parseMovieDetail(html) {
             var innerHtml = btnMatch[2] || "";
 
             var dataName = PluginUtils.cleanText(PluginUtils.getAttr(attrs, "data-name"));
-            var dataPlayer = PluginUtils.getAttr(attrs, "data-player");
-            var btnClass = PluginUtils.getAttr(attrs, "class");
-            var isActive = /\bactive-server\b/i.test(btnClass);
-
             var badgeMatch = innerHtml.match(/<span[^>]*class=["'][^"']*server-label[^"']*["'][^>]*>([\s\S]*?)<\/span>/i);
             var badge = badgeMatch ? PluginUtils.cleanText(badgeMatch[1]) : "";
-
-            var htmlWithoutBadge = innerHtml.replace(/<span[^>]*class=["'][^"']*server-label[^"']*["'][^>]*>[\s\S]*?<\/span>/gi, "");
-            var labelText = PluginUtils.cleanText(htmlWithoutBadge);
+            var labelText = PluginUtils.cleanText(
+                innerHtml.replace(/<span[^>]*class=["'][^"']*server-label[^"']*["'][^>]*>[\s\S]*?<\/span>/gi, "")
+            );
 
             var dataEmbeds = PluginUtils.getAttr(attrs, "data-embeds");
             var dataEmbed = PluginUtils.getAttr(attrs, "data-embed");
-
             var urls = [];
+
             if (dataEmbeds) {
                 try {
                     var parsedArr = JSON.parse(PluginUtils.decodeBase64(dataEmbeds));
@@ -436,97 +452,84 @@ function parseMovieDetail(html) {
                 idxCounter++;
 
                 var baseName = dataName || labelText || ("Server " + idxCounter);
-                var hosts = [];
-                var episodes = [];
+                var serverLabel = baseName + (badge ? " [" + badge + "]" : "");
+                var serverEpisodes = [];
 
                 for (var eIdx = 0; eIdx < urls.length; eIdx++) {
                     var streamUrl = urls[eIdx];
                     var host = PluginUtils.getHostName(streamUrl);
-                    if (host && hosts.indexOf(host) === -1) {
-                        hosts.push(host);
-                    }
-
                     var epName = urls.length > 1
-                        ? ("Mirror " + (eIdx + 1) + "/" + urls.length + (host ? " (" + host + ")" : ""))
-                        : ("Full" + (host ? " (" + host + ")" : ""));
+                        ? ("Tập " + (eIdx + 1) + (host ? " - " + host : ""))
+                        : ("Full" + (host ? " - " + host : ""));
 
-                    episodes.push({
+                    serverEpisodes.push({
                         id: streamUrl,
                         name: epName,
-                        slug: urls.length > 1 ? ("mirror-" + (eIdx + 1)) : "full",
-                        host: host,
-                        serverName: baseName
+                        slug: urls.length > 1 ? ("tap-" + (eIdx + 1)) : "full"
                     });
                 }
 
-                var metaParts = [];
-                if (badge) metaParts.push(badge);
-                if (isActive) metaParts.push("Active");
-                metaParts.push(urls.length > 1 ? (urls.length + " mirrors") : "1 link");
-                if (dataPlayer !== "") metaParts.push("Player " + dataPlayer);
-                if (hosts.length > 0) metaParts.push(hosts.join(", "));
-
-                var displayName = baseName + " [" + metaParts.join(" • ") + "]";
-
                 servers.push({
-                    name: displayName,
-                    rawName: baseName,
-                    badge: badge,
-                    player: dataPlayer,
-                    isActive: isActive,
-                    linkCount: urls.length,
-                    hosts: hosts,
-                    episodes: episodes
+                    name: serverLabel,
+                    episodes: serverEpisodes
                 });
+            }
+        }
 
-                serverDetails.push(
-                    baseName +
-                    (badge ? " [" + badge + "]" : "") +
-                    " — " + urls.length + " link" +
-                    (dataPlayer !== "" ? " (player=" + dataPlayer + ")" : "") +
-                    (hosts.length > 0 ? " — Hosts: " + hosts.join(", ") : "")
-                );
+        if (!foundServer) {
+            var mainPlayerStr = 'id="main-player"';
+            var idxMain = safeHtml.indexOf(mainPlayerStr);
+            if (idxMain !== -1) {
+                var srcStr = 'src="';
+                var idxSrc = safeHtml.indexOf(srcStr, idxMain);
+                if (idxSrc !== -1 && idxSrc - idxMain < 500) {
+                    var startUrl = idxSrc + srcStr.length;
+                    var endUrl = safeHtml.indexOf('"', startUrl);
+                    if (endUrl !== -1) {
+                        var embedUrl = safeHtml.substring(startUrl, endUrl).trim();
+                        if (embedUrl) {
+                            servers.push({
+                                name: "Embed Server",
+                                episodes: [{ id: embedUrl, name: "Full", slug: "full" }]
+                            });
+                            foundServer = true;
+                        }
+                    }
+                }
             }
         }
 
         if (!foundServer) {
             servers.push({
-                name: "Không tìm thấy server",
+                name: "Unknown",
                 episodes: [{ id: "", name: "Full", slug: "full" }]
             });
-            serverDetails.push("Không tìm thấy server");
         }
-
-        // Tổng hợp chi tiết phim + chi tiết server
-        var infoLines = [];
-        if (title) infoLines.push("Tên phim: " + title);
-        if (code) infoLines.push("Mã / Label: " + code);
-        if (duration) infoLines.push("Thời lượng: " + duration);
-        if (categoriesArr.length > 0) infoLines.push("Thể loại: " + categoriesArr.join(", "));
-        if (castLinks.length > 0) infoLines.push("Diễn viên: " + castLinks.join(", "));
-        if (description) infoLines.push("Nội dung: " + description);
-        infoLines.push("Chi tiết Server (" + servers.length + "):\n- " + serverDetails.join("\n- "));
 
         return JSON.stringify({
             id: "",
             title: title,
+            originName: originName,
             posterUrl: thumb,
             backdropUrl: thumb,
-            description: infoLines.join("\n"),
-            servers: servers,
-            serverDetails: serverDetails,
+            description: description,
+            year: year,
+            rating: rating,
             quality: "HD",
-            lang: "Vietsub",
             duration: duration,
-            year: 0,
-            rating: 0,
-            casts: castLinks.join(", "),
-            director: "",
-            country: "",
+            servers: servers,
+            episode_current: code || "Full",
+            lang: "Vietsub",
             category: categoriesArr.join(", "),
-            status: code
+            country: countryArr.join(", "),
+            director: directorArr.join(", "),
+            casts: castsArr.join(", "),
+            status: code || "Full",
+            tmdbId: "",
+            tmdbSeason: 0,
+            tmdbType: ""
         });
-    } catch (e) {
+    } catch (error) {
         return "null";
     }
 }
