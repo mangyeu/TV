@@ -1,649 +1,537 @@
-/*
- * JavHDZ Catalog Plugin
- * Based on the KKPhim plugin architecture
- *
- * Catalog / metadata parser only.
- * Does not extract video stream or player URLs.
- */
-
-// ============================================================
-// CONSTANTS
-// ============================================================
-
-var BASE_URL = "https://javhdz.today";
-
-// Regex cache cho getAttribute (tránh compile lại nhiều lần)
-var ATTR_REGEX_CACHE = {};
-
-// Path pattern để lọc anchor là phim (tránh false-positive từ nav/footer)
-var MOVIE_PATH_REGEX = /\/(?:phim|video|jav|xem|watch|movie)\//i;
-
-// Path cần loại bỏ (không phải phim)
-var EXCLUDED_PATH_REGEX = /\/(?:the-loai|quoc-gia|nam|tag|category|country|year|search|login|register|dang-nhap|dang-ky)\b/i;
-
-// ============================================================
-// MANIFEST
-// ============================================================
+// =============================================================================
+// CONFIGURATION & METADATA
+// =============================================================================
 
 function getManifest() {
     return JSON.stringify({
-        id: "javhdz",
-        name: "JavHDZ",
-        version: "1.0.1",
-        baseUrl: BASE_URL,
-        iconUrl: BASE_URL + "/favicon.ico",
-        isEnabled: true,
-        type: "MOVIE"
+        "id": "javhd",
+        "name": "JavHD",
+        "version": "1.0.5",
+        "baseUrl": "https://javhdz.today",
+        "iconUrl": "https://javhdz.today/favicon.ico",
+        "isEnabled": true,
+        "isAdult": true,
+        "type": "VIDEO",
+        "playerType": "embedtoexoplay"
     });
-}
-
-// ============================================================
-// HOME SECTIONS
-// ============================================================
-
-function getHomeSections() {
-    return JSON.stringify([
-        {
-            slug: "recent",
-            title: "Recently Updated",
-            type: "Grid",
-            path: "recent"
-        },
-        {
-            slug: "popular",
-            title: "Popular",
-            type: "Grid",
-            path: "popular"
-        }
-    ]);
 }
 
 function getPrimaryCategories() {
     return JSON.stringify([
-        { name: "Recent", slug: "recent" },
-        { name: "Popular", slug: "popular" }
+        { name: 'Mới cập nhật', slug: 'recent' },
+        { name: 'Không Che', slug: 'uncensored-jav' },
+        { name: 'Khử Che', slug: 'reducing-mosaic' },
+        { name: 'Vietsub', slug: 'jav-sub' },
+        { name: 'Nghiệp Dư', slug: 'amateur' }
+    ]);
+}
+
+function getHomeSections() {
+    return JSON.stringify([
+        { slug: 'popular/today', title: 'Xem Nhiều Hôm Nay', type: 'Horizontal', path: '' },
+        { slug: 'uncensored-jav', title: 'Jav Uncensored', type: 'Horizontal', path: '' },
+        { slug: 'reducing-mosaic', title: 'Reducing Mosaic', type: 'Horizontal', path: '' },
+        { slug: 'jav-sub', title: 'Jav Sub', type: 'Horizontal', path: '' },
+        { slug: 'recent', title: 'Video Mới Cập Nhật', type: 'Grid', path: '' }
     ]);
 }
 
 function getFilterConfig() {
     return JSON.stringify({
         sort: [
-            { name: "Newest", value: "date" },
-            { name: "Popular", value: "views" }
+            { name: 'Mới nhất', value: 'recent' },
+            { name: 'Xem nhiều hôm nay', value: 'popular/today' },
+            { name: 'Xem nhiều trong tuần', value: 'popular/week' },
+            { name: 'Xem nhiều trong tháng', value: 'popular/month' },
+            { name: 'Xem nhiều tất cả', value: 'popular/year' },
+            { name: 'Nhiều lượt thích', value: 'rated/year' }
+        ],
+        category: [
+            { name: "Uncensored Jav", value: "uncensored-jav" },
+            { name: "Reducing Mosaic", value: "reducing-mosaic" },
+            { name: "Jav Sub", value: "jav-sub" },
+            { name: "Chinese Sub", value: "chinese-subtitle" },
+            { name: "Creampie", value: "creampie" },
+            { name: "Big Tits", value: "big-tits" },
+            { name: "Amateur", value: "amateur" },
+            { name: "Married Woman", value: "married-woman" },
+            { name: "Beautiful Girl", value: "beautiful-girl" },
+            { name: "Mature Woman", value: "mature-woman" },
+            { name: "Cuckold", value: "cuckold" },
+            { name: "Squirting", value: "squirting" },
+            { name: "Nasty", value: "nasty" },
+            { name: "Hardcore", value: "hardcore" }
         ]
     });
 }
 
-// ============================================================
-// URL HELPERS
-// ============================================================
+// =============================================================================
+// URL GENERATION
+// =============================================================================
 
-function normalizeUrl(url, base) {
-    if (!url) return "";
-
-    url = String(url).trim();
-
-    if (/^https?:\/\//i.test(url)) {
-        return url;
-    }
-
-    try {
-        return new URL(url, base || BASE_URL).href;
-    } catch (e) {
-        return "";
-    }
-}
+var BASE_URL = "https://javhdz.today";
 
 function getUrlList(slug, filtersJson) {
     try {
         var filters = JSON.parse(filtersJson || "{}");
+        var page = parseInt(filters.page, 10) || 1;
+        var sortPath = (filters.sort && filters.sort !== 'recent') ? (filters.sort + '/') : '';
 
-        var page = Math.max(1, parseInt(filters.page, 10) || 1);
-        var route = slug || "recent";
-
-        // Trường hợp slug là absolute URL
-        if (/^https?:\/\//i.test(route)) {
-            var customUrl = new URL(route);
-
-            if (page > 1) {
-                customUrl.searchParams.set("page", page);
-            }
-            if (filters.sort) {
-                customUrl.searchParams.set("sort", filters.sort);
-            }
-
-            return customUrl.href;
+        var targetSlug = slug || 'recent';
+        if (filters.category) {
+            targetSlug = filters.category;
         }
 
-        route = route.replace(/^\/+|\/+$/g, "");
+        var isBrowse = false;
+        var browsePrefixes = ['recent', 'popular', 'rated', 'discussed', 'downloaded', 'longest', 'watched'];
+        for (var i = 0; i < browsePrefixes.length; i++) {
+            if (targetSlug.indexOf(browsePrefixes[i]) === 0) {
+                isBrowse = true;
+                break;
+            }
+        }
 
-        var url = new URL(
-            route ? "/" + route + "/" : "/",
-            BASE_URL
-        );
+        var finalUrl = "";
+        if (filters.category) {
+            finalUrl = BASE_URL + "/" + filters.category + "/" + sortPath;
+        } else if (!slug || slug === 'recent') {
+            finalUrl = BASE_URL + "/recent/";
+        } else if (slug.indexOf("http") === 0) {
+            finalUrl = slug.replace(/\/+$/, '') + '/';
+        } else {
+            if (slug.indexOf("/") === 0) {
+                slug = slug.replace(/^\/+/, '').replace(/\/+$/, '');
+            }
+            finalUrl = BASE_URL + "/" + slug + "/" + sortPath;
+        }
 
+        var params = [];
+        params.push(isBrowse ? "ajax=browse_videos" : "ajax=1");
         if (page > 1) {
-            url.searchParams.set("page", page);
-        }
-        if (filters.sort) {
-            url.searchParams.set("sort", filters.sort);
+            params.push("page=" + page);
         }
 
-        return url.href;
-
+        var separator = (finalUrl.indexOf('?') !== -1) ? '&' : '?';
+        return finalUrl + separator + params.join('&');
     } catch (e) {
-        return BASE_URL + "/recent/";
+        return BASE_URL + "/recent/?ajax=1";
     }
 }
 
 function getUrlSearch(keyword, filtersJson) {
     try {
         var filters = JSON.parse(filtersJson || "{}");
-
-        var url = new URL("/", BASE_URL);
-
-        if (keyword) {
-            url.searchParams.set("q", keyword.trim());
-        }
-
-        var page = Math.max(1, parseInt(filters.page, 10) || 1);
+        var page = parseInt(filters.page, 10) || 1;
+        var url = BASE_URL + "/search/video/?s=" + encodeURIComponent(keyword || "") + "&ajax=1";
         if (page > 1) {
-            url.searchParams.set("page", page);
+            url += "&page=" + page;
         }
-
-        return url.href;
-
+        return url;
     } catch (e) {
-        return BASE_URL + "/";
+        return BASE_URL + "/search/video/?s=" + encodeURIComponent(keyword || "") + "&ajax=1";
     }
 }
 
 function getUrlDetail(slug) {
-    if (!slug) return "";
-
-    // Nếu slug đã là absolute URL → giữ nguyên
-    if (/^https?:\/\//i.test(slug)) {
-        return slug;
-    }
-
-    // Nếu là path tương đối → resolve
-    return normalizeUrl(slug);
+    if (!slug) return BASE_URL;
+    if (slug.indexOf("http") === 0) return slug;
+    if (slug.indexOf("/") === 0) return BASE_URL + slug;
+    return BASE_URL + "/" + slug;
 }
 
-function getUrlCategories() {
-    return BASE_URL + "/";
-}
+function getUrlCategories() { return BASE_URL + "/categories/"; }
+function getUrlCountries() { return BASE_URL + "/"; }
+function getUrlYears() { return BASE_URL + "/"; }
 
-function getUrlCountries() {
-    return "";
-}
+// =============================================================================
+// HELPERS
+// =============================================================================
 
-function getUrlYears() {
-    return "";
-}
-
-function getLocalYearsJson() {
-    var years = [];
-    var currentYear = new Date().getFullYear();
-
-    for (var y = currentYear; y >= 1970; y--) {
-        years.push({
-            name: String(y),
-            value: String(y)
-        });
-    }
-
-    return JSON.stringify(years);
-}
-
-// ============================================================
-// HTML HELPERS
-// ============================================================
-
-function decodeHtml(text) {
+function cleanText(text) {
     if (!text) return "";
-
     return String(text)
+        .replace(/<[^>]*>/g, "")
         .replace(/&amp;/g, "&")
         .replace(/&quot;/g, '"')
-        .replace(/&#39;/g, "'")
-        .replace(/&apos;/g, "'")
-        .replace(/&lt;/g, "<")
-        .replace(/&gt;/g, ">")
-        .replace(/&nbsp;/g, " ")
-        .replace(/&#(\d+);/g, function (_, n) {
-            return String.fromCharCode(parseInt(n, 10));
-        })
-        .replace(/&#x([0-9a-f]+);/gi, function (_, h) {
-            return String.fromCharCode(parseInt(h, 16));
-        });
+        .replace(/&#039;/g, "'")
+        .replace(/\s+/g, " ")
+        .trim();
 }
 
-function stripHtml(text) {
-    return decodeHtml(
-        String(text || "")
-            .replace(/<script[\s\S]*?<\/script>/gi, "")
-            .replace(/<style[\s\S]*?<\/style>/gi, "")
-            .replace(/<[^>]*>/g, "")
-    )
-    .replace(/\s+/g, " ")
-    .trim();
-}
-
-function getAttribute(tag, attribute) {
-    if (!tag || !attribute) return "";
-
-    var regex = ATTR_REGEX_CACHE[attribute];
-
-    if (!regex) {
-        var escaped = attribute.replace(
-            /[.*+?^${}()|[\]\\]/g,
-            "\\$&"
-        );
-
-        regex = new RegExp(
-            escaped +
-            "\\s*=\\s*(?:\"([^\"]*)\"|'([^']*)'|([^\\s>]+))",
-            "i"
-        );
-
-        ATTR_REGEX_CACHE[attribute] = regex;
-    }
-
-    var match = tag.match(regex);
-
-    return decodeHtml(
-        match ? (match[1] || match[2] || match[3] || "") : ""
-    );
-}
-
-function getMeta(html, property) {
-    if (!html || !property) return "";
-
-    var tags = html.match(/<meta\b[^>]*>/gi) || [];
-    var target = property.toLowerCase();
-
-    for (var i = 0; i < tags.length; i++) {
-        var tag = tags[i];
-
-        var key =
-            getAttribute(tag, "property") ||
-            getAttribute(tag, "name");
-
-        if ((key || "").toLowerCase() === target) {
-            return getAttribute(tag, "content");
-        }
-    }
-
-    return "";
-}
-
-function getCanonical(html) {
-    if (!html) return "";
-
-    var tags = html.match(/<link\b[^>]*>/gi) || [];
-
-    for (var i = 0; i < tags.length; i++) {
-        var tag = tags[i];
-
-        if (
-            (getAttribute(tag, "rel") || "")
-                .toLowerCase()
-                .indexOf("canonical") !== -1
-        ) {
-            return normalizeUrl(
-                getAttribute(tag, "href")
-            );
-        }
-    }
-
-    return "";
-}
-
-function getTitle(html) {
-    if (!html) return "";
-
-    var match = html.match(
-        /<title[^>]*>([\s\S]*?)<\/title>/i
-    );
-
-    return stripHtml(match ? match[1] : "");
-}
-
-function extractYear(text) {
-    var m = String(text || "").match(/(?:19|20)\d{2}/);
-    return m ? parseInt(m[0], 10) : 0;
-}
-
-function parseNextPage(html) {
-    if (!html) return 0;
-
-    // rel="next"
-    var linkTags = html.match(/<link\b[^>]*>/gi) || [];
-    for (var i = 0; i < linkTags.length; i++) {
-        if (
-            (getAttribute(linkTags[i], "rel") || "")
-                .toLowerCase()
-                .indexOf("next") !== -1
-        ) {
-            var href = getAttribute(linkTags[i], "href");
-            var pageMatch = href.match(/[?&]page=(\d+)/i);
-            if (pageMatch) return parseInt(pageMatch[1], 10);
-        }
-    }
-
-    // anchor rel="next"
-    var anchors = html.match(/<a\b[^>]*>[\s\S]*?<\/a>/gi) || [];
-    for (var j = 0; j < anchors.length; j++) {
-        if (
-            (getAttribute(anchors[j], "rel") || "")
-                .toLowerCase()
-                .indexOf("next") !== -1
-        ) {
-            var aHref = getAttribute(anchors[j], "href");
-            var m = aHref.match(/[?&]page=(\d+)/i);
-            if (m) return parseInt(m[1], 10);
-        }
-    }
-
-    return 0;
-}
-
-// ============================================================
-// CATALOG PARSER
-// ============================================================
-
-function parseCatalogResponse(html) {
-    var items = [];
-    var seen = {};
-
+function decodeBase64(input) {
+    var b64chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+    var decoded = "";
     try {
-        if (!html) throw new Error("empty html");
-
-        var anchors = html.match(
-            /<a\b[^>]*>[\s\S]*?<\/a>/gi
-        ) || [];
-
-        for (var i = 0; i < anchors.length; i++) {
-            var anchor = anchors[i];
-
-            var href = getAttribute(anchor, "href");
-            if (!href) continue;
-
-            var url = normalizeUrl(href);
-            if (!url) continue;
-
-            // Loại bỏ link không phải phim
-            if (EXCLUDED_PATH_REGEX.test(url)) continue;
-
-            // Yêu cầu có path khớp pattern phim
-            if (!MOVIE_PATH_REGEX.test(url)) continue;
-
-            // Loại duplicate
-            if (seen[url]) continue;
-
-            var title =
-                getAttribute(anchor, "title") ||
-                getAttribute(anchor, "aria-label");
-
-            if (!title) {
-                title = stripHtml(anchor);
+        if (typeof atob === 'function') {
+            return atob(input);
+        }
+        var str = String(input).replace(/[=]+$/, '');
+        if (str.length % 4 === 1) return "";
+        for (var bc = 0, bs, buffer, idx = 0; (buffer = str.charAt(idx++)); ) {
+            buffer = b64chars.indexOf(buffer);
+            if (~buffer) {
+                bs = bc % 4 ? bs * 64 + buffer : buffer;
+                if (bc++ % 4) {
+                    decoded += String.fromCharCode(255 & bs >> (-2 * bc & 6));
+                }
             }
+        }
+    } catch (e) {
+        return "";
+    }
+    return decoded;
+}
 
-            // Bỏ anchor không có title hoặc title quá ngắn
-            if (!title || title.length < 3) continue;
+// =============================================================================
+// PARSERS
+// =============================================================================
 
-            var imgMatch = anchor.match(/<img\b[^>]*>/i);
-            var image = "";
+function parseListResponse(html) {
+    try {
+        var responseHtml = html || "";
+        var paginationHtml = "";
 
-            if (imgMatch) {
-                var img = imgMatch[0];
-                image =
-                    getAttribute(img, "data-src") ||
-                    getAttribute(img, "data-original") ||
-                    getAttribute(img, "data-lazy-src") ||
-                    getAttribute(img, "data-srcset") ||
-                    getAttribute(img, "src");
+        if (responseHtml.trim().indexOf('{') === 0) {
+            try {
+                var data = JSON.parse(responseHtml);
+                if (data && data.html) {
+                    responseHtml = data.html;
+                    if (data.pagination) {
+                        paginationHtml = data.pagination;
+                    }
+                }
+            } catch (e) {
+                // Fallback to original html
             }
-
-            // Bắt buộc có ảnh poster
-            if (!image) continue;
-
-            seen[url] = true;
-
-            items.push({
-                id: url,
-                title: title,
-                url: url,
-                posterUrl: normalizeUrl(image),
-                backdropUrl: normalizeUrl(image),
-                description: "",
-                year: extractYear(title),
-                duration: "",
-                category: "",
-                quality: ""
-            });
         }
 
-        var nextPage = parseNextPage(html);
+        var moviesMap = {};
+        var parts = responseHtml.split(/<li[^>]*id=["']video-[^"']*["'][^>]*>/);
+
+        for (var i = 1; i < parts.length; i++) {
+            var itemHtml = parts[i];
+
+            var fullUrl = "";
+            var title = "";
+
+            var aRegex = /<a([^>]+)>/g;
+            var aMatch;
+            while ((aMatch = aRegex.exec(itemHtml)) !== null) {
+                var attrs = aMatch[1];
+                if (attrs.indexOf('thumbnail') !== -1) {
+                    var linkM = attrs.match(/href=["']([^"']+)["']/);
+                    var titleM = attrs.match(/title=["']([^"']*)["']/);
+                    if (linkM) fullUrl = linkM[1];
+                    if (titleM) title = titleM[1];
+                    break;
+                }
+            }
+
+            var slug = fullUrl;
+            if (slug && slug.indexOf('/') === 0) slug = slug.substring(1);
+
+            var thumb = "";
+            var imgMatch = itemHtml.match(/<img([^>]+)>/);
+            if (imgMatch) {
+                var imgAttrs = imgMatch[1];
+                var srcM = imgAttrs.match(/src=["']([^"']+)["']/);
+                var dataSrcM = imgAttrs.match(/data-src=["']([^"']+)["']/);
+                thumb = (dataSrcM && dataSrcM[1]) ? dataSrcM[1] : (srcM ? srcM[1] : "");
+            }
+
+            if (!slug) continue;
+            if (moviesMap[slug]) continue;
+
+            var rawTitle = cleanText(title);
+
+            var durationMatch = itemHtml.match(/<span[^>]*class=["']video-overlay badge transparent["'][^>]*>([\s\S]*?)<\/span>/);
+            var duration = durationMatch ? cleanText(durationMatch[1]) : "";
+
+            var codeMatch = itemHtml.match(/<span[^>]*class=["']video-overlay1 badge transparent["'][^>]*>([\s\S]*?)<\/span>/);
+            var code = codeMatch ? cleanText(codeMatch[1]) : "";
+
+            var labels = [];
+            if (duration) labels.push(duration);
+            if (code) labels.push(code);
+            var labelText = labels.join(" | ") || "HD";
+
+            moviesMap[slug] = {
+                id: slug,
+                title: rawTitle || "Phim không tiêu đề",
+                posterUrl: thumb,
+                backdropUrl: thumb,
+                year: 0,
+                quality: "HD",
+                episode_current: labelText,
+                lang: "Vietsub"
+            };
+        }
+
+        var movies = [];
+        for (var key in moviesMap) {
+            if (moviesMap.hasOwnProperty(key)) {
+                movies.push(moviesMap[key]);
+            }
+        }
+
+        // Pagination
+        var totalPages = 1;
+        var currentPage = 1;
+        var paginationSrc = paginationHtml || responseHtml;
+
+        var pagNav = "";
+        var paginationBlock = paginationSrc.match(/<ul[^>]*class="[^"]*pagination[^"]*"[^>]*>([\s\S]*?)<\/ul>/);
+        if (paginationBlock) {
+            pagNav = paginationBlock[1];
+        } else if (paginationHtml) {
+            pagNav = paginationHtml;
+        }
+
+        if (pagNav) {
+            var activeMatch = pagNav.match(/<li[^>]*class="[^"]*active[^"]*"[^>]*>\s*<a[^>]*>(\d+)<\/a>/i)
+                || pagNav.match(/<li[^>]*class="[^"]*active[^"]*"[^>]*>\s*<span[^>]*>(\d+)<\/span>/i);
+            if (activeMatch) {
+                currentPage = parseInt(activeMatch[1], 10) || 1;
+            }
+
+            var pageLinks = pagNav.match(/href="[^"]*\/(\d+)\/?[^"]*"/g);
+            if (pageLinks) {
+                for (var j = 0; j < pageLinks.length; j++) {
+                    var pMatch = pageLinks[j].match(/\/(\d+)\/?"/);
+                    if (pMatch) {
+                        var p = parseInt(pMatch[1], 10);
+                        if (p > totalPages) totalPages = p;
+                    }
+                }
+            }
+
+            var queryPageLinks = pagNav.match(/href="[^"]*(?:[?&]|&amp;)page=(\d+)[^"]*"/g);
+            if (queryPageLinks) {
+                for (var k = 0; k < queryPageLinks.length; k++) {
+                    var qpMatch = queryPageLinks[k].match(/(?:[?&]|&amp;)page=(\d+)/);
+                    if (qpMatch) {
+                        var qp = parseInt(qpMatch[1], 10);
+                        if (qp > totalPages) totalPages = qp;
+                    }
+                }
+            }
+        }
+
+        if (totalPages <= 1) {
+            var queryPages = paginationSrc.match(/(?:[?&]|&amp;)page=(\d+)/g);
+            if (queryPages) {
+                for (var q = 0; q < queryPages.length; q++) {
+                    var m = queryPages[q].match(/page=(\d+)/) || queryPages[q].match(/(\d+)/);
+                    if (m) {
+                        var n = parseInt(m[1], 10);
+                        if (n > totalPages) totalPages = n;
+                    }
+                }
+            }
+        }
 
         return JSON.stringify({
-            items: items,
+            items: movies,
             pagination: {
-                currentPage: 1,
-                totalPages: nextPage > 1 ? Math.max(nextPage, 2) : 1,
-                totalItems: items.length,
-                itemsPerPage: items.length || 24
+                currentPage: currentPage,
+                totalPages: totalPages || 1,
+                totalItems: movies.length,
+                itemsPerPage: 20
             }
         });
-
     } catch (e) {
         return JSON.stringify({
             items: [],
-            pagination: {
-                currentPage: 1,
-                totalPages: 1,
-                totalItems: 0,
-                itemsPerPage: 24
-            }
+            pagination: { currentPage: 1, totalPages: 1, totalItems: 0, itemsPerPage: 20 }
         });
     }
 }
 
-function parseListResponse(html) {
-    return parseCatalogResponse(html);
-}
-
 function parseSearchResponse(html) {
-    return parseCatalogResponse(html);
+    return parseListResponse(html);
 }
-
-// ============================================================
-// DETAIL METADATA PARSER
-// ============================================================
 
 function parseMovieDetail(html) {
     try {
-        if (!html) return "null";
+        var titleMatch = html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/);
+        var title = titleMatch ? cleanText(titleMatch[1]) : "";
 
-        var title =
-            getMeta(html, "og:title") ||
-            getTitle(html);
+        var descMatch = html.match(/<p[^>]*class=["']description["'][^>]*>([\s\S]*?)<\/p>/);
+        var description = descMatch ? cleanText(descMatch[1]) : "";
 
-        var canonical =
-            getCanonical(html) ||
-            getMeta(html, "og:url");
+        var servers = [];
+        var serverRegex = /<button[^>]*class=["'][^"']*button_choice_server[^"']*["'][^>]*data-embed=["']([^"']+)["'][^>]*data-name=["']([^"']+)["']/gi;
+        var serverMatch;
+        var foundServer = false;
 
-        var poster = getMeta(html, "og:image");
-
-        var description =
-            getMeta(html, "og:description") ||
-            getMeta(html, "description");
-
-        var durationRaw = getMeta(html, "og:video:duration");
-        var duration = durationRaw ? parseInt(durationRaw, 10) || 0 : 0;
-
-        var releaseDate = getMeta(html, "og:video:release_date");
-
-        // Rating
-        var ratingRaw =
-            getMeta(html, "og:rating") ||
-            getMeta(html, "rating");
-        var rating = ratingRaw ? parseFloat(ratingRaw) || 0 : 0;
-
-        // H1
-        var contentTitle = "";
-        var h1 = html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i);
-        if (h1) {
-            contentTitle = stripHtml(h1[1]);
-        }
-
-        // Tags
-        var tags = [];
-        var tagRegex =
-            /<meta\b[^>]*property=["']video:tag["'][^>]*>/gi;
-        var tagMatch;
-
-        while ((tagMatch = tagRegex.exec(html)) !== null) {
-            var tag = getAttribute(tagMatch[0], "content");
-            if (tag && tags.indexOf(tag) === -1) {
-                tags.push(tag);
+        while ((serverMatch = serverRegex.exec(html)) !== null) {
+            var decodedUrl = decodeBase64(serverMatch[1]);
+            if (decodedUrl) {
+                foundServer = true;
+                servers.push({
+                    name: serverMatch[2],
+                    episodes: [{
+                        id: decodedUrl,
+                        name: "Full",
+                        slug: "full"
+                    }]
+                });
             }
         }
 
-        // Category (fallback từ breadcrumb nếu không có tags)
-        var category = tags.join(", ");
+        // Fallback: id="main-player"
+        if (!foundServer) {
+            var idxMain = html.indexOf('id="main-player"');
+            if (idxMain !== -1) {
+                var idxSrc = html.indexOf('src="', idxMain);
+                if (idxSrc !== -1 && idxSrc - idxMain < 500) {
+                    var startUrl = idxSrc + 5;
+                    var endUrl = html.indexOf('"', startUrl);
+                    if (endUrl !== -1) {
+                        var embedUrl = html.substring(startUrl, endUrl);
+                        servers.push({
+                            name: "Embed Server",
+                            episodes: [{
+                                id: embedUrl,
+                                name: "Full",
+                                slug: "full"
+                            }]
+                        });
+                        foundServer = true;
+                    }
+                }
+            }
+        }
 
-        // Year từ releaseDate hoặc title
-        var year =
-            extractYear(releaseDate) ||
-            extractYear(title) ||
-            extractYear(contentTitle);
+        // Ultimate fallback
+        if (!foundServer) {
+            var ultimateMatch = html.match(/src=["'](https?:\/\/[a-z0-9A-Z.-]+\/(v|e|embed)\/[^"']+)["']/i);
+            if (ultimateMatch) {
+                servers.push({
+                    name: "Default Embed",
+                    episodes: [{
+                        id: ultimateMatch[1],
+                        name: "Full",
+                        slug: "full"
+                    }]
+                });
+            } else {
+                servers.push({
+                    name: "Unknown",
+                    episodes: [{
+                        id: "",
+                        name: "Full",
+                        slug: "full"
+                    }]
+                });
+            }
+        }
+
+        var thumbMatch = html.match(/<meta[^>]*property=["']og:image["'][^>]*content=["']([^"']+)["']/);
+        var thumb = thumbMatch ? thumbMatch[1] : "";
+
+        var codeMatch = html.match(/Label:\s*<a[^>]*>([\s\S]*?)<\/a>/i);
+        var code = codeMatch ? cleanText(codeMatch[1]) : "Full";
+
+        var categoryRegex = /<a[^>]*href=["']\/([^"']+)["'][^>]*><i[^>]*class=["']fa fa-th-list["'][^>]*><\/i>([^<]+)<\/a>/g;
+        var categoriesArr = [];
+        var catMatch;
+        while ((catMatch = categoryRegex.exec(html)) !== null) {
+            categoriesArr.push(cleanText(catMatch[2]));
+        }
 
         return JSON.stringify({
-            id: canonical,
-            title: contentTitle || title,
-            originName: title,
-            posterUrl: normalizeUrl(poster),
-            backdropUrl: normalizeUrl(poster),
-            description: stripHtml(description),
-            year: year,
-            rating: rating,
-            quality: "",
-            duration: duration,
-            episode_current: "",
-            lang: "",
-            category: category,
-            country: "",
-            director: "",
+            id: "",
+            title: title,
+            posterUrl: thumb,
+            backdropUrl: thumb,
+            description: description,
+            servers: servers,
+            quality: "HD",
+            lang: "Vietsub",
+            year: 0,
+            rating: 0,
             casts: "",
-            status: "",
-            releaseDate: releaseDate || "",
-            tags: tags,
-            url: canonical
+            director: "",
+            country: "",
+            category: categoriesArr.join(", "),
+            status: code
         });
-
     } catch (e) {
         return "null";
     }
 }
 
-// ============================================================
-// DETAIL RESPONSE
-// ============================================================
-
-function parseDetailResponse(input) {
-    /*
-     * KHÔNG extract stream.
-     * Chỉ trả về metadata-only response.
-     */
-
-    var fallback = JSON.stringify({
-        url: "",
-        isDirectStream: false,
-        headers: {},
-        subtitles: []
+function resolveStreamData(hostUrl, referer) {
+    return JSON.stringify({
+        url: hostUrl || "",
+        headers: {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+            "Referer": referer || (BASE_URL + "/")
+        },
+        subtitles: [],
+        isEmbed: true,
+        embedRegex: "['\"](https?:\\/\\/[^\\s'\"]+\\.m3u8[^'\"]*)['\"]"
     });
+}
 
+function parseDetailResponse(html, fallbackUrl) {
     try {
-        if (!input) return fallback;
+        var hostUrl = fallbackUrl || "";
 
-        var parsed;
-
-        // Thử parse JSON trước
-        try {
-            parsed = JSON.parse(input);
-        } catch (_) {
-            // Nếu không phải JSON → coi là HTML, không extract stream
-            parsed = null;
+        var idxMain = html.indexOf('id="main-player"');
+        if (idxMain !== -1) {
+            var idxSrc = html.indexOf('src="', idxMain);
+            if (idxSrc !== -1 && idxSrc - idxMain < 500) {
+                var startUrl = idxSrc + 5;
+                var endUrl = html.indexOf('"', startUrl);
+                if (endUrl !== -1) {
+                    hostUrl = html.substring(startUrl, endUrl);
+                }
+            }
         }
 
-        if (!parsed || typeof parsed !== "object") {
-            return fallback;
-        }
-
-        return JSON.stringify({
-            url: parsed.url || "",
-            isDirectStream: !!parsed.isDirectStream,
-            headers: parsed.headers || {},
-            subtitles: Array.isArray(parsed.subtitles) ? parsed.subtitles : []
-        });
-
+        return resolveStreamData(hostUrl, BASE_URL + "/");
     } catch (e) {
-        return fallback;
+        return JSON.stringify({ url: fallbackUrl || "", headers: {}, subtitles: [] });
     }
 }
 
-// ============================================================
-// CATEGORIES / COUNTRIES / YEARS
-// ============================================================
+function parseEmbedResponse(html, fallbackUrl) {
+    return JSON.stringify({
+        url: fallbackUrl || "",
+        headers: {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+            "Referer": BASE_URL + "/"
+        },
+        subtitles: [],
+        isEmbed: false
+    });
+}
 
 function parseCategoriesResponse(html) {
     try {
-        if (!html) return JSON.stringify({ categories: [] });
+        var categories = [];
+        var parts = html.split(/<li[^>]*id=["']category-[^"']*["'][^>]*>/);
+        for (var i = 1; i < parts.length; i++) {
+            var itemHtml = parts[i];
+            var linkMatch = itemHtml.match(/href=["']\/([^"']+)[\/]?["']/);
+            var nameMatch = itemHtml.match(/<div[^>]*class=["']category-title["'][^>]*>([\s\S]*?)<\/div>/);
 
-        var items = [];
-        var seen = {};
-
-        var anchors = html.match(
-            /<a\b[^>]*>[\s\S]*?<\/a>/gi
-        ) || [];
-
-        for (var i = 0; i < anchors.length; i++) {
-            var tag = anchors[i];
-
-            var href = getAttribute(tag, "href");
-            var name = stripHtml(tag);
-
-            if (!href || !name) continue;
-            if (name.length < 2) continue;
-
-            var slug = normalizeUrl(href);
-            if (!slug || seen[slug]) continue;
-
-            // Chỉ giữ link category/country
-            if (
-                !/\/(?:the-loai|quoc-gia|category|country|tag)\//i.test(slug) &&
-                !/^https?:\/\/[^/]+\/?$/.test(slug)
-            ) {
-                continue;
+            if (linkMatch && nameMatch) {
+                var slug = linkMatch[1];
+                if (slug.charAt(slug.length - 1) === '/') slug = slug.substring(0, slug.length - 1);
+                categories.push({
+                    name: cleanText(nameMatch[1]),
+                    slug: slug
+                });
             }
-
-            seen[slug] = true;
-            items.push({ name: name, slug: slug });
         }
-
-        return JSON.stringify({ categories: items });
-
+        return JSON.stringify(categories);
     } catch (e) {
-        return JSON.stringify({ categories: [] });
+        return "[]";
     }
 }
 
-function parseCountriesResponse(html) {
-    return parseCategoriesResponse(html);
-}
-
-function parseYearsResponse(html) {
-    return getLocalYearsJson();
-}
+function parseCountriesResponse(html) { return "[]"; }
+function parseYearsResponse(html) { return "[]"; }
