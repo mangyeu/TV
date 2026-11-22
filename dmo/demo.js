@@ -6,7 +6,7 @@ function getManifest() {
     return JSON.stringify({
         "id": "javhd",
         "name": "JavHD",
-        "version": "1.1.2",
+        "version": "1.2.0",
         "baseUrl": "https://javhdz.today",
         "iconUrl": "https://javhdz.today/favicon.ico",
         "isEnabled": true,
@@ -146,10 +146,10 @@ var PluginUtils = {
         if (!text) return "";
         return String(text)
             .replace(/<[^>]*>/g, "")
-            .replace(/&/g, "&")
-            .replace(/"/g, '"')
-            .replace(/'/g, "'")
-            .replace(/ /g, " ")
+            .replace(/&amp;/g, "&")
+            .replace(/&quot;/g, '"')
+            .replace(/&#039;/g, "'")
+            .replace(/&nbsp;/g, " ")
             .replace(/\s+/g, " ")
             .trim();
     },
@@ -181,16 +181,16 @@ var PluginUtils = {
         var m = String(url).match(/^https?:\/\/([^\/?#]+)/i);
         return m ? m[1].replace(/^www\./i, "") : "";
     },
+    // Chỉ dùng để tìm link media trực tiếp trong HTML (nếu có)
     extractMediaUrl: function (text) {
         var unescaped = String(text || "")
             .replace(/\\\//g, "/")
             .replace(/\\u0026/g, "&")
-            .replace(/&/g, "&");
+            .replace(/&amp;/g, "&");
 
         var patterns = [
             /(https?:\/\/[^\s"'<>\\]+\.m3u8[^\s"'<>\\]*)/i,
-            /(https?:\/\/[^\s"'<>\\]+\.mp4[^\s"'<>\\]*)/i,
-            /(?:file|source|src|url|hls|stream|link)\s*[:=]\s*["'](https?:\/\/[^"'\s<>]+(?:\.m3u8|\.mp4|playlist|master|stream|dl)[^"'\s<>]*)["']/i
+            /(https?:\/\/[^\s"'<>\\]+\.mp4[^\s"'<>\\]*)/i
         ];
 
         for (var i = 0; i < patterns.length; i++) {
@@ -199,56 +199,20 @@ var PluginUtils = {
                 return m[1].trim();
             }
         }
-
-        var tagMatch = unescaped.match(/<(?:source|video)[^>]+src=["']([^"']+)["']/i);
-        if (tagMatch && tagMatch[1]) {
-            var srcVal = tagMatch[1].trim();
-            if (srcVal.indexOf("//") === 0) srcVal = "https:" + srcVal;
-            return srcVal;
-        }
-
         return "";
     },
     extractIframeUrl: function (html) {
         var unescaped = String(html || "")
             .replace(/\\\//g, "/")
-            .replace(/&/g, "&");
+            .replace(/&amp;/g, "&");
 
-        var iframeMatch = unescaped.match(/<iframe[^>]+(?:id=["']main-player["'][^>]*src=["']([^"']+)["']|src=["']([^"']+)["'][^>]*id=["']main-player["']|src=["']([^"']+)["'])/i);
+        var iframeMatch = unescaped.match(/<iframe[^>]+src=["']([^"']+)["']/i);
         if (iframeMatch) {
-            var u = (iframeMatch[1] || iframeMatch[2] || iframeMatch[3] || "").trim();
+            var u = (iframeMatch[1] || "").trim();
             if (u.indexOf("//") === 0) u = "https:" + u;
             return u;
         }
         return "";
-    },
-    buildMycloudzDlUrl: function (html, embedUrl) {
-        var safeHtml = String(html || "");
-        var cleanEmbed = String(embedUrl || "").trim();
-        var host = PluginUtils.getHostName(cleanEmbed) || "mycloudz.cc";
-        var schemeMatch = cleanEmbed.match(/^(https?):\/\//i);
-        var scheme = schemeMatch ? schemeMatch[1].toLowerCase() : "https";
-
-        var codeMatch = cleanEmbed.match(/\/(?:v|e|embed)\/([a-zA-Z0-9_-]+)/i)
-            || safeHtml.match(/file_code\s*[:=]\s*["']([^"']+)["']/i);
-        var hashMatch = safeHtml.match(/hash\s*[:=]\s*["']([^"']+)["']/i)
-            || safeHtml.match(/([0-9]+-[0-9]+-[a-f0-9]{32})/i);
-
-        var fileCode = codeMatch ? codeMatch[1] : "";
-        var hashVal = hashMatch ? hashMatch[1] : "";
-
-        if (!fileCode && !hashVal) return "";
-
-        var query = [
-            "op=view",
-            "file_code=" + encodeURIComponent(fileCode),
-            "hash=" + encodeURIComponent(hashVal),
-            "embed=1",
-            "referer=" + encodeURIComponent("javhdz.today"),
-            "ad=b0",
-            "hls=41"
-        ];
-        return scheme + "://" + host + "/dl?" + query.join("&");
     }
 };
 
@@ -377,10 +341,10 @@ function parseListResponse(html) {
             }
         }
 
-        var queryPageLinks = pagNav.match(/href="[^"]*(?:[?&]|&)page=(\d+)[^"]*"/g);
+        var queryPageLinks = pagNav.match(/href="[^"]*(?:[?&]|&amp;)page=(\d+)[^"]*"/g);
         if (queryPageLinks) {
             for (var j = 0; j < queryPageLinks.length; j++) {
-                var pMatch = queryPageLinks[j].match(/(?:[?&]|&)page=(\d+)/);
+                var pMatch = queryPageLinks[j].match(/(?:[?&]|&amp;)page=(\d+)/);
                 if (pMatch) {
                     var p = parseInt(pMatch[1]);
                     if (p > totalPages) totalPages = p;
@@ -390,7 +354,7 @@ function parseListResponse(html) {
     }
 
     if (totalPages <= 1) {
-        var queryPages = paginationSrc.match(/(?:[?&]|&)page=(\d+)/g);
+        var queryPages = paginationSrc.match(/(?:[?&]|&amp;)page=(\d+)/g);
         if (queryPages) {
             for (var k = 0; k < queryPages.length; k++) {
                 var qMatch = queryPages[k].match(/page=(\d+)/) || queryPages[k].match(/(\d+)/);
@@ -439,12 +403,10 @@ function parseMovieDetail(html) {
         var thumbMatch = safeHtml.match(/<meta[^>]*property=["']og:image["'][^>]*content=["']([^"']+)["']/i);
         var thumb = thumbMatch ? thumbMatch[1] : "";
 
-        var codeMatch = safeHtml.match(/Label:\s*<a[^>]*>([\s\S]*?)<\/a>/i)
-            || safeHtml.match(/Code:\s*<[^>]*>([\s\S]*?)<\/[^>]*>/i);
+        var codeMatch = safeHtml.match(/Label:\s*<a[^>]*>([\s\S]*?)<\/a>/i);
         var code = codeMatch ? PluginUtils.cleanText(codeMatch[1]) : "";
 
-        var durationMatch = safeHtml.match(/(?:Duration|Thời\s*lượng)[^<]*:\s*<[^>]*>([\s\S]*?)<\/[^>]*>/i)
-            || safeHtml.match(/<span[^>]*class=["'][^"']*duration[^"']*["'][^>]*>([\s\S]*?)<\/span>/i);
+        var durationMatch = safeHtml.match(/(?:Duration|Thời\s*lượng)[^<]*:\s*<[^>]*>([\s\S]*?)<\/[^>]*>/i);
         var duration = durationMatch ? PluginUtils.cleanText(durationMatch[1]) : "";
 
         var yearMatch = safeHtml.match(/(?:Release\s*Date|Release\s*Year|Year|Năm)[^<]*:[\s\S]{0,60}?(\b(?:19|20)\d{2}\b)/i);
@@ -623,9 +585,13 @@ function parseMovieDetail(html) {
 function parseDetailResponse(html, fallbackUrl) {
     try {
         var safeHtml = html || "";
+        // Chỉ tìm link media trực tiếp nếu có (hiếm khi xảy ra với mycloudz)
         var mediaUrl = PluginUtils.extractMediaUrl(safeHtml);
         var iframeUrl = PluginUtils.extractIframeUrl(safeHtml);
         var targetUrl = mediaUrl || iframeUrl || (fallbackUrl || "");
+        
+        // Nếu tìm thấy link media trực tiếp -> không phải embed
+        // Ngược lại -> là embed, để app core xử lý
         var isEmbed = !mediaUrl;
 
         var host = PluginUtils.getHostName(targetUrl);
@@ -635,12 +601,13 @@ function parseDetailResponse(html, fallbackUrl) {
             url: targetUrl,
             headers: {
                 "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:160.0) Gecko/20100101 Firefox/160.0",
-                "Referer": referer,
-                "X-Requested-With": "XMLHttpRequest"
+                "Referer": referer
             },
             subtitles: [],
             isEmbed: isEmbed,
-            embedRegex: "['\"](https?:\\/\\/[^\\s'\"]+\\.(?:m3u8|mp4)[^'\"]*)['\"]"
+            // Regex này sẽ được app core dùng để tìm link stream bên trong iframe
+            // sau khi JavaScript của player mycloudz đã chạy và tạo ra link .m3u8
+            embedRegex: "['\"](https?:\\/\\/[^\\s'\"]+\\.m3u8[^'\"]*)['\"]"
         });
     } catch (e) {
         return JSON.stringify({
@@ -655,88 +622,62 @@ function parseDetailResponse(html, fallbackUrl) {
     }
 }
 
+/**
+ * Hàm này được gọi khi app core tải nội dung của iframe embed.
+ * Với mycloudz.cc, nội dung HTML ban đầu KHÔNG chứa link .m3u8.
+ * Link .m3u8 được tạo ra bởi JavaScript (provider.hlsjs.js) sau khi iframe được tải.
+ * 
+ * Do đó, chiến lược đúng đắn là:
+ * 1. Nếu tìm thấy link media trực tiếp trong HTML (may mắn) -> trả về ngay.
+ * 2. Nếu không, trả về URL embed gốc với isEmbed: true.
+ *    App core của bạn (với khả năng thực thi JS trong WebView) sẽ tự động
+ *    chạy player, đợi link .m3u8 xuất hiện, rồi dùng embedRegex để bắt lấy.
+ * 
+ * TUYỆT ĐỐI KHÔNG cố gắng tự xây dựng URL /dl hay tìm link trong HTML tĩnh.
+ */
 function parseEmbedResponse(html, fallbackUrl) {
     try {
         var safeHtml = String(html || "").trim();
         var cleanFallback = String(fallbackUrl || "").trim();
-        var host = PluginUtils.getHostName(cleanFallback) || "mycloudz.cc";
-        var referer = cleanFallback || ("https://" + host + "/");
 
-        // Nếu response là JSON từ endpoint /dl
-        if (safeHtml.indexOf("{") === 0) {
-            try {
-                var jsonObj = JSON.parse(safeHtml);
-                var jsonStr = JSON.stringify(jsonObj);
-                var jsonMedia = PluginUtils.extractMediaUrl(jsonStr)
-                    || jsonObj.url || jsonObj.stream || jsonObj.file || jsonObj.link || jsonObj.src || "";
-                if (jsonMedia) {
-                    return JSON.stringify({
-                        url: String(jsonMedia).replace(/\\\//g, "/"),
-                        headers: {
-                            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:160.0) Gecko/20100101 Firefox/160.0",
-                            "Referer": referer,
-                            "X-Requested-With": "XMLHttpRequest"
-                        },
-                        subtitles: [],
-                        isEmbed: false
-                    });
-                }
-            } catch (e) {}
-        }
-
-        // Tìm trực tiếp link stream (.m3u8 / .mp4 / video tag)
+        // 1. Thử tìm link media trực tiếp trong HTML (trường hợp may mắn)
         var mediaUrl = PluginUtils.extractMediaUrl(safeHtml);
         if (mediaUrl) {
+            var host = PluginUtils.getHostName(mediaUrl);
             return JSON.stringify({
                 url: mediaUrl,
                 headers: {
                     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:160.0) Gecko/20100101 Firefox/160.0",
-                    "Referer": referer,
-                    "X-Requested-With": "XMLHttpRequest"
+                    "Referer": cleanFallback || ("https://" + (host || "mycloudz.cc") + "/")
                 },
                 subtitles: [],
                 isEmbed: false
             });
         }
 
-        // Nếu đang ở trang /v/... (hoặc /e/...) và chưa thấy link stream, xây dựng URL /dl đúng tham số
-        var dlUrl = PluginUtils.buildMycloudzDlUrl(safeHtml, cleanFallback);
-        if (dlUrl && cleanFallback.indexOf("/dl?") === -1) {
+        // 2. Không tìm thấy link trực tiếp -> trả về URL embed gốc để app core xử lý
+        // App core sẽ tải iframe, chạy JS, và trích xuất link .m3u8 từ player
+        if (cleanFallback) {
+            var embedHost = PluginUtils.getHostName(cleanFallback) || "mycloudz.cc";
             return JSON.stringify({
-                url: dlUrl,
+                url: cleanFallback,
                 headers: {
                     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:160.0) Gecko/20100101 Firefox/160.0",
-                    "Referer": referer,
-                    "X-Requested-With": "XMLHttpRequest"
-                },
-                subtitles: [],
-                isEmbed: true
-            });
-        }
-
-        // Nếu có iframe con bên trong
-        var nestedIframe = PluginUtils.extractIframeUrl(safeHtml);
-        if (nestedIframe) {
-            return JSON.stringify({
-                url: nestedIframe,
-                headers: {
-                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:160.0) Gecko/20100101 Firefox/160.0",
-                    "Referer": referer,
-                    "X-Requested-With": "XMLHttpRequest"
+                    "Referer": "https://javhdz.today/"
                 },
                 subtitles: [],
                 isEmbed: true,
-                embedRegex: "['\"](https?:\\/\\/[^\\s'\"]+\\.(?:m3u8|mp4)[^'\"]*)['\"]"
+                embedRegex: "['\"](https?:\\/\\/[^\\s'\"]+\\.m3u8[^'\"]*)['\"]"
             });
         }
     } catch (e) {}
 
+    // Fallback cuối cùng
     return JSON.stringify({
         url: fallbackUrl || "",
         headers: {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:160.0) Gecko/20100101 Firefox/160.0",
-            "Referer": fallbackUrl || "https://javhdz.today/",
-            "X-Requested-With": "XMLHttpRequest"
+            "Referer": "https://javhdz.today/"
         },
         subtitles: [],
         isEmbed: false
