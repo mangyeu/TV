@@ -12,7 +12,7 @@
         {
             "id": "nguonc",
             "name": "Phim NguonC",
-            "version": "1.0.0",
+            "version": "1.0.1",
             "baseUrl": "https://phim.nguonc.com",
             "scriptUrl": "https://raw.githubusercontent.com/mangyeu/TV/refs/heads/main/plugin_film/nguonc_plugin.js",
             "iconUrl": "https://raw.githubusercontent.com/mangyeu/TV/refs/heads/main/plugin_film/nguonc.ico"
