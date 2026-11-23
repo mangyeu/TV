@@ -7,7 +7,7 @@ function getManifest() {
     return JSON.stringify({
         "id": "javhd",
         "name": "JavHD",
-        "version": "1.0.5",
+        "version": "1.0.6",
         "baseUrl": "https://javhdz.today",
         "iconUrl": "https://javhdz.today/favicon.ico",
         "isEnabled": true,
@@ -319,257 +319,201 @@ function parseSearchResponse(html) {
     return parseListResponse(html);
 }
 
-function parseMovieHtml(html) {
-    if (!html || typeof html !== "string") {
-        return null;
-    }
-
-    var doc = new DOMParser().parseFromString(html, "text/html");
-
-    // Helper lấy text an toàn
-    function getText(selector) {
-        var el = doc.querySelector(selector);
-        return el ? el.textContent.trim() : "";
-    }
-
-    // Helper lấy attribute an toàn
-    function getAttr(selector, attr) {
-        var el = doc.querySelector(selector);
-        return el ? (el.getAttribute(attr) || "") : "";
-    }
-
-    // =========================
-    // TITLE
-    // =========================
-    var title =
-        getText("h1") ||
-        getText("title") ||
-        getAttr('meta[property="og:title"]', "content") ||
-        "Unknown";
-
-    // =========================
-    // POSTER
-    // =========================
-    var thumb =
-        getAttr('meta[property="og:image"]', "content") ||
-        getAttr('meta[name="twitter:image"]', "content");
-
-    // Lấy poster từ background-image
-    if (!thumb) {
-        var posterElement = doc.querySelector("#player-poster");
-
-        if (posterElement) {
-            var style = posterElement.getAttribute("style") || "";
-
-            var match = style.match(
-                /background-image\s*:\s*url\(\s*['"]?([^'")]+)['"]?\s*\)/i
-            );
-
-            if (match) {
-                thumb = match[1];
-            }
-        }
-    }
-
-    // =========================
-    // STATUS / LABEL
-    // =========================
-    var status = "";
-
-    var labelElement = doc.querySelector(".label, .movie-label, .status");
-
-    if (labelElement) {
-        status = labelElement.textContent.trim();
-    }
 function parseMovieDetail(html) {
-    const doc = new DOMParser().parseFromString(html, "text/html");
+    try {
+        var titleMatch = html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i);
+        var title = titleMatch
+            ? titleMatch[1].replace(/<[^>]+>/g, "").trim()
+            : "";
 
-    // Helpers
-    const text = (selector) =>
-        doc.querySelector(selector)?.textContent?.trim() || "";
-
-    const attr = (selector, attribute) =>
-        doc.querySelector(selector)?.getAttribute(attribute) || "";
-
-    const cleanText = (value) =>
-        (value || "")
-            .replace(/\s+/g, " ")
-            .trim();
-
-    // --------------------------------
-    // TITLE
-    // --------------------------------
-
-    const title =
-        text(".movie-title") ||
-        text("h1") ||
-        text("h2") ||
-        text("title");
-
-    // --------------------------------
-    // DESCRIPTION
-    // --------------------------------
-
-    const description =
-        text(".description") ||
-        text(".movie-description") ||
-        text(".detail-description") ||
-        text(".content-description");
-
-    // --------------------------------
-    // THUMBNAIL
-    // --------------------------------
-
-    const thumbnail =
-        attr(".movie-poster img", "src") ||
-        attr(".poster img", "src") ||
-        attr("meta[property='og:image']", "content") ||
-        attr("video", "poster") ||
-        attr("img", "src");
-
-    // --------------------------------
-    // VIDEO / TRAILER
-    // --------------------------------
-
-    const video = doc.querySelector("video");
-
-    const trailerSources = video
-        ? [...video.querySelectorAll("source")].map(source => ({
-            type: source.getAttribute("type") || "",
-            label: source.getAttribute("label") || "",
-            resolution: source.getAttribute("res") || "",
-            url: source.getAttribute("src") || ""
-        }))
-        : [];
-
-    const trailer = video
-        ? {
-            id: video.id || null,
-            poster: video.getAttribute("poster") || null,
-            controls: video.hasAttribute("controls"),
-            preload: video.getAttribute("preload") || null,
-            sources: trailerSources
-        }
-        : null;
-
-    // --------------------------------
-    // SERVER BUTTONS
-    // --------------------------------
-
-    const serverSelectors = [
-        ".button_choice_server",
-        ".server-item",
-        ".server-button",
-        ".server-option",
-        "[data-embed]",
-        "[data-embeds]"
-    ].join(",");
-
-    const serverElements = [
-        ...doc.querySelectorAll(serverSelectors)
-    ];
-
-    // Avoid duplicate elements matched by multiple selectors
-    const uniqueServerElements = [...new Set(serverElements)];
-
-    const servers = uniqueServerElements.map((element, index) => {
-        const name = cleanText(
-            element.getAttribute("data-name") ||
-            element.getAttribute("title") ||
-            element.textContent
+        var descMatch = html.match(
+            /<p[^>]*class=["'][^"']*description[^"']*["'][^>]*>([\s\S]*?)<\/p>/i
         );
 
-        const hasSingleEmbed =
-            element.hasAttribute("data-embed");
+        var description = descMatch
+            ? descMatch[1].replace(/<[^>]+>/g, "").trim()
+            : "";
 
-        const hasMultipleEmbeds =
-            element.hasAttribute("data-embeds");
+        var servers = [];
+        var seenUrls = new Set();
 
-        let type = "unknown";
+        // Base64 decoder
+        function decodeBase64(value) {
+            try {
+                return decodeURIComponent(
+                    Array.prototype.map.call(
+                        atob(value),
+                        function (c) {
+                            return "%" +
+                                ("00" + c.charCodeAt(0).toString(16)).slice(-2);
+                        }
+                    ).join("")
+                );
+            } catch (e) {
+                try {
+                    return atob(value);
+                } catch (e2) {
+                    return "";
+                }
+            }
+        }
 
-        if (hasMultipleEmbeds) {
-            type = "multi";
-        } else if (hasSingleEmbed) {
-            type = "single";
+        // Đọc thuộc tính HTML
+        function getAttribute(tag, attribute) {
+            var regex = new RegExp(
+                attribute + "\\s*=\\s*[\"']([^\"']*)[\"']",
+                "i"
+            );
+
+            var match = tag.match(regex);
+
+            return match ? match[1] : "";
+        }
+
+        // Thêm server, tránh trùng
+        function addServer(name, url) {
+            if (!url || typeof url !== "string") return;
+
+            url = url.trim();
+
+            if (!/^https?:\/\//i.test(url)) return;
+            if (seenUrls.has(url)) return;
+
+            seenUrls.add(url);
+
+            servers.push({
+                name: name || "Server " + servers.length,
+                episodes: [{
+                    id: url,
+                    name: "Full",
+                    slug: "full"
+                }]
+            });
+        }
+
+        // Tìm các button server
+        var buttonRegex =
+            /<button\b[^>]*button_choice_server[^>]*>/gi;
+
+        var buttonMatch;
+
+        while ((buttonMatch = buttonRegex.exec(html)) !== null) {
+            var buttonHtml = buttonMatch[0];
+
+            var serverName = getAttribute(buttonHtml, "data-name");
+            var singleEmbed = getAttribute(buttonHtml, "data-embed");
+            var multiEmbed = getAttribute(buttonHtml, "data-embeds");
+
+            // Server sử dụng một URL
+            if (singleEmbed) {
+                var decodedUrl = decodeBase64(singleEmbed);
+
+                addServer(serverName, decodedUrl);
+            }
+
+            // Server sử dụng nhiều URL
+            if (multiEmbed) {
+                var decodedMulti = decodeBase64(multiEmbed);
+
+                try {
+                    var urlList = JSON.parse(decodedMulti);
+
+                    if (Array.isArray(urlList)) {
+                        urlList.forEach(function (url, index) {
+                            addServer(
+                                serverName +
+                                (index > 0 ? " " + (index + 1) : ""),
+                                url
+                            );
+                        });
+                    }
+                } catch (e) {
+                    // Không xử lý nếu JSON không hợp lệ
+                }
+            }
+        }
+
+        // Fallback: main-player
+        if (servers.length === 0) {
+            var mainPlayerMatch = html.match(
+                /<[^>]+id=["']main-player["'][^>]*>/i
+            );
+
+            if (mainPlayerMatch) {
+                var mainPlayerTag = mainPlayerMatch[0];
+                var mainSrc = getAttribute(mainPlayerTag, "src");
+
+                if (mainSrc) {
+                    addServer("Main Player", mainSrc);
+                }
+            }
+        }
+
+        // Fallback: video tag
+        if (servers.length === 0) {
+            var videoRegex = /<video\b[^>]*>/gi;
+            var videoMatch;
+
+            while ((videoMatch = videoRegex.exec(html)) !== null) {
+                var videoTag = videoMatch[0];
+                var videoSrc = getAttribute(videoTag, "src");
+
+                if (videoSrc) {
+                    addServer("Video Source", videoSrc);
+                }
+            }
         }
 
         return {
-            id: index,
-            name: name || `Server ${index + 1}`,
-            type,
-
-            player: element.getAttribute("data-player"),
-
-            active:
-                element.classList.contains("active") ||
-                element.classList.contains("selected"),
-
-            disabled:
-                element.classList.contains("disabled") ||
-                element.hasAttribute("disabled"),
-
-            attributes: {
-                hasEmbed: hasSingleEmbed,
-                hasEmbeds: hasMultipleEmbeds
-            }
+            title: title,
+            description: description,
+            servers: servers
         };
-    });
 
-    // --------------------------------
-    // CATEGORIES
-    // --------------------------------
+    } catch (error) {
+        console.error("parseMovieDetail error:", error);
 
-    const categories = [
-        ...doc.querySelectorAll(
-            ".category a, .categories a, .genre a"
-        )
-    ]
-        .map(element => cleanText(element.textContent))
-        .filter(Boolean);
+        return {
+            title: "",
+            description: "",
+            servers: []
+        };
+    }
+}
+var thumbMatch = html.match(/<meta[^>]*property=["']og:image["'][^>]*content=["']([^"']+)["']/);
+        var thumb = thumbMatch ? thumbMatch[1] : "";
 
-    // --------------------------------
-    // TAGS
-    // --------------------------------
+        // Status / Code
+        var codeMatch = html.match(/Label:\s*<a[^>]*>([\s\S]*?)<\/a>/i);
+        var code = codeMatch ? codeMatch[1].replace(/<[^>]+>/g, '').trim() : "Full";
 
-    const tags = [
-        ...doc.querySelectorAll(".tag a, .tags a")
-    ]
-        .map(element => cleanText(element.textContent))
-        .filter(Boolean);
-
-    // --------------------------------
-    // STATUS
-    // --------------------------------
-
-    const status =
-        text(".movie-status") ||
-        text(".status") ||
-        null;
-
-    // --------------------------------
-    // OUTPUT
-    // --------------------------------
-
-    return {
-        title,
-        description,
-        thumbnail,
-
-        trailer,
-
-        servers,
-
-        categories,
-        tags,
-
-        status,
-
-        metadata: {
-            pageTitle: doc.title || "",
-            serverCount: servers.length,
-            trailerAvailable: trailer !== null
+        var categoryRegex = /<a[^>]*href=["']\/([^"']+)["'][^>]*><i[^>]*class=["']fa fa-th-list["'][^>]*><\/i>([^<]+)<\/a>/g;
+        var categoriesArr = [];
+        var catMatch;
+        while ((catMatch = categoryRegex.exec(html)) !== null) {
+            categoriesArr.push(catMatch[2].replace(/<[^>]+>/g, '').trim());
         }
-    };
+
+        return JSON.stringify({
+            id: "",
+            title: title.replace(/<[^>]+>/g, '').trim(),
+            posterUrl: thumb,
+            backdropUrl: thumb,
+            description: description,
+            servers: servers,
+            quality: "HD",
+            lang: "Vietsub",
+            year: 0,
+            rating: 0,
+            casts: "",
+            director: "",
+            country: "",
+            category: categoriesArr.join(", "),
+            status: code
+        });
+    } catch (e) {
+        return "null";
+    }
 }
 
 function parseDetailResponse(html, fallbackUrl) {
