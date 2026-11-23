@@ -5,7 +5,7 @@ function getManifest() {
     return JSON.stringify({
         id: "nguonc",
         name: "NguồnC",
-        version: "1.0.2",
+        version: "1.0.3",
         baseUrl: "https://phim.nguonc.com",
         iconUrl: "https://phim.nguonc.com/favicon.ico",
         isEnabled: true,
@@ -200,54 +200,112 @@ function parseListResponse(apiResponseJson) {
 }
 function parseSearchResponse(apiResponseJson) { return parseListResponse(apiResponseJson); }
 
+// PLAYABLE SOURCE SCAN: tolerate changing API fields and nested server/episode shapes.
+function isPlayableUrl(value) {
+    if (typeof value !== "string") return false;
+    var v = value.trim();
+    return /^https?:\/\//i.test(v) && !/\.(jpg|jpeg|png|webp|gif|svg)(\?|$)/i.test(v);
+}
+function urlKind(url) {
+    if (/\.m3u8(\?|#|$)/i.test(url)) return "m3u8";
+    if (/\.mp4(\?|#|$)/i.test(url)) return "mp4";
+    if (/\.(mpd|m4v|mov|webm)(\?|#|$)/i.test(url)) return "direct";
+    return "embed";
+}
+function collectPlayableLinks(obj, out, seen, depth) {
+    if (!obj || depth > 10) return;
+    if (typeof obj === "string") {
+        var str = obj.trim();
+        // Handle JSON strings nested inside API fields.
+        if ((str.charAt(0) === "{" || str.charAt(0) === "[") && depth < 10) {
+            try { collectPlayableLinks(JSON.parse(str), out, seen, depth + 1); return; } catch (_) {}
+        }
+        if (isPlayableUrl(str) && !seen[str]) { seen[str] = true; out.push(str); }
+        return;
+    }
+    if (Array.isArray(obj)) {
+        for (var i = 0; i < obj.length; i++) collectPlayableLinks(obj[i], out, seen, depth + 1);
+        return;
+    }
+    if (typeof obj !== "object") return;
+    // Prioritize known playback fields, then scan nested values for alternate source structures.
+    var keys = ["m3u8", "link_m3u8", "hls", "video_url", "stream_url", "stream", "file", "src", "source", "embed", "link_embed", "embed_url", "url_embed", "url", "link", "play_url", "playUrl", "content_url", "contentUrl"];
+    for (var k = 0; k < keys.length; k++) {
+        var val = obj[keys[k]];
+        if (val != null) collectPlayableLinks(val, out, seen, depth + 1);
+    }
+    for (var key in obj) {
+        if (!Object.prototype.hasOwnProperty.call(obj, key) || keys.indexOf(key) >= 0) continue;
+        // Ignore metadata and artwork; scan likely source/server/episode containers and unknown nested objects.
+        if (/poster|thumb|image|avatar|logo|description|content|actor|director|category|country|tmdb|imdb/i.test(key)) continue;
+        if (typeof obj[key] === "object" || (typeof obj[key] === "string" && /^https?:\/\//i.test(obj[key]))) {
+            collectPlayableLinks(obj[key], out, seen, depth + 1);
+        }
+    }
+}
+function getEpisodeArrays(group) {
+    if (!group) return [];
+    var candidates = [group.items, group.list, group.episodes, group.server_data, group.data, group.sources];
+    for (var i = 0; i < candidates.length; i++) if (Array.isArray(candidates[i])) return candidates[i];
+    return [];
+}
 function parseMovieDetail(apiResponseJson) {
     try {
         var response = JSON.parse(apiResponseJson || "{}");
-        if (!apiSucceeded(response)) return JSON.stringify({ error: response.message || "API error" });
-        var movie = response.movie || {};
-        var episodeGroups = Array.isArray(movie.episodes) ? movie.episodes : (Array.isArray(response.episodes) ? response.episodes : []);
+        if (!apiSucceeded(response)) return JSON.stringify({ error: response.message || "API error", servers: [] });
+        var movie = response.movie || response.data && response.data.movie || {};
+        var episodeGroups = movie.episodes || response.episodes || response.data && response.data.episodes || [];
+        if (!Array.isArray(episodeGroups)) episodeGroups = [];
         var servers = [];
+        var allSeen = {};
         for (var i = 0; i < episodeGroups.length; i++) {
             var group = episodeGroups[i] || {};
-            var episodes = Array.isArray(group.items) ? group.items : [];
+            var episodes = getEpisodeArrays(group);
+            // Some APIs place one episode/source object directly in the server group.
+            if (!episodes.length && (group.url || group.embed || group.link || group.m3u8 || group.file)) episodes = [group];
             var parsedEpisodes = [];
             for (var j = 0; j < episodes.length; j++) {
                 var ep = episodes[j] || {};
-                var m3u8 = ep.m3u8 || ep.link_m3u8 || ep.url || ep.link || ep.video_url || "";
-                var embed = ep.embed || ep.link_embed || ep.embed_url || ep.url_embed || "";
-                var stream = m3u8 || embed;
-                if (stream) parsedEpisodes.push({
-                    id: stream,
-                    name: ep.name || ep.title || ep.episode || ep.slug || String(j + 1),
-                    slug: ep.slug || "",
-                    m3u8: m3u8,
-                    embed: embed
-                });
+                var links = [], localSeen = {};
+                collectPlayableLinks(ep, links, localSeen, 0);
+                // Episode group may expose source URLs at group level; include them as fallback.
+                if (!links.length) collectPlayableLinks(group, links, localSeen, 0);
+                for (var n = 0; n < links.length; n++) {
+                    var link = links[n];
+                    parsedEpisodes.push({
+                        id: link,
+                        name: ep.name || ep.title || ep.episode || ep.slug || String(j + 1),
+                        slug: ep.slug || "",
+                        m3u8: urlKind(link) === "m3u8" ? link : "",
+                        embed: urlKind(link) === "embed" ? link : "",
+                        sourceType: urlKind(link)
+                    });
+                }
             }
-            if (parsedEpisodes.length) servers.push({ name: group.server_name || group.name || ("Server " + (i + 1)), episodes: parsedEpisodes });
+            if (parsedEpisodes.length) servers.push({ name: group.server_name || group.server || group.name || ("Server " + (i + 1)), episodes: parsedEpisodes });
+        }
+        // Last-resort scan entire detail response for playable URLs missed by schema assumptions.
+        if (!servers.length) {
+            var fallbackLinks = [], fallbackSeen = {};
+            collectPlayableLinks(response, fallbackLinks, fallbackSeen, 0);
+            if (fallbackLinks.length) servers.push({ name: "Nguồn dự phòng", episodes: fallbackLinks.map(function (url, index) {
+                return { id: url, name: "Nguồn " + (index + 1), slug: "", m3u8: urlKind(url) === "m3u8" ? url : "", embed: urlKind(url) === "embed" ? url : "", sourceType: urlKind(url) };
+            }) });
         }
         var external = normalizeExternalIds(movie);
         return JSON.stringify({
-            id: movie.slug || movie.id || "",
-            title: movie.name || movie.title || "",
+            id: movie.slug || movie.id || "", title: movie.name || movie.title || "",
             originName: movie.original_name || movie.origin_name || movie.original_title || "",
             posterUrl: getImageUrl(movie.poster_url || movie.poster || movie.thumb_url || movie.thumb),
             backdropUrl: getImageUrl(movie.thumb_url || movie.thumb || movie.backdrop || movie.poster_url || movie.poster),
             description: cleanText(movie.description || movie.content || movie.desc),
-            year: parseInt(movie.year, 10) || 0,
-            rating: parseFloat(movie.rating || movie.vote_average) || 0,
-            quality: movie.quality || "",
-            duration: movie.duration || movie.time || "",
-            servers: servers,
+            year: parseInt(movie.year, 10) || 0, rating: parseFloat(movie.rating || movie.vote_average) || 0,
+            quality: movie.quality || "", duration: movie.duration || movie.time || "", servers: servers,
             episode_current: movie.current_episode || movie.episode_current || movie.episode || "",
-            lang: movie.language || movie.lang || "",
-            category: toNames(movie.category || movie.categories),
-            country: toNames(movie.country || movie.countries),
-            director: toNames(movie.director),
-            casts: toNames(movie.actor || movie.actors || movie.cast),
-            status: movie.status || response.status || "",
-            tmdb: external.tmdb,
-            imdb: external.imdb,
+            lang: movie.language || movie.lang || "", category: toNames(movie.category || movie.categories),
+            country: toNames(movie.country || movie.countries), director: toNames(movie.director),
+            casts: toNames(movie.actor || movie.actors || movie.cast), status: movie.status || response.status || "",
+            tmdb: external.tmdb, imdb: external.imdb,
             tmdbId: external.tmdb && external.tmdb.id != null ? String(external.tmdb.id) : "",
             tmdbSeason: external.tmdb && external.tmdb.season != null ? external.tmdb.season : 0,
             tmdbType: external.tmdb && external.tmdb.type ? external.tmdb.type : "",
@@ -255,15 +313,17 @@ function parseMovieDetail(apiResponseJson) {
             imdbId: external.imdb && external.imdb.id ? external.imdb.id : "",
             imdbUrl: external.imdb && external.imdb.url ? external.imdb.url : ""
         });
-    } catch (e) { return "null"; }
+    } catch (e) { return JSON.stringify({ error: "Parse detail failed: " + e.message, servers: [] }); }
 }
 
 function resolveStreamData(streamInput) {
     var raw = String(streamInput || "").trim();
-    var direct = /\.m3u8(\?|$)/i.test(raw) || /\.mp4(\?|$)/i.test(raw);
+    var links = [], seen = {};
+    collectPlayableLinks(raw, links, seen, 0);
+    var url = links.length ? links[0] : raw;
     return JSON.stringify({
-        url: raw,
-        isDirectStream: direct,
+        url: url,
+        isDirectStream: urlKind(url) === "m3u8" || urlKind(url) === "mp4" || urlKind(url) === "direct",
         headers: { "User-Agent": "Mozilla/5.0", "Referer": "https://phim.nguonc.com/" },
         subtitles: []
     });
@@ -271,7 +331,9 @@ function resolveStreamData(streamInput) {
 function parseDetailResponse(apiResponseJson) {
     try {
         var parsed = JSON.parse(apiResponseJson || "{}");
-        var url = parsed.url || parsed.streamUrl || parsed.m3u8 || parsed.link_m3u8 || parsed.embed || parsed.link_embed || parsed.link || "";
+        var links = [], seen = {};
+        collectPlayableLinks(parsed, links, seen, 0);
+        var url = links.length ? links[0] : (parsed.url || parsed.streamUrl || parsed.m3u8 || parsed.link_m3u8 || parsed.embed || parsed.link_embed || parsed.link || "");
         return resolveStreamData(url);
     } catch (e) { return resolveStreamData(apiResponseJson); }
 }
