@@ -8,7 +8,7 @@ function getManifest() {
         "name": "CLB Phim Xưa",
         "version": "1.0.0",
         "baseUrl": "https://clbphimxua.com",
-        "iconUrl": "https://raw.githubusercontent.com/youngbi/repo/main/plugins/clbpx.ico",
+        "iconUrl": "https://raw.githubusercontent.com/mangyeu/TV/refs/heads/main/plugin_film/clbphimxua-logo.ico",
         "isEnabled": true,
         "isAdult": false,
         "type": "MOVIE",
