@@ -12,8 +12,8 @@
     {
         "id": "javhd",
         "name": "JavHD",
-        "version": "1.0.6",
-        "baseUrl": "https://javhdz.today",
+        "version": "1.0.0",
+        "baseUrl": "https://javcc.me",
         "scriptUrl": "https://raw.githubusercontent.com/mangyeu/TV/refs/heads/main/dmo/demo1.js",
         "iconUrl": "https://tvhay.buzz/favicon.png"
     }
