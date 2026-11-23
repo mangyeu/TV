@@ -13,7 +13,7 @@
         "id": "vaxplayer",
         "name": "VaxPlayer - NguonC",
         "version": "1.0.0",
-        "baseUrl": "https://phim.nguonc.com/api",
+        "baseUrl": "https://phim.nguonc.com",
         "scriptUrl": "https://raw.githubusercontent.com/mangyeu/TV/refs/heads/main/dmo/demo1.js",
       "iconUrl": "https://tvhay.buzz/favicon.png"
     }
