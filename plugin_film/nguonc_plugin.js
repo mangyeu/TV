@@ -6,7 +6,7 @@ function getManifest() {
     return JSON.stringify({
         "id": "nguonc",
         "name": "Phim NguonC",
-        "version": "1.1.5",
+        "version": "1.1.6",
         "baseUrl": "https://phim.nguonc.com",
         "iconUrl": "https://raw.githubusercontent.com/youngbi/repo/main/plugins/nguonC.png",
         "isEnabled": true,
@@ -197,7 +197,10 @@ function parseSearchResponse(apiResponseJson) {
 
 function parseMovieDetail(apiResponseJson) {
     try {
-        var response = JSON.parse(apiResponseJson);
+        var response = typeof apiResponseJson === "string"
+            ? JSON.parse(apiResponseJson)
+            : (apiResponseJson || {});
+
         // Normalize movie object (supports standard and potential variants)
         var movie = response.movie || response.data?.item || response.data || {};
 
@@ -211,21 +214,19 @@ function parseMovieDetail(apiResponseJson) {
                 var serverItems = server.items || server.server_data || [];
 
                 if (Array.isArray(serverItems)) {
-                    serverItems.forEach(function (ep, epIndex) {
+                    serverItems.forEach(function (ep) {
                         var embed = ep.embed || ep.link_embed || "";
                         var m3u8 = ep.m3u8 || ep.link_m3u8 || "";
 
                         // Use Embed URL as ID to allow scraping Referer/M3u8 details
                         // If no embed, use m3u8 directly.
-                        var link = embed || m3u8 || ep.link || ep.url || "";
+                        var link = embed || m3u8;
 
                         if (link) {
-                    episodes.push({
-                        id: link,
-                        embed: embed,
-                        m3u8: m3u8,
-                        name: ep.name || ep.episode_name || String(epIndex + 1),
-                        slug: ep.slug || ep.episode_slug || ""
+                            episodes.push({
+                                id: link,
+                                name: ep.name || ep.episode_name || "",
+                                slug: ep.slug || ep.episode_slug || ""
                             });
                         }
                     });
@@ -239,6 +240,30 @@ function parseMovieDetail(apiResponseJson) {
                 }
             });
         }
+
+        return {
+            id: movie.id || movie._id || "",
+            name: movie.name || "",
+            original_name: movie.original_name || movie.origin_name || "",
+            slug: movie.slug || "",
+            description: movie.description || movie.content || "",
+            thumb_url: movie.thumb_url || "",
+            poster_url: movie.poster_url || "",
+            year: movie.year || "",
+            total_episodes: movie.total_episodes || movie.episode_total || "",
+            current_episode: movie.current_episode || movie.episode_current || "",
+            quality: movie.quality || "",
+            language: movie.language || movie.lang || "",
+            servers: servers
+        };
+    } catch (e) {
+        console.error("parseMovieDetail error:", e);
+        return {
+            id: "",
+            servers: []
+        };
+    }
+}
 
         // Helper to extract category/country/year
         // Handles both { "1": { group: ..., list: [...] } } AND typical arrays
