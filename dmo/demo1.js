@@ -319,135 +319,136 @@ function parseSearchResponse(html) {
     return parseListResponse(html);
 }
 
-function parseMovieDetail(html) {
-    try {
-        var titleMatch = html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/);
-        var title = titleMatch ? titleMatch[1].trim() : "";
-
-        var descMatch = html.match(/<p[^>]*class=["']description["'][^>]*>([\s\S]*?)<\/p>/);
-        var description = descMatch ? descMatch[1].replace(/<[^>]+>/g, '').trim() : "";
-
-        var servers = [];
-
-        var serverRegex = /<button[^>]*class=["'][^"']*button_choice_server[^"']*["'][^>]*data-embed=["']([^"']+)["'][^>]*data-name=["']([^"']+)["']/gi;
-        var b64chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
-        var serverMatch;
-        var foundServer = false;
-
-        while ((serverMatch = serverRegex.exec(html)) !== null) {
-            var b64url = serverMatch[1];
-            var serverName = serverMatch[2];
-            var decodedUrl = "";
-            try {
-                if (typeof atob === 'function') {
-                    decodedUrl = atob(b64url);
-                } else {
-                    var str = String(b64url).replace(/[=]+$/, '');
-                    if (str.length % 4 !== 1) {
-                        for (var bc = 0, bs, buffer, idx = 0; buffer = str.charAt(idx++); ~buffer && (bs = bc % 4 ? bs * 64 + buffer : buffer, bc++ % 4) ? decodedUrl += String.fromCharCode(255 & bs >> (-2 * bc & 6)) : 0) {
-                            buffer = b64chars.indexOf(buffer);
-                        }
-                    }
-                }
-            } catch (e) { }
-
-            if (decodedUrl) {
-                foundServer = true;
-                servers.push({
-                    name: serverName,
-                    episodes: [{
-                        id: decodedUrl,
-                        name: "Full",
-                        slug: "full"
-                    }]
-                });
-            }
-        }
-
-        // Fallback using the simple indexOf main-player
-        if (!foundServer) {
-            var mainPlayerStr = 'id="main-player"';
-            var idxMain = html.indexOf(mainPlayerStr);
-            if (idxMain !== -1) {
-                var srcStr = 'src="';
-                var idxSrc = html.indexOf(srcStr, idxMain);
-                if (idxSrc !== -1 && idxSrc - idxMain < 500) {
-                    var startUrl = idxSrc + srcStr.length;
-                    var endUrl = html.indexOf('"', startUrl);
-                    if (endUrl !== -1) {
-                        var embedUrl = html.substring(startUrl, endUrl);
-                        servers.push({
-                            name: "Embed Server",
-                            episodes: [{
-                                id: embedUrl,
-                                name: "Full",
-                                slug: "full"
-                            }]
-                        });
-                        foundServer = true;
-                    }
-                }
-            }
-        }
-
-        // Ultimate fallback: direct link extraction
-        if (!foundServer) {
-            var ultimateMatch = html.match(/src=["'](https?:\/\/[a-z0-9A-Z.-]+\/(v|e|embed)\/[^"']+)["']/i);
-            if (ultimateMatch) {
-                servers.push({
-                    name: "Default Embed",
-                    episodes: [{
-                        id: ultimateMatch[1],
-                        name: "Full",
-                        slug: "full"
-                    }]
-                });
-            } else {
-                servers.push({
-                    name: "Unknown",
-                    episodes: [{
-                        id: "",
-                        name: "Full",
-                        slug: "full"
-                    }]
-                });
-            }
-        }
-
-        var thumbMatch = html.match(/<meta[^>]*property=["']og:image["'][^>]*content=["']([^"']+)["']/);
-        var thumb = thumbMatch ? thumbMatch[1] : "";
-
-        // Status / Code
-        var codeMatch = html.match(/Label:\s*<a[^>]*>([\s\S]*?)<\/a>/i);
-        var code = codeMatch ? codeMatch[1].replace(/<[^>]+>/g, '').trim() : "Full";
-
-        var categoryRegex = /<a[^>]*href=["']\/([^"']+)["'][^>]*><i[^>]*class=["']fa fa-th-list["'][^>]*><\/i>([^<]+)<\/a>/g;
-        var categoriesArr = [];
-        var catMatch;
-        while ((catMatch = categoryRegex.exec(html)) !== null) {
-            categoriesArr.push(catMatch[2].replace(/<[^>]+>/g, '').trim());
-        }
-
-        return JSON.stringify({
-            id: "",
-            title: title.replace(/<[^>]+>/g, '').trim(),
-            posterUrl: thumb,
-            backdropUrl: thumb,
-            description: description,
-            servers: servers,
-            quality: "HD",
-            lang: "Vietsub",
-            year: 0,
-            rating: 0,
-            casts: "",
-            director: "",
-            country: "",
-            category: categoriesArr.join(", "),
-            status: code
-        });
-    } catch (e) {
-        return "null";
+function parseMovieHtml(html) {
+    if (!html || typeof html !== "string") {
+        return null;
     }
+
+    var doc = new DOMParser().parseFromString(html, "text/html");
+
+    // Helper lấy text an toàn
+    function getText(selector) {
+        var el = doc.querySelector(selector);
+        return el ? el.textContent.trim() : "";
+    }
+
+    // Helper lấy attribute an toàn
+    function getAttr(selector, attr) {
+        var el = doc.querySelector(selector);
+        return el ? (el.getAttribute(attr) || "") : "";
+    }
+
+    // =========================
+    // TITLE
+    // =========================
+    var title =
+        getText("h1") ||
+        getText("title") ||
+        getAttr('meta[property="og:title"]', "content") ||
+        "Unknown";
+
+    // =========================
+    // POSTER
+    // =========================
+    var thumb =
+        getAttr('meta[property="og:image"]', "content") ||
+        getAttr('meta[name="twitter:image"]', "content");
+
+    // Lấy poster từ background-image
+    if (!thumb) {
+        var posterElement = doc.querySelector("#player-poster");
+
+        if (posterElement) {
+            var style = posterElement.getAttribute("style") || "";
+
+            var match = style.match(
+                /background-image\s*:\s*url\(\s*['"]?([^'")]+)['"]?\s*\)/i
+            );
+
+            if (match) {
+                thumb = match[1];
+            }
+        }
+    }
+
+    // =========================
+    // STATUS / LABEL
+    // =========================
+    var status = "";
+
+    var labelElement = doc.querySelector(".label, .movie-label, .status");
+
+    if (labelElement) {
+        status = labelElement.textContent.trim();
+    }
+
+    // Fallback: tìm nội dung sau từ khóa Label
+    if (!status) {
+        var labelMatch = html.match(
+            /Label\s*:\s*<[^>]*>(.*?)<\/[^>]+>/i
+        );
+
+        if (labelMatch) {
+            status = labelMatch[1].replace(/<[^>]*>/g, "").trim();
+        }
+    }
+
+    // =========================
+    // CATEGORY
+    // =========================
+    var category = "";
+
+    var categoryElement = doc.querySelector(
+        '[class*="fa-th-list"]'
+    );
+
+    if (categoryElement) {
+        var parent = categoryElement.parentElement;
+
+        if (parent) {
+            category = parent.textContent.trim();
+        }
+    }
+
+    // =========================
+    // SERVER NAMES
+    // =========================
+    var serverNames = [];
+
+    doc.querySelectorAll(".button_choice_server").forEach(function(button) {
+        var name = button.getAttribute("data-name");
+
+        if (name) {
+            serverNames.push(name.trim());
+        }
+    });
+
+    // =========================
+    // PLAYER ELEMENT
+    // =========================
+    var player = doc.querySelector("#main-player");
+
+    var playerSrc = player
+        ? (player.getAttribute("src") || "")
+        : "";
+
+    // Không tìm src toàn bộ HTML để tránh lấy nhầm logo,
+    // poster, quảng cáo hoặc ảnh khác.
+    if (!playerSrc && player) {
+        playerSrc = player.getAttribute("data-src") || "";
+    }
+
+    // =========================
+    // OUTPUT
+    // =========================
+    return {
+        title: title,
+        thumb: thumb,
+        status: status,
+        category: category,
+        serverNames: serverNames,
+        playerSrc: playerSrc
+    };
 }
 
 function parseDetailResponse(html, fallbackUrl) {
