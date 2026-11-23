@@ -6,7 +6,7 @@ function getManifest() {
     return JSON.stringify({
         "id": "nguonc",
         "name": "Phim NguonC",
-        "version": "1.1.0",
+        "version": "1.1.5",
         "baseUrl": "https://phim.nguonc.com",
         "iconUrl": "https://raw.githubusercontent.com/youngbi/repo/main/plugins/nguonC.png",
         "isEnabled": true,
@@ -195,66 +195,50 @@ function parseSearchResponse(apiResponseJson) {
     return parseListResponse(apiResponseJson);
 }
 
-function parseMovieDetail(apiResponse) {
+function parseMovieDetail(apiResponseJson) {
     try {
-        var response = typeof apiResponse === "string"
-            ? JSON.parse(apiResponse)
-            : (apiResponse || {});
-
+        var response = JSON.parse(apiResponseJson);
+        // Normalize movie object (supports standard and potential variants)
         var movie = response.movie || response.data?.item || response.data || {};
-        var rawEpisodes = Array.isArray(movie.episodes)
-            ? movie.episodes
-            : (Array.isArray(response.episodes) ? response.episodes : []);
+
+        // Normalize episodes
+        var rawEpisodes = movie.episodes || response.episodes || response.data?.item?.episodes || [];
 
         var servers = [];
+        if (Array.isArray(rawEpisodes)) {
+            rawEpisodes.forEach(function (server) {
+                var episodes = [];
+                var serverItems = server.items || server.server_data || [];
 
-        rawEpisodes.forEach(function (server, serverIndex) {
-            if (!server) return;
+                if (Array.isArray(serverItems)) {
+                    serverItems.forEach(function (ep, epIndex) {
+                        var embed = ep.embed || ep.link_embed || "";
+                        var m3u8 = ep.m3u8 || ep.link_m3u8 || "";
 
-            var serverItems = Array.isArray(server.items)
-                ? server.items
-                : (Array.isArray(server.server_data) ? server.server_data : []);
+                        // Use Embed URL as ID to allow scraping Referer/M3u8 details
+                        // If no embed, use m3u8 directly.
+                        var link = embed || m3u8 || ep.link || ep.url || "";
 
-            var episodes = [];
-
-            serverItems.forEach(function (ep, epIndex) {
-                if (!ep) return;
-
-                var embed = ep.embed || ep.link_embed || "";
-                var m3u8 = ep.m3u8 || ep.link_m3u8 || "";
-                var link = embed || m3u8 || ep.link || ep.url || "";
-
-                if (link) {
+                        if (link) {
                     episodes.push({
                         id: link,
                         embed: embed,
                         m3u8: m3u8,
                         name: ep.name || ep.episode_name || String(epIndex + 1),
                         slug: ep.slug || ep.episode_slug || ""
+                            });
+                        }
+                    });
+                }
+
+                if (episodes.length > 0) {
+                    servers.push({
+                        name: server.server_name || server.name || "Server",
+                        episodes: episodes
                     });
                 }
             });
-
-            if (episodes.length > 0) {
-                servers.push({
-                    name: server.server_name || server.name || ("Server " + (serverIndex + 1)),
-                    episodes: episodes
-                });
-            }
-        });
-
-        return {
-            movie: movie,
-            servers: servers
-        };
-    } catch (err) {
-        console.error("Lỗi khi parse dữ liệu phim:", err);
-        return {
-            movie: {},
-            servers: []
-        };
-    }
-}
+        }
 
         // Helper to extract category/country/year
         // Handles both { "1": { group: ..., list: [...] } } AND typical arrays
