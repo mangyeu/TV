@@ -7,7 +7,7 @@ function getManifest() {
         "id": "nguonc",
         "name": "NguonC",
         "version": "1.0.5",
-        "baseUrl": "https://phim.nguonc.com/api",
+        "baseUrl": "https://phim.nguonc.com",
         "iconUrl": "https://raw.githubusercontent.com/youngbi/repo/main/plugins/nguonc.png",
         "isEnabled": true,
         "type": "MOVIE",
