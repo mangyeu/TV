@@ -1,14 +1,13 @@
 // ============================================================
 // NguonC Plugin - KKPhim Compatible
-// Version: 1.1.6
+// Version: 1.1.7
 // API: https://phim.nguonc.com/api
 // ============================================================
-
 function getManifest() {
     return JSON.stringify({
         "id": "nguonc",
         "name": "Phim NguonC",
-        "version": "1.1.6",
+        "version": "1.1.7",
         "baseUrl": "https://phim.nguonc.com",
         "iconUrl": "https://raw.githubusercontent.com/youngbi/repo/main/plugins/nguonC.png",
         "isEnabled": true,
@@ -16,6 +15,7 @@ function getManifest() {
         "playerType": "embed"
     });
 }
+
 
 // ============================================================
 // HOME
@@ -103,6 +103,7 @@ function getUrlList(slug, filtersJson) {
 
         if (s.indexOf("country:") === 0 || filters.country) {
             var country = filters.country || s.substring(8);
+
             return base + "quoc-gia/" +
                 encodeURIComponent(country) +
                 "?page=" + page;
@@ -110,6 +111,7 @@ function getUrlList(slug, filtersJson) {
 
         if (s.indexOf("year:") === 0 || filters.year) {
             var year = filters.year || s.substring(5);
+
             return base + "nam-phat-hanh/" +
                 encodeURIComponent(year) +
                 "?page=" + page;
@@ -117,6 +119,7 @@ function getUrlList(slug, filtersJson) {
 
         if (s.indexOf("category:") === 0 || filters.category) {
             var category = filters.category || s.substring(9);
+
             return base + "the-loai/" +
                 encodeURIComponent(category) +
                 "?page=" + page;
@@ -167,6 +170,13 @@ function getUrlSearch(keyword, filtersJson) {
 function getUrlDetail(slug) {
     return "https://phim.nguonc.com/api/film/" +
         encodeURIComponent(slug || "");
+}
+
+// Endpoint danh sách tập mới của NguonC
+function getUrlEpisodes(slug) {
+    return "https://phim.nguonc.com/phim/" +
+        encodeURIComponent(slug || "") +
+        "/episodes";
 }
 
 function getUrlCategories() {
@@ -438,13 +448,6 @@ function parseSearchResponse(apiResponseJson) {
 
 // ============================================================
 // EPISODE PARSER
-// Hỗ trợ:
-// 1. episodes[].items[]
-// 2. episodes[].server_data[]
-// 3. episodes[].episodes[]
-// 4. movie.server_data[]
-// 5. response.server_data[]
-// 6. Chuỗi: 1|tap-1|https://...embed.php?hash=...
 // ============================================================
 
 function getUrlValue(value) {
@@ -467,22 +470,21 @@ function isHttpUrl(value) {
     return /^https?:\/\//i.test(String(value || "").trim());
 }
 
-function isEmbedUrl(value) {
-    value = String(value || "");
-
-    return /\/embed(?:\.php|\/|$)/i.test(value) ||
-        /[?&]hash=/i.test(value) ||
-        /\/iframe/i.test(value);
-}
-
 function isDirectUrl(value) {
-    value = String(value || "");
-
     return /\.m3u8(?:\?|$)/i.test(value) ||
         /\.mp4(?:\?|$)/i.test(value) ||
         /\.mpd(?:\?|$)/i.test(value);
 }
 
+function isEmbedUrl(value) {
+    return /embed/i.test(value) ||
+        /[?&]hash=/i.test(value) ||
+        /iframe/i.test(value) ||
+        /streamc/i.test(value);
+}
+
+// Hỗ trợ:
+// 1|tap-1|https://embed17.streamc.xyz/embed.php?hash=...
 function parseEpisodeString(value) {
     if (!value || typeof value !== "string") {
         return null;
@@ -506,12 +508,14 @@ function parseEpisodeString(value) {
         id: url,
         name: name || number || "Tập " + number,
         slug: "",
+        url: url,
         m3u8: isDirectUrl(url) ? url : "",
-        embed: isEmbedUrl(url) || !isDirectUrl(url) ? url : "",
+        embed: isDirectUrl(url) ? "" : url,
         playbackType: isDirectUrl(url) ? "direct" : "embed"
     };
 }
 
+// Lấy URL từ nhiều tên field
 function pickEpisodeUrls(ep) {
     ep = ep || {};
 
@@ -571,7 +575,6 @@ function pickEpisodeUrls(ep) {
 function parseEpisodeObject(ep, index) {
     if (!ep) return null;
 
-    // Nếu server trả episode dạng chuỗi
     if (typeof ep === "string") {
         return parseEpisodeString(ep);
     }
@@ -594,6 +597,7 @@ function parseEpisodeObject(ep, index) {
 
         slug: ep.slug || "",
 
+        url: stream,
         m3u8: urls.direct || "",
         embed: urls.embed || "",
 
@@ -602,36 +606,44 @@ function parseEpisodeObject(ep, index) {
     };
 }
 
+// Xử lý danh sách episode
+function parseEpisodeArray(episodes) {
+    if (!Array.isArray(episodes)) {
+        if (typeof episodes === "string") {
+            episodes = episodes.split(/\r?\n/);
+        } else {
+            return [];
+        }
+    }
+
+    var result = [];
+
+    for (var i = 0; i < episodes.length; i++) {
+        var ep = parseEpisodeObject(episodes[i], i);
+
+        if (ep) {
+            result.push(ep);
+        }
+    }
+
+    return result;
+}
+
+// Xử lý một server
 function parseEpisodeGroup(group, groupIndex) {
     group = group || {};
 
     var episodes =
         group.items ||
+        group.list ||
         group.server_data ||
         group.episodes ||
         group.data ||
         [];
 
-    // Hỗ trợ server_data là chuỗi
-    if (typeof episodes === "string") {
-        episodes = episodes.split(/\r?\n/);
-    }
+    var parsedEpisodes = parseEpisodeArray(episodes);
 
-    if (!Array.isArray(episodes)) {
-        episodes = [];
-    }
-
-    var parsedEpisodes = [];
-
-    for (var i = 0; i < episodes.length; i++) {
-        var parsed = parseEpisodeObject(episodes[i], i);
-
-        if (parsed) {
-            parsedEpisodes.push(parsed);
-        }
-    }
-
-    // Hỗ trợ group trực tiếp có link
+    // Server có thể chứa một tập trực tiếp
     if (parsedEpisodes.length === 0) {
         var directEpisode = parseEpisodeObject(group, groupIndex);
 
@@ -655,29 +667,48 @@ function parseEpisodeGroup(group, groupIndex) {
     };
 }
 
+// ============================================================
+// GET EPISODE GROUPS
+// ============================================================
+
 function getEpisodeGroups(movie, response) {
     movie = movie || {};
     response = response || {};
 
     var groups = [];
 
-    if (Array.isArray(movie.episodes)) {
+    // API mới
+    if (Array.isArray(response.servers)) {
+        groups = response.servers;
+    }
+
+    // API movie.episodes
+    else if (Array.isArray(movie.episodes)) {
         groups = movie.episodes;
-    } else if (Array.isArray(response.episodes)) {
+    }
+
+    // API response.episodes
+    else if (Array.isArray(response.episodes)) {
         groups = response.episodes;
-    } else if (Array.isArray(movie.server_data)) {
+    }
+
+    // API movie.server_data
+    else if (Array.isArray(movie.server_data)) {
         groups = [{
             server_name: movie.server_name || "Server",
             items: movie.server_data
         }];
-    } else if (Array.isArray(response.server_data)) {
+    }
+
+    // API response.server_data
+    else if (Array.isArray(response.server_data)) {
         groups = [{
             server_name: response.server_name || "Server",
             items: response.server_data
         }];
     }
 
-    // Một số API trả episodes dạng object
+    // episodes dạng object
     if (!Array.isArray(groups) && groups && typeof groups === "object") {
         groups = Object.keys(groups).map(function (key) {
             return groups[key];
@@ -685,6 +716,52 @@ function getEpisodeGroups(movie, response) {
     }
 
     return groups || [];
+}
+
+// ============================================================
+// PARSE EPISODES ENDPOINT
+// Endpoint: /phim/{slug}/episodes
+// ============================================================
+
+function parseEpisodesResponse(apiResponseJson) {
+    try {
+        var response = JSON.parse(apiResponseJson || "{}");
+
+        var groups = [];
+
+        if (Array.isArray(response.servers)) {
+            groups = response.servers;
+        } else if (Array.isArray(response.episodes)) {
+            groups = response.episodes;
+        } else if (Array.isArray(response.data)) {
+            groups = response.data;
+        } else if (Array.isArray(response.data && response.data.servers)) {
+            groups = response.data.servers;
+        }
+
+        var result = [];
+
+        for (var i = 0; i < groups.length; i++) {
+            var parsed = parseEpisodeGroup(groups[i], i);
+
+            if (parsed) {
+                result.push(parsed);
+            }
+        }
+
+        return JSON.stringify({
+            servers: result,
+            items: result,
+            status: "success"
+        });
+
+    } catch (e) {
+        return JSON.stringify({
+            servers: [],
+            items: [],
+            error: e.message
+        });
+    }
 }
 
 // ============================================================
@@ -697,7 +774,8 @@ function parseMovieDetail(apiResponseJson) {
 
         if (!apiSucceeded(response)) {
             return JSON.stringify({
-                error: response.message || "API error"
+                error: response.message || "API error",
+                servers: []
             });
         }
 
@@ -846,11 +924,19 @@ function parseMovieDetail(apiResponseJson) {
 }
 
 // ============================================================
-// STREAM
+// STREAM RESOLVER
 // ============================================================
 
 function resolveStreamData(streamInput) {
     var raw = String(streamInput || "").trim();
+
+    if (!raw) {
+        return JSON.stringify({
+            url: "",
+            error: "Không tìm thấy đường dẫn phát video",
+            playbackType: "unknown"
+        });
+    }
 
     var direct =
         /\.m3u8(?:\?|$)/i.test(raw) ||
@@ -873,9 +959,15 @@ function resolveStreamData(streamInput) {
                     ? "embed"
                     : "unknown",
 
+        type:
+            direct
+                ? "video"
+                : "embed",
+
         headers: {
             "User-Agent": "Mozilla/5.0",
-            "Referer": "https://phim.nguonc.com/"
+            "Referer": "https://phim.nguonc.com/",
+            "Origin": "https://phim.nguonc.com"
         },
 
         subtitles: []
@@ -886,7 +978,7 @@ function parseDetailResponse(apiResponseJson) {
     try {
         var parsed = JSON.parse(apiResponseJson || "{}");
 
-        // Nếu input đã là URL
+        // Input trực tiếp là URL
         if (typeof parsed === "string") {
             return resolveStreamData(parsed);
         }
