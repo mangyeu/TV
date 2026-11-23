@@ -12,7 +12,7 @@
     {
         "id": "javcc",
         "name": "JAVCC",
-        "version": "1.0.3",
+        "version": "1.0.5",
         "baseUrl": "https://javcc.me",
         "scriptUrl": "https://raw.githubusercontent.com/mangyeu/TV/refs/heads/main/dmo/demo1.js",
         "iconUrl": "https://tvhay.buzz/favicon.png"
