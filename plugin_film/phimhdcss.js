@@ -2,7 +2,7 @@ function getManifest() {
     return JSON.stringify({
         "id": "kkphim",
         "name": "KKPhim + NGUỒN C",
-        "version": "1.1.0",
+        "version": "1.1.1",
         "baseUrl": "https://phimapi.com",
         "iconUrl": "https://raw.githubusercontent.com/youngbi/repo/main/plugins/kkphim.png",
         "isEnabled": true,
@@ -228,20 +228,37 @@ function parseNguoncListResponse(apiResponseJson) {
 function parseNguoncMovieDetail(apiResponseJson) {
     try {
         var response = JSON.parse(apiResponseJson || "{}");
-        var movie = response.movie || response.data && response.data.movie || response.data || {};
-        var episodeGroups = movie.episodes || response.episodes || [];
+        var movie = response.movie || (response.data && response.data.movie) || response.data || {};
+        var episodeGroups = movie.episodes || response.episodes || (response.data && response.data.episodes) || [];
+        if (!Array.isArray(episodeGroups)) episodeGroups = [];
         var servers = [];
+
         episodeGroups.forEach(function (group, index) {
-            var episodeItems = group.items || group.server_data || [];
-            var episodes = episodeItems.map(function (ep) {
-                var embed = ep.embed || ep.link_embed || ep.url || "";
-                var m3u8 = ep.link_m3u8 || ep.m3u8 || "";
+            if (!group) return;
+            var episodeItems = group.items || group.server_data || group.list || [];
+            if (!Array.isArray(episodeItems)) episodeItems = [];
+            var episodes = episodeItems.map(function (ep, epIndex) {
+                if (!ep) return null;
+                var m3u8 = ep.link_m3u8 || ep.m3u8 || ep.hls || ep.video || "";
+                var embed = ep.embed || ep.link_embed || ep.url || ep.link || "";
                 var stream = m3u8 || embed;
                 if (!stream) return null;
-                return { id: stream, name: ep.name || ep.title || String(index + 1), slug: ep.slug || "", m3u8: m3u8, embed: embed };
+                return {
+                    id: stream,
+                    name: ep.name || ep.title || ep.episode || String(epIndex + 1),
+                    slug: ep.slug || "",
+                    m3u8: m3u8,
+                    embed: embed
+                };
             }).filter(Boolean);
-            if (episodes.length) servers.push({ name: group.server_name || group.name || ("Server " + (index + 1)), episodes: episodes });
+            if (episodes.length) {
+                servers.push({
+                    name: group.server_name || group.name || group.title || ("Server " + (index + 1)),
+                    episodes: episodes
+                });
+            }
         });
+
         var categories = movie.category;
         if (Array.isArray(categories)) categories = categories.map(function (c) { return c.name || c; }).join(", ");
         var countries = movie.country;
@@ -313,7 +330,7 @@ function parseSearchResponse(apiResponseJson) {
 function parseMovieDetail(apiResponseJson) {
     try {
         var response = JSON.parse(apiResponseJson);
-        if (response && response.movie && Array.isArray(response.movie.episodes)) return parseNguoncMovieDetail(apiResponseJson);
+        if (response && ((response.movie && Array.isArray(response.movie.episodes)) || Array.isArray(response.episodes) || (response.data && Array.isArray(response.data.episodes)))) return parseNguoncMovieDetail(apiResponseJson);
         var movie = response.movie || {};
         var episodes = Array.isArray(response.episodes) ? response.episodes : [];
         var cdnDomain = extractCdnDomain(response);
@@ -410,7 +427,7 @@ function resolveStreamData(streamInput) {
         isDirectStream: isHlsOrDirect,
         headers: {
             "User-Agent": "Mozilla/5.0",
-            "Referer": raw.indexOf("nguonc") >= 0 ? "https://phim.nguonc.com/" : "https://phimapi.com/"
+            "Referer": raw.indexOf("nguonc") >= 0 || raw.indexOf("nguon") >= 0 ? "https://phim.nguonc.com/" : "https://phimapi.com/"
         },
         subtitles: []
     });
@@ -419,7 +436,7 @@ function resolveStreamData(streamInput) {
 function parseDetailResponse(apiResponseJson) {
     try {
         var parsed = JSON.parse(apiResponseJson || "{}");
-        var candidate = parsed.url || parsed.streamUrl || parsed.link_m3u8 || parsed.link_embed || parsed.embed || "";
+        var candidate = parsed.url || parsed.streamUrl || parsed.link_m3u8 || parsed.m3u8 || parsed.hls || parsed.video || parsed.link_embed || parsed.embed || parsed.link || "";
         return resolveStreamData(candidate);
     } catch (e) {
         return resolveStreamData(apiResponseJson);
