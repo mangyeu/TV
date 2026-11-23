@@ -1,4 +1,4 @@
-{
+l{
   "version": 1,
   "plugins": [
     {
@@ -10,9 +10,9 @@
         "iconUrl": "https://javhdz.today/favicon.ico"
     },
     {
-        "id": "nguonc_test",
-        "name": "NguonC - Test",
-        "version": "0.1.0",
+        "id": "nguonc",
+        "name": "Phim NguonC",
+        "version": "1.1.5",
         "baseUrl": "https://phim.nguonc.com",
         "scriptUrl": "https://raw.githubusercontent.com/mangyeu/TV/refs/heads/main/dmo/demo1.js",
       "iconUrl": "https://tvhay.buzz/favicon.png"
