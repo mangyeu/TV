@@ -2,15 +2,20 @@
 // CONFIGURATION & METADATA
 // =============================================================================
 
+var BASE_URL = "https://javcc.me";
+
 function getManifest() {
     return JSON.stringify({
         "id": "javcc",
         "name": "JAVCC",
-        "version": "1.0.2",
-        "baseUrl": "https://javcc.me",
-        "iconUrl": "https://javcc.me/wp-content/themes/retrotube/assets/stylesheets/font-awesome/css/font-awesome.min.css",
-        "isEnabled": true,
-        "type": "MOVIE"
+        "version": "1.0.3",
+        "baseUrl": BASE_URL,
+        "iconUrl": BASE_URL + "/favicon.ico",
+       "isEnabled": true,
+        "isAdult": true,
+        "type": "MOVIE",
+        "layoutType": "HORIZONTAL",
+        "playerType": "embed"
     });
 }
 
@@ -45,8 +50,6 @@ function getFilterConfig() {
 // URL GENERATION
 // =============================================================================
 
-var BASE_URL = "https://javcc.me";
-
 function getUrlList(slug, filtersJson) {
     try {
         var filters = JSON.parse(filtersJson || "{}");
@@ -75,12 +78,16 @@ function getUrlList(slug, filtersJson) {
 }
 
 function getUrlSearch(keyword, filtersJson) {
-    var filters = JSON.parse(filtersJson || "{}");
-    var page = parseInt(filters.page, 10) || 1;
-    var q = encodeURIComponent(keyword || "");
-    return page > 1
-        ? BASE_URL + "/page/" + page + "/?s=" + q
-        : BASE_URL + "/?s=" + q;
+    try {
+        var filters = JSON.parse(filtersJson || "{}");
+        var page = parseInt(filters.page, 10) || 1;
+        var q = encodeURIComponent(keyword || "");
+        return page > 1
+            ? BASE_URL + "/page/" + page + "/?s=" + q
+            : BASE_URL + "/?s=" + q;
+    } catch (e) {
+        return BASE_URL + "/?s=" + encodeURIComponent(keyword || "");
+    }
 }
 
 function getUrlDetail(slug) {
@@ -109,18 +116,22 @@ function getUrlYears() {
 function decodeHtmlEntities(str) {
     if (!str) return "";
     return String(str)
-        .replace(/’/g, "'")
-        .replace(/‘/g, "'")
-        .replace(/“/g, '"')
-        .replace(/”/g, '"')
-        .replace(/–/g, "-")
-        .replace(/—/g, "--")
-        .replace(/&/g, "&")
-        .replace(/&/g, "&")
-        .replace(/"/g, '"')
-        .replace(/'/g, "'")
-        .replace(/</g, "<")
-        .replace(/>/g, ">")
+        .replace(/&#(\d+);/g, function (_, dec) {
+            return String.fromCharCode(parseInt(dec, 10));
+        })
+        .replace(/&#x([0-9a-fA-F]+);/g, function (_, hex) {
+            return String.fromCharCode(parseInt(hex, 16));
+        })
+        .replace(/&/gi, "&")
+        .replace(/"/gi, '"')
+        .replace(/'|'/gi, "'")
+        .replace(/</gi, "<")
+        .replace(/>/gi, ">")
+        .replace(/–/gi, "-")
+        .replace(/—/gi, "--")
+        .replace(/‘|’/gi, "'")
+        .replace(/“|”/gi, '"')
+        .replace(/ /gi, " ")
         .replace(/<[^>]*>/g, "")
         .trim();
 }
@@ -148,20 +159,20 @@ function parseListResponse(htmlOrJson) {
             var titleAttrMatch = inner.match(/<a[^>]*title=["']([^"']+)["']/i);
             var imgMatch = inner.match(/<img[^>]+(?:data-src|src)=["']([^"']+)["']/i);
             var durationMatch = inner.match(/<span[^>]*class=["'][^"']*duration[^"']*["'][^>]*>([\s\S]*?)<\/span>/i);
-            var viewsMatch = inner.match(/<span[^>]*class=["'][^"']*views[^"']*["'][^>]*>([\s\S]*?)<\/span>/i);
             var catMatch = fullTag.match(/\bcategory-([a-z0-9-]+)\b/i);
 
             var href = hrefMatch ? hrefMatch[1] : "";
             var rawTitle = titleSpanMatch ? titleSpanMatch[1] : (titleAttrMatch ? titleAttrMatch[1] : "");
             var title = decodeHtmlEntities(rawTitle);
             var slug = extractSlugFromUrl(href);
+            var poster = getPosterUrl(imgMatch ? imgMatch[1] : "");
 
             if (title || slug) {
                 movies.push({
                     id: slug || href,
                     title: title,
-                    posterUrl: getPosterUrl(imgMatch ? imgMatch[1] : ""),
-                    backdropUrl: getPosterUrl(imgMatch ? imgMatch[1] : ""),
+                    posterUrl: poster,
+                    backdropUrl: poster,
                     year: 0,
                     quality: "",
                     episode_current: durationMatch ? decodeHtmlEntities(durationMatch[1]) : "",
@@ -170,8 +181,11 @@ function parseListResponse(htmlOrJson) {
             }
         }
 
+        var currentPageMatch = html.match(/<span[^>]*class=["'][^"']*page-numbers\s+current[^"']*["'][^>]*>(\d+)<\/span>/i);
+        var currentPage = currentPageMatch ? parseInt(currentPageMatch[1], 10) : 1;
+
         var pageMatches = html.match(/\/page\/(\d+)\//g) || [];
-        var maxPage = 1;
+        var maxPage = currentPage;
         for (var i = 0; i < pageMatches.length; i++) {
             var numMatch = pageMatches[i].match(/\/page\/(\d+)\//);
             if (numMatch) {
@@ -183,7 +197,7 @@ function parseListResponse(htmlOrJson) {
         return JSON.stringify({
             items: movies,
             pagination: {
-                currentPage: 1,
+                currentPage: currentPage,
                 totalPages: maxPage,
                 totalItems: movies.length,
                 itemsPerPage: movies.length || 24
@@ -258,13 +272,14 @@ function parseMovieDetail(htmlOrJson) {
         var title = decodeHtmlEntities(
             (h1Match && h1Match[1]) || (titleMatch && titleMatch[1]) || ""
         );
+        var poster = getPosterUrl(imgMatch ? imgMatch[1] : "");
 
         return JSON.stringify({
             id: "",
             title: title,
             originName: "",
-            posterUrl: getPosterUrl(imgMatch ? imgMatch[1] : ""),
-            backdropUrl: getPosterUrl(imgMatch ? imgMatch[1] : ""),
+            posterUrl: poster,
+            backdropUrl: poster,
             description: decodeHtmlEntities(descMatch ? descMatch[1] : ""),
             year: 0,
             rating: 0,
@@ -287,11 +302,26 @@ function parseMovieDetail(htmlOrJson) {
     }
 }
 
-function parseDetailResponse(apiResponseJson) {
+function parseDetailResponse(input) {
+    var rawUrl = "";
+    try {
+        if (typeof input === "string" && input.trim().indexOf("{") === 0) {
+            var parsed = JSON.parse(input);
+            rawUrl = parsed.url || parsed.id || "";
+        } else {
+            rawUrl = String(input || "").trim();
+        }
+    } catch (e) {
+        rawUrl = String(input || "").trim();
+    }
+
+    var directUrl = /\.(m3u8|mp4)(\?.*)?$/i.test(rawUrl) ? rawUrl : "";
+
     return JSON.stringify({
-        url: "",
+        url: directUrl,
+        embedUrl: directUrl ? "" : rawUrl,
         headers: {
-            "User-Agent": "Mozilla/5.0",
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
             "Referer": BASE_URL + "/"
         },
         subtitles: []
