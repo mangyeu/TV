@@ -2,17 +2,26 @@
     "version": 1,
     "plugins": [
         {
-         "id": "kkphim",
-        "name": "KKPhim + NGUỒN C",
-        "version": "1.1.1",
-        "baseUrl": "https://phimapi.com",
-        "scriptUrl": "https://raw.githubusercontent.com/mangyeu/TV/refs/heads/main/plugin_film/phimhdcss.js",
-        "iconUrl": "https://raw.githubusercontent.com/mangyeu/TV/refs/heads/main/plugin_film/favicon.ico"
+            "id": "kkphim",
+            "name": "KKPhim + NGUỒN C",
+            "version": "1.1.1",
+            "baseUrl": "https://phimapi.com",
+            "scriptUrl": "https://raw.githubusercontent.com/mangyeu/TV/refs/heads/main/plugin_film/phimhdcss.js",
+            "iconUrl": "https://raw.githubusercontent.com/mangyeu/TV/refs/heads/main/plugin_film/favicon.ico"
         },
         {
-        "id": "phimmoichillz",
-        "name": "phimmoichillz",
-        "version": "1.0",
+            "id": "nguonc",
+            "name": "Phim NguonC",
+            "version": "1.0.0",
+            "baseUrl": "https://phim.nguonc.com",
+            "scriptUrl": "https://raw.githubusercontent.com/mangyeu/TV/refs/heads/main/plugin_film/nguonc_plugin.js",
+            "iconUrl": "https://raw.githubusercontent.com/mangyeu/TV/refs/heads/main/plugin_film/nguonc.ico"
+        },
+        {
+            "id": "phimmoichillz",
+            "name": "phimmoichillz",
+            "version": "1.0",
+            "baseUrl": "https://phimmoichillz.top",
             "scriptUrl": "https://raw.githubusercontent.com/mangyeu/TV/refs/heads/main/plugin_film/phimmoichillz.js",
             "iconUrl": "https://raw.githubusercontent.com/mangyeu/TV/refs/heads/main/plugin_film/icon-phimmoichill.ico"
         }
