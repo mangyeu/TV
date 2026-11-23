@@ -6,7 +6,7 @@ function getManifest() {
     return JSON.stringify({
         "id": "nguonc",
         "name": "Phim NguonC",
-        "version": "1.1.7",
+        "version": "1.1.8",
         "baseUrl": "https://phim.nguonc.com",
         "iconUrl": "https://raw.githubusercontent.com/youngbi/repo/main/plugins/nguonC.png",
         "isEnabled": true,
@@ -197,21 +197,35 @@ function parseSearchResponse(apiResponseJson) {
 
 function parseMovieDetail(apiResponseJson) {
     try {
-        var response = JSON.parse(apiResponseJson);
+        var response = typeof apiResponseJson === "string"
+            ? JSON.parse(apiResponseJson)
+            : (apiResponseJson || {});
+
         // Normalize movie object (supports standard and potential variants)
         var movie = response.movie || response.data?.item || response.data || {};
+
+        // Phân luồng & chuẩn hóa Movie ID theo thứ tự ưu tiên từ các nguồn API khác nhau
+        var movieId = String(
+            movie.id ||
+            movie._id ||
+            movie.movie_id ||
+            response.id ||
+            response._id ||
+            movie.slug ||
+            ""
+        ).trim();
 
         // Normalize episodes
         var rawEpisodes = movie.episodes || response.episodes || response.data?.item?.episodes || [];
 
         var servers = [];
         if (Array.isArray(rawEpisodes)) {
-            rawEpisodes.forEach(function (server) {
+            rawEpisodes.forEach(function (server, serverIndex) {
                 var episodes = [];
                 var serverItems = server.items || server.server_data || [];
 
                 if (Array.isArray(serverItems)) {
-                    serverItems.forEach(function (ep) {
+                    serverItems.forEach(function (ep, epIndex) {
                         var embed = ep.embed || ep.link_embed || "";
                         var m3u8 = ep.m3u8 || ep.link_m3u8 || "";
 
@@ -220,10 +234,14 @@ function parseMovieDetail(apiResponseJson) {
                         var link = embed || m3u8;
 
                         if (link) {
+                            var epSlug = ep.slug || ep.episode_slug || ("tap-" + (epIndex + 1));
+
                             episodes.push({
                                 id: link,
+                                movieId: movieId,
+                                streamKey: movieId ? (movieId + ":" + serverIndex + ":" + epSlug) : epSlug,
                                 name: ep.name || ep.episode_name || "",
-                                slug: ep.slug || ep.episode_slug || ""
+                                slug: epSlug
                             });
                         }
                     });
@@ -239,24 +257,20 @@ function parseMovieDetail(apiResponseJson) {
         }
 
         return {
-            id: movie.id || movie._id || "",
+            id: movieId,
+            movieId: movieId,
+            slug: movie.slug || "",
             name: movie.name || "",
             original_name: movie.original_name || movie.origin_name || "",
-            slug: movie.slug || "",
-            description: movie.description || movie.content || "",
             thumb_url: movie.thumb_url || "",
             poster_url: movie.poster_url || "",
-            year: movie.year || "",
-            total_episodes: movie.total_episodes || movie.episode_total || "",
-            current_episode: movie.current_episode || movie.episode_current || "",
-            quality: movie.quality || "",
-            language: movie.language || movie.lang || "",
             servers: servers
         };
     } catch (e) {
         console.error("parseMovieDetail error:", e);
         return {
             id: "",
+            movieId: "",
             servers: []
         };
     }
