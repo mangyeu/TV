@@ -10,8 +10,8 @@
         "iconUrl": "https://javhdz.today/favicon.ico"
     },
     {
-        "id": "javhd",
-        "name": "JavHD",
+        "id": "javcc",
+        "name": "JAVCC",
         "version": "1.0.2",
         "baseUrl": "https://javcc.me",
         "scriptUrl": "https://raw.githubusercontent.com/mangyeu/TV/refs/heads/main/dmo/demo1.js",
