@@ -381,73 +381,194 @@ function parseMovieHtml(html) {
     if (labelElement) {
         status = labelElement.textContent.trim();
     }
+function parseMovieDetail(html) {
+    const doc = new DOMParser().parseFromString(html, "text/html");
 
-    // Fallback: tìm nội dung sau từ khóa Label
-    if (!status) {
-        var labelMatch = html.match(
-            /Label\s*:\s*<[^>]*>(.*?)<\/[^>]+>/i
+    // Helpers
+    const text = (selector) =>
+        doc.querySelector(selector)?.textContent?.trim() || "";
+
+    const attr = (selector, attribute) =>
+        doc.querySelector(selector)?.getAttribute(attribute) || "";
+
+    const cleanText = (value) =>
+        (value || "")
+            .replace(/\s+/g, " ")
+            .trim();
+
+    // --------------------------------
+    // TITLE
+    // --------------------------------
+
+    const title =
+        text(".movie-title") ||
+        text("h1") ||
+        text("h2") ||
+        text("title");
+
+    // --------------------------------
+    // DESCRIPTION
+    // --------------------------------
+
+    const description =
+        text(".description") ||
+        text(".movie-description") ||
+        text(".detail-description") ||
+        text(".content-description");
+
+    // --------------------------------
+    // THUMBNAIL
+    // --------------------------------
+
+    const thumbnail =
+        attr(".movie-poster img", "src") ||
+        attr(".poster img", "src") ||
+        attr("meta[property='og:image']", "content") ||
+        attr("video", "poster") ||
+        attr("img", "src");
+
+    // --------------------------------
+    // VIDEO / TRAILER
+    // --------------------------------
+
+    const video = doc.querySelector("video");
+
+    const trailerSources = video
+        ? [...video.querySelectorAll("source")].map(source => ({
+            type: source.getAttribute("type") || "",
+            label: source.getAttribute("label") || "",
+            resolution: source.getAttribute("res") || "",
+            url: source.getAttribute("src") || ""
+        }))
+        : [];
+
+    const trailer = video
+        ? {
+            id: video.id || null,
+            poster: video.getAttribute("poster") || null,
+            controls: video.hasAttribute("controls"),
+            preload: video.getAttribute("preload") || null,
+            sources: trailerSources
+        }
+        : null;
+
+    // --------------------------------
+    // SERVER BUTTONS
+    // --------------------------------
+
+    const serverSelectors = [
+        ".button_choice_server",
+        ".server-item",
+        ".server-button",
+        ".server-option",
+        "[data-embed]",
+        "[data-embeds]"
+    ].join(",");
+
+    const serverElements = [
+        ...doc.querySelectorAll(serverSelectors)
+    ];
+
+    // Avoid duplicate elements matched by multiple selectors
+    const uniqueServerElements = [...new Set(serverElements)];
+
+    const servers = uniqueServerElements.map((element, index) => {
+        const name = cleanText(
+            element.getAttribute("data-name") ||
+            element.getAttribute("title") ||
+            element.textContent
         );
 
-        if (labelMatch) {
-            status = labelMatch[1].replace(/<[^>]*>/g, "").trim();
+        const hasSingleEmbed =
+            element.hasAttribute("data-embed");
+
+        const hasMultipleEmbeds =
+            element.hasAttribute("data-embeds");
+
+        let type = "unknown";
+
+        if (hasMultipleEmbeds) {
+            type = "multi";
+        } else if (hasSingleEmbed) {
+            type = "single";
         }
-    }
 
-    // =========================
-    // CATEGORY
-    // =========================
-    var category = "";
+        return {
+            id: index,
+            name: name || `Server ${index + 1}`,
+            type,
 
-    var categoryElement = doc.querySelector(
-        '[class*="fa-th-list"]'
-    );
+            player: element.getAttribute("data-player"),
 
-    if (categoryElement) {
-        var parent = categoryElement.parentElement;
+            active:
+                element.classList.contains("active") ||
+                element.classList.contains("selected"),
 
-        if (parent) {
-            category = parent.textContent.trim();
-        }
-    }
+            disabled:
+                element.classList.contains("disabled") ||
+                element.hasAttribute("disabled"),
 
-    // =========================
-    // SERVER NAMES
-    // =========================
-    var serverNames = [];
-
-    doc.querySelectorAll(".button_choice_server").forEach(function(button) {
-        var name = button.getAttribute("data-name");
-
-        if (name) {
-            serverNames.push(name.trim());
-        }
+            attributes: {
+                hasEmbed: hasSingleEmbed,
+                hasEmbeds: hasMultipleEmbeds
+            }
+        };
     });
 
-    // =========================
-    // PLAYER ELEMENT
-    // =========================
-    var player = doc.querySelector("#main-player");
+    // --------------------------------
+    // CATEGORIES
+    // --------------------------------
 
-    var playerSrc = player
-        ? (player.getAttribute("src") || "")
-        : "";
+    const categories = [
+        ...doc.querySelectorAll(
+            ".category a, .categories a, .genre a"
+        )
+    ]
+        .map(element => cleanText(element.textContent))
+        .filter(Boolean);
 
-    // Không tìm src toàn bộ HTML để tránh lấy nhầm logo,
-    // poster, quảng cáo hoặc ảnh khác.
-    if (!playerSrc && player) {
-        playerSrc = player.getAttribute("data-src") || "";
-    }
+    // --------------------------------
+    // TAGS
+    // --------------------------------
 
-    // =========================
+    const tags = [
+        ...doc.querySelectorAll(".tag a, .tags a")
+    ]
+        .map(element => cleanText(element.textContent))
+        .filter(Boolean);
+
+    // --------------------------------
+    // STATUS
+    // --------------------------------
+
+    const status =
+        text(".movie-status") ||
+        text(".status") ||
+        null;
+
+    // --------------------------------
     // OUTPUT
-    // =========================
+    // --------------------------------
+
     return {
-        title: title,
-        thumb: thumb,
-        status: status,
-        category: category,
-        serverNames: serverNames,
-        playerSrc: playerSrc
+        title,
+        description,
+        thumbnail,
+
+        trailer,
+
+        servers,
+
+        categories,
+        tags,
+
+        status,
+
+        metadata: {
+            pageTitle: doc.title || "",
+            serverCount: servers.length,
+            trailerAvailable: trailer !== null
+        }
     };
 }
 
