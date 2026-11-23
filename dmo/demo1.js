@@ -6,7 +6,7 @@ function getManifest() {
     return JSON.stringify({
         "id": "avdbapi",
         "name": "JAVHD",
-        "version": "1.0.3",
+        "version": "1.0.8",
         "baseUrl": "https://avdbapi.com/api.php/provide/vod",
         "iconUrl": "https://avdbapi.com/favicon.ico",
         "isEnabled": true,
