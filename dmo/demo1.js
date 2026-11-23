@@ -1,4 +1,3 @@
-
 // =============================================================================
 // CONFIGURATION & METADATA
 // =============================================================================
@@ -7,9 +6,9 @@ function getManifest() {
     return JSON.stringify({
         "id": "javhd",
         "name": "JavHD",
-        "version": "1.0.6",
-        "baseUrl": "https://javhdz.today",
-        "iconUrl": "https://javhdz.today/favicon.ico",
+        "version": "1.0.0",
+        "baseUrl": "https://javcc.me",
+        "iconUrl": "https://javcc.me/favicon.ico",
         "isEnabled": true,
         "isAdult": true,
         "type": "VIDEO",
@@ -91,16 +90,16 @@ function getUrlList(slug, filtersJson) {
 
     var finalUrl = "";
     if (filters.category) {
-        finalUrl = "https://javhdz.today/" + filters.category + "/" + sortPath;
+        finalUrl = "https://javcc.me/" + filters.category + "/" + sortPath;
     } else if (!slug || slug === 'recent') {
-        finalUrl = "https://javhdz.today/recent/";
+        finalUrl = "https://javcc.me/recent/";
     } else if (slug.indexOf("http") === 0) {
         finalUrl = slug.replace(/\/+$/, '') + '/';
     } else {
         if (slug.indexOf("/") === 0) {
             slug = slug.replace(/^\/+/, '').replace(/\/+$/, '');
         }
-        finalUrl = "https://javhdz.today/" + slug + "/" + sortPath;
+        finalUrl = "https://javcc.me/" + slug + "/" + sortPath;
     }
 
     var params = [];
@@ -121,7 +120,7 @@ function getUrlList(slug, filtersJson) {
 function getUrlSearch(keyword, filtersJson) {
     var filters = JSON.parse(filtersJson || "{}");
     var page = parseInt(filters.page) || 1;
-    var url = "https://javhdz.today/search/video/?s=" + encodeURIComponent(keyword) + "&ajax=1";
+    var url = "https://javcc.me/search/video/?s=" + encodeURIComponent(keyword) + "&ajax=1";
     if (page > 1) {
         url += "&page=" + page;
     }
@@ -130,13 +129,13 @@ function getUrlSearch(keyword, filtersJson) {
 
 function getUrlDetail(slug) {
     if (slug.indexOf("http") === 0) return slug;
-    if (slug.indexOf("/") === 0) return "https://javhdz.today" + slug;
-    return "https://javhdz.today/" + slug;
+    if (slug.indexOf("/") === 0) return "https://javcc.me" + slug;
+    return "https://javcc.me/" + slug;
 }
 
-function getUrlCategories() { return "https://javhdz.today/categories/"; }
-function getUrlCountries() { return "https://javhdz.today/"; }
-function getUrlYears() { return "https://javhdz.today/"; }
+function getUrlCategories() { return "https://javcc.me/categories/"; }
+function getUrlCountries() { return "https://javcc.me/"; }
+function getUrlYears() { return "https://javcc.me/"; }
 
 // =============================================================================
 // PARSERS
@@ -321,166 +320,100 @@ function parseSearchResponse(html) {
 
 function parseMovieDetail(html) {
     try {
-        var titleMatch = html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i);
-        var title = titleMatch
-            ? titleMatch[1].replace(/<[^>]+>/g, "").trim()
-            : "";
+        var titleMatch = html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/);
+        var title = titleMatch ? titleMatch[1].trim() : "";
 
-        var descMatch = html.match(
-            /<p[^>]*class=["'][^"']*description[^"']*["'][^>]*>([\s\S]*?)<\/p>/i
-        );
-
-        var description = descMatch
-            ? descMatch[1].replace(/<[^>]+>/g, "").trim()
-            : "";
+        var descMatch = html.match(/<p[^>]*class=["']description["'][^>]*>([\s\S]*?)<\/p>/);
+        var description = descMatch ? descMatch[1].replace(/<[^>]+>/g, '').trim() : "";
 
         var servers = [];
-        var seenUrls = new Set();
 
-        // Base64 decoder
-        function decodeBase64(value) {
+        var serverRegex = /<button[^>]*class=["'][^"']*button_choice_server[^"']*["'][^>]*data-embed=["']([^"']+)["'][^>]*data-name=["']([^"']+)["']/gi;
+        var b64chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+        var serverMatch;
+        var foundServer = false;
+
+        while ((serverMatch = serverRegex.exec(html)) !== null) {
+            var b64url = serverMatch[1];
+            var serverName = serverMatch[2];
+            var decodedUrl = "";
             try {
-                return decodeURIComponent(
-                    Array.prototype.map.call(
-                        atob(value),
-                        function (c) {
-                            return "%" +
-                                ("00" + c.charCodeAt(0).toString(16)).slice(-2);
+                if (typeof atob === 'function') {
+                    decodedUrl = atob(b64url);
+                } else {
+                    var str = String(b64url).replace(/[=]+$/, '');
+                    if (str.length % 4 !== 1) {
+                        for (var bc = 0, bs, buffer, idx = 0; buffer = str.charAt(idx++); ~buffer && (bs = bc % 4 ? bs * 64 + buffer : buffer, bc++ % 4) ? decodedUrl += String.fromCharCode(255 & bs >> (-2 * bc & 6)) : 0) {
+                            buffer = b64chars.indexOf(buffer);
                         }
-                    ).join("")
-                );
-            } catch (e) {
-                try {
-                    return atob(value);
-                } catch (e2) {
-                    return "";
-                }
-            }
-        }
-
-        // Đọc thuộc tính HTML
-        function getAttribute(tag, attribute) {
-            var regex = new RegExp(
-                attribute + "\\s*=\\s*[\"']([^\"']*)[\"']",
-                "i"
-            );
-
-            var match = tag.match(regex);
-
-            return match ? match[1] : "";
-        }
-
-        // Thêm server, tránh trùng
-        function addServer(name, url) {
-            if (!url || typeof url !== "string") return;
-
-            url = url.trim();
-
-            if (!/^https?:\/\//i.test(url)) return;
-            if (seenUrls.has(url)) return;
-
-            seenUrls.add(url);
-
-            servers.push({
-                name: name || "Server " + servers.length,
-                episodes: [{
-                    id: url,
-                    name: "Full",
-                    slug: "full"
-                }]
-            });
-        }
-
-        // Tìm các button server
-        var buttonRegex =
-            /<button\b[^>]*button_choice_server[^>]*>/gi;
-
-        var buttonMatch;
-
-        while ((buttonMatch = buttonRegex.exec(html)) !== null) {
-            var buttonHtml = buttonMatch[0];
-
-            var serverName = getAttribute(buttonHtml, "data-name");
-            var singleEmbed = getAttribute(buttonHtml, "data-embed");
-            var multiEmbed = getAttribute(buttonHtml, "data-embeds");
-
-            // Server sử dụng một URL
-            if (singleEmbed) {
-                var decodedUrl = decodeBase64(singleEmbed);
-
-                addServer(serverName, decodedUrl);
-            }
-
-            // Server sử dụng nhiều URL
-            if (multiEmbed) {
-                var decodedMulti = decodeBase64(multiEmbed);
-
-                try {
-                    var urlList = JSON.parse(decodedMulti);
-
-                    if (Array.isArray(urlList)) {
-                        urlList.forEach(function (url, index) {
-                            addServer(
-                                serverName +
-                                (index > 0 ? " " + (index + 1) : ""),
-                                url
-                            );
-                        });
                     }
-                } catch (e) {
-                    // Không xử lý nếu JSON không hợp lệ
+                }
+            } catch (e) { }
+
+            if (decodedUrl) {
+                foundServer = true;
+                servers.push({
+                    name: serverName,
+                    episodes: [{
+                        id: decodedUrl,
+                        name: "Full",
+                        slug: "full"
+                    }]
+                });
+            }
+        }
+
+        // Fallback using the simple indexOf main-player
+        if (!foundServer) {
+            var mainPlayerStr = 'id="main-player"';
+            var idxMain = html.indexOf(mainPlayerStr);
+            if (idxMain !== -1) {
+                var srcStr = 'src="';
+                var idxSrc = html.indexOf(srcStr, idxMain);
+                if (idxSrc !== -1 && idxSrc - idxMain < 500) {
+                    var startUrl = idxSrc + srcStr.length;
+                    var endUrl = html.indexOf('"', startUrl);
+                    if (endUrl !== -1) {
+                        var embedUrl = html.substring(startUrl, endUrl);
+                        servers.push({
+                            name: "Embed Server",
+                            episodes: [{
+                                id: embedUrl,
+                                name: "Full",
+                                slug: "full"
+                            }]
+                        });
+                        foundServer = true;
+                    }
                 }
             }
         }
 
-        // Fallback: main-player
-        if (servers.length === 0) {
-            var mainPlayerMatch = html.match(
-                /<[^>]+id=["']main-player["'][^>]*>/i
-            );
-
-            if (mainPlayerMatch) {
-                var mainPlayerTag = mainPlayerMatch[0];
-                var mainSrc = getAttribute(mainPlayerTag, "src");
-
-                if (mainSrc) {
-                    addServer("Main Player", mainSrc);
-                }
+        // Ultimate fallback: direct link extraction
+        if (!foundServer) {
+            var ultimateMatch = html.match(/src=["'](https?:\/\/[a-z0-9A-Z.-]+\/(v|e|embed)\/[^"']+)["']/i);
+            if (ultimateMatch) {
+                servers.push({
+                    name: "Default Embed",
+                    episodes: [{
+                        id: ultimateMatch[1],
+                        name: "Full",
+                        slug: "full"
+                    }]
+                });
+            } else {
+                servers.push({
+                    name: "Unknown",
+                    episodes: [{
+                        id: "",
+                        name: "Full",
+                        slug: "full"
+                    }]
+                });
             }
         }
 
-        // Fallback: video tag
-        if (servers.length === 0) {
-            var videoRegex = /<video\b[^>]*>/gi;
-            var videoMatch;
-
-            while ((videoMatch = videoRegex.exec(html)) !== null) {
-                var videoTag = videoMatch[0];
-                var videoSrc = getAttribute(videoTag, "src");
-
-                if (videoSrc) {
-                    addServer("Video Source", videoSrc);
-                }
-            }
-        }
-
-        return {
-            title: title,
-            description: description,
-            servers: servers
-        };
-
-    } catch (error) {
-        console.error("parseMovieDetail error:", error);
-
-        return {
-            title: "",
-            description: "",
-            servers: []
-        };
-    }
-}
-var thumbMatch = html.match(/<meta[^>]*property=["']og:image["'][^>]*content=["']([^"']+)["']/);
+        var thumbMatch = html.match(/<meta[^>]*property=["']og:image["'][^>]*content=["']([^"']+)["']/);
         var thumb = thumbMatch ? thumbMatch[1] : "";
 
         // Status / Code
@@ -538,7 +471,7 @@ function parseDetailResponse(html, fallbackUrl) {
             url: hostUrl,
             headers: {
                 "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-                "Referer": "https://javhdz.today/"
+                "Referer": "https://javcc.me/"
             },
             subtitles: [],
             isEmbed: true,
@@ -557,7 +490,7 @@ function parseEmbedResponse(html, fallbackUrl) {
         url: fallbackUrl || "",
         headers: {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-            "Referer": "https://javhdz.today/"
+            "Referer": "https://javcc.me/"
         },
         subtitles: [],
         isEmbed: false
