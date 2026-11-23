@@ -6,7 +6,7 @@ function getManifest() {
     return JSON.stringify({
         "id": "nguonc",
         "name": "Phim NguonC",
-        "version": "1.1.6",
+        "version": "1.1.7",
         "baseUrl": "https://phim.nguonc.com",
         "iconUrl": "https://raw.githubusercontent.com/youngbi/repo/main/plugins/nguonC.png",
         "isEnabled": true,
@@ -197,10 +197,7 @@ function parseSearchResponse(apiResponseJson) {
 
 function parseMovieDetail(apiResponseJson) {
     try {
-        var response = typeof apiResponseJson === "string"
-            ? JSON.parse(apiResponseJson)
-            : (apiResponseJson || {});
-
+        var response = JSON.parse(apiResponseJson);
         // Normalize movie object (supports standard and potential variants)
         var movie = response.movie || response.data?.item || response.data || {};
 
