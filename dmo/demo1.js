@@ -2,7 +2,7 @@
 // Playback resolver returns direct URLs exposed by API. Embed links are returned as embed URLs
 // for a player that supports WebView/iframe; this plugin does not bypass embed protections.
 
-var API_BASE = "https://phim.nguonc.com/api";
+var API_BASE = "https://phim.nguonc.com";
 
 function getManifest() {
     return JSON.stringify({
