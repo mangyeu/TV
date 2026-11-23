@@ -18,6 +18,14 @@
             "iconUrl": "https://raw.githubusercontent.com/mangyeu/TV/refs/heads/main/plugin_film/nguonc.ico"
         },
         {
+            "id": "clbpx",
+            "name": "CLB Phim Xưa",
+            "version": "1.0.0",
+            "baseUrl": "https://clbphimxua.com",
+            "scriptUrl": "https://raw.githubusercontent.com/mangyeu/TV/refs/heads/main/plugin_film/clbpx_plugin.js",
+            "iconUrl": "https://raw.githubusercontent.com/mangyeu/TV/refs/heads/main/plugin_film/clbphimxua-logo.ico"
+        },
+        {
             "id": "phimmoichillz",
             "name": "phimmoichillz",
             "version": "1.0",
