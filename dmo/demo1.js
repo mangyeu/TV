@@ -8,7 +8,7 @@ function getManifest() {
     return JSON.stringify({
         "id": "javhd",
         "name": "JavHD",
-        "version": "1.0.4",
+        "version": "1.0.5",
         "baseUrl": BASE_URL,
         "iconUrl": BASE_URL + "/favicon.ico",
         "isEnabled": true,
@@ -26,6 +26,14 @@ function getPrimaryCategories() {
         { name: 'Vietsub', slug: 'jav-sub' },
         { name: 'Nghiệp Dư', slug: 'amateur' }
     ]);
+}
+
+function getMenu() {
+    return getPrimaryCategories();
+}
+
+function getMenus() {
+    return getPrimaryCategories();
 }
 
 function getHomeSections() {
@@ -199,7 +207,6 @@ function parseListResponse(html) {
     var sourceHtml = typeof html === "string" ? html : "";
     var moviesMap = {};
 
-    // Hỗ trợ nhiều cấu trúc thẻ item danh sách video
     var parts = sourceHtml.split(/<(?:li|div|article)[^>]*(?:id=["']video-[^"']*["']|class=["'][^"']*(?:video-block|thumb-block|video-item|video-box)[^"']*["'])[^>]*>/i);
 
     for (var i = 1; i < parts.length; i++) {
