@@ -4,54 +4,51 @@
 
 function getManifest() {
     return JSON.stringify({
-        "id": "clbpx",
-        "name": "CLB Phim Xưa",
-        "version": "1.0.0",
-        "baseUrl": "https://clbphimxua.com",
-        "iconUrl": "https://raw.githubusercontent.com/mangyeu/TV/refs/heads/main/plugin_film/clbphimxua-logo.ico",
+        "id": "ophim",
+        "name": "OPhim",
+        "version": "1.0.4",
+        "baseUrl": "https://ophim1.com",
+        "iconUrl": "https://raw.githubusercontent.com/youngbi/repo/main/plugins/ophim.ico",
         "isEnabled": true,
-        "isAdult": false,
-        "type": "MOVIE",
-        "playerType": "embed",
-        "layoutType": "VERTICAL"
+        "type": "MOVIE"
     });
 }
 
 function getHomeSections() {
     return JSON.stringify([
-        { slug: 'phim-hk-tk', title: 'Phim Châu Á', type: 'Horizontal', path: 'category' },
-        { slug: 'phim-bo-kiem-hiep-co-trang', title: 'Kiếm Hiệp Cô Trang', type: 'Horizontal', path: 'category' },
-        { slug: 'tien-hiep-ngon-tinh', title: 'Tiên Hiệp - Thần Thoại', type: 'Horizontal', path: 'category' },
-        { slug: 'ma-kinh-di', title: 'Phim Ma - Kinh Dị', type: 'Horizontal', path: 'category' },
-        { slug: 'thap-nien-90', title: 'Ký Ức Thập Niên 90', type: 'Horizontal', path: 'category' },
-        { slug: 'home', title: 'Mới Cập Nhật', type: 'Grid', path: '' }
+        { slug: 'phim-chieu-rap', title: 'Phim Chiếu Rạp', type: 'Horizontal', path: 'danh-sach' },
+        { slug: 'phim-bo', title: 'Phim Bộ', type: 'Horizontal', path: 'danh-sach' },
+        { slug: 'phim-le', title: 'Phim Lẻ', type: 'Horizontal', path: 'danh-sach' },
+        { slug: 'hoat-hinh', title: 'Hoạt Hình', type: 'Horizontal', path: 'danh-sach' },
+        { slug: 'tv-shows', title: 'TV Shows', type: 'Horizontal', path: 'danh-sach' },
+        { slug: 'phim-moi', title: 'Phim Mới Cập Nhật', type: 'Grid', path: 'danh-sach' }
     ]);
 }
 
 function getPrimaryCategories() {
     return JSON.stringify([
-        { name: 'Kiếm Hiệp', slug: 'phim-bo-kiem-hiep-co-trang' },
-        { name: 'Tiên Hiệp', slug: 'tien-hiep-ngon-tinh' },
-        { name: 'Tâm Lý', slug: 'tlhd' },
-        { name: 'Ma Kinh Dị', slug: 'ma-kinh-di' },
-        { name: 'Điện Ảnh Châu Á', slug: 'phim-hk-tk' },
-        { name: 'Điện Ảnh Âu Mỹ', slug: 'dien-anh-tay' },
-        { name: 'Hàn Quốc', slug: 'drama-hq-nb' },
-        { name: 'Anime', slug: 'phim-hoat-hinh' },
-        { name: 'TV Series', slug: 'phim-tv' },
-        { name: 'Thập Niên 60', slug: 'thap-nien-60' },
-        { name: 'Thập Niên 70', slug: 'thap-nien-70' },
-        { name: 'Thập Niên 80', slug: 'thap-nien-80' },
-        { name: 'Thập Niên 90', slug: 'thap-nien-90' },
-        { name: 'Thập Niên 2000', slug: 'thap-nien-2000' }
+        { name: 'Phim mới', slug: 'phim-moi' },
+        { name: 'Phim bộ', slug: 'phim-bo' },
+        { name: 'Phim lẻ', slug: 'phim-le' },
+        { name: 'Shows', slug: 'tv-shows' },
+        { name: 'Hoạt hình', slug: 'hoat-hinh' },
+        { name: 'Phim vietsub', slug: 'phim-vietsub' },
+        { name: 'Phim thuyết minh', slug: 'phim-thuyet-minh' },
+        { name: 'Phim lồng tiếng', slug: 'phim-long-tien' },
+        { name: 'Phim bộ đang chiếu', slug: 'phim-bo-dang-chieu' },
+        { name: 'Phim bộ đã hoàn thành', slug: 'phim-bo-hoan-thanh' },
+        { name: 'Phim sắp chiếu', slug: 'phim-sap-chieu' },
+        { name: 'Subteam', slug: 'subteam' },
+        { name: 'Phim chiếu rạp', slug: 'phim-chieu-rap' }
     ]);
 }
 
 function getFilterConfig() {
     return JSON.stringify({
         sort: [
-            { name: 'Cũ nhất', value: 'oldest' },
-            { name: 'Mới nhất', value: 'newest' }
+            { name: 'Mới cập nhật', value: 'update' },
+            { name: 'Năm xuất bản', value: 'year' },
+            { name: 'Lượt xem', value: 'view' }
         ]
     });
 }
@@ -61,309 +58,232 @@ function getFilterConfig() {
 // =============================================================================
 
 function getUrlList(slug, filtersJson) {
-    var filters = JSON.parse(filtersJson || "{}");
-    var page = filters.page || 1;
-    var baseUrl = "https://clbphimxua.com";
+    try {
+        var filters = JSON.parse(filtersJson || "{}");
+        var page = filters.page || 1;
+        var limit = filters.limit || 24; // Default limit
 
-    // URL rule for typical WP sites
-    if (slug === '' || slug === 'home') {
-        if (page > 1) {
-            return baseUrl + "/page/" + page + "/";
+        // Logic ưu tiên: Năm > Danh sách (nhiều thể loại) > Thẻ loại đơn
+        var baseUrl = "https://ophim1.com/v1/api";
+        var finalPath = "";
+
+        var mainLists = ['phim-le', 'phim-bo', 'hoat-hinh', 'tv-shows', 'phim-chieu-rap', 'phim-moi', 'sap-chieu'];
+
+        // Ưu tiên: Slug gốc (Nếu là danh mục chính hoặc Năm) > Năm Filter > Thể loại Filter
+        if (mainLists.indexOf(slug) >= 0) {
+            finalPath = "/danh-sach/" + slug;
+        } else if (/^\d{4}$/.test(slug)) {
+            finalPath = "/nam-phat-hanh/" + slug;
+        } else if (filters.year) {
+            finalPath = "/nam-phat-hanh/" + filters.year;
+        } else if (filters.category) {
+            if (filters.category.indexOf(',') > -1) {
+                finalPath = "/danh-sach/" + filters.category;
+            } else {
+                finalPath = "/the-loai/" + filters.category;
+            }
+        } else if (filters.country) {
+            finalPath = "/quoc-gia/" + filters.country;
+        } else {
+            // Mặc định cho các slug là thể loại đơn lẻ (từ menu home)
+            finalPath = "/the-loai/" + slug;
         }
-        return baseUrl + "/";
-    }
 
-    // Otherwise category
-    if (page > 1) {
-        return baseUrl + "/category/" + slug + "/page/" + page + "/";
+        var url = baseUrl + finalPath + "?page=" + page + "&limit=" + limit;
+
+        // Append supplementary filters (as query params if they weren't used in path)
+        // Lưu ý: Nếu đã dùng Year ở path thì không cần append lại, nhưng append dư cũng không sao với một số API.
+        // Tuy nhiên, logic lọc chéo của Ophim:
+        // /nam-phat-hanh/2024?category=hanh-dong (Lọc phim 2024 có thể loại hành động)
+        // /the-loai/hanh-dong?country=han-quoc (Lọc hành động của Hàn Quốc)
+
+        if (filters.category && finalPath.indexOf(filters.category) === -1) {
+            url += "&category=" + filters.category;
+        }
+        if (filters.country && finalPath.indexOf(filters.country) === -1) {
+            url += "&country=" + filters.country;
+        }
+        if (filters.year && finalPath.indexOf(filters.year) === -1) {
+            url += "&year=" + filters.year;
+        }
+        if (filters.sort) {
+            url += "&sort_field=" + filters.sort;
+        }
+
+        return url;
+    } catch (e) {
+        return "https://ophim1.com/v1/api/danh-sach/" + slug;
     }
-    return baseUrl + "/category/" + slug + "/";
 }
 
 function getUrlSearch(keyword, filtersJson) {
     var filters = JSON.parse(filtersJson || "{}");
     var page = filters.page || 1;
-    // Tự động phân trang khi search (WordPress format)
-    if (page > 1) {
-        return "https://clbphimxua.com/page/" + page + "/?s=" + encodeURIComponent(keyword);
-    }
-    return "https://clbphimxua.com/?s=" + encodeURIComponent(keyword);
+    return "https://ophim1.com/v1/api/tim-kiem?keyword=" + encodeURIComponent(keyword) + "&page=" + page;
 }
 
 function getUrlDetail(slug) {
-    if (!slug) return "";
-    if (slug.indexOf("http") === 0) return slug;
-    return "https://clbphimxua.com/" + slug + "/";
+    return "https://ophim1.com/v1/api/phim/" + slug;
 }
 
-function getUrlCategories() { return ""; }
-function getUrlCountries() { return ""; }
-function getUrlYears() { return ""; }
+function getUrlCategories() { return "https://ophim1.com/v1/api/the-loai"; }
+function getUrlCountries() { return "https://ophim1.com/v1/api/quoc-gia"; }
+function getUrlYears() { return "https://ophim1.com/v1/api/nam-phat-hanh"; }
 
 // =============================================================================
 // PARSERS
 // =============================================================================
 
-function parseListResponse(htmlResponse) {
-    var items = [];
-    var regex = /<article.*?id="post-[^>]+>[\s\S]*?<a href="([^"]+)".*?>\s*<figure[\s\S]*?<img.*?src="([^"]+)".*?alt="([^"]+)".*?>/gi;
-    var match;
-
-    while ((match = regex.exec(htmlResponse)) !== null) {
-        var link = match[1] || "";
-        var thumb = match[2] || "";
-        var title = match[3] || "";
-
-        // Convert title that contains HTML entities
-        title = title.replace(/&#8211;/g, '-').replace(/&#8217;/g, "'");
-
-        var slugMatch = link.match(/clbphimxua\.com\/([^\/]+)\/?/);
-        var slug = slugMatch ? slugMatch[1] : link;
-
-        // Try extracting year conditionally from title if present
-        var year = 0;
-        var yearMatch = title.match(/19\d{2}|20\d{2}/);
-        if (yearMatch) {
-            year = parseInt(yearMatch[0], 10);
-        }
-
-        items.push({
-            id: slug, // Use slug, not full URL, so cross-source lookups work
-            title: title.trim(),
-            posterUrl: thumb,
-            backdropUrl: thumb,
-            year: year
-        });
-    }
-
-    var totalPages = 1;
-    var currentPage = 1;
-    var pageRegex = /<a class="page-numbers".*?>(\d+)<\/a>/gi;
-    var pm;
-    while ((pm = pageRegex.exec(htmlResponse)) !== null) {
-        if (parseInt(pm[1]) > totalPages) {
-            totalPages = parseInt(pm[1]);
-        }
-    }
-    var curPageMatch = htmlResponse.match(/<span aria-current="page" class="page-numbers current">(\d+)<\/span>/i);
-    if (curPageMatch) {
-        currentPage = parseInt(curPageMatch[1]);
-        if (currentPage > totalPages) totalPages = currentPage;
-    }
-
-    return JSON.stringify({
-        items: items,
-        pagination: {
-            currentPage: currentPage,
-            totalPages: totalPages
-        }
-    });
-}
-
-function parseSearchResponse(htmlResponse) {
-    return parseListResponse(htmlResponse);
-}
-
-function parseMovieDetail(htmlResponse) {
+function parseListResponse(apiResponseJson) {
     try {
-        var id = "";
-        var title = "";
-        var posterUrl = "";
-        var description = "";
+        var response = JSON.parse(apiResponseJson);
+        var data = response.data || {};
+        var items = data.items || [];
+        var params = data.params || {};
+        var pagination = params.pagination || {};
 
-        var titleMatch = htmlResponse.match(/<h1 class="single-title">([^<]+)<\/h1>/i);
-        if (titleMatch) title = titleMatch[1].trim();
-
-        // Convert html entities
-        title = title.replace(/&#8211;/g, '-').replace(/&#8217;/g, "'");
-
-        // Try wp-post-image class first (most reliable for WordPress)
-        var posterMatch = htmlResponse.match(/<img[^>]*class="[^"]*wp-post-image[^"]*"[^>]*src="([^"]+)"/i);
-        if (!posterMatch) {
-            // Try src before class
-            posterMatch = htmlResponse.match(/<img[^>]*src="([^"]+)"[^>]*class="[^"]*wp-post-image[^"]*"/i);
-        }
-        if (!posterMatch) {
-            // Fallback: image inside figure inside article
-            posterMatch = htmlResponse.match(/<article[^>]*>[\s\S]*?<figure>\s*<img[^>]*src="([^"]+)"/i);
-        }
-        if (posterMatch) posterUrl = posterMatch[1];
-        else {
-            // Last fallback: og:image
-            var ogImg = htmlResponse.match(/<meta property="og:image" content="([^"]+)"/i);
-            if (ogImg) posterUrl = ogImg[1];
-        }
-
-        var descMatch = htmlResponse.match(/<div class="sigle-post-content-area">([\s\S]*?)<a href/i);
-        if (descMatch) {
-            description = descMatch[1].replace(/<[^>]+>/g, '').trim();
-        }
-
-        var year = 0;
-        var yearMatch = title.match(/(19\d{2}|20\d{2})/);
-        if (yearMatch) year = parseInt(yearMatch[1], 10);
-
-        // Find episode links grouped by server sections
-        // HTML structure: <b>(Lồng Tiếng)<br>..links..</b> <b>(Phụ Đề)<br>..links..</b>
-        var servers = [];
-
-        // Detect server sections by looking for <b> tags containing server names
-        var contentArea = "";
-        var contentMatch = htmlResponse.match(/<div class="sigle-post-content-area">([\s\S]*?)<\/div>/i);
-        if (contentMatch) {
-            contentArea = contentMatch[1];
-        } else {
-            contentArea = htmlResponse;
-        }
-
-        // Known server name patterns
-        var serverPatterns = [
-            { pattern: /\(L\u1ed3ng Ti\u1ebfng\)/gi, name: "Lồng Tiếng" },
-            { pattern: /\(L&#7891;ng Ti&#7871;ng\)/gi, name: "Lồng Tiếng" },
-            { pattern: /\(Ph\u1ee5 \u0110\u1ec1\)/gi, name: "Phụ Đề" },
-            { pattern: /\(Ph&#7909; &#272;&#7873;\)/gi, name: "Phụ Đề" },
-            { pattern: /\(Thuy\u1ebft Minh\)/gi, name: "Thuyết Minh" },
-            { pattern: /\(Thuy&#7871;t Minh\)/gi, name: "Thuyết Minh" }
-        ];
-
-        // Try splitting content by <b> sections containing server names
-        // Strategy: find each <b>...</b> block, detect server name, parse links inside
-        var boldSections = [];
-        var boldRegex = /<b[^>]*>([\s\S]*?)<\/b>/gi;
-        var bMatch;
-        while ((bMatch = boldRegex.exec(contentArea)) !== null) {
-            boldSections.push(bMatch[1]);
-        }
-
-        if (boldSections.length > 0) {
-            // Parse each bold section as a potential server
-            for (var si = 0; si < boldSections.length; si++) {
-                var section = boldSections[si];
-                var serverName = "";
-
-                // Detect server name from section content
-                for (var pi = 0; pi < serverPatterns.length; pi++) {
-                    serverPatterns[pi].pattern.lastIndex = 0;
-                    if (serverPatterns[pi].pattern.test(section)) {
-                        serverName = serverPatterns[pi].name;
-                        break;
-                    }
-                }
-
-                // If no known server name found, try to extract text before first <a> or <br>
-                if (!serverName) {
-                    var headerMatch = section.match(/^\s*\(([^)]+)\)/);
-                    if (headerMatch) {
-                        serverName = headerMatch[1].trim();
-                    }
-                }
-
-                // Parse episode links in this section
-                var sectionEpisodes = [];
-                var sectionLinkRegex = /<a href="(https?:\/\/clbphimxua\.com\/clbpx\.html\?v=[a-zA-Z0-9_-]+)"[^>]*>([\s\S]*?)<\/a>/gi;
-                var slMatch;
-                while ((slMatch = sectionLinkRegex.exec(section)) !== null) {
-                    var epUrl = slMatch[1];
-                    var epLabel = slMatch[2].replace(/<[^>]+>/g, '').trim();
-
-                    if (!epLabel || epLabel.length === 0) {
-                        epLabel = "Phim";
-                    }
-
-                    sectionEpisodes.push({
-                        id: epUrl,
-                        name: epLabel,
-                        slug: epUrl
-                    });
-                }
-
-                if (sectionEpisodes.length > 0) {
-                    servers.push({
-                        name: serverName || ("Server " + (servers.length + 1)),
-                        episodes: sectionEpisodes
-                    });
-                }
-            }
-        }
-
-        // Fallback: if no server sections found, collect all links as one server
-        if (servers.length === 0) {
-            var episodes = [];
-            var allLinksRegex = /<a href="(https?:\/\/clbphimxua\.com\/clbpx\.html\?v=[a-zA-Z0-9_-]+)"[^>]*>([\s\S]*?)<\/a>/gi;
-            var lMatch;
-            while ((lMatch = allLinksRegex.exec(htmlResponse)) !== null) {
-                var epUrl = lMatch[1];
-                var epLabel = lMatch[2].replace(/<[^>]+>/g, '').trim();
-
-                if (!epLabel || epLabel.length === 0) {
-                    epLabel = "Phim";
-                }
-
-                episodes.push({
-                    id: epUrl,
-                    name: epLabel,
-                    slug: epUrl
-                });
-            }
-
-            if (episodes.length === 0) {
-                // Fallback single play button (empty <a> tag with play image)
-                var playBtnRegex = /<a href="(https?:\/\/clbphimxua\.com\/clbpx\.html\?v=[a-zA-Z0-9_-]+)"[^>]*><\/a>/gi;
-                var sMatch;
-                while ((sMatch = playBtnRegex.exec(htmlResponse)) !== null) {
-                    episodes.push({
-                        id: sMatch[1],
-                        name: "Phim",
-                        slug: sMatch[1]
-                    });
-                }
-            }
-
-            if (episodes.length > 0) {
-                servers.push({
-                    name: "Thuyết Minh",
-                    episodes: episodes
-                });
-            }
-        }
+        var movies = items.map(function (item) {
+            return {
+                id: item.slug,
+                title: item.name,
+                posterUrl: getImageUrl(item.thumb_url),
+                backdropUrl: getImageUrl(item.poster_url),
+                year: item.year || 0,
+                quality: item.quality || "",
+                episode_current: item.episode_current || "",
+                lang: item.lang || ""
+            };
+        });
 
         return JSON.stringify({
-            id: id,
-            title: title,
-            posterUrl: posterUrl,
-            backdropUrl: posterUrl,
-            description: description,
-            year: year,
-            rating: 0,
-            quality: "HD",
-            servers: servers,
-            category: "",
-            country: "",
-            director: "",
-            casts: ""
+            items: movies,
+            pagination: {
+                currentPage: pagination.currentPage || 1,
+                totalPages: Math.ceil((pagination.totalItems || 0) / (pagination.totalItemsPerPage || 24)),
+                totalItems: pagination.totalItems || 0,
+                itemsPerPage: pagination.totalItemsPerPage || 24
+            }
         });
     } catch (error) {
-        return "null";
+        return JSON.stringify({ items: [], pagination: { currentPage: 1, totalPages: 1 } });
     }
 }
 
-function parseDetailResponse(htmlResponse, fallbackUrl) {
-    try {
-        var streamUrl = fallbackUrl || "";
+function parseSearchResponse(apiResponseJson) {
+    return parseListResponse(apiResponseJson);
+}
 
-        var customJs = "var style = document.createElement('style');" +
-            "style.innerHTML = '#playback { display: none !important; }';" +
-            "document.head.appendChild(style);";
+function parseMovieDetail(apiResponseJson) {
+    try {
+        var response = JSON.parse(apiResponseJson);
+        var movie = response.movie || response.data?.item || {};
+        var rawEpisodes = response.episodes || response.data?.item?.episodes || [];
+
+        var servers = [];
+        rawEpisodes.forEach(function (server) {
+            var episodes = [];
+            if (server.server_data) {
+                server.server_data.forEach(function (ep) {
+                    episodes.push({
+                        id: ep.link_m3u8 || ep.link_embed,
+                        name: ep.name,
+                        slug: ep.slug
+                    });
+                });
+            }
+            if (episodes.length > 0) {
+                servers.push({ name: server.server_name, episodes: episodes });
+            }
+        });
+
+        var rating = 0;
+        if (movie.tmdb && movie.tmdb.vote_average) {
+            rating = movie.tmdb.vote_average;
+        } else if (movie.imdb && movie.imdb.vote_average) {
+            rating = movie.imdb.vote_average;
+        }
+
+        var categories = (movie.category || []).map(function (c) { return c.name; }).join(", ");
+        var countries = (movie.country || []).map(function (c) { return c.name; }).join(", ");
+        var directors = (movie.director || []).join(", ");
+        var actors = (movie.actor || []).join(", ");
+
+        var tmdbId = movie.tmdb && movie.tmdb.id ? movie.tmdb.id : "";
+        var tmdbSeason = movie.tmdb && movie.tmdb.season ? parseInt(movie.tmdb.season, 10) : 0;
+        var tmdbType = movie.tmdb && movie.tmdb.type ? movie.tmdb.type : "";
+
+        return JSON.stringify({
+            id: movie.slug,
+            title: movie.name,
+            originName: movie.origin_name || "",
+            posterUrl: getImageUrl(movie.thumb_url),
+            backdropUrl: getImageUrl(movie.poster_url),
+            description: (movie.content || "").replace(/<[^>]*>/g, ""),
+            year: movie.year || 0,
+            rating: rating,
+            quality: movie.quality || "",
+            servers: servers,
+            episode_current: movie.episode_current || "",
+            lang: movie.lang || "",
+            category: categories,
+            country: countries,
+            director: directors,
+            casts: actors,
+            tmdbId: String(tmdbId),
+            tmdbSeason: tmdbSeason || 0,
+            tmdbType: tmdbType || ""
+        });
+    } catch (error) { return "null"; }
+}
+
+function parseDetailResponse(apiResponseJson) {
+    try {
+        var response = JSON.parse(apiResponseJson);
+        var movie = response.movie || response.data?.item || {};
+        var episodes = response.episodes || response.data?.item?.episodes || [];
+
+        var streamUrl = "";
+        if (episodes.length > 0) {
+            var firstServer = episodes[0];
+            if (firstServer.server_data && firstServer.server_data.length > 0) {
+                streamUrl = firstServer.server_data[0].link_m3u8 || firstServer.server_data[0].link_embed || "";
+            }
+        }
 
         return JSON.stringify({
             url: streamUrl,
-            headers: {
-                "Referer": "https://clbphimxua.com/",
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-                "Custom-Js": customJs
-            }
+            headers: { "User-Agent": "Mozilla/5.0", "Referer": "https://ophim1.com" },
+            subtitles: []
         });
-    } catch (error) {
-        return JSON.stringify({ url: "", headers: {} });
-    }
+    } catch (error) { return "{}"; }
+}
+
+function parseCategoriesResponse(apiResponseJson) {
+    try {
+        var response = JSON.parse(apiResponseJson);
+        var items = response.data?.items || [];
+        return JSON.stringify(items.map(function (i) { return { name: i.name, slug: i.slug }; }));
+    } catch (e) { return "[]"; }
+}
+
+function parseCountriesResponse(apiResponseJson) {
+    try {
+        var response = JSON.parse(apiResponseJson);
+        var items = response.data?.items || [];
+        return JSON.stringify(items.map(function (i) { return { name: i.name, value: i.slug }; }));
+    } catch (e) { return "[]"; }
+}
+
+function parseYearsResponse(apiResponseJson) {
+    try {
+        var response = JSON.parse(apiResponseJson);
+        var items = response.data?.items || [];
+        return JSON.stringify(items.map(function (i) { return { name: i.year.toString(), value: i.year.toString() }; }));
+    } catch (e) { return "[]"; }
+}
+
+function getImageUrl(path) {
+    if (!path) return "";
+    if (path.indexOf("http") === 0) return path;
+    return "https://img.ophim.live/uploads/movies/" + path;
 }
