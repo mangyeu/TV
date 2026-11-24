@@ -10,9 +10,9 @@
         "iconUrl": "https://javhdz.today/favicon.ico"
     },
     {
-        "id": "missav",
-        "name": "MissAV",
-        "version": "1.0.1",
+        "id": "missav2",
+        "name": "MissAV 2",
+        "version": "1.0.2",
         "baseUrl": "https://missav.media",
         "scriptUrl": "https://raw.githubusercontent.com/mangyeu/TV/refs/heads/main/dmo/missav.js",
         "iconUrl": "https://raw.githubusercontent.com/mangyeu/TV/refs/heads/main/dmo/missav.ico"
