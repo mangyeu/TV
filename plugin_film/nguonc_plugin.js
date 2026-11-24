@@ -224,10 +224,7 @@ function parseMovieDetail(jsonText) {
  */
 function parseDetailResponse(jsonText) {
     try {
-        // Thử parse JSON xem có phải API trả về không
         var data = JSON.parse(jsonText);
-        
-        // Nếu là response chi tiết phim, thử lấy link từ episode đầu tiên
         var movie = data.movie || data;
         var episodes = movie.episodes || [];
         
@@ -235,39 +232,29 @@ function parseDetailResponse(jsonText) {
             var items = episodes[s].items || episodes[s].list || [];
             for (var e = 0; e < items.length; e++) {
                 var ep = items[e];
-                var url = ep.link_m3u8 || ep.link_embed || "";
-                if (url) {
-                    // Nếu là link m3u8/mp4 trực tiếp
-                    if (url.indexOf('.m3u8') !== -1 || url.indexOf('.mp4') !== -1) {
-                        return JSON.stringify({
-                            url: url,
-                            headers: { "Referer": BASE_URL + "/" },
-                            isEmbed: false,
-                            mimeType: url.indexOf('.m3u8') !== -1 ? "application/x-mpegURL" : "video/mp4"
-                        });
-                    }
-                    // Link embed → WebView
+                var url = ep.link_m3u8 || ep.link_embed || ep.id || "";
+                if (!url) continue;
+                
+                // Nếu là liên kết .m3u8/.mp4 trực tiếp
+                if (url.indexOf('.m3u8') !== -1 || url.indexOf('.mp4') !== -1) {
                     return JSON.stringify({
                         url: url,
-                        headers: { "Referer": BASE_URL + "/" },
-                        isEmbed: true
+                        headers: { "Referer": "https://phim.nguonc.com/" },
+                        isEmbed: false,
+                        mimeType: url.indexOf('.m3u8') !== -1 ? "application/x-mpegURL" : "video/mp4"
                     });
                 }
+                
+                // Các liên kết khác (bao gồm embed.php) đều xử lý theo nhúng
+                return JSON.stringify({
+                    url: url,
+                    headers: { "Referer": "https://phim.nguonc.com/" },
+                    isEmbed: true
+                });
             }
         }
-        
         return JSON.stringify({ url: "", isEmbed: false });
     } catch (e) {
-        // Không phải JSON → thử regex tìm m3u8 trong HTML
-        var match = jsonText.match(/https?:\/\/[^"'\s]+\.m3u8[^"'\s]*/);
-        if (match) {
-            return JSON.stringify({
-                url: match[0],
-                headers: { "Referer": BASE_URL + "/" },
-                isEmbed: false,
-                mimeType: "application/x-mpegURL"
-            });
-        }
         return JSON.stringify({ url: "", isEmbed: false });
     }
 }
