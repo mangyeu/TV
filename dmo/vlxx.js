@@ -301,6 +301,7 @@ function parseDetailResponse(html, fetchedUrl) {
             isEmbed: true,
             postBody: "vlxx_server=" + vlxxServer + "&id=" + videoId + "&server=" + serverId,
             headers: {
+                "origin": "https://vlxx.net",
                 "Referer": "https://vlxx.net/"
             }
         });
@@ -329,6 +330,7 @@ function parseEmbedResponse(html, url) {
                             url: srcMatch[1],
                             isEmbed: true,
                             headers: {
+                                "origin": "https://vlxx.net",
                                 "Referer": "https://vlxx.net/"
                             }
                         });
@@ -345,6 +347,7 @@ function parseEmbedResponse(html, url) {
                         url: iframeMatch[1],
                         isEmbed: true,
                         headers: {
+                            "origin": "https://vlxx.net",
                             "Referer": "https://vlxx.net/"
                         }
                     });
@@ -360,6 +363,7 @@ function parseEmbedResponse(html, url) {
                 isEmbed: false,
                 mimeType: "application/x-mpegURL",
                 headers: {
+                    "origin": "https://play.vlstream.net",
                     "Referer": "https://play.vlstream.net/"
                 }
             });
@@ -376,6 +380,7 @@ function parseEmbedResponse(html, url) {
                         isEmbed: false,
                         mimeType: sources[0].type === 'hls' ? 'application/x-mpegURL' : '',
                         headers: {
+                            "origin": "https://play.vlstream.net",
                             "Referer": "https://play.vlstream.net/"
                         }
                     });
@@ -388,6 +393,7 @@ function parseEmbedResponse(html, url) {
                         isEmbed: false,
                         mimeType: "application/x-mpegURL",
                         headers: {
+                            "origin": "https://play.vlstream.net",
                             "Referer": "https://play.vlstream.net/"
                         }
                     });
@@ -401,8 +407,9 @@ function parseEmbedResponse(html, url) {
             return JSON.stringify({
                 url: vlMatch[1],
                 isEmbed: false,
-                mimeType: "",
+                mimeType: "application/x-mpegURL",
                 headers: {
+                    "origin": "https://play.vlstream.net",
                     "Referer": "https://play.vlstream.net/"
                 }
             });
