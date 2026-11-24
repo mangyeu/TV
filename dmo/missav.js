@@ -4,14 +4,14 @@
 
 function getManifest() {
     return JSON.stringify({
-        "id": "missav",
-        "name": "MissAV",
-        "version": "1.2.2",
+        "id": "123av",
+        "name": "123AV",
+        "version": "1.0.0",
         "baseUrl": "https://123av.org",
-        "iconUrl": "https://raw.githubusercontent.com/mangyeu/TV/refs/heads/main/dmo/missav.ico",
+        "iconUrl": "https://raw.githubusercontent.com/mangyeu/TV/refs/heads/main/dmo/demo.js",
         "isEnabled": true,
         "isAdult": true,
-        "type": "MOVIE",
+        "type": "VIDEO",
         "layoutType": "HORIZONTAL",
         "subtitleCat": true
     });
@@ -653,14 +653,14 @@ function parseMovieDetail(html, pageUrl) {
         if (evalMatch) {
             var parts = evalMatch[1].split('|');
             // Look for 'surrit' or 'sixyik' in parts to confirm it's the video source eval
-            var hasfourhoi = false;
+            var hasSurrit = false;
             for (var ei = 0; ei < parts.length; ei++) {
-                if (parts[ei] === 'fourhoi' || parts[ei] === 'sixyik') {
-                    hasfourhoi = true;
+                if (parts[ei] === 'surrit' || parts[ei] === 'sixyik') {
+                    hasSurrit = true;
                     break;
                 }
             }
-            if (hasfourhoi) {
+            if (hasSurrit) {
                 // Find UUID parts (5 hex segments) in the array
                 var uuidParts = [];
                 for (var ei = 0; ei < parts.length; ei++) {
@@ -678,12 +678,12 @@ function parseMovieDetail(html, pageUrl) {
 
         // Strategy 2: Check for direct Surrit/Sixyik/Nineyu/Fourhoi patterns
         if (!uuid) {
-            var fourhoiMatch = html.match(/fourhoi\.com\/([0-9a-f-]{36})/i) ||
+            var surritMatch = html.match(/surrit\.com\/([0-9a-f-]{36})/i) ||
                 html.match(/sixyik\.com\/([0-9a-f-]{36})/i) ||
                 html.match(/nineyu\.com\/([0-9a-f-]{36})/i) ||
-                html.match(/surrit\.com\/([0-9a-f-]{36})/i);
+                html.match(/fourhoi\.com\/([0-9a-f-]{36})/i);
             if (surritMatch) {
-                uuid = fourhoiMatch[1];
+                uuid = surritMatch[1];
             }
         }
 
@@ -721,7 +721,7 @@ function parseMovieDetail(html, pageUrl) {
         }
 
         if (uuid) {
-            streamUrl = "https://fourhoi.com/" + uuid + "/playlist.m3u8";
+            streamUrl = "https://surrit.com/" + uuid + "/playlist.m3u8";
         }
 
         var servers = [];
@@ -781,11 +781,11 @@ function parseDetailResponse(html) {
     var evalMatch = html.match(/eval\(function\(p,a,c,k,e,d\)[\s\S]*?'([^']+)'\.split\('\|'\)/i);
     if (evalMatch) {
         var parts = evalMatch[1].split('|');
-        var hasfourhoi = false;
+        var hasSurrit = false;
         for (var i = 0; i < parts.length; i++) {
             if (parts[i] === 'surrit' || parts[i] === 'sixyik') { hasSurrit = true; break; }
         }
-        if (hasfourhoi) {
+        if (hasSurrit) {
             var uuidParts = [];
             for (var i = 0; i < parts.length; i++) {
                 if (parts[i].match(/^[0-9a-f]{8,12}$/)) uuidParts.push(parts[i]);
@@ -824,7 +824,7 @@ function parseDetailResponse(html) {
     }
 
     if (uuid) {
-        streamUrl = "https://fourhoi.com/" + uuid + "/playlist.m3u8";
+        streamUrl = "https://surrit.com/" + uuid + "/playlist.m3u8";
     }
 
     return JSON.stringify({
