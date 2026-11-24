@@ -12,7 +12,7 @@
     {
         "id": "missav",
         "name": "MissAV",
-        "version": "1.2.1",
+        "version": "1.2.2",
         "baseUrl": "https://123av.org",
         "scriptUrl": "https://raw.githubusercontent.com/mangyeu/TV/refs/heads/main/dmo/missav.js",
         "iconUrl": "https://raw.githubusercontent.com/mangyeu/TV/refs/heads/main/dmo/missav.ico"
