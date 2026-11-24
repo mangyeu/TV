@@ -6,9 +6,9 @@ function getManifest() {
     return JSON.stringify({
         "id": "vlxx",
         "name": "VLXX",
-        "version": "1.0.4",
+        "version": "1.0.0",
         "baseUrl": "https://vlxx.net",
-        "iconUrl": "https://raw.githubusercontent.com/youngbi/repo/main/plugins/vlxx.ico",
+        "iconUrl": "https://raw.githubusercontent.com/mangyeu/TV/refs/heads/main/dmo/vlxx.ico",
         "isEnabled": true,
         "isAdult": true,
         "type": "MOVIE",
