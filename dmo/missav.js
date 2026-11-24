@@ -12,7 +12,7 @@ function getManifest() {
         "isEnabled": true,
         "isAdult": true,
         "playerType": "auto",
-        "type": "VIDEO",
+        "type": "MOVIE",
         "layoutType": "HORIZONTAL",
         "subtitleCat": true
     });
