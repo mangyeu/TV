@@ -9,7 +9,7 @@ function getManifest() {
         "version": "1.0",
         "baseUrl": "https://missav.media",
         "referrer": "https://missav.media/",
-        "iconUrl": "https://raw.githubusercontent.com/youngbi/repo/main/plugins/missav.ico",
+        "iconUrl": "https://raw.githubusercontent.com/mangyeu/TV/refs/heads/main/dmo/missav.ico",
         "isEnabled": true,
         "isAdult": true,
         "type": "enDEO",
