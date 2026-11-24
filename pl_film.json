@@ -3,8 +3,8 @@
     "plugins": [
         {
             "id": "kkphim",
-            "name": "KKPhim + NGUỒN C",
-            "version": "1.1.1",
+            "name": "KKPhim C",
+            "version": "1.1.2",
             "baseUrl": "https://phimapi.com",
             "scriptUrl": "https://raw.githubusercontent.com/mangyeu/TV/refs/heads/main/plugin_film/phimhdcss.js",
             "iconUrl": "https://raw.githubusercontent.com/mangyeu/TV/refs/heads/main/plugin_film/favicon.ico"
