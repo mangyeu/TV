@@ -13,7 +13,7 @@ function getManifest() {
     return JSON.stringify({
         "id": "nguonc_plugin",
         "name": "NguonC Phim",
-        "version": "1.0.1",
+        "version": "1.0.2",
         "baseUrl": BASE_URL,
         "iconUrl": "https://phim.nguonc.com/favicon.ico",
         "isEnabled": true,
