@@ -12,8 +12,8 @@
     {
         "id": "missav2",
         "name": "MissAV 2",
-        "version": "1.0.2",
-        "baseUrl": "https://missav.media",
+        "version": "1.1.2",
+        "baseUrl": "https://javcc.me",
         "scriptUrl": "https://raw.githubusercontent.com/mangyeu/TV/refs/heads/main/dmo/missav.js",
         "iconUrl": "https://raw.githubusercontent.com/mangyeu/TV/refs/heads/main/dmo/missav.ico"
     },
