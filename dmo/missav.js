@@ -6,11 +6,12 @@ function getManifest() {
     return JSON.stringify({
         "id": "missav",
         "name": "MissAV",
-        "version": "1.2.0",
+        "version": "1.2.1",
         "baseUrl": "https://123av.org",
         "iconUrl": "https://raw.githubusercontent.com/mangyeu/TV/refs/heads/main/dmo/missav.ico",
         "isEnabled": true,
         "isAdult": true,
+        "playerType": "auto",
         "type": "VIDEO",
         "layoutType": "HORIZONTAL",
         "subtitleCat": true
