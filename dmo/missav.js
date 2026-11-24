@@ -4,9 +4,9 @@
 
 function getManifest() {
     return JSON.stringify({
-        "id": "missav2",
-        "name": "MissAV 2",
-        "version": "1.1.2",
+        "id": "javcc",
+        "name": "JAVCC",
+        "version": "1.0.0",
         "baseUrl": "https://javcc.me",
         "fallbackUrls": ["https://javcc.me"],
         "iconUrl": "https://raw.githubusercontent.com/mangyeu/TV/refs/heads/main/dmo/missav.ico",
