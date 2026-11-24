@@ -6,7 +6,7 @@ function getManifest() {
     return JSON.stringify({
         "id": "javhd",
         "name": "JavHD",
-        "version": "1.0.2",
+        "version": "1.0.3",
         "baseUrl": "https://javhdz.today",
         "iconUrl": "https://javhdz.today/favicon.ico",
         "isEnabled": true,
@@ -82,18 +82,16 @@ function getUrlList(slug, filtersJson) {
         return "https://javhdz.today/recent/?page=" + page;
     }
 
-    // Handles absolute slugs
     if (slug.indexOf("http") === 0) {
         return slug + (slug.indexOf("?") === -1 ? "?" : "&") + "page=" + page;
     }
 
     if (slug.indexOf("/") === 0) {
-        return "https://javhdz.today/" + slug + (slug.indexOf("?") === -1 ? "?" : "&") + "page=" + page;
+        var cleanLeading = slug.replace(/^\/+/, "");
+        return "https://javhdz.today/" + cleanLeading + (cleanLeading.indexOf("?") === -1 ? "?" : "&") + "page=" + page;
     }
 
-    // Combine slug and sort
     if (slug.indexOf('/') !== -1) {
-        // e.g., 'popular/today'
         return "https://javhdz.today/" + slug + "/?page=" + page;
     }
 
@@ -124,9 +122,11 @@ var PluginUtils = {
     cleanText: function (text) {
         if (!text) return "";
         return text.replace(/<[^>]*>/g, "")
-            .replace(/&amp;/g, "&")
-            .replace(/&quot;/g, '"')
-            .replace(/&#039;/g, "'")
+            .replace(/&/g, "&")
+            .replace(/"/g, '"')
+            .replace(/'/g, "'")
+            .replace(/'/g, "'")
+            .replace(/'/g, "'")
             .replace(/\s+/g, " ")
             .trim();
     }
@@ -156,7 +156,12 @@ function parseListResponse(html) {
         }
 
         var slug = fullUrl;
-        if (slug && slug.indexOf('/') === 0) slug = slug.substring(1);
+        if (slug && slug.indexOf('http') === 0) {
+            slug = slug.replace(/^https?:\/\/[^/]+\/?/, '');
+        }
+        if (slug && slug.indexOf('/') === 0) {
+            slug = slug.substring(1);
+        }
 
         var thumb = "";
         var imgRegex = /<img([^>]+)>/;
@@ -166,12 +171,12 @@ function parseListResponse(html) {
             var srcM = imgAttrs.match(/src=["']([^"']+)["']/);
             var dataSrcM = imgAttrs.match(/data-src=["']([^"']+)["']/);
             thumb = (dataSrcM && dataSrcM[1]) ? dataSrcM[1] : (srcM ? srcM[1] : "");
+            thumb = normalizeUrl(thumb);
         }
 
         if (slug) {
             var rawTitle = PluginUtils.cleanText(title);
 
-            // Extract labels
             var durationMatch = itemHtml.match(/<span[^>]*class=["']video-overlay badge transparent["'][^>]*>([\s\S]*?)<\/span>/);
             var duration = durationMatch ? PluginUtils.cleanText(durationMatch[1]) : "";
 
@@ -213,7 +218,7 @@ function parseListResponse(html) {
         for (var j = 0; j < pagesMatch.length; j++) {
             var pMatch = pagesMatch[j].match(/page=(\d+)/);
             if (pMatch) {
-                var p = parseInt(pMatch[1]);
+                var p = parseInt(pMatch[1], 10);
                 if (p > totalPages) totalPages = p;
             }
         }
@@ -236,246 +241,4 @@ function parseSearchResponse(html) {
 
 function parseMovieDetail(html) {
     try {
-        var titleMatch = html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/);
-        var title = titleMatch ? titleMatch[1].trim() : "";
-
-        var descMatch = html.match(/<p[^>]*class=["']description["'][^>]*>([\s\S]*?)<\/p>/);
-        var description = descMatch ? PluginUtils.cleanText(descMatch[1]) : "";
-
-        var servers = [];
-
-        var serverRegex = /<button[^>]*class=["'][^"']*button_choice_server[^"']*["'][^>]*data-embed=["']([^"']+)["'][^>]*data-name=["']([^"']+)["']/gi;
-        var b64chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
-        var serverMatch;
-        var foundServer = false;
-
-        while ((serverMatch = serverRegex.exec(html)) !== null) {
-            var b64url = serverMatch[1];
-            var serverName = serverMatch[2];
-            var decodedUrl = "";
-            try {
-                if (typeof atob === 'function') {
-                    decodedUrl = atob(b64url);
-                } else {
-                    var str = String(b64url).replace(/[=]+$/, '');
-                    if (str.length % 4 !== 1) {
-                        for (var bc = 0, bs, buffer, idx = 0; buffer = str.charAt(idx++); ~buffer && (bs = bc % 4 ? bs * 64 + buffer : buffer, bc++ % 4) ? decodedUrl += String.fromCharCode(255 & bs >> (-2 * bc & 6)) : 0) {
-                            buffer = b64chars.indexOf(buffer);
-                        }
-                    }
-                }
-            } catch (e) {}
-
-            if (decodedUrl) {
-                foundServer = true;
-                servers.push({
-                    name: serverName,
-                    episodes: [{
-                        id: decodedUrl,
-                        name: "Full",
-                        slug: "full"
-                    }]
-                });
-            }
-        }
-
-        // Fallback using the simple indexOf main-player
-        if (!foundServer) {
-            var mainPlayerStr = 'id="main-player"';
-            var idxMain = html.indexOf(mainPlayerStr);
-            if (idxMain !== -1) {
-                var srcStr = 'src="';
-                var idxSrc = html.indexOf(srcStr, idxMain);
-                if (idxSrc !== -1 && idxSrc - idxMain < 500) {
-                    var startUrl = idxSrc + srcStr.length;
-                    var endUrl = html.indexOf('"', startUrl);
-                    if (endUrl !== -1) {
-                        var embedUrl = html.substring(startUrl, endUrl);
-                        servers.push({
-                            name: "Embed Server",
-                            episodes: [{
-                                id: embedUrl,
-                                name: "Full",
-                                slug: "full"
-                            }]
-                        });
-                        foundServer = true;
-                    }
-                }
-            }
-        }
-
-        // Ultimate fallback: direct link extraction
-        if (!foundServer) {
-            var ultimateMatch = html.match(/src=["'](https?:\/\/[a-z0-9A-Z.-]+\/(v|e|embed)\/[^"']+)["']/i);
-            if (ultimateMatch) {
-                servers.push({
-                    name: "Default Embed",
-                    episodes: [{
-                        id: ultimateMatch[1],
-                        name: "Full",
-                        slug: "full"
-                    }]
-                });
-            } else {
-                servers.push({
-                    name: "Unknown",
-                    episodes: [{
-                        id: "",
-                        name: "Full",
-                        slug: "full"
-                    }]
-                });
-            }
-        }
-
-        var thumbMatch = html.match(/<meta[^>]*property=["']og:image["'][^>]*content=["']([^"']+)["']/);
-        var thumb = thumbMatch ? thumbMatch[1] : "";
-
-        // Status / Code
-        var codeMatch = html.match(/Label:\s*<a[^>]*>([\s\S]*?)<\/a>/i);
-        var code = codeMatch ? PluginUtils.cleanText(codeMatch[1]) : "Full";
-
-        var categoryRegex = /<a[^>]*href=["']\/([^"']+)["'][^>]*><i[^>]*class=["']fa fa-th-list["'][^>]*><\/i>([^<]+)<\/a>/g;
-        var categoriesArr = [];
-        var catMatch;
-        while ((catMatch = categoryRegex.exec(html)) !== null) {
-            categoriesArr.push(PluginUtils.cleanText(catMatch[2]));
-        }
-
-        return JSON.stringify({
-            id: "",
-            title: PluginUtils.cleanText(title),
-            posterUrl: thumb,
-            backdropUrl: thumb,
-            description: description,
-            servers: servers,
-            quality: "HD",
-            lang: "Vietsub",
-            year: 0,
-            rating: 0,
-            casts: "",
-            director: "",
-            country: "",
-            category: categoriesArr.join(", "),
-            status: code
-        });
-    } catch (e) {
-        return "null";
-    }
-}
-
-function parseDetailResponse(html, fallbackUrl) {
-    try {
-        var hostUrl = fallbackUrl || "";
-        
-        var mainPlayerStr = 'id="main-player"';
-        var idxMain = html.indexOf(mainPlayerStr);
-        if (idxMain !== -1) {
-            var srcStr = 'src="';
-            var idxSrc = html.indexOf(srcStr, idxMain);
-            if (idxSrc !== -1 && idxSrc - idxMain < 500) {
-                var startUrl = idxSrc + srcStr.length;
-                var endUrl = html.indexOf('"', startUrl);
-                if (endUrl !== -1) {
-                    hostUrl = html.substring(startUrl, endUrl);
-                }
-            }
-        }
-
-        return JSON.stringify({
-            url: hostUrl,
-            headers: {
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-                "Referer": "https://javhdz.today/"
-            },
-            subtitles: [],
-            isEmbed: true,
-            embedRegex: "['\"](https?:\\/\\/[^\\s'\"]+\\.m3u8[^'\"]*)['\"]"
-        });
-    } catch (e) {
-        return JSON.stringify({ url: fallbackUrl || "", headers: {}, subtitles: [] });
-    }
-}
-
-function parseEmbedResponse(html, fallbackUrl) {
-    var defaultHeaders = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-        "Referer": "https://javhdz.today/"
-    };
-
-    var sourceHtml = typeof html === "string" ? html : "";
-    var resolvedUrl = fallbackUrl || "";
-    var isEmbed = false;
-
-    if (sourceHtml) {
-        // 1. Tìm link trực tiếp HLS (.m3u8) hoặc MP4 (.mp4)
-        var directMediaMatch = sourceHtml.match(
-            /(?:https?:)?\/\/[^\s"'<>\\]+\.(?:m3u8|mp4)(?:\?[^\s"'<>\\]*)?/i
-        );
-
-        if (directMediaMatch) {
-            resolvedUrl = normalizeUrl(directMediaMatch[0]);
-            isEmbed = false;
-        } else {
-            // 2. Tìm các biến nguồn phổ biến trong script player (file, src, source, url)
-            var playerSrcMatch = sourceHtml.match(
-                /(?:file|src|source|url)\s*[:=]\s*["']((?:https?:)?\/\/[^"']+\.(?:m3u8|mp4)[^"']*?)["']/i
-            );
-
-            if (playerSrcMatch) {
-                resolvedUrl = normalizeUrl(playerSrcMatch[1]);
-                isEmbed = false;
-            } else {
-                // 3. Tìm thẻ iframe lồng bên trong nếu chưa có link trực tiếp
-                var nestedIframeMatch = sourceHtml.match(
-                    /<iframe[^>]+src=["']([^"']+)["']/i
-                );
-
-                if (nestedIframeMatch) {
-                    resolvedUrl = normalizeUrl(nestedIframeMatch[1]);
-                    isEmbed = true;
-                }
-            }
-        }
-    }
-
-    return JSON.stringify({
-        url: resolvedUrl,
-        headers: defaultHeaders,
-        subtitles: [],
-        isEmbed: isEmbed
-    });
-}
-
-function normalizeUrl(rawUrl) {
-    if (!rawUrl) return "";
-    var cleaned = rawUrl.replace(/\\\//g, "/").trim();
-    if (cleaned.indexOf("//") === 0) {
-        return "https:" + cleaned;
-    }
-    return cleaned;
-}
-
-function parseCategoriesResponse(html) {
-    var categories = [];
-    var parts = html.split(/<li[^>]*id=["']category-[^"']*["'][^>]*>/);
-    for (var i = 1; i < parts.length; i++) {
-        var itemHtml = parts[i];
-        var linkMatch = itemHtml.match(/href=["']\/([^"']+)[\/]?["']/);
-        var nameMatch = itemHtml.match(/<div[^>]*class=["']category-title["'][^>]*>([\s\S]*?)<\/div>/);
-
-        if (linkMatch && nameMatch) {
-            var slug = linkMatch[1];
-            if (slug.endsWith('/')) slug = slug.substring(0, slug.length - 1);
-            var name = PluginUtils.cleanText(nameMatch[1]);
-            categories.push({
-                name: name,
-                slug: slug
-            });
-        }
-    }
-    return JSON.stringify(categories);
-}
-function parseCountriesResponse(html) { return "[]"; }
-function parseYearsResponse(html) { return "[]"; }
+        var titleMatch = html.match(/<h1[^>]*>([\s\
