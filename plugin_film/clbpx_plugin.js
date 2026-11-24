@@ -293,42 +293,94 @@ function parseMovieDetail(html) {
 // STREAM RESOLUTION
 // =============================================================================
 
-// parseDetailResponse: Xử lý HTML trang chi tiết/tập phim để tìm link stream
-// Đối với TVHAY, thường link stream nằm trong iframe hoặc script player
+// MIME type cho stream. Một số server dùng extension không chuẩn hoặc không có extension.
+function getStreamMimeType(streamUrl) {
+    if (!streamUrl) return "";
+
+    // Bỏ query/hash trước khi kiểm tra extension.
+    var cleanUrl = String(streamUrl).split("?")[0].split("#")[0].toLowerCase();
+
+    if (/\.m3u8$/.test(cleanUrl) || /\.vl$/.test(cleanUrl)) {
+        return "application/x-mpegURL";
+    }
+
+    if (/\.mp4$/.test(cleanUrl)) {
+        return "video/mp4";
+    }
+
+    // Endpoint stream của streamvsmov có dạng /video/<UUID>, không có extension.
+    // Endpoint này được cấu hình là HLS theo yêu cầu.
+    if (/^https?:\/\/v\d+\.streamvsmov\.com\/video\/[0-9a-f-]{36}$/i.test(cleanUrl)) {
+        return "application/x-mpegURL";
+    }
+
+    // Để trống để ExoPlayer/app tự nhận dạng nếu chưa đủ thông tin.
+    return "";
+}
+
+function makeStreamResult(streamUrl, referer) {
+    var result = {
+        url: streamUrl,
+        isEmbed: false,
+        headers: {}
+    };
+    var mimeType = getStreamMimeType(streamUrl);
+    if (mimeType) result.mimeType = mimeType;
+    if (referer) result.headers.Referer = referer;
+    return JSON.stringify(result);
+}
+
+// Tìm URL stream trong HTML hoặc script player.
+function findStreamUrl(html) {
+    if (!html) return "";
+
+    // Trường file của player: hỗ trợ URL có extension lạ hoặc không có extension.
+    var fileMatch = html.match(/["']file["']\s*:\s*["'](https?:\\?\/\\?\/[^"']+)["']/i);
+    if (fileMatch) {
+        return fileMatch[1].replace(/\\\//g, "/").replace(/\\u0026/gi, "&");
+    }
+
+    // URL HLS thông thường.
+    var m3u8Match = html.match(/https?:\/\/[^\s"'<>\\]+\.m3u8(?:\?[^\s"'<>\\]*)?/i);
+    if (m3u8Match) return m3u8Match[0];
+
+    // URL streamvsmov dạng /video/<UUID>, không có phần mở rộng.
+    var streamvsmovMatch = html.match(/https?:\/\/v\d+\.streamvsmov\.com\/video\/[0-9a-f-]{36}(?:\?[^\s"'<>\\]*)?/i);
+    if (streamvsmovMatch) return streamvsmovMatch[0];
+
+    // File MP4.
+    var mp4Match = html.match(/https?:\/\/[^\s"'<>\\]+\.mp4(?:\?[^\s"'<>\\]*)?/i);
+    if (mp4Match) return mp4Match[0];
+
+    // Extension .vl thường được server dùng cho nội dung HLS.
+    var vlMatch = html.match(/https?:\/\/[^\s"'<>\\]+\.vl(?:\?[^\s"'<>\\]*)?/i);
+    if (vlMatch) return vlMatch[0];
+
+    return "";
+}
+
+// parseDetailResponse: xử lý HTML trang chi tiết/tập phim để tìm link stream.
 function parseDetailResponse(html, fetchedUrl) {
     try {
-        // Tìm iframe embed (thường là player)
+        var directStreamUrl = "https://v13.streamvsmov.com/video/4b208176-9136-499c-8ebd-074b0b35854d";
+
+        // Nếu app gọi trực tiếp endpoint stream đã cung cấp, trả về HLS ngay.
+        if (fetchedUrl && fetchedUrl.indexOf(directStreamUrl) === 0) {
+            return makeStreamResult(directStreamUrl, "https://tvhay.buzz/");
+        }
+
+        // Nếu URL stream được nhúng trong HTML, ưu tiên phân tích URL trực tiếp.
+        var streamUrl = findStreamUrl(html);
+        if (streamUrl) {
+            return makeStreamResult(streamUrl, "https://tvhay.buzz/");
+        }
+
+        // Nếu trang có iframe player thì trả về để app tiếp tục phân tích embed.
         var iframeMatch = html.match(/<iframe[^>]*src=["']([^"']+)["']/i);
         if (iframeMatch) {
             return JSON.stringify({
                 url: iframeMatch[1],
                 isEmbed: true,
-                headers: {
-                    "Referer": "https://tvhay.buzz/"
-                }
-            });
-        }
-
-        // Tìm link stream trực tiếp trong script (file: "...")
-        var fileMatch = html.match(/"file"\s*:\s*"([^"]+\.(?:m3u8|mp4)[^"]*)"/i);
-        if (fileMatch) {
-            return JSON.stringify({
-                url: fileMatch[1],
-                isEmbed: false,
-                mimeType: fileMatch[1].indexOf(".m3u8") !== -1 ? "application/x-mpegURL" : "video/mp4",
-                headers: {
-                    "Referer": "https://tvhay.buzz/"
-                }
-            });
-        }
-
-        // Tìm bất kỳ URL m3u8 nào
-        var m3u8Match = html.match(/(https?:\/\/[^\s"'\\]+\.m3u8[^\s"'\\]*)/i);
-        if (m3u8Match) {
-            return JSON.stringify({
-                url: m3u8Match[1],
-                isEmbed: false,
-                mimeType: "application/x-mpegURL",
                 headers: {
                     "Referer": "https://tvhay.buzz/"
                 }
@@ -341,32 +393,17 @@ function parseDetailResponse(html, fetchedUrl) {
     }
 }
 
-// parseEmbedResponse: Xử lý HTML từ embed page (nếu isEmbed = true)
+// parseEmbedResponse: xử lý HTML từ embed page (nếu isEmbed = true).
 function parseEmbedResponse(html, url) {
     try {
-        // Tương tự như trên, tìm link stream trong embed page
-        var fileMatch = html.match(/"file"\s*:\s*"([^"]+\.(?:m3u8|mp4)[^"]*)"/i);
-        if (fileMatch) {
-            return JSON.stringify({
-                url: fileMatch[1],
-                isEmbed: false,
-                mimeType: fileMatch[1].indexOf(".m3u8") !== -1 ? "application/x-mpegURL" : "video/mp4",
-                headers: {
-                    "Referer": url
-                }
-            });
+        var streamUrl = findStreamUrl(html);
+        if (streamUrl) {
+            return makeStreamResult(streamUrl, url || "https://tvhay.buzz/");
         }
 
-        var m3u8Match = html.match(/(https?:\/\/[^\s"'\\]+\.m3u8[^\s"'\\]*)/i);
-        if (m3u8Match) {
-            return JSON.stringify({
-                url: m3u8Match[1],
-                isEmbed: false,
-                mimeType: "application/x-mpegURL",
-                headers: {
-                    "Referer": url
-                }
-            });
+        // Một số embed trả thẳng URL stream trong chính URL được tải.
+        if (url && getStreamMimeType(url)) {
+            return makeStreamResult(url, "https://tvhay.buzz/");
         }
 
         return JSON.stringify({ url: "", isEmbed: false, headers: {} });
