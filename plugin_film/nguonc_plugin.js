@@ -10,7 +10,7 @@ function getManifest() {
     return JSON.stringify({
         "id": "nguonc_phim",
         "name": "Nguồn C",
-        "version": "1.2.0",
+        "version": "1.3.1",
         "description": "Phim Vietsub, Thuyết minh, Lồng tiếng từ Nguồn C",
         "author": "VAAPP",
         "baseUrl": BASE_URL,
@@ -116,7 +116,6 @@ function _safeJsonParse(input) {
     var text = String(input).trim();
     if (!text) return null;
 
-    // Nếu người dùng dán kèm tiền tố text hoặc nhiều dòng pipe dạng "1|tap-1|https://..."
     try {
         return JSON.parse(text);
     } catch (e1) {
@@ -137,6 +136,13 @@ function _safeJsonParse(input) {
         }
     }
     return null;
+}
+
+function _originFromUrl(urlStr) {
+    var clean = _stripPipe(urlStr || "");
+    if (clean.indexOf("//") === 0) clean = "https:" + clean;
+    var m = clean.match(/^(https?:\/\/[^\/]+)/i);
+    return m ? (m[1] + "/") : (BASE_URL + "/");
 }
 
 function getUrlList(slug, filtersJson) {
@@ -174,7 +180,7 @@ function getUrlDetail(slug, datasend) {
             if (epObj && (epObj.embed || epObj.m3u8)) {
                 return epObj.embed || epObj.m3u8;
             }
-        } catch (e) {
+        } catch (e1) {
             try {
                 var epObj2 = JSON.parse(datasend);
                 if (epObj2 && (epObj2.embed || epObj2.m3u8)) {
@@ -232,8 +238,8 @@ function _parseFilmsList(html, apiUrl, datasend) {
                 var poster = m.thumb_url || m.poster_url || m.poster || m.image || "";
                 var backdrop = m.poster_url || m.thumb_url || "";
 
-                var year = 0;
-                if (m.category && typeof m.category === "object") {
+                var year = parseInt(m.year, 10) || 0;
+                if (!year && m.category && typeof m.category === "object") {
                     for (var k in m.category) {
                         var grp = m.category[k];
                         if (grp && grp.list && grp.list.length > 0) {
@@ -260,22 +266,7 @@ function _parseFilmsList(html, apiUrl, datasend) {
 
                 items.push(itemObj);
             }
-        } else if (rawStr.trim()) {
-            // Fallback nếu đầu vào là HTML có link /phim/ hoặc slug
-            var linkRegex = /href=["'][^"']*\/phim\/([^"'/?#]+)[^"']*["'][^>]*>([^<]+)</gi;
-            var match;
-            var idxFallback = 0;
-            while ((match = linkRegex.exec(rawStr)) !== null) {
-                idxFallback++;
-                items.push({
-                    id: match[1].trim(),
-                    title: match[2].trim() || ("Phim #" + idxFallback),
-                    posterUrl: ""
-                });
-            }
         }
-
-        console.log("_parseFilmsList: items =", items.length);
     } catch (e) {
         console.error("Lỗi _parseFilmsList:", e && e.message ? e.message : e);
     }
@@ -366,7 +357,6 @@ function parseMovieDetail(html, apiUrl, datasend) {
             }
         }
 
-        // Nếu đầu vào là danh sách dòng dạng "1|tap-1|https://embed..."
         if (servers.length === 0 && rawStr.indexOf("|") >= 0) {
             var pipeEps = _parsePipeEpisodeLines(rawStr);
             if (pipeEps.length > 0) {
@@ -416,6 +406,11 @@ function parseMovieDetail(html, apiUrl, datasend) {
             }
         }
 
+        var yVal = (film && film.year) ? (parseInt(film.year, 10) || 0) : 0;
+        if (!yVal && years.length > 0) {
+            yVal = parseInt(years[0], 10) || 0;
+        }
+
         var detailObj = {
             id: (film && film.slug) ? film.slug : fallbackSlug,
             title: (film && (film.name || film.title || film.original_name)) ? (film.name || film.title || film.original_name) : fallbackSlug,
@@ -430,13 +425,8 @@ function parseMovieDetail(html, apiUrl, datasend) {
             status: (film && film.current_episode) ? film.current_episode : "",
             duration: (film && film.time) ? film.time : ""
         };
+        if (yVal > 0) detailObj.year = yVal;
 
-        if (years.length > 0) {
-            var yVal = parseInt(years[0], 10);
-            if (!isNaN(yVal) && yVal > 0) detailObj.year = yVal;
-        }
-
-        console.log("parseMovieDetail: servers =", servers.length);
         return JSON.stringify(detailObj);
     } catch (e) {
         console.error("Lỗi parseMovieDetail:", e && e.message ? e.message : e);
@@ -453,7 +443,6 @@ function _buildStreamResult(targetUrl, fallbackReferer) {
     if (!clean) {
         return JSON.stringify({ url: "", isEmbed: false });
     }
-
     if (clean.indexOf("//") === 0) {
         clean = "https:" + clean;
     }
@@ -461,10 +450,7 @@ function _buildStreamResult(targetUrl, fallbackReferer) {
     var isM3u8 = /\.m3u8(\?|$)/i.test(clean);
     var isMp4 = /\.mp4(\?|$)/i.test(clean);
     var isDirect = isM3u8 || isMp4 || /\.(mkv|mpd)(\?|$)/i.test(clean);
-
-    var ref = fallbackReferer || (BASE_URL + "/");
-    var originMatch = clean.match(/^(https?:\/\/[^\/]+)/i);
-    if (originMatch) ref = originMatch[1] + "/";
+    var ref = _originFromUrl(clean) || fallbackReferer || (BASE_URL + "/");
 
     if (isDirect) {
         var mime = "";
@@ -496,6 +482,23 @@ function _buildStreamResult(targetUrl, fallbackReferer) {
     });
 }
 
+function _extractStreamFromText(text) {
+    if (!text) return "";
+    var str = String(text).replace(/\\\//g, "/");
+
+    var mediaMatch = str.match(/(https?:\/\/[^\s"'<>\\]+\.(?:m3u8|mp4)(?:\?[^\s"'<>\\]*)?)/i);
+    if (mediaMatch && mediaMatch[1]) {
+        return mediaMatch[1];
+    }
+
+    var fieldMatch = str.match(/["']?(?:file|url|stream|m3u8|link|src)["']?\s*[:=]\s*["'](https?:\/\/[^"'\s<>\\]+)["']/i);
+    if (fieldMatch && fieldMatch[1]) {
+        return fieldMatch[1];
+    }
+
+    return "";
+}
+
 function parseDetailResponse(html, apiUrl, datasend) {
     var rawStr = html === undefined || html === null ? "" : String(html);
     var rawData = _getPipeData(apiUrl, datasend);
@@ -503,45 +506,41 @@ function parseDetailResponse(html, apiUrl, datasend) {
     if (rawData) {
         try {
             var epObj = JSON.parse(decodeURIComponent(rawData));
-            if (epObj && (epObj.embed || epObj.m3u8)) {
-                return _buildStreamResult(epObj.embed || epObj.m3u8, apiUrl);
+            if (epObj && (epObj.m3u8 || epObj.embed)) {
+                return _buildStreamResult(epObj.m3u8 || epObj.embed, apiUrl);
             }
-        } catch (e) {
+        } catch (e1) {
             try {
                 var epObj2 = JSON.parse(rawData);
-                if (epObj2 && (epObj2.embed || epObj2.m3u8)) {
-                    return _buildStreamResult(epObj2.embed || epObj2.m3u8, apiUrl);
+                if (epObj2 && (epObj2.m3u8 || epObj2.embed)) {
+                    return _buildStreamResult(epObj2.m3u8 || epObj2.embed, apiUrl);
                 }
             } catch (e2) {}
         }
     }
 
-    // 1. Tìm link stream trực tiếp (.m3u8 / .mp4) trong html nếu có
-    var streamMatch = rawStr.match(/(https?:\/\/[^\s"'<>\\]+\.(?:m3u8|mp4)(?:\?[^\s"'<>\\]*)?)/i);
-    if (streamMatch && streamMatch[1]) {
-        return _buildStreamResult(streamMatch[1].replace(/\\\//g, "/"), apiUrl);
+    var extracted = _extractStreamFromText(rawStr);
+    if (extracted) {
+        return _buildStreamResult(extracted, apiUrl);
     }
 
-    // 2. Nếu html là JSON của /api/film/{slug}
     var json = _safeJsonParse(rawStr);
     if (json && typeof json === "object") {
         var film = json.movie || json.data || json;
         if (film && Array.isArray(film.episodes) && film.episodes.length > 0) {
             var firstEps = film.episodes[0].items || film.episodes[0].server_data || [];
             if (firstEps.length > 0) {
-                var candidate = firstEps[0].embed || firstEps[0].link_embed || firstEps[0].m3u8 || firstEps[0].link_m3u8 || "";
+                var candidate = firstEps[0].m3u8 || firstEps[0].link_m3u8 || firstEps[0].embed || firstEps[0].link_embed || "";
                 if (candidate) return _buildStreamResult(candidate, apiUrl);
             }
         }
     }
 
-    // 3. Nếu html chứa link embed (vd: https://embed17.streamc.xyz/embed.php?hash=...)
     var embedMatch = rawStr.match(/(https?:\/\/[^\s"'<>\\]+embed\.php\?[^\s"'<>\\]+)/i);
     if (embedMatch && embedMatch[1]) {
         return _buildStreamResult(embedMatch[1].replace(/\\\//g, "/"), apiUrl);
     }
 
-    // 4. Fallback sang apiUrl hoặc url mặc định của NguonC để không bao giờ trả rỗng khi gọi parseDetailResponse(html)
     var cleanApiUrl = _stripPipe(apiUrl || "");
     if (cleanApiUrl && cleanApiUrl.indexOf("http") === 0) {
         return _buildStreamResult(cleanApiUrl, cleanApiUrl);
@@ -553,20 +552,13 @@ function parseDetailResponse(html, apiUrl, datasend) {
 function parseEmbedResponse(html, url) {
     var rawStr = html === undefined || html === null ? "" : String(html);
     var cleanSrc = _stripPipe(url || "");
-    var baseRef = BASE_URL + "/";
+    var baseRef = _originFromUrl(cleanSrc);
 
-    if (cleanSrc && cleanSrc.indexOf("http") === 0) {
-        var originMatch = cleanSrc.match(/^(https?:\/\/[^\/]+)/i);
-        if (originMatch) baseRef = originMatch[1] + "/";
+    var directStream = _extractStreamFromText(rawStr);
+    if (directStream && /\.(m3u8|mp4)(\?|$)/i.test(directStream)) {
+        return _buildStreamResult(directStream, baseRef);
     }
 
-    // 1. Tìm link stream trực tiếp (.m3u8 / .mp4) trong HTML/JS
-    var streamMatch = rawStr.match(/(https?:\/\/[^\s"'<>\\]+\.(?:m3u8|mp4)(?:\?[^\s"'<>\\]*)?)/i);
-    if (streamMatch && streamMatch[1]) {
-        return _buildStreamResult(streamMatch[1].replace(/\\\//g, "/"), baseRef);
-    }
-
-    // 2. Nếu có iframe trung gian → trả isEmbed: true để app fetch tiếp (tối đa 3 lần)
     var iframeMatch = rawStr.match(/<iframe[^>]+src=["']([^"']+)["']/i);
     if (iframeMatch && iframeMatch[1]) {
         var nextUrl = iframeMatch[1].replace(/\\\//g, "/").trim();
@@ -587,10 +579,8 @@ function parseEmbedResponse(html, url) {
         });
     }
 
-    // 3. Nếu có url truyền vào hoặc link embed trong rawStr
-    var embedMatch = rawStr.match(/(https?:\/\/[^\s"'<>\\]+embed[^\s"'<>\\]*)/i);
-    if (embedMatch && embedMatch[1]) {
-        return _buildStreamResult(embedMatch[1].replace(/\\\//g, "/"), baseRef);
+    if (directStream && directStream.indexOf("http") === 0) {
+        return _buildStreamResult(directStream, baseRef);
     }
 
     if (cleanSrc && cleanSrc.indexOf("http") === 0) {
