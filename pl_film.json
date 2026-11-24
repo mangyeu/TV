@@ -12,7 +12,7 @@
         {
             "id": "nguonc_phim",
             "name": "Nguồn C",
-            "version": "1.1.0",
+            "version": "1.2.0",
             "baseUrl": "https://phim.nguonc.com",
             "scriptUrl": "https://raw.githubusercontent.com/mangyeu/TV/refs/heads/main/plugin_film/nguonc_plugin.js",
             "iconUrl": "https://raw.githubusercontent.com/mangyeu/TV/refs/heads/main/plugin_film/nguonc.ico"
