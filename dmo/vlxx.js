@@ -6,7 +6,7 @@ function getManifest() {
     return JSON.stringify({
         "id": "vlxx",
         "name": "VLXX",
-        "version": "1.0.0",
+        "version": "1.0.1",
         "baseUrl": "https://vlxx.net",
         "iconUrl": "https://raw.githubusercontent.com/mangyeu/TV/refs/heads/main/dmo/vlxx.ico",
         "isEnabled": true,
@@ -401,7 +401,7 @@ function parseEmbedResponse(html, url) {
             return JSON.stringify({
                 url: vlMatch[1],
                 isEmbed: false,
-                mimeType: "application/x-mpegURL",
+                mimeType: "",
                 headers: {
                     "Referer": "https://play.vlstream.net/"
                 }
