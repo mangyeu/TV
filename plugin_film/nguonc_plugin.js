@@ -223,19 +223,28 @@ function parseMovieDetail(jsonText) {
  * Với NguonC, nếu episode.id là link embed, trả về isEmbed: true để WebView xử lý.
  */
 function parseDetailResponse(jsonText) {
+    // Nếu App truyền vào chính là liên kết embed, trực tiếp đánh dấu isEmbed
+    if (jsonText && jsonText.indexOf('embed.php') !== -1) {
+        return JSON.stringify({
+            url: jsonText,
+            headers: { "Referer": "https://phim.nguonc.com/" },
+            isEmbed: true
+        });
+    }
+
+    // Nếu không, thử phân tích JSON (dự phòng cho trường hợp có link trực tiếp)
     try {
         var data = JSON.parse(jsonText);
         var movie = data.movie || data;
         var episodes = movie.episodes || [];
-        
+
         for (var s = 0; s < episodes.length; s++) {
-            var items = episodes[s].items || episodes[s].list || [];
+            var items = episodes[s].items || [];
             for (var e = 0; e < items.length; e++) {
                 var ep = items[e];
-                var url = ep.link_m3u8 || ep.link_embed || ep.id || "";
+                var url = ep.embed || ep.link_m3u8 || ep.link_embed || "";
                 if (!url) continue;
-                
-                // Nếu là liên kết .m3u8/.mp4 trực tiếp
+
                 if (url.indexOf('.m3u8') !== -1 || url.indexOf('.mp4') !== -1) {
                     return JSON.stringify({
                         url: url,
@@ -244,8 +253,7 @@ function parseDetailResponse(jsonText) {
                         mimeType: url.indexOf('.m3u8') !== -1 ? "application/x-mpegURL" : "video/mp4"
                     });
                 }
-                
-                // Các liên kết khác (bao gồm embed.php) đều xử lý theo nhúng
+
                 return JSON.stringify({
                     url: url,
                     headers: { "Referer": "https://phim.nguonc.com/" },
@@ -253,10 +261,11 @@ function parseDetailResponse(jsonText) {
                 });
             }
         }
-        return JSON.stringify({ url: "", isEmbed: false });
     } catch (e) {
-        return JSON.stringify({ url: "", isEmbed: false });
+        // Bỏ qua, thực hiện fallback bên dưới
     }
+
+    return JSON.stringify({ url: "", isEmbed: false });
 }
 
 /**
