@@ -26,9 +26,9 @@
         "iconUrl": "https://raw.githubusercontent.com/mangyeu/TV/refs/heads/main/dmo/vlxx.ico"
     },
     {
-        "id": "javhd",
+        "id": "javhdz_today",
         "name": "JavHD",
-        "version": "1.0.2",
+        "version": "1.1.0",
         "baseUrl": "https://javhdz.today",
         "scriptUrl": "https://raw.githubusercontent.com/mangyeu/TV/refs/heads/main/dmo/demo1.js",
         "iconUrl": "https://tvhay.buzz/favicon.png"
