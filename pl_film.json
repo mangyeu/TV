@@ -38,6 +38,15 @@
       "openvax": true
     },
         {
+      "id": "clbpxVIP",
+      "name": "Clbpxvip (MOVIE)",
+      "version": "2.3.1",
+      "scriptUrl": "https://vx2plugin.alokillgtv.workers.dev/Plugins/movie/clbpxVIP_plugin.js",
+      "iconUrl": "https://vaxplugin.alokillgtv.workers.dev/img/icon/clbpxVIP.png?cache=true",
+      "isVip": false,
+      "openvax": true
+    },
+        {
             "id": "phimmoichillz",
             "name": "phimmoichillz",
             "version": "1.0",
