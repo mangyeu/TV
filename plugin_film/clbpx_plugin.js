@@ -58,14 +58,32 @@ function attr(tag, name) {
 function absoluteUrl(url, base) {
   if (!url) return "";
   url = decodeEntities(String(url).trim()).replace(/\\\//g,"/");
-  if (/^(data:|javascript:|blob:)/i.test(url)) return url;
-  if (url.indexOf("//") === 0) return "https:" + url;
+  if (/^(data:|javascript:|blob:|mailto:)/i.test(url)) return url;
   if (/^https?:\/\//i.test(url)) return url;
-  var root = base || BASE_URL;
-  if (url.charAt(0) === "#") return root + url;
-  if (url.charAt(0) === "?") return root + url;
-  if (url.charAt(0) !== "/") url = "/" + url;
-  return root.replace(/\/$/,"") + url;
+  var b = String(base || BASE_URL).replace(/#.*$/,"");
+  var m = b.match(/^(https?):\/\/([^\/?#]+)([^?#]*)/i);
+  if (!m) return BASE_URL.replace(/\/$/,"") + (url.charAt(0)==="/" ? url : "/" + url);
+  var origin = m[1] + "://" + m[2];
+  var basePath = m[3] || "/";
+  if (url.indexOf("//") === 0) return m[1] + ":" + url;
+  if (url.charAt(0) === "#") return b + url;
+  if (url.charAt(0) === "?") return origin + basePath + url;
+  var path;
+  if (url.charAt(0) === "/") path = url;
+  else {
+    path = basePath.substring(0, basePath.lastIndexOf("/") + 1) + url;
+  }
+  var query = "";
+  var qi = path.search(/[?#]/);
+  if (qi >= 0) { query = path.substring(qi); path = path.substring(0, qi); }
+  var parts = [];
+  var segs = path.split("/");
+  for (var i=0;i<segs.length;i++) {
+    if (!segs[i] || segs[i]===".") continue;
+    if (segs[i]==="..") { if(parts.length) parts.pop(); }
+    else parts.push(segs[i]);
+  }
+  return origin + "/" + parts.join("/") + query;
 }
 function getMeta(html, key) {
   var h = String(html || "");
@@ -90,15 +108,19 @@ function normalizePath(path) {
   if (/^https?:\/\//i.test(path)) return path;
   return path.charAt(0)==="/"?path:"/"+path;
 }
-function extractPageNumber(html) {
-  var m = String(html||"").match(/[?&]paged?=(\d+)/i) || String(html||"").match(/\/page\/(\d+)\//i);
-  return m ? parseInt(m[1],10) : 1;
+function extractPageNumber(html, pageUrl) {
+  var text = String(html || "");
+  var fromUrl = String(pageUrl || "").match(/[?&](?:paged?|page)=(\d+)/i) ||
+    String(pageUrl || "").match(/\/page\/(\d+)(?:\/|$)/i);
+  var fromHtml = text.match(/[?&](?:paged?|page)=(\d+)/i) || text.match(/\/page\/(\d+)(?:\/|$)/i);
+  var n = fromUrl || fromHtml;
+  return n ? Math.max(1, parseInt(n[1],10) || 1) : 1;
 }
 function getManifest() {
   return JSON.stringify({
     id:"tvhay", name:"TVHAY", version:"1.0.0", baseUrl:BASE_URL,
     author:"VAApp Community", referrer:BASE_URL+"/", imageReferer:BASE_URL+"/",
-    iconUrl:"https://tvhay.buzz/favicon.png", isEnabled:true, isAdult:false, type:"VIDEO",
+    iconUrl:"", isEnabled:true, isAdult:false, type:"VIDEO",
     layoutType:"HORIZONTAL", playerType:"exoplayer", subtitleCat:true,
     debug:DEBUG_MODE, adblock:true
   });
@@ -210,13 +232,19 @@ function parseCards(html, base) {
 function parseListResponse(html, apiUrl, datasend) {
   logStep("parseListResponse",{url:apiUrl,length:(html||"").length});
   var items=parseCards(html,apiUrl||BASE_URL);
-  // Remove obvious navigation/category links accidentally collected.
   items=items.filter(function(x){return !/(the-loai|quoc-gia|nam-phat-hanh|dang-nhap|lien-he|gioi-thieu)(\/|$)/i.test(x.id);});
-  var page=extractPageNumber(html);
-  var pages=page;
-  var pageMatches=String(html||"").match(/(?:paged?|page)=(\d+)|\/page\/(\d+)\//gi)||[];
-  for(var i=0;i<pageMatches.length;i++){var n=parseInt((pageMatches[i].match(/\d+/)||[])[0],10);if(n>pages)pages=n;}
-  return JSON.stringify({items:items,pagination:{currentPage:page,totalPages:Math.max(page,pages),totalItems:items.length,itemsPerPage:items.length||20}});
+  var h=String(html||""), page=extractPageNumber(h,apiUrl), pages=1;
+  // WordPress and common theme pagination: inspect actual page links and rel=last.
+  var candidates=h.match(/(?:[?&](?:paged?|page)=\d+|\/page\/\d+\/)/gi)||[];
+  for(var i=0;i<candidates.length;i++){
+    var n=parseInt((candidates[i].match(/\d+/)||[])[0],10);
+    if(n>pages)pages=n;
+  }
+  var last=h.match(/<a\b[^>]*(?:class=["'][^"']*(?:last|page-numbers)[^"']*["'][^>]*|rel=["']last["'][^>]*)[^>]*href=["']([^"']+)["']/i);
+  if(last){var ln=last[1].match(/(?:paged?|page)=(\d+)|\/page\/(\d+)(?:\/|$)/i);if(ln)pages=Math.max(pages,parseInt(ln[1]||ln[2],10)||1);}
+  var totalMatch=h.match(/(?:of|trang|page)\s*(\d+)\s*(?:trang|pages)?/i);
+  if(totalMatch)pages=Math.max(pages,parseInt(totalMatch[1],10)||1);
+  return JSON.stringify({items:items,pagination:{currentPage:page,totalPages:Math.max(page,pages),totalItems:items.length,itemsPerPage:items.length||20,hasNextPage:page<Math.max(page,pages)}});
 }
 function parseSearchResponse(html, apiUrl, datasend){return parseListResponse(html,apiUrl,datasend);}
 
@@ -229,9 +257,20 @@ function extractJsonObjects(html) {
   for(var p=0;p<patterns.length;p++){var m;while((m=patterns[p].exec(String(html||"")))!==null){found.push(m[1]);if(found.length>30)break;}}
   return found;
 }
-function decodeEscapedUrl(s){return String(s||"").replace(/\\\//g,"/").replace(/\\u0026/gi,"&").replace(/&amp;/g,"&").replace(/\\x3a/gi,":").replace(/\\x2f/gi,"/").replace(/\\n/g,"").replace(/\\r/g,"");}
+function decodeEscapedUrl(s) {
+  return String(s||"")
+    .replace(/\\\//g,"/").replace(/\\u0026/gi,"&").replace(/&amp;/gi,"&")
+    .replace(/\\x3a/gi,":").replace(/\\x2f/gi,"/").replace(/\\u003a/gi,":")
+    .replace(/\\u002f/gi,"/").replace(/\\u003d/gi,"=").replace(/\\n|\\r/g,"")
+    .replace(/&quot;/gi,'"').replace(/&#0*39;/gi,"'");
+}
 function detectMime(url, explicit) {
-  if(explicit)return explicit;
+  if(explicit) {
+    var e=String(explicit).toLowerCase();
+    if(e==="hls"||e==="m3u8")return "application/x-mpegURL";
+    if(e==="dash"||e==="mpd")return "application/dash+xml";
+    return explicit;
+  }
   var u=String(url||"").toLowerCase().split("?")[0].split("#")[0];
   if(/\.m3u8$/.test(u))return "application/x-mpegURL";
   if(/\.mpd$/.test(u))return "application/dash+xml";
@@ -243,26 +282,60 @@ function detectMime(url, explicit) {
 }
 function parsePlayerSources(html, pageUrl) {
   var h=decodeEscapedUrl(html||""), sources=[], seen={};
-  function add(url,type,label,headers){
-    url=decodeEscapedUrl(url).replace(/["'<>\\\s]+$/g,"");
-    if(!url||/^(blob:|data:|javascript:)/i.test(url))return;
+  function add(url,type,label,headers) {
+    url=decodeEscapedUrl(url).replace(/^[\s"'`]+|[\s"'`]+$/g,"").replace(/[),;]+$/g,"");
+    if(!url||/^(blob:|data:|javascript:|#)/i.test(url))return;
     url=absoluteUrl(url,pageUrl||BASE_URL);
     if(!/^https?:\/\//i.test(url)||seen[url])return;
+    // Recover a nearby explicit MIME type for extensionless or unusual stream URLs.
+    if(!type){
+      var at=h.indexOf(url), near=at>=0?h.substring(Math.max(0,at-500),Math.min(h.length,at+800)):h;
+      var mt=(near.match(/["']?(?:mimeType|mime|type)["']?\s*[:=]\s*["']([^"']+)["']/i)||[])[1];
+      if(mt)type=mt;
+    }
+    // Do not mistake thumbnails, logos, tracking pixels or ordinary links for streams.
+    if(/\.(?:jpe?g|png|gif|webp|svg|css|js|woff2?)(?:[?#]|$)/i.test(url))return;
     seen[url]=true;
     sources.push({url:url,mimeType:detectMime(url,type),name:label||("Server "+(sources.length+1)),headers:headers||{"Referer":pageUrl||BASE_URL+"/","User-Agent":DEFAULT_HEADERS["User-Agent"]}});
   }
-  // HTML5 video/source tags
-  var tagRe=/<(?:video|source)\b[^>]*>/gi,m;
-  while((m=tagRe.exec(h))!==null){var u=attr(m[0],"src")||attr(m[0],"data-src");var typ=attr(m[0],"type");if(u)add(u,typ,"HTML5");}
-  // iframe/embed sources are returned as embeds, not mislabelled as HLS.
+  var m, tagRe=/<(?:video|source)\b[^>]*>/gi;
+  while((m=tagRe.exec(h))!==null){
+    var u=attr(m[0],"src")||attr(m[0],"data-src")||attr(m[0],"data-original");
+    if(u)add(u,attr(m[0],"type"),"HTML5");
+  }
+  // Player iframe URLs must be followed by the plugin's embed parser.
   var ifrRe=/<iframe\b[^>]*>/gi;
-  while((m=ifrRe.exec(h))!==null){var iu=attr(m[0],"src")||attr(m[0],"data-src");if(iu)add(iu,"","Embed");}
-  // Common JS player config keys. Avoid collecting poster images.
-  var urlRe=/(?:file|src|url|hls|m3u8|mp4)\s*[:=]\s*["']((?:https?:)?\/\/[^"']+|\/[^"']+)["']/gi;
-  while((m=urlRe.exec(h))!==null){var candidate=decodeEscapedUrl(m[1]);if(/\.(?:m3u8|mp4|mpd|webm|mkv)(?:[?#]|$)/i.test(candidate)||/\.php\?.*(?:id|file|url)=/i.test(candidate))add(candidate,"", "Player");}
-  // HLS/DASH URLs can be nested in escaped JSON or script strings.
-  var directRe=/(https?:\\?\/\\?\/[^\s"'<>\\]+?\.(?:m3u8|mpd|mp4|webm|mkv)(?:\?[^\s"'<>\\]*)?)/gi;
-  while((m=directRe.exec(h))!==null)add(m[1],"","Direct source");
+  while((m=ifrRe.exec(h))!==null){
+    var iu=attr(m[0],"src")||attr(m[0],"data-src")||attr(m[0],"data-lazy-src");
+    if(iu)add(iu,"","Embed");
+  }
+  // Explicit player objects, including unusual file extensions accompanied by mimeType/type.
+  var objRe=/\{[^{}]{0,5000}(?:"|')?(?:file|src|url|hls|source|hlsUrl|mp4)(?:"|')?\s*:\s*(?:"|')([^"']{6,2000})(?:"|')[^{}]{0,5000}\}/gi;
+  while((m=objRe.exec(h))!==null){
+    var block=m[0], candidate=m[1];
+    var mt=(block.match(/["'](?:mimeType|type|mime)["']\s*:\s*["']([^"']+)["']/i)||[])[1]||"";
+    if(/^https?:|^\/|^\.\.?\//i.test(candidate))add(candidate,mt,"Player");
+  }
+  // Common quoted config keys. Include URLs with uncommon extensions when the key is a player key.
+  var keyRe=/(["']?)(file|src|url|hls|hlsUrl|mp4|playlist|source|contentUrl)\1\s*[:=]\s*["']((?:https?:)?\/\/[^"']+|\/[^"']+|\.\.?\/[^"']+)["']/gi;
+  while((m=keyRe.exec(h))!==null){
+    var candidate=decodeEscapedUrl(m[3]);
+    var nearby=h.substring(Math.max(0,m.index-300),Math.min(h.length,m.index+700));
+    var mt=(nearby.match(/["'](?:mimeType|mime|type)["']\s*:\s*["']([^"']+)["']/i)||[])[1]||"";
+    if(/\.(?:m3u8|mpd|mp4|webm|mkv|vl|xyz|dat)(?:[?#]|$)/i.test(candidate)||mt||/(?:jwplayer|player|sources|playlist|video)/i.test(nearby))add(candidate,mt,"Player");
+  }
+  // URLs embedded in scripts/JSON, even when extension is non-standard but mimeType is nearby.
+  var directRe=/(https?:\\?\/\\?\/[^\s"'<>\\]+|\/[^\s"'<>\\]+?\.(?:m3u8|mpd|mp4|webm|mkv|vl|xyz|dat)(?:\?[^\s"'<>\\]*)?)/gi;
+  while((m=directRe.exec(h))!==null){
+    var candidate=decodeEscapedUrl(m[1]), around=h.substring(Math.max(0,m.index-400),Math.min(h.length,m.index+500));
+    if(/\.(?:m3u8|mpd|mp4|webm|mkv|vl|xyz|dat)(?:[?#]|$)/i.test(candidate)){
+      var mt2=(around.match(/["'](?:mimeType|mime|type)["']\s*:\s*["']([^"']+)["']/i)||[])[1]||"";
+      add(candidate,mt2,"Direct source");
+    }
+  }
+  // data-* player attributes used by some themes.
+  var dataRe=/<[^>]+\bdata-(?:file|src|url|video|hls)=["']([^"']+)["'][^>]*>/gi;
+  while((m=dataRe.exec(h))!==null)add(m[1],"","Player data");
   return sources;
 }
 function parseMovieDetail(html, apiUrl, datasend) {
