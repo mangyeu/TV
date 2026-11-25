@@ -15,8 +15,7 @@
       "version": "3.2",
       "scriptUrl": "https://vx2plugin.alokillgtv.workers.dev/Plugins/movie/nguoncnew_plugin.js",
       "iconUrl": "https://raw.githubusercontent.com/mangyeu/TV/refs/heads/main/plugin_film/nguonc.ico?cache=true",
-      "info": "Phim hay, xem mượt. Nếu nguồn không vào được hãy thử truy cập bằng nút đăng nhập ở kho plugin để xem họ đổi domain gì và bạn tự đổi lại trên app và báo cho tác giả biết.",
-      "isVip": true,
+      "isVip": false,
       "openvax": true
     },
         {
