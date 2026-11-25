@@ -18,30 +18,55 @@ function getManifest() {
         isAdult: true,
         type: "MOVIE",
         layoutType: "VERTICAL",
-        playerType: "auto"
+        playerType: "embedtoexoplay"
     });
 }
 
 function getHomeSections() {
+    // Các slug này là đường dẫn có thật trong menu và homepage của javhdz.today.
     return JSON.stringify([
-        { slug: "recent", title: "Recently Updated", type: "Horizontal", path: "/recent/" },
+        { slug: "recent", title: "Latest Updates", type: "Horizontal", path: "/recent/" },
         { slug: "jav-sub", title: "JAV Sub", type: "Horizontal", path: "/jav-sub/" },
-        { slug: "uncensored-jav", title: "Uncensored", type: "Horizontal", path: "/uncensored-jav/" }
+        { slug: "uncensored-jav", title: "Uncensored JAV", type: "Horizontal", path: "/uncensored-jav/" },
+        { slug: "reducing-mosaic", title: "Reducing Mosaic", type: "Horizontal", path: "/reducing-mosaic/" },
+        { slug: "amateur", title: "Amateur", type: "Horizontal", path: "/amateur/" },
+        { slug: "beautiful-girl", title: "Beautiful Girl", type: "Horizontal", path: "/beautiful-girl/" },
+        { slug: "big-tits", title: "Big Tits", type: "Horizontal", path: "/big-tits/" },
+        { slug: "creampie", title: "Creampie", type: "Horizontal", path: "/creampie/" },
+        { slug: "debut-production", title: "Debut Production", type: "Horizontal", path: "/debut-production/" }
     ]);
 }
 
 function getPrimaryCategories() {
+    // Chỉ dùng các URL danh mục xuất hiện trong View Source của website.
     return JSON.stringify([
-        { name: "Recently Updated", slug: "recent" },
+        { name: "Latest Updates", slug: "recent" },
+        { name: "Popular Today", slug: "popular/today" },
         { name: "JAV Sub", slug: "jav-sub" },
-        { name: "Uncensored", slug: "uncensored-jav" },
+        { name: "Chinese Subtitle", slug: "chinese-subtitle" },
+        { name: "Uncensored JAV", slug: "uncensored-jav" },
         { name: "Reducing Mosaic", slug: "reducing-mosaic" },
         { name: "Amateur", slug: "amateur" },
+        { name: "Creampie", slug: "creampie" },
         { name: "Big Tits", slug: "big-tits" },
         { name: "Married Woman", slug: "married-woman" },
-        { name: "Mature Woman", slug: "mature-woman" },
         { name: "Beautiful Girl", slug: "beautiful-girl" },
-        { name: "Creampie", slug: "creampie" }
+        { name: "Mature Woman", slug: "mature-woman" },
+        { name: "Cuckold", slug: "cuckold" },
+        { name: "Squirting", slug: "squirting" },
+        { name: "Nasty", slug: "nasty" },
+        { name: "Hardcore", slug: "hardcore" },
+        { name: "Mother", slug: "mother" },
+        { name: "Debut Production", slug: "debut-production" },
+        { name: "Release Day", slug: "releaseday" },
+        { name: "Top Most Searched", slug: "top-most-searched-jav-movies-on-the-internet" },
+        { name: "Popular", slug: "popular" },
+        { name: "Top Rated", slug: "rated" },
+        { name: "Most Discussed", slug: "discussed" },
+        { name: "Most Downloaded", slug: "downloaded" },
+        { name: "Longest Videos", slug: "longest" },
+        { name: "Most Watched", slug: "watched" },
+        { name: "All Categories", slug: "categories" }
     ]);
 }
 
@@ -499,18 +524,7 @@ function parseEmbedResponse(html, sourceUrl) {
 }
 
 function parseCategoriesResponse(html) {
-    return JSON.stringify([
-        { name: "Recently Updated", slug: "recent" },
-        { name: "JAV Sub", slug: "jav-sub" },
-        { name: "Uncensored", slug: "uncensored-jav" },
-        { name: "Reducing Mosaic", slug: "reducing-mosaic" },
-        { name: "Amateur", slug: "amateur" },
-        { name: "Big Tits", slug: "big-tits" },
-        { name: "Married Woman", slug: "married-woman" },
-        { name: "Mature Woman", slug: "mature-woman" },
-        { name: "Beautiful Girl", slug: "beautiful-girl" },
-        { name: "Creampie", slug: "creampie" }
-    ]);
+    return getPrimaryCategories();
 }
 
 function parseCountriesResponse(html) { return "[]"; }
