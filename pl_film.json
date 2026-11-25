@@ -19,12 +19,13 @@
       "openvax": true
     },
         {
-            "id": "tvhay",
-            "name": "TVHAY",
-            "version": "1.0.1",
-            "baseUrl": "https://tvhay.buzz",
-            "scriptUrl": "https://raw.githubusercontent.com/mangyeu/TV/refs/heads/main/plugin_film/clbpx_plugin.js",
-            "iconUrl": "https://raw.githubusercontent.com/mangyeu/TV/refs/heads/main/plugin_film/clbphimxua-logo.ico"
+            "id": "phimnet",
+      "name": "Phimnet (MOVIE)",
+      "version": "1.2.1",
+      "scriptUrl": "https://vx2plugin.alokillgtv.workers.dev/Plugins/movie/phimnet_plugin.js",
+      "iconUrl": "https://vaxplugin.alokillgtv.workers.dev/img/icon/phimnet.png?cache=true",
+      "isVip": false,
+      "openvax": true
         },
         {
             "id": "phimmoichillz",
