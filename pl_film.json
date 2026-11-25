@@ -28,6 +28,16 @@
       "openvax": true
         },
         {
+      "id": "rophim",
+      "name": "Rophim (MOVIE)",
+      "version": "2.4",
+      "scriptUrl": "https://vx2plugin.alokillgtv.workers.dev/Plugins/movie/rophim_plugin.js",
+      "iconUrl": "https://vaxplugin.alokillgtv.workers.dev/img/icon/rophim.png?cache=true",
+      "info": "Nguồn Rophim phục hồi lại. Xem 4K hơi bị ok nha.",
+      "isVip": false,
+      "openvax": true
+    },
+        {
             "id": "phimmoichillz",
             "name": "phimmoichillz",
             "version": "1.0",
