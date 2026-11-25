@@ -2,7 +2,16 @@
     "version": 1,
     "plugins": [
         {
-            "id": "kkphim",
+            "id": "tvhay",
+            "name": "TVHAY",
+            "version": "1.0.0",
+            "baseUrl": "https://tvhay.buzz",
+            "scriptUrl": "https://raw.githubusercontent.com/mangyeu/TV/refs/heads/main/plugin_film/clbpx_plugin.js",
+            "iconUrl": "https://tvhay.buzz/favicon.png?cache=true",
+            "openvax": true
+        },
+        {
+            "id": "",
             "name": "KKPhim C",
             "version": "1.1.2",
             "baseUrl": "https://phimapi.com",
