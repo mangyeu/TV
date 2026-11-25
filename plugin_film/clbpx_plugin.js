@@ -98,7 +98,7 @@ function getManifest() {
   return JSON.stringify({
     id:"tvhay", name:"TVHAY", version:"1.0.0", baseUrl:BASE_URL,
     author:"VAApp Community", referrer:BASE_URL+"/", imageReferer:BASE_URL+"/",
-    iconUrl:"", isEnabled:true, isAdult:false, type:"VIDEO",
+    iconUrl:"https://tvhay.buzz/favicon.png", isEnabled:true, isAdult:false, type:"VIDEO",
     layoutType:"HORIZONTAL", playerType:"exoplayer", subtitleCat:true,
     debug:DEBUG_MODE, adblock:true
   });
