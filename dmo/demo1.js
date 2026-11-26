@@ -1,13 +1,14 @@
 // JAVCC.ME - VAAPP plugin
 // Based on the supplied VAAPP template and JAVCC page source.
-// Player extraction: JAVCC detail page -> defaultUrl iframe -> HLS URL if exposed by iframe response.
+// Player extraction: dynamic pox/dp parsing + HLS scan; embed fallback remains available.
+// NOTE: pure-JS AES is not included in this build; CryptoJS is used only if host provides it.
 // The stream URL is dynamic; do not hard-code Download Helper tokens.
 
 function getManifest() {
     return JSON.stringify({
         id: "javcc_me",
         name: "JAVCC.ME",
-        version: "1.0.0",
+        version: "1.1.0",
         baseUrl: "https://javcc.me",
         iconUrl: "https://javcc.me/wp-content/uploads/2026/02/javcc.png",
         isEnabled: true,
@@ -288,9 +289,39 @@ function _jDecodeScripts(html) {
     }
     return out;
 }
+// Extract per-page player parameters. No film-specific values are embedded.
+function _jPlayerParams(html) {
+    var s = _jDecodeScripts(html);
+    var p = s.match(/\bpox\s*=\s*['"]([^'"]+)['"]/i);
+    var d = s.match(/\bdp\s*=\s*['"]([^'"]+)['"]/i);
+    if (!p || !d) return null;
+    return { pox: p[1], dp: d[1] };
+}
+// The source's pr() routine selects the ten-character segment after the first '+'.
+// Example structure: prefix + dynamic-key-fragment + suffix. Values are always read
+// from the current response, never hard-coded.
+function _jPlayerKey(pox) {
+    var parts = String(pox || '').split('+');
+    return parts.length > 1 ? parts[1].substring(0, 10) : '';
+}
+function _jCryptoJsDecrypt(cipherJson, passphrase) {
+    // VAAPP/QuickJS builds differ. This compatibility branch is used only if the host
+    // exposes CryptoJS; otherwise leave playback on the embed fallback.
+    try {
+        if (typeof CryptoJS === 'undefined' || !CryptoJS.AES) return '';
+        var parsed = JSON.parse(cipherJson);
+        var cp = CryptoJS.lib.CipherParams.create({
+            ciphertext: CryptoJS.enc.Base64.parse(parsed.ct)
+        });
+        if (parsed.iv) cp.iv = CryptoJS.enc.Hex.parse(parsed.iv);
+        if (parsed.s) cp.salt = CryptoJS.enc.Hex.parse(parsed.s);
+        var cfg = { format: { stringify: function(x) { return JSON.stringify({ct:x.ciphertext.toString(CryptoJS.enc.Base64), iv:x.iv ? x.iv.toString() : undefined, s:x.salt ? x.salt.toString() : undefined}); }, parse: function() { return cp; } } };
+        var plain = CryptoJS.AES.decrypt(cp, passphrase);
+        return plain.toString(CryptoJS.enc.Utf8) || '';
+    } catch (e) { return ''; }
+}
 function _jFindStream(html) {
     var s = _jDecodeScripts(html);
-    // Look for explicit HLS URLs in source, inline JS, JSON or escaped strings.
     var patterns = [
         /https?:\\?\/\\?\/[^"'\\\s<>]+?\.m3u8(?:\?[^"'\\\s<>]*)?/ig,
         /https?:\/\/[^"'\\\s<>]+?\.m3u8(?:\?[^"'\\\s<>]*)?/ig,
@@ -299,12 +330,21 @@ function _jFindStream(html) {
     for (var p = 0; p < patterns.length; p++) {
         var m = patterns[p].exec(s);
         if (m) {
-            var u = m[1] || m[0];
-            u = u.replace(/\\\//g, "/").replace(/\\u0026/g, "&").replace(/&amp;/g, "&");
+            var u = (m[1] || m[0]).replace(/\\\//g, '/').replace(/\\u0026/g, '&').replace(/&amp;/g, '&');
             if (/\.m3u8(?:$|[?#])/i.test(u)) return u;
         }
     }
-    return "";
+    var params = _jPlayerParams(s);
+    if (params) {
+        var key = _jPlayerKey(params.pox);
+        var decoded = _jBase64Decode(params.dp);
+        var clear = _jCryptoJsDecrypt(decoded, key);
+        if (clear) {
+            var result = clear.match(/https?:\/\/[^"'\s]+?\.m3u8(?:\?[^"'\s]*)?/i);
+            if (result) return result[0];
+        }
+    }
+    return '';
 }
 function _jPlayerResult(html, sourceUrl) {
     var stream = _jFindStream(html);
