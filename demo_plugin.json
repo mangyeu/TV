@@ -27,7 +27,7 @@
     },
     {
         "id": "javcc_me",
-        "name": "JAVCC",
+        "name": "JAVCC_ME",
         "version": "1.0.0",
         "baseUrl": "https://javcc.me",
         "scriptUrl": "https://raw.githubusercontent.com/mangyeu/TV/refs/heads/main/dmo/demo1.js",
