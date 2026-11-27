@@ -20,7 +20,7 @@
     {
         "id": "missav",
         "name": "MissAV",
-        "version": "1.0.1",
+        "version": "1.0.3",
         "baseUrl": "https://missav.media",
         "scriptUrl": "https://raw.githubusercontent.com/mangyeu/TV/refs/heads/main/dmo/missav.js",
         "iconUrl": "https://raw.githubusercontent.com/mangyeu/TV/refs/heads/main/dmo/missav.ico"
