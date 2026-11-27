@@ -2,7 +2,7 @@
   "version": 1,
   "plugins": [
     {
-        "id": "avdbapi",
+        "id": "avdbapi_jav",
         "name": "AVDB JAV",
         "version": "1.1.0",
         "baseUrl": "https://avdbapi.com",
