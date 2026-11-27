@@ -1,381 +1,656 @@
-var AVDB_BASE = "https://avdbapi.com/vi/api.php/provide/vod";
-var AVDB_SITE = "https://avdbapi.com";
-var AVDB_PAGE_SIZE = 30;
+// =============================================================================
+// VAAPP Plugin - AVDB API
+// Version: 1.0.0
+// Source API: https://avdbapi.com/api.php/provide/vod/
+// Compatible with VAAPP plugin_template (JSON/MacCMS Provide API)
+// =============================================================================
 
-function _safeJson(value, fallback) {
-    try {
-        if (typeof value === "string") return JSON.parse(value);
-        return value || fallback;
-    } catch (e) {
-        return fallback;
+var AVDB_API_BASE = "https://avdbapi.com/api.php/provide/vod/";
+var AVDB_SITE_BASE = "https://avdbapi.com";
+var AVDB_REFERER = "https://avdbapi.com/";
+var AVDB_PAGE_SIZE = 20;
+
+// -----------------------------------------------------------------------------
+// Helpers (ES5 only; no DOM, jQuery, fetch, or external libraries)
+// -----------------------------------------------------------------------------
+
+function avdbParseJson(input) {
+    if (input && typeof input === "object") return input;
+    var raw = String(input == null ? "" : input).replace(/^\uFEFF/, "").trim();
+    if (!raw) return {};
+    try { return JSON.parse(raw); } catch (e) {}
+    // Some providers wrap JSON in a callback or return JSON inside <pre>.
+    var pre = raw.match(/<pre[^>]*>([\s\S]*?)<\/pre>/i);
+    if (pre) {
+        raw = avdbDecodeHtml(pre[1]).trim();
+        try { return JSON.parse(raw); } catch (e2) {}
     }
+    var start = raw.indexOf("{");
+    var end = raw.lastIndexOf("}");
+    if (start >= 0 && end > start) {
+        try { return JSON.parse(raw.substring(start, end + 1)); } catch (e3) {}
+    }
+    return {};
 }
 
-function _str(value) {
-    if (value === null || value === undefined) return "";
-    return String(value);
+function avdbDecodeHtml(value) {
+    var s = String(value == null ? "" : value);
+    s = s.replace(/&amp;/gi, "&").replace(/&quot;/gi, '"')
+        .replace(/&#39;|&apos;/gi, "'").replace(/&lt;/gi, "<")
+        .replace(/&gt;/gi, ">").replace(/&#(\d+);/g, function (m, n) {
+            return String.fromCharCode(parseInt(n, 10));
+        }).replace(/&#x([0-9a-f]+);/gi, function (m, n) {
+            return String.fromCharCode(parseInt(n, 16));
+        });
+    return s.replace(/\\\//g, "/").replace(/\\u0026/gi, "&")
+        .replace(/\\u003d/gi, "=").replace(/\\u002f/gi, "/")
+        .replace(/\\u003a/gi, ":");
 }
 
-function _arr(value) {
-    if (value === null || value === undefined || value === "") return [];
-    if (Object.prototype.toString.call(value) === "[object Array]") return value;
-    if (typeof value === "string") return value.split(/[,，|]+/).map(function (x) { return x.trim(); }).filter(Boolean);
-    return [value];
+function avdbText(value) {
+    return avdbDecodeHtml(String(value == null ? "" : value))
+        .replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
 }
 
-function _first(obj, keys, fallback) {
-    var i, value;
-    for (i = 0; i < keys.length; i++) {
-        value = obj ? obj[keys[i]] : null;
-        if (value !== null && value !== undefined && value !== "") return value;
+function avdbEncode(value) {
+    return encodeURIComponent(String(value == null ? "" : value));
+}
+
+function avdbFilters(json) {
+    try { return JSON.parse(json || "{}") || {}; } catch (e) { return {}; }
+}
+
+function avdbFirst(obj, names, fallback) {
+    var i, v;
+    for (i = 0; i < names.length; i++) {
+        v = obj ? obj[names[i]] : null;
+        if (v !== undefined && v !== null && v !== "") return v;
     }
     return fallback;
 }
 
-function _query(params) {
-    var parts = [], key, value;
-    for (key in params) {
-        if (Object.prototype.hasOwnProperty.call(params, key) && params[key] !== undefined && params[key] !== null && params[key] !== "") {
-            value = params[key];
-            parts.push(encodeURIComponent(key) + "=" + encodeURIComponent(String(value)));
-        }
+function avdbAbsoluteUrl(url) {
+    var s = avdbDecodeHtml(url).trim();
+    if (!s) return "";
+    if (/^(https?:)?\/\//i.test(s)) {
+        if (s.indexOf("//") === 0) return "https:" + s;
+        if (s.indexOf("http://") === 0 || s.indexOf("https://") === 0) return s;
     }
-    return parts.join("&");
+    if (s.charAt(0) === "/") return AVDB_SITE_BASE + s;
+    return s;
 }
 
-function _apiUrl(params) {
-    return AVDB_BASE + "?" + _query(params);
+function avdbIsDirectMedia(url) {
+    return /\.(m3u8|mp4|m4v|mpd|flv|webm)(?:$|[?#])/i.test(String(url || "")) ||
+        /(?:m3u8|playlist|\.mp4)(?:[?&]|$)/i.test(String(url || ""));
 }
 
-function _normalVideo(item) {
-    item = item || {};
-    var id = _first(item, ["id", "vod_id"], "");
-    var code = _first(item, ["movie_code", "vod_remarks", "vod_sub", "slug"], "");
-    var title = _first(item, ["name", "vod_name", "origin_name", "vod_en"], code || "Không có tiêu đề");
-    var poster = _first(item, ["poster_url", "vod_pic", "thumb_url", "vod_pic_thumb"], "");
+function avdbEmptyList(page) {
+    return JSON.stringify({
+        items: [],
+        pagination: { currentPage: page || 1, totalPages: 1, totalItems: 0 }
+    });
+}
+
+function avdbNormalizeMovie(movie) {
+    var id = avdbFirst(movie, ["vod_id", "id", "vod_en"], "");
+    var title = avdbFirst(movie, ["vod_name", "title", "name"], "");
+    if (id === "" || title === "") return null;
+    var poster = avdbAbsoluteUrl(avdbFirst(movie, ["vod_pic", "vod_pic_thumb", "pic", "poster"], ""));
+    var year = avdbFirst(movie, ["vod_year", "year"], "");
+    var remarks = avdbFirst(movie, ["vod_remarks", "remarks", "vod_state"], "");
     return {
-        id: _str(id || code || _first(item, ["slug"], title)),
-        title: _str(title),
-        posterUrl: _str(poster),
-        backdropUrl: _str(_first(item, ["thumb_url", "vod_pic_thumb", "poster_url", "vod_pic"], poster)),
-        description: _str(_first(item, ["description", "vod_content"], "")),
-        year: _str(_first(item, ["year", "vod_year"], "")),
-        quality: _str(_first(item, ["quality"], "")),
-        status: _str(_first(item, ["status", "type_name"], "")),
-        duration: _str(_first(item, ["time", "vod_duration"], "")),
-        casts: _arr(_first(item, ["actor", "vod_actor"], [])).join(", "),
-        director: _arr(_first(item, ["director", "vod_director"], [])).join(", "),
-        category: _arr(_first(item, ["category", "vod_class"], [])).join(", "),
-        movieCode: _str(code),
-        raw: item
+        id: String(id),
+        title: avdbText(title),
+        posterUrl: poster,
+        backdropUrl: avdbAbsoluteUrl(avdbFirst(movie, ["vod_pic_slide", "vod_bg", "backdrop"], poster)),
+        description: avdbText(avdbFirst(movie, ["vod_blurb", "vod_content", "description"], "")),
+        year: year,
+        status: avdbText(remarks),
+        category: avdbText(avdbFirst(movie, ["type_name", "vod_class", "category"], "")),
+        quality: avdbText(avdbFirst(movie, ["vod_remarks", "quality"], "")),
+        rating: avdbFirst(movie, ["vod_score", "rating"], ""),
+        duration: avdbText(avdbFirst(movie, ["vod_duration", "duration"], "")),
+        casts: avdbText(avdbFirst(movie, ["vod_actor", "actors"], "")),
+        director: avdbText(avdbFirst(movie, ["vod_director", "director"], ""))
     };
 }
 
-function _extractVideos(data) {
-    data = _safeJson(data, {});
-    if (Object.prototype.toString.call(data) === "[object Array]") return data;
-    if (data && Object.prototype.toString.call(data.list) === "[object Array]") return data.list;
-    if (data && data.data && Object.prototype.toString.call(data.data.list) === "[object Array]") return data.data.list;
-    return [];
+function avdbParseList(input) {
+    var data = avdbParseJson(input);
+    var source = data.list || data.data || data.items || [];
+    if (!source.length && data.vod) source = data.vod;
+    var items = [];
+    var i, normalized;
+    for (i = 0; i < source.length; i++) {
+        normalized = avdbNormalizeMovie(source[i] || {});
+        if (normalized) items.push(normalized);
+    }
+    var page = parseInt(data.page, 10) || 1;
+    var totalPages = parseInt(data.pagecount || data.total_pages, 10) || 1;
+    var totalItems = parseInt(data.total, 10) || items.length;
+    return JSON.stringify({
+        items: items,
+        pagination: { currentPage: page, totalPages: totalPages, totalItems: totalItems }
+    });
 }
 
-function _episodeEntries(video) {
-    var result = [], episodes = video ? video.episodes : null;
-    var serverData, serverName, key, ep, playUrl, playFrom, parts, i, pair;
-
-    // Standard API: episodes.server_data = { "Full": { slug, link_embed } }
-    if (episodes && typeof episodes === "object" && episodes.server_data) {
-        serverData = episodes.server_data;
-        serverName = _str(episodes.server_name || "Server 1");
-        for (key in serverData) {
-            if (Object.prototype.hasOwnProperty.call(serverData, key)) {
-                ep = serverData[key] || {};
-                playUrl = _first(ep, ["link_embed", "link", "url", "file", "link_url"], "");
-                if (playUrl) result.push({ server: serverName, name: key || ep.name || "Tập 1", id: _str(playUrl), slug: _str(ep.slug || key) });
-            }
+// Parse MacCMS play_url format:
+// "Episode 1$url1#Episode 2$url2$$$Episode 1$url3"
+function avdbParsePlaySources(movie) {
+    var fromRaw = String(avdbFirst(movie, ["vod_play_from", "play_from"], "") || "");
+    var urlRaw = String(avdbFirst(movie, ["vod_play_url", "play_url"], "") || "");
+    var from = fromRaw.split("$$$");
+    var sourceLists = urlRaw.split("$$$");
+    var servers = [];
+    var i, j, sourceName, entries, pair, label, link, episodes;
+    for (i = 0; i < sourceLists.length; i++) {
+        sourceName = avdbText(from[i] || ("Server " + (i + 1)));
+        entries = sourceLists[i].split("#");
+        episodes = [];
+        for (j = 0; j < entries.length; j++) {
+            pair = entries[j].split("$");
+            if (pair.length < 2) continue;
+            label = avdbText(pair.shift());
+            link = avdbAbsoluteUrl(pair.join("$").trim());
+            if (!link) continue;
+            episodes.push({
+                id: link,
+                name: label || ("Tập " + (episodes.length + 1)),
+                slug: label || String(episodes.length + 1)
+            });
         }
+        if (episodes.length) servers.push({ name: sourceName, episodes: episodes });
     }
-
-    // Also accept array-based episode structures from alternate API responses.
-    if (episodes && Object.prototype.toString.call(episodes) === "[object Array]") {
-        for (i = 0; i < episodes.length; i++) {
-            ep = episodes[i] || {};
-            playUrl = _first(ep, ["link_embed", "url", "file", "link"], "");
-            if (playUrl) result.push({ server: _str(ep.server_name || "Server 1"), name: _str(ep.name || ep.title || ("Tập " + (i + 1))), id: _str(playUrl), slug: _str(ep.slug || "") });
+    // Alternative JSON-style episode fields used by some API mirrors.
+    if (!servers.length && movie.episodes && movie.episodes.length) {
+        episodes = [];
+        for (j = 0; j < movie.episodes.length; j++) {
+            var ep = movie.episodes[j] || {};
+            link = avdbAbsoluteUrl(avdbFirst(ep, ["url", "link", "play_url", "id"], ""));
+            if (link) episodes.push({
+                id: link,
+                name: avdbText(avdbFirst(ep, ["name", "title"], "Tập " + (j + 1))),
+                slug: String(j + 1)
+            });
         }
+        if (episodes.length) servers.push({ name: "Server", episodes: episodes });
     }
-
-    // Maccms-compatible fields, if returned by a proxy or alternate endpoint.
-    playUrl = _str(video && video.vod_play_url);
-    playFrom = _str(video && video.vod_play_from);
-    if (playUrl) {
-        parts = playUrl.split("$$$");
-        for (i = 0; i < parts.length; i++) {
-            pair = parts[i].split("#");
-            var j;
-            for (j = 0; j < pair.length; j++) {
-                var sep = pair[j].indexOf("$");
-                if (sep >= 0) {
-                    var epName = pair[j].substring(0, sep) || ("Tập " + (result.length + 1));
-                    var epUrl = pair[j].substring(sep + 1);
-                    if (epUrl) result.push({ server: playFrom.split("$$$")[i] || ("Server " + (i + 1)), name: epName, id: epUrl, slug: epName });
-                }
-            }
-        }
-    }
-    return result;
+    return servers;
 }
+
+function avdbExtractMedia(html) {
+    var raw = String(html == null ? "" : html);
+    var decoded = avdbDecodeHtml(raw);
+    var patterns = [
+        /(?:\"|')?(?:url|file|src|hls|m3u8)(?:\"|')?\s*[:=]\s*(?:\"|')((?:https?:)?\/\/[^\"'\s<>]+)(?:\"|')/i,
+        /https?:\\?\/\\?\/[^"'\\\s<>]+\.m3u8(?:\?[^"'\\\s<>]*)?/i,
+        /https?:\\?\/\\?\/[^"'\\\s<>]+\.mp4(?:\?[^"'\\\s<>]*)?/i,
+        /<iframe[^>]+src=[\"']([^\"']+)[\"']/i,
+        /<source[^>]+src=[\"']([^\"']+)[\"']/i
+    ];
+    var i, m;
+    for (i = 0; i < patterns.length; i++) {
+        m = decoded.match(patterns[i]);
+        if (m) {
+            var candidate = m[1] || m[0];
+            candidate = avdbAbsoluteUrl(candidate.replace(/\\\//g, "/"));
+            if (candidate) return candidate;
+        }
+    }
+    return "";
+}
+
+function avdbDetailObject(input) {
+    var data = avdbParseJson(input);
+    var list = data.list || data.data || data.items || [];
+    if (list.length) return list[0] || {};
+    if (data.vod && data.vod.length) return data.vod[0] || {};
+    if (data.vod_id || data.id) return data;
+    return {};
+}
+
+// -----------------------------------------------------------------------------
+// 1. Config & Metadata
+// -----------------------------------------------------------------------------
 
 function getManifest() {
     return JSON.stringify({
-        "id": "avdbapi_jav",
-        "name": "AVDBAPI - JAV",
-        "version": "1.1.0",
-        "baseUrl": AVDB_SITE,
-        "iconUrl": "https://avdbapi.com/favicon.ico",
-        "isEnabled": true,
-        "isAdult": true,
-        "type": "MOVIE",
-        "layoutType": "VERTICAL",
-        "playerType": "embed"
+        id: "avdb_api",
+        name: "AVDB API",
+        version: "1.0.0",
+        baseUrl: AVDB_SITE_BASE,
+        iconUrl: "",
+        isEnabled: true,
+        isAdult: true,
+        type: "MOVIE",
+        layoutType: "VERTICAL",
+        playerType: "exoplayer"
     });
 }
 
 function getHomeSections() {
     return JSON.stringify([
-        { slug: "censored", title: "Có kiểm duyệt", type: "Horizontal", path: "" },
-        { slug: "uncensored", title: "Không kiểm duyệt", type: "Horizontal", path: "" },
+        { slug: "latest", title: "Mới cập nhật", type: "Horizontal", path: "" },
+        { slug: "censored", title: "Censored", type: "Horizontal", path: "" },
+        { slug: "uncensored", title: "Uncensored", type: "Horizontal", path: "" },
+        { slug: "uncensored-leaked", title: "Uncensored Leaked", type: "Horizontal", path: "" },
         { slug: "amateur", title: "Amateur", type: "Horizontal", path: "" },
-        { slug: "chinese", title: "Chinese AV", type: "Horizontal", path: "" },
+        { slug: "chinese-av", title: "Chinese AV", type: "Horizontal", path: "" },
         { slug: "hentai", title: "Hentai", type: "Horizontal", path: "" },
-        { slug: "english-subtitle", title: "Phụ đề tiếng Anh", type: "Horizontal", path: "" },
-        { slug: "latest", title: "Mới cập nhật", type: "Grid", path: "" }
+        { slug: "english-subtitle", title: "English Subtitle", type: "Horizontal", path: "" }
     ]);
 }
 
 function getPrimaryCategories() {
     return JSON.stringify([
-        { name: "Có kiểm duyệt", slug: "1" },
-        { name: "Không kiểm duyệt", slug: "2" },
-        { name: "Không kiểm duyệt (Leak)", slug: "3" },
-        { name: "Amateur", slug: "4" },
-        { name: "Chinese AV", slug: "5" },
-        { name: "Hentai", slug: "6" },
-        { name: "Phụ đề tiếng Anh", slug: "7" }
+        { name: "Censored", slug: "censored" },
+        { name: "Uncensored", slug: "uncensored" },
+        { name: "Uncensored Leaked", slug: "uncensored-leaked" },
+        { name: "Amateur", slug: "amateur" },
+        { name: "Chinese AV", slug: "chinese-av" },
+        { name: "Hentai", slug: "hentai" },
+        { name: "English Subtitle", slug: "english-subtitle" }
     ]);
 }
 
 function getFilterConfig() {
     return JSON.stringify({
-        sort: [
-            { name: "Mới nhất", value: "desc" },
-            { name: "Cũ nhất", value: "asc" }
-        ],
+        sort: [],
         category: [],
-        year: true
+        year: [],
+        country: []
     });
 }
 
-function getUrlList(slug, filtersJson) {
-    var filters = _safeJson(filtersJson, {});
-    var page = parseInt(filters.page || filters.pg || 1, 10);
-    if (!page || page < 1) page = 1;
-    var typeId = "";
-    var sectionMap = { censored: "1", uncensored: "2", "uncensored-leaked": "3", amateur: "4", chinese: "5", hentai: "6", "english-subtitle": "7" };
-    if (/^[1-7]$/.test(_str(slug))) typeId = _str(slug);
-    else if (sectionMap[slug]) typeId = sectionMap[slug];
-    else if (filters.categoryId) typeId = filters.categoryId;
+// -----------------------------------------------------------------------------
+// 2. URL builders
+// -----------------------------------------------------------------------------
 
-    return _apiUrl({
-        ac: "detail",
-        t: typeId,
-        pg: page,
-        pagesize: AVDB_PAGE_SIZE,
-        year: filters.year || "",
-        sort_direction: filters.sort || filters.sort_direction || "desc",
-        isend: filters.isend
-    });
+function getUrlList(slug, filtersJson) {
+    var filters = avdbFilters(filtersJson);
+    var page = parseInt(filters.page, 10) || 1;
+    var params = ["ac=list", "pg=" + page, "pagesize=" + (parseInt(filters.pagesize, 10) || AVDB_PAGE_SIZE)];
+    var categoryMap = {
+        "censored": 1, "uncensored": 2, "uncensored-leaked": 3,
+        "amateur": 4, "chinese-av": 5, "hentai": 6, "english-subtitle": 7
+    };
+    var category = filters.category || filters.type || categoryMap[String(slug || "").toLowerCase()];
+    if (category && /^\d+$/.test(String(category))) params.push("t=" + encodeURIComponent(category));
+    if (filters.year) params.push("year=" + avdbEncode(filters.year));
+    if (filters.hours || filters.h) params.push("h=" + avdbEncode(filters.hours || filters.h));
+    if (filters.sort_direction) params.push("sort_direction=" + avdbEncode(filters.sort_direction));
+    // Home's latest section uses no category; category slugs map to AVDB IDs.
+    return AVDB_API_BASE + "?" + params.join("&");
 }
 
 function getUrlSearch(keyword, filtersJson) {
-    var filters = _safeJson(filtersJson, {});
-    var page = parseInt(filters.page || filters.pg || 1, 10);
-    if (!page || page < 1) page = 1;
-    return _apiUrl({ ac: "detail", wd: _str(keyword).trim(), pg: page, pagesize: AVDB_PAGE_SIZE });
+    var filters = avdbFilters(filtersJson);
+    var page = parseInt(filters.page, 10) || 1;
+    return AVDB_API_BASE + "?ac=list&wd=" + avdbEncode(keyword) +
+        "&pg=" + page + "&pagesize=" + (parseInt(filters.pagesize, 10) || AVDB_PAGE_SIZE);
 }
 
 function getUrlDetail(slug) {
-    var value = _str(slug).trim();
+    var value = String(slug == null ? "" : slug).trim();
     if (/^https?:\/\//i.test(value)) return value;
-    if (/^\d+$/.test(value)) return _apiUrl({ ac: "detail", ids: value });
-    // Accept JAV code or API slug as a search fallback.
-    return _apiUrl({ ac: "detail", wd: value, pagesize: 1 });
+    return AVDB_API_BASE + "?ac=detail&ids=" + avdbEncode(value);
 }
 
-function getUrlCategories() { return _apiUrl({ ac: "list", pg: 1, pagesize: 1 }); }
+function getUrlCategories() {
+    return AVDB_API_BASE + "?ac=list";
+}
 function getUrlCountries() { return ""; }
 function getUrlYears() { return ""; }
 
-function parseListResponse(response) {
-    try {
-        var data = _safeJson(response, {});
-        var rawItems = _extractVideos(data);
-        var items = rawItems.map(function (item) {
-            var v = _normalVideo(item);
-            return { id: v.id, title: v.title, posterUrl: v.posterUrl, backdropUrl: v.backdropUrl, description: v.description, year: v.year, quality: v.quality, status: v.status, movieCode: v.movieCode };
-        });
-        var page = parseInt(data.page || 1, 10);
-        var pageCount = parseInt(data.pagecount || 1, 10);
-        return JSON.stringify({ items: items, pagination: { currentPage: page, totalPages: pageCount, totalItems: parseInt(data.total || items.length, 10) } });
-    } catch (e) {
-        return JSON.stringify({ items: [], pagination: { currentPage: 1, totalPages: 1 } });
-    }
+// -----------------------------------------------------------------------------
+// 3. Parsers
+// -----------------------------------------------------------------------------
+
+function parseListResponse(html) {
+    return avdbParseList(html);
 }
 
-function parseSearchResponse(response) {
-    return parseListResponse(response);
+function parseSearchResponse(html) {
+    return avdbParseList(html);
 }
 
-function parseMovieDetail(response) {
-    try {
-        var data = _safeJson(response, {});
-        var list = _extractVideos(data);
-        var item = list.length ? list[0] : (data && data.id ? data : null);
-        if (!item) return JSON.stringify({ id: "", title: "Không tìm thấy dữ liệu", posterUrl: "", description: "", servers: [] });
-        var v = _normalVideo(item);
-        var entries = _episodeEntries(item);
-        var servers = [], byServer = {}, i, e;
-        for (i = 0; i < entries.length; i++) {
-            e = entries[i];
-            if (!byServer[e.server]) {
-                byServer[e.server] = { name: e.server, episodes: [] };
-                servers.push(byServer[e.server]);
-            }
-            // Resolve the episode through AVDB's detail API first. The API returns
-            // link_embed; AVDB recommends using that embed URL instead of guessing
-            // or extracting an m3u8 URL from the player page.
-            var episodeId = e.id;
-            if (item.id !== undefined && item.id !== null && item.id !== "" && /^https?:\/\//i.test(e.id)) {
-                episodeId = _apiUrl({ ac: "detail", ids: item.id });
-            }
-            byServer[e.server].episodes.push({ id: episodeId, name: e.name, slug: e.slug });
-        }
+function parseMovieDetail(html) {
+    var movie = avdbDetailObject(html);
+    if (!movie || (!movie.vod_id && !movie.id && !movie.vod_name)) {
         return JSON.stringify({
-            id: v.id,
-            title: v.title,
-            posterUrl: v.posterUrl,
-            backdropUrl: v.backdropUrl,
-            description: v.description,
-            servers: servers,
-            quality: v.quality,
-            year: parseInt(v.year, 10) || v.year,
-            rating: 0,
-            status: v.status || _str(item.type_name || ""),
-            duration: v.duration,
-            casts: v.casts,
-            director: v.director,
-            category: v.category,
-            movieCode: v.movieCode
+            id: "", title: "", posterUrl: "", backdropUrl: "",
+            description: "", servers: [], quality: "", year: "",
+            rating: "", status: "", duration: "", casts: "",
+            director: "", category: ""
         });
-    } catch (e) {
-        return JSON.stringify({ id: "", title: "Lỗi đọc dữ liệu", posterUrl: "", description: "", servers: [] });
     }
+    var normalized = avdbNormalizeMovie(movie) || {};
+    return JSON.stringify({
+        id: String(avdbFirst(movie, ["vod_id", "id"], normalized.id || "")),
+        title: normalized.title || "",
+        posterUrl: normalized.posterUrl || "",
+        backdropUrl: normalized.backdropUrl || normalized.posterUrl || "",
+        description: avdbText(avdbFirst(movie, ["vod_content", "vod_blurb", "description"], normalized.description || "")),
+        servers: avdbParsePlaySources(movie),
+        quality: avdbText(avdbFirst(movie, ["vod_remarks", "vod_version", "quality"], "")),
+        year: avdbFirst(movie, ["vod_year", "year"], ""),
+        rating: avdbFirst(movie, ["vod_score", "rating"], ""),
+        status: avdbText(avdbFirst(movie, ["vod_remarks", "vod_state", "status"], "")),
+        duration: avdbText(avdbFirst(movie, ["vod_duration", "duration"], "")),
+        casts: avdbText(avdbFirst(movie, ["vod_actor", "actors"], "")),
+        director: avdbText(avdbFirst(movie, ["vod_director", "director"], "")),
+        category: avdbText(avdbFirst(movie, ["type_name", "vod_class", "category"], ""))
+    });
 }
 
-function _decodeHtml(value) {
-    return _str(value).replace(/&amp;/g, "&").replace(/&#38;/g, "&").replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&#x2F;/g, "/").replace(/\\\//g, "/").replace(/\\u0026/g, "&");
-}
-
-function _absoluteUrl(url, base) {
-    url = _decodeHtml(url).trim();
-    if (!url) return "";
-    if (/^(https?:)?\/\//i.test(url)) return url.indexOf("//") === 0 ? "https:" + url : url;
-    if (url.charAt(0) === "/") {
-        var m = _str(base).match(/^(https?:\/\/[^/]+)/i);
-        return (m ? m[1] : AVDB_SITE) + url;
+// Receives a direct episode URL or a fetched player/stream response.
+// Direct M3U8/MP4 links are returned unchanged for ExoPlayer.
+function parseDetailResponse(html) {
+    var raw = String(html == null ? "" : html).trim();
+    var direct = avdbAbsoluteUrl(raw);
+    if (/^https?:\/\/\S+$/i.test(direct) && avdbIsDirectMedia(direct)) {
+        return JSON.stringify({
+            url: direct,
+            isEmbed: false,
+            mimeType: /\.mp4(?:$|[?#])/i.test(direct) ? "video/mp4" : "application/x-mpegURL",
+            headers: { Referer: AVDB_REFERER },
+            subtitles: []
+        });
     }
-    return url;
-}
-
-function _findStream(text) {
-    var patterns = [
-        /(?:file|src|url|source|hls)\s*[:=]\s*["']([^"']+\.m3u8(?:\?[^"']*)?)["']/i,
-        /["'](https?:\\?\/\\?\/[^"'\s]+\.m3u8(?:\?[^"']*)?)["']/i,
-        /(https?:\/\/[^\s"'<>]+\.m3u8(?:\?[^\s"'<>]*)?)/i,
-        /(?:file|src|url|source)\s*[:=]\s*["']([^"']+\.mp4(?:\?[^"']*)?)["']/i,
-        /(https?:\/\/[^\s"'<>]+\.mp4(?:\?[^\s"'<>]*)?)/i
-    ];
-    var i, match;
-    for (i = 0; i < patterns.length; i++) {
-        match = _str(text).match(patterns[i]);
-        if (match && match[1]) return _decodeHtml(match[1]).replace(/\\\//g, "/");
+    var data = avdbParseJson(raw);
+    var media = avdbFirst(data, ["url", "file", "play_url", "m3u8", "src"], "");
+    if (media) {
+        media = avdbAbsoluteUrl(media);
+        return JSON.stringify({
+            url: media,
+            isEmbed: !avdbIsDirectMedia(media),
+            mimeType: /\.mp4(?:$|[?#])/i.test(media) ? "video/mp4" :
+                (avdbIsDirectMedia(media) ? "application/x-mpegURL" : ""),
+            headers: { Referer: AVDB_REFERER },
+            subtitles: []
+        });
     }
-    return "";
+    media = avdbExtractMedia(raw);
+    if (media) {
+        return JSON.stringify({
+            url: media,
+            isEmbed: !avdbIsDirectMedia(media),
+            mimeType: /\.mp4(?:$|[?#])/i.test(media) ? "video/mp4" :
+                (avdbIsDirectMedia(media) ? "application/x-mpegURL" : ""),
+            headers: { Referer: AVDB_REFERER },
+            subtitles: []
+        });
+    }
+    // If a URL was supplied but is not a direct media file, let App load it as embed.
+    if (/^https?:\/\//i.test(raw)) {
+        return JSON.stringify({
+            url: raw,
+            isEmbed: true,
+            headers: { Referer: AVDB_REFERER },
+            subtitles: []
+        });
+    }
+    return JSON.stringify({ url: "", isEmbed: false, subtitles: [] });
 }
 
-function _findIframe(text) {
-    var match = _str(text).match(/<iframe[^>]+(?:src|data-src)\s*=\s*["']([^"']+)["']/i);
-    if (!match) match = _str(text).match(/["'](?:url|embed|iframe)["']\s*:\s*["']([^"']+)["']/i);
-    return match && match[1] ? _decodeHtml(match[1]) : "";
+function parseEmbedResponse(html, sourceUrl) {
+    var media = avdbExtractMedia(html);
+    if (!media) {
+        var data = avdbParseJson(html);
+        media = avdbAbsoluteUrl(avdbFirst(data, ["url", "file", "play_url", "m3u8", "src"], ""));
+    }
+    if (media) {
+        return JSON.stringify({
+            url: media,
+            isEmbed: !avdbIsDirectMedia(media),
+            mimeType: /\.mp4(?:$|[?#])/i.test(media) ? "video/mp4" :
+                (avdbIsDirectMedia(media) ? "application/x-mpegURL" : ""),
+            headers: { Referer: sourceUrl || AVDB_REFERER },
+            subtitles: []
+        });
+    }
+    var iframe = String(html || "").match(/<iframe[^>]+src=["']([^"']+)["']/i);
+    if (iframe && iframe[1]) {
+        return JSON.stringify({
+            url: avdbAbsoluteUrl(iframe[1]),
+            isEmbed: true,
+            headers: { Referer: sourceUrl || AVDB_REFERER }
+        });
+    }
+    return JSON.stringify({ url: "", isEmbed: false });
 }
 
-function parseDetailResponse(response) {
-    var text = _str(response);
-    try {
-        var data = JSON.parse(text);
-        if (data && data.url) return JSON.stringify(data);
-        if (data && data.list && data.list.length) {
-            var found = _episodeEntries(data.list[0]);
-            if (found.length) {
-                // link_embed is the final player page. Do not recursively scrape
-                // it for an m3u8: AVDB's own troubleshooting recommends embed.
-                return JSON.stringify({
-                    url: _absoluteUrl(found[0].id, AVDB_SITE),
-                    isEmbed: false,
-                    headers: { Referer: AVDB_SITE },
-                    subtitles: []
-                });
+function parseCategoriesResponse(html) {
+    var data = avdbParseJson(html);
+    var classes = data.class || data.classes || data.categories || [];
+    var result = [];
+    var i, item, id, name;
+    for (i = 0; i < classes.length; i++) {
+        item = classes[i] || {};
+        id = avdbFirst(item, ["type_id", "id"], "");
+        name = avdbFirst(item, ["type_name", "name"], "");
+        if (id !== "" && name !== "") result.push({ name: avdbText(name), slug: String(id) });
+    }
+    return JSON.stringify(result);
+}
+
+function parseCountriesResponse(html) {
+    return "[]";
+}
+
+function parseYearsResponse(html) {
+    return "[]";
+}
+
+
+// =============================================================================
+// Compatibility patch 1.1.0 - robust AVDB images, list/detail shapes and players
+// ES5 only. No DOM, jQuery, fetch, CryptoJS or external dependency.
+// =============================================================================
+
+function avdbDeepValue(obj, keys) {
+    var i, j, cur, parts;
+    for (i = 0; i < keys.length; i++) {
+        parts = keys[i].split('.'); cur = obj;
+        for (j = 0; j < parts.length && cur != null; j++) cur = cur[parts[j]];
+        if (cur !== undefined && cur !== null && cur !== '') return cur;
+    }
+    return '';
+}
+
+function avdbImageUrl(value) {
+    var s = String(value == null ? '' : value).trim();
+    if (!s) return '';
+    s = avdbDecodeHtml(s).replace(/\\\//g, '/');
+    if (/^(data:|blob:)/i.test(s)) return '';
+    if (/^\/\//.test(s)) return 'https:' + s;
+    if (/^https?:\/\//i.test(s)) return s;
+    if (/^\/(?:\/)/.test(s)) return 'https:' + s;
+    if (s.charAt(0) === '/') return AVDB_SITE_BASE + s;
+    if (/^[a-z0-9.-]+\.[a-z]{2,}\//i.test(s)) return 'https://' + s;
+    return AVDB_SITE_BASE + '/' + s.replace(/^\.\//, '');
+}
+
+function avdbNormalizeMovie(movie) {
+    movie = movie || {};
+    var id = avdbFirst(movie, ['vod_id', 'id', 'vod_en', 'vod_code'], '');
+    var title = avdbFirst(movie, ['vod_name', 'title', 'name'], '');
+    if (id === '' || title === '') return null;
+    var poster = avdbImageUrl(avdbDeepValue(movie, [
+        'vod_pic', 'vod_pic_thumb', 'vod_pic_screenshot', 'vod_pic_url',
+        'pic', 'thumb', 'thumbnail', 'cover', 'poster', 'image', 'images.0'
+    ]));
+    var backdrop = avdbImageUrl(avdbDeepValue(movie, [
+        'vod_pic_slide', 'vod_bg', 'backdrop', 'background', 'fanart'
+    ])) || poster;
+    return {
+        id: String(id),
+        title: avdbText(title),
+        posterUrl: poster,
+        backdropUrl: backdrop,
+        description: avdbText(avdbFirst(movie, ['vod_blurb', 'vod_content', 'description', 'content'], '')),
+        year: avdbFirst(movie, ['vod_year', 'year'], ''),
+        status: avdbText(avdbFirst(movie, ['vod_remarks', 'remarks', 'vod_state', 'status'], '')),
+        category: avdbText(avdbFirst(movie, ['type_name', 'vod_class', 'category'], '')),
+        quality: avdbText(avdbFirst(movie, ['vod_version', 'vod_remarks', 'quality'], '')),
+        rating: avdbFirst(movie, ['vod_score', 'rating'], ''),
+        duration: avdbText(avdbFirst(movie, ['vod_duration', 'duration'], '')),
+        casts: avdbText(avdbFirst(movie, ['vod_actor', 'actors'], '')),
+        director: avdbText(avdbFirst(movie, ['vod_director', 'director'], ''))
+    };
+}
+
+function avdbGetArray(data) {
+    var source = data && (data.list || data.data || data.items || data.vod || data.result);
+    if (source && source.list && source.list.length !== undefined) source = source.list;
+    if (source && source.data && source.data.length !== undefined) source = source.data;
+    if (source && source.length !== undefined) return source;
+    if (source && typeof source === 'object') return [source];
+    if (data && (data.vod_id || data.id)) return [data];
+    return [];
+}
+
+function avdbParseList(input) {
+    var data = avdbParseJson(input), source = avdbGetArray(data), items = [];
+    var i, normalized;
+    for (i = 0; i < source.length; i++) {
+        normalized = avdbNormalizeMovie(source[i] || {});
+        if (normalized) items.push(normalized);
+    }
+    var page = parseInt(data.page || data.pg, 10) || 1;
+    var totalPages = parseInt(data.pagecount || data.total_pages || data.last_page, 10) || 1;
+    var totalItems = parseInt(data.total || data.total_hits, 10);
+    if (!(totalItems >= 0)) totalItems = items.length;
+    return JSON.stringify({items: items, pagination: {
+        currentPage: page, totalPages: totalPages, totalItems: totalItems
+    }});
+}
+
+function avdbDetailObject(input) {
+    var data = avdbParseJson(input), arr = avdbGetArray(data);
+    return arr.length ? (arr[0] || {}) : {};
+}
+
+function avdbParsePlaySources(movie) {
+    movie = movie || {};
+    var fromRaw = String(avdbFirst(movie, ['vod_play_from', 'play_from'], '') || '');
+    var urlRaw = avdbFirst(movie, ['vod_play_url', 'play_url'], '');
+    var from = fromRaw.split('$$$'), sourceLists, servers = [], i, j, entries, pair, link, label, eps;
+    if (Object.prototype.toString.call(urlRaw) === '[object Array]') {
+        sourceLists = urlRaw;
+    } else {
+        sourceLists = String(urlRaw || '').split('$$$');
+    }
+    for (i = 0; i < sourceLists.length; i++) {
+        var block = sourceLists[i], sourceName = avdbText(from[i] || ('Server ' + (i + 1)));
+        eps = [];
+        if (block && typeof block === 'object' && block.length !== undefined) {
+            for (j = 0; j < block.length; j++) {
+                var e = block[j] || {};
+                link = avdbFirst(e, ['url', 'link', 'play_url', 'id'], '');
+                if (link) eps.push({id: String(link), name: avdbText(avdbFirst(e, ['name','title'], 'Tập ' + (eps.length + 1))), slug: String(eps.length + 1)});
+            }
+        } else {
+            entries = String(block || '').split('#');
+            for (j = 0; j < entries.length; j++) {
+                pair = entries[j].split('$');
+                if (pair.length < 2) continue;
+                label = avdbText(pair.shift()); link = pair.join('$').trim();
+                if (!link) continue;
+                eps.push({id: link, name: label || ('Tập ' + (eps.length + 1)), slug: label || String(eps.length + 1)});
             }
         }
-    } catch (ignore) {}
-
-    var stream = _findStream(text);
-    if (stream) {
-        var mime = /\.m3u8(?:\?|$)/i.test(stream) ? "application/x-mpegURL" : "video/mp4";
-        return JSON.stringify({ url: stream, isEmbed: false, mimeType: mime, headers: { Referer: AVDB_SITE }, subtitles: [] });
+        if (eps.length) servers.push({name: sourceName, episodes: eps});
     }
-    var iframe = _findIframe(text);
-    if (iframe) return JSON.stringify({ url: _absoluteUrl(iframe, AVDB_SITE), isEmbed: true, headers: { Referer: AVDB_SITE }, subtitles: [] });
-
-    // If the API returned a direct media URL as plain text.
-    var plain = text.trim().replace(/^"|"$/g, "");
-    if (/^https?:\/\/.*\.(m3u8|mp4)(\?.*)?$/i.test(plain)) {
-        return JSON.stringify({ url: plain, isEmbed: false, mimeType: /\.m3u8/i.test(plain) ? "application/x-mpegURL" : "video/mp4", headers: { Referer: AVDB_SITE }, subtitles: [] });
+    if (!servers.length && movie.episodes && movie.episodes.length) {
+        eps = [];
+        for (j = 0; j < movie.episodes.length; j++) {
+            var ep = movie.episodes[j] || {};
+            link = avdbFirst(ep, ['url','link','play_url','id'], '');
+            if (link) eps.push({id: String(link), name: avdbText(avdbFirst(ep, ['name','title'], 'Tập ' + (j + 1))), slug: String(j + 1)});
+        }
+        if (eps.length) servers.push({name: 'Server', episodes: eps});
     }
-    return JSON.stringify({ url: "", isEmbed: false, subtitles: [] });
+    return servers;
 }
 
-function parseEmbedResponse(response, sourceUrl) {
-    var text = _str(response);
-    var stream = _findStream(text);
-    if (stream) {
-        return JSON.stringify({ url: _absoluteUrl(stream, sourceUrl), isEmbed: false, mimeType: /\.m3u8(?:\?|$)/i.test(stream) ? "application/x-mpegURL" : "video/mp4", headers: { Referer: sourceUrl || AVDB_SITE }, subtitles: [] });
+function avdbBuildPlayResult(url, referer) {
+    var u = avdbImageUrl(url);
+    var isMp4 = /\.mp4(?:$|[?#])/i.test(u);
+    return {url: u, isEmbed: !avdbIsDirectMedia(u), mimeType: isMp4 ? 'video/mp4' : (avdbIsDirectMedia(u) ? 'application/x-mpegURL' : ''), headers: {Referer: referer || AVDB_REFERER}, subtitles: []};
+}
+
+function avdbExtractMedia(html) {
+    var raw = avdbDecodeHtml(String(html == null ? '' : html));
+    var patterns = [
+        /(?:file|url|src|hls|m3u8|source)\s*[:=]\s*["']([^"']+\.(?:m3u8|mp4|mpd)(?:\?[^"']*)?)["']/i,
+        /https?:\\?\/\\?\/[^"'\s<>]+\.(?:m3u8|mp4|mpd)(?:\?[^"'\s<>]*)?/i,
+        /(?:https?:)?\/\/[^"'\s<>]+\.(?:m3u8|mp4|mpd)(?:\?[^"'\s<>]*)?/i,
+        /<source[^>]+src=["']([^"']+)["']/i,
+        /<iframe[^>]+src=["']([^"']+)["']/i
+    ];
+    var i, m, candidate;
+    for (i = 0; i < patterns.length; i++) {
+        m = raw.match(patterns[i]);
+        if (m) {
+            candidate = m[1] || m[0];
+            candidate = candidate.replace(/\\\//g, '/').replace(/&amp;/g, '&');
+            return avdbImageUrl(candidate);
+        }
     }
-    var iframe = _findIframe(text);
-    if (iframe) return JSON.stringify({ url: _absoluteUrl(iframe, sourceUrl), isEmbed: true, headers: { Referer: sourceUrl || AVDB_SITE }, subtitles: [] });
-    return JSON.stringify({ url: "", isEmbed: false, subtitles: [] });
+    return '';
 }
 
-function parseCategoriesResponse(response) {
-    try {
-        var data = _safeJson(response, {});
-        var classes = data.class || (data.data && data.data.class) || [];
-        if (Object.prototype.toString.call(classes) !== "[object Array]") return "[]";
-        return JSON.stringify(classes.map(function (item) {
-            return { name: _str(item.type_name || item.name || item), slug: _str(item.type_id || item.id || "") };
-        }));
-    } catch (e) { return "[]"; }
+function getManifest() {
+    return JSON.stringify({id:'avdb_api', name:'AVDB API', version:'1.1.0', baseUrl:AVDB_SITE_BASE, iconUrl:'', isEnabled:true, isAdult:true, type:'MOVIE', layoutType:'VERTICAL', playerType:'auto'});
 }
 
-function parseCountriesResponse() { return "[]"; }
-function parseYearsResponse() { return "[]"; }
+function parseListResponse(html) { return avdbParseList(html); }
+function parseSearchResponse(html) { return avdbParseList(html); }
+
+function parseMovieDetail(html) {
+    var movie = avdbDetailObject(html), normalized = avdbNormalizeMovie(movie) || {};
+    if (!normalized.id) return JSON.stringify({id:'', title:'', posterUrl:'', backdropUrl:'', description:'', servers:[], quality:'', year:'', rating:'', status:'', duration:'', casts:'', director:'', category:''});
+    return JSON.stringify({
+        id: normalized.id, title: normalized.title,
+        posterUrl: normalized.posterUrl, backdropUrl: normalized.backdropUrl,
+        description: normalized.description, servers: avdbParsePlaySources(movie),
+        quality: normalized.quality, year: normalized.year, rating: normalized.rating,
+        status: normalized.status, duration: normalized.duration, casts: normalized.casts,
+        director: normalized.director, category: normalized.category
+    });
+}
+
+function parseDetailResponse(html) {
+    var raw = String(html == null ? '' : html).trim(), data, media;
+    if (/^https?:\/\/\S+$/i.test(raw)) {
+        if (avdbIsDirectMedia(raw)) return JSON.stringify(avdbBuildPlayResult(raw, AVDB_REFERER));
+        // Episode URLs that point to player pages must be handed to the app's embed-capable player.
+        return JSON.stringify({url:raw, isEmbed:true, headers:{Referer:AVDB_REFERER}, subtitles:[]});
+    }
+    data = avdbParseJson(raw);
+    media = avdbFirst(data, ['url','file','play_url','m3u8','src','link'], '');
+    if (media) return JSON.stringify(avdbBuildPlayResult(media, AVDB_REFERER));
+    media = avdbExtractMedia(raw);
+    if (media) return JSON.stringify(avdbBuildPlayResult(media, AVDB_REFERER));
+    var iframe = raw.match(/<iframe[^>]+src=["']([^"']+)["']/i);
+    if (iframe) return JSON.stringify({url:avdbImageUrl(iframe[1]), isEmbed:true, headers:{Referer:AVDB_REFERER}, subtitles:[]});
+    return JSON.stringify({url:'', isEmbed:false, subtitles:[]});
+}
+
+function parseEmbedResponse(html, sourceUrl) {
+    var raw = String(html == null ? '' : html), data = avdbParseJson(raw), media;
+    media = avdbFirst(data, ['url','file','play_url','m3u8','src','link'], '');
+    if (media) return JSON.stringify(avdbBuildPlayResult(media, sourceUrl || AVDB_REFERER));
+    media = avdbExtractMedia(raw);
+    if (media) return JSON.stringify(avdbBuildPlayResult(media, sourceUrl || AVDB_REFERER));
+    var iframe = raw.match(/<iframe[^>]+src=["']([^"']+)["']/i);
+    if (iframe && iframe[1]) return JSON.stringify({url:avdbImageUrl(iframe[1]), isEmbed:true, headers:{Referer:sourceUrl || AVDB_REFERER}});
+    // If a player page has encrypted JS variables rather than a public media URL,
+    // retain it as an embed page instead of returning an empty URL.
+    if (/^https?:\/\//i.test(sourceUrl || '') && /(pox|ply\s*\(|player|videojs)/i.test(raw)) {
+        return JSON.stringify({url:sourceUrl, isEmbed:false, headers:{Referer:AVDB_REFERER}, subtitles:[]});
+    }
+    return JSON.stringify({url:'', isEmbed:false});
+}
