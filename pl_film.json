@@ -19,13 +19,12 @@
             "iconUrl": "https://raw.githubusercontent.com/mangyeu/TV/refs/heads/main/plugin_film/favicon.ico"
         },
         {
-      "id": "nguoncnew",
-      "name": "NguonC Phim",
-      "version": "3.2",
-      "scriptUrl": "https://vx2plugin.alokillgtv.workers.dev/Plugins/movie/nguoncnew_plugin.js",
-      "iconUrl": "https://raw.githubusercontent.com/mangyeu/TV/refs/heads/main/plugin_film/nguonc.ico?cache=true",
-      "isVip": false,
-      "openvax": true
+            "id": "nguonc",
+            "name": "NguồnC",
+            "version": "1.0.0",
+            "baseUrl": "https://phim.nguonc.com",
+            "scriptUrl": "https://raw.githubusercontent.com/mangyeu/TV/refs/heads/main/plugin_film/nguonc_plugin.js",
+            "iconUrl": "https://raw.githubusercontent.com/mangyeu/TV/refs/heads/main/plugin_film/nguonc.ico"
     },
         {
             "id": "phimnet",
