@@ -1,9 +1,3 @@
-// =============================================================================
-// VAAPP Plugin - AVDBAPI (Standard API, Vietnamese)
-// Based on plugin_template.js
-// API docs: https://avdbapi.com/index.php/label/help.html
-// =============================================================================
-
 var AVDB_BASE = "https://avdbapi.com/vi/api.php/provide/vod";
 var AVDB_SITE = "https://avdbapi.com";
 var AVDB_PAGE_SIZE = 30;
@@ -136,7 +130,7 @@ function getManifest() {
     return JSON.stringify({
         id: "avdbapi_jav",
         name: "AVDBAPI - JAV",
-        version: "1.1.0",
+        version: "1.1.1",
         baseUrl: AVDB_SITE,
         iconUrl: "https://avdbapi.com/favicon.ico",
         isEnabled: true,
