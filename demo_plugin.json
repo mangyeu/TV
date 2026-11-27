@@ -3,8 +3,8 @@
   "plugins": [
     {
         "id": "avdbapi_jav",
-        "name": "AVDB - JAV",
-        "version": "1.3.0",
+        "name": "AVDBAPI - JAV",
+        "version": "1.0.0",
         "baseUrl": "https://avdbapi.com",
         "scriptUrl": "https://raw.githubusercontent.com/mangyeu/TV/refs/heads/main/dmo/demo.js",
         "iconUrl": "https://javhdz.today/favicon.ico"
