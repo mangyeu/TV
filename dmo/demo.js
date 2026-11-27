@@ -34,7 +34,7 @@ function getManifest() {
     return JSON.stringify({
         id: "avdb_api",
         name: "AVDB API",
-        version: "1.0.1",
+        version: "1.0.0",
         baseUrl: SITE_BASE,
         iconUrl: "https://avdbapi.com/favicon.ico",
         isEnabled: true,
@@ -104,7 +104,17 @@ function getUrlSearch(keyword, filtersJson) {
 function getUrlDetail(slug) {
     var value = String(slug || DEFAULT_MOVIE_ID).trim();
 
-    // Cho phép episode.id là URL embed; App sẽ tải URL này để parser xử lý.
+    // AVDB XML trả link tập theo dạng TEN_TAP$URL_PHAT.
+    // Ví dụ: Full$https://upload18.to/play/index/...
+    // URL phát nằm SAU dấu $, không phải phần tên tập.
+    if (value.indexOf("$") >= 0) {
+        var parts = value.split("$");
+        var candidate = String(parts.slice(1).join("$") || "").trim();
+        if (/^https?:\/\//i.test(candidate)) value = candidate;
+        else value = String(parts[0] || "").trim();
+    }
+
+    // URL player/embed đầy đủ.
     if (/^https?:\/\//i.test(value)) return value;
 
     // API detail nhận ID số qua tham số ids.
@@ -212,86 +222,89 @@ function parseSearchResponse(response) {
 
 function parseMovieDetail(response) {
     try {
-        var data = safeJsonParse(response) || {};
-        var item = data.list && data.list.length ? data.list[0] : data;
+        var raw = String(response || "");
+        var data = safeJsonParse(raw);
+        var item = data && data.list && data.list.length ? data.list[0] : data;
 
+        // AVDB RSS/XML response: <list><video>...</video></list>
         if (!item || !item.id) {
-            return JSON.stringify({
-                id: "",
-                title: "Không tìm thấy dữ liệu phim",
-                posterUrl: "",
-                backdropUrl: "",
-                description: "",
-                servers: [],
-                quality: "",
-                year: "",
-                status: "",
-                duration: "",
-                casts: "",
-                director: "",
-                category: ""
-            });
+            function xmlValue(tag) {
+                var re = new RegExp("<" + tag + "\\b[^>]*>([\\s\\S]*?)</" + tag + ">", "i");
+                var m = raw.match(re);
+                if (!m) return "";
+                var v = m[1].replace(/^\s*<!\[CDATA\[/i, "").replace(/\] >\s*$/i, "");
+                v = v.replace(/\]\]>\s*$/i, "").trim();
+                return decodeHtml(v.replace(/<[^>]*>/g, " ").trim());
+            }
+            var id = xmlValue("id");
+            if (id) {
+                var linkBlock = raw.match(/<dd\b[^>]*>([\s\S]*?)<\/dd>/i);
+                var linkValue = "";
+                if (linkBlock) {
+                    linkValue = linkBlock[1]
+                        .replace(/^\s*<!\[CDATA\[/i, "")
+                        .replace(/\]\]>\s*$/i, "")
+                        .trim();
+                }
+                var linkParts = linkValue.split("$");
+                var playUrl = linkParts.length > 1 ? linkParts.slice(1).join("$").trim() : linkValue.trim();
+                var episodeName = linkParts.length > 1 ? linkParts[0].trim() : "Full";
+                item = {
+                    id: id,
+                    name: xmlValue("name"),
+                    type_name: xmlValue("type"),
+                    poster_url: xmlValue("pic"),
+                    actor: xmlValue("actor"),
+                    director: xmlValue("director"),
+                    year: xmlValue("year"),
+                    time: (xmlValue("des").match(/runtime\s+([0-9:]+)/i) || [])[1] || "",
+                    description: xmlValue("des"),
+                    episodes: { server_name: "Upload18", server_data: {} }
+                };
+                if (/^https?:\/\//i.test(playUrl)) {
+                    item.episodes.server_data[episodeName || "Full"] = {
+                        slug: (episodeName || "Full").toLowerCase(),
+                        link_embed: playUrl
+                    };
+                }
+            }
         }
 
-        var serverData = item.episodes && item.episodes.server_data
-            ? item.episodes.server_data
-            : {};
+        if (!item || !item.id) {
+            return JSON.stringify({ id: "", title: "Không tìm thấy dữ liệu phim", posterUrl: "", backdropUrl: "", description: "", servers: [], quality: "", year: "", status: "", duration: "", casts: "", director: "", category: "" });
+        }
 
+        var serverData = item.episodes && item.episodes.server_data ? item.episodes.server_data : {};
         var episodes = [];
         Object.keys(serverData).forEach(function (episodeName) {
             var ep = serverData[episodeName] || {};
             if (!ep.link_embed) return;
-
-            episodes.push({
-                // Giữ URL embed để getUrlDetail() nhận biết đây là URL đầy đủ.
-                id: ep.link_embed,
-                name: episodeName || ep.slug || "Full",
-                slug: ep.slug || episodeName || "full"
-            });
+            var rawLink = String(ep.link_embed).trim();
+            // Chuẩn hóa cả trường hợp link_embed vẫn còn dạng Full$URL.
+            if (rawLink.indexOf("$") >= 0) {
+                var split = rawLink.split("$");
+                if (/^https?:\/\//i.test(String(split.slice(1).join("$")).trim())) rawLink = String(split.slice(1).join("$")).trim();
+            }
+            episodes.push({ id: rawLink, name: episodeName || ep.slug || "Full", slug: ep.slug || episodeName || "full" });
         });
 
-        var serverName = item.episodes && item.episodes.server_name
-            ? item.episodes.server_name
-            : "Server 1";
-
+        var serverName = item.episodes && item.episodes.server_name ? item.episodes.server_name : "Server 1";
         return JSON.stringify({
             id: String(item.id),
             title: decodeHtml(item.name || item.origin_name || ""),
-            posterUrl: item.poster_url || item.thumb_url || "",
-            backdropUrl: item.thumb_url || item.poster_url || "",
-            description: decodeHtml(item.description || ""),
-            servers: episodes.length ? [{
-                name: serverName,
-                episodes: episodes
-            }] : [],
-            quality: item.quality || "",
-            year: item.year || "",
-            rating: 0,
-            status: item.status || "",
-            duration: item.time || "",
-            casts: asText(item.actor),
-            director: asText(item.director),
-            category: asText(item.category || item.type_name),
-            country: asText(item.country),
-            movieCode: item.movie_code || "",
-            releaseDate: item.vod_pubdate || item.created_at || ""
+            posterUrl: item.poster_url || item.pic || item.thumb_url || "",
+            backdropUrl: item.thumb_url || item.poster_url || item.pic || "",
+            description: decodeHtml(item.description || item.des || ""),
+            servers: episodes.length ? [{ name: serverName, episodes: episodes }] : [],
+            quality: item.quality || "", year: item.year || "", rating: 0,
+            status: item.status || "", duration: item.time || "",
+            casts: asText(item.actor), director: asText(item.director),
+            category: asText(item.category || item.type_name), country: asText(item.country),
+            movieCode: item.movie_code || item.note || "",
+            releaseDate: item.vod_pubdate || item.created_at || item.last || ""
         });
     } catch (e) {
-        return JSON.stringify({
-            id: "",
-            title: "",
-            posterUrl: "",
-            backdropUrl: "",
-            description: "",
-            servers: [],
-            quality: "",
-            year: "",
-            status: "",
-            duration: "",
-            casts: "",
-            director: "",
-            category: ""
-        });
+        return JSON.stringify({ id: "", title: "", posterUrl: "", backdropUrl: "", description: "", servers: [], quality: "", year: "", status: "", duration: "", casts: "", director: "", category: "" });
     }
 }
 
@@ -343,7 +356,7 @@ function parseDetailResponse(response) {
         if (embedUrl) {
             return JSON.stringify({
                 url: embedUrl,
-                headers: { "Referer": "https://upload18.to/" },
+                headers: { "Referer": "https://upload18.to/", "Origin": "https://upload18.to" },
                 subtitles: [],
                 isEmbed: !/\.(m3u8|mp4)(\?|$)/i.test(embedUrl),
                 mimeType: /\.(m3u8)(\?|$)/i.test(embedUrl)
@@ -368,7 +381,8 @@ function parseEmbedResponse(response, sourceUrl) {
             url: embedUrl,
             isEmbed: !isMedia,
             headers: {
-                "Referer": sourceUrl || "https://upload18.to/"
+                "Referer": sourceUrl || "https://upload18.to/",
+                "Origin": "https://upload18.to"
             },
             mimeType: /\.m3u8(\?|$)/i.test(embedUrl)
                 ? "application/x-mpegURL"
