@@ -1,7 +1,3 @@
-// =============================================================================
-// VAAPP Plugin — MissAV (Chuẩn hóa theo Plugin Template)
-// =============================================================================
-
 var BASE_URL = "https://missav.media";
 
 // =============================================================================
@@ -12,7 +8,7 @@ function getManifest() {
     return JSON.stringify({
         "id": "missav",
         "name": "MissAV",
-        "version": "1.0.0",
+        "version": "1.0.1",
         "baseUrl": BASE_URL,
         "referrer": BASE_URL + "/",
         "iconUrl": "https://raw.githubusercontent.com/youngbi/repo/main/plugins/missav.ico",
@@ -20,7 +16,6 @@ function getManifest() {
         "isAdult": true,
         "type": "VIDEO",
         "layoutType": "HORIZONTAL",
-        "playerType": "embed",
         "subtitleCat": true
     });
 }
