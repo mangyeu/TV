@@ -6,7 +6,7 @@ function getManifest() {
     return JSON.stringify({
         "id": "vlxx",
         "name": "VLXX",
-        "version": "1.0.1",
+        "version": "1.0.2",
         "baseUrl": "https://vlxx.net",
         "iconUrl": "https://raw.githubusercontent.com/mangyeu/TV/refs/heads/main/dmo/vlxx.ico",
         "isEnabled": true,
@@ -199,8 +199,7 @@ function parseMovieDetail(html) {
 
         // =====================================================================
         // episode.id = canonical URL + #s{serverId}
-        // Khi user bấm xem → App gọi getUrlDetail(url#s1) → fetch trang detail
-        // → parseDetailResponse trích data-id + server từ fragment → trả AJAX POST
+        // Ưu tiên danh sách server theo thứ tự: Server #2 -> Server #1 -> khác
         // =====================================================================
 
         var servers = [];
@@ -213,27 +212,53 @@ function parseMovieDetail(html) {
         // Tìm server buttons: onclick="server(1,3105)" onclick="server(2,3105)"
         var serverRegex = /onclick=["']server\((\d+),\s*(\d+)\)["']/gi;
         var srvMatch;
+        var foundServers = {};
 
         while ((srvMatch = serverRegex.exec(html)) !== null) {
             var serverId = srvMatch[1];
-            servers.push({
-                name: "Server #" + serverId,
-                episodes: [{
-                    id: pageUrl + "#s" + serverId,
-                    name: "Full",
-                    slug: "full-s" + serverId
-                }]
-            });
+            if (!foundServers[serverId]) {
+                foundServers[serverId] = {
+                    name: "Server #" + serverId,
+                    episodes: [{
+                        id: pageUrl + "#s" + serverId,
+                        name: "Full",
+                        slug: "full-s" + serverId
+                    }]
+                };
+            }
         }
 
-        // Fallback nếu không tìm thấy server buttons
+        // Thứ tự ưu tiên: Server 2 -> Server 1 -> các server khác (nếu có)
+        var priorityOrder = ["2", "1"];
+        for (var p = 0; p < priorityOrder.length; p++) {
+            var pid = priorityOrder[p];
+            if (foundServers[pid]) {
+                servers.push(foundServers[pid]);
+                delete foundServers[pid];
+            }
+        }
+        for (var remKey in foundServers) {
+            if (foundServers.hasOwnProperty(remKey)) {
+                servers.push(foundServers[remKey]);
+            }
+        }
+
+        // Fallback nếu không tìm thấy server buttons: ưu tiên Server #2 tới Server #1
         if (servers.length === 0 && pageUrl) {
+            servers.push({
+                name: "Server #2",
+                episodes: [{
+                    id: pageUrl + "#s2",
+                    name: "Full",
+                    slug: "full-s2"
+                }]
+            });
             servers.push({
                 name: "Server #1",
                 episodes: [{
                     id: pageUrl + "#s1",
                     name: "Full",
-                    slug: "full"
+                    slug: "full-s1"
                 }]
             });
         }
@@ -266,7 +291,7 @@ function parseMovieDetail(html) {
 // =============================================================================
 
 // parseDetailResponse: Nhận HTML tĩnh từ detail page
-// Trích data-id + server number → trả AJAX POST config cho App
+// Trích data-id + server number (ưu tiên Server 2) → trả AJAX POST config cho App
 function parseDetailResponse(html, fetchedUrl) {
     try {
         // Trích data-id từ HTML
@@ -283,11 +308,15 @@ function parseDetailResponse(html, fetchedUrl) {
             return JSON.stringify({ url: "", isEmbed: false, headers: {} });
         }
 
-        // Trích server number từ URL fragment (#s1, #s2)
-        var serverId = "1";
+        // Trích server number từ URL fragment (#s1, #s2), mặc định ưu tiên Server 2
+        var serverId = "2";
         if (fetchedUrl) {
             var fragMatch = fetchedUrl.match(/#s(\d+)/);
-            if (fragMatch) serverId = fragMatch[1];
+            if (fragMatch) {
+                serverId = fragMatch[1];
+            } else if (html.indexOf("server(2,") === -1 && html.indexOf("server(1,") !== -1) {
+                serverId = "1";
+            }
         }
 
         // Trích device type từ HTML
@@ -421,3 +450,4 @@ function parseEmbedResponse(html, url) {
         return JSON.stringify({ url: "", isEmbed: false, headers: {} });
     }
 }
+```[cite: 1]
