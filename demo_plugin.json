@@ -2,9 +2,9 @@
   "version": 1,
   "plugins": [
     {
-        "id": "avdbapi_jav",
-        "name": "AVDBAPI - JAV",
-        "version": "1.0.1",
+        "id": "avdbapi_vaapp",
+        "name": "AVDBAPI",
+        "version": "1.2.0",
         "baseUrl": "https://avdbapi.com",
         "scriptUrl": "https://raw.githubusercontent.com/mangyeu/TV/refs/heads/main/dmo/demo.js",
         "iconUrl": "https://javhdz.today/favicon.ico"
