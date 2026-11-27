@@ -34,7 +34,7 @@ function getManifest() {
     return JSON.stringify({
         id: "avdb_api",
         name: "AVDB API",
-        version: "1.0.0",
+        version: "1.0.2",
         baseUrl: SITE_BASE,
         iconUrl: "https://avdbapi.com/favicon.ico",
         isEnabled: true,
