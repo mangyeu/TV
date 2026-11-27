@@ -1,9 +1,3 @@
-// =============================================================================
-// VAAPP Plugin - AVDBAPI (Standard API, Vietnamese)
-// Based on plugin_template.js
-// API docs: https://avdbapi.com/index.php/label/help.html
-// =============================================================================
-
 var AVDB_BASE = "https://avdbapi.com/vi/api.php/provide/vod";
 var AVDB_SITE = "https://avdbapi.com";
 var AVDB_PAGE_SIZE = 30;
@@ -134,28 +128,28 @@ function _episodeEntries(video) {
 
 function getManifest() {
     return JSON.stringify({
-        id: "avdbapi_jav",
-        name: "AVDBAPI - JAV",
-        version: "1.1.0",
-        baseUrl: AVDB_SITE,
-        iconUrl: "https://avdbapi.com/favicon.ico",
-        isEnabled: true,
-        isAdult: true,
-        type: "MOVIE",
-        layoutType: "VERTICAL",
-        playerType: "embed"
+        "id": "avdbapi_jav",
+        "name": "AVDBAPI - JAV",
+        "version": "1.1.0",
+        "baseUrl": AVDB_SITE,
+        "iconUrl": "https://avdbapi.com/favicon.ico",
+        "isEnabled": true,
+        "isAdult": true,
+        "type": "MOVIE",
+        "layoutType": "VERTICAL",
+        "playerType": "embed"
     });
 }
 
 function getHomeSections() {
     return JSON.stringify([
-        { slug: "latest", title: "Mới cập nhật", type: "Horizontal", path: "" },
         { slug: "censored", title: "Có kiểm duyệt", type: "Horizontal", path: "" },
         { slug: "uncensored", title: "Không kiểm duyệt", type: "Horizontal", path: "" },
         { slug: "amateur", title: "Amateur", type: "Horizontal", path: "" },
         { slug: "chinese", title: "Chinese AV", type: "Horizontal", path: "" },
         { slug: "hentai", title: "Hentai", type: "Horizontal", path: "" },
-        { slug: "english-subtitle", title: "Phụ đề tiếng Anh", type: "Horizontal", path: "" }
+        { slug: "english-subtitle", title: "Phụ đề tiếng Anh", type: "Horizontal", path: "" },
+        { slug: "latest", title: "Mới cập nhật", type: "Grid", path: "" }
     ]);
 }
 
