@@ -136,14 +136,14 @@ function getManifest() {
     return JSON.stringify({
         id: "avdbapi_jav",
         name: "AVDBAPI - JAV",
-        version: "1.0.7",
+        version: "1.0.8",
         baseUrl: AVDB_SITE,
         iconUrl: "https://avdbapi.com/favicon.ico",
         isEnabled: true,
         isAdult: true,
         type: "MOVIE",
-        layoutType: "VERTICAL",
-        playerType: "auto"
+        layoutType: "Horizontal",
+        playerType: "embed"
     });
 }
 
