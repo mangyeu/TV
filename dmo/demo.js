@@ -1,6 +1,13 @@
+// =============================================================================
+// VAAPP Plugin - AVDBAPI (Standard API, Vietnamese) - Actor Search
+// Based on plugin_template.js
+// API docs: https://avdbapi.com/index.php/label/help.html
+// =============================================================================
+
 var AVDB_BASE = "https://avdbapi.com/vi/api.php/provide/vod";
 var AVDB_SITE = "https://avdbapi.com";
 var AVDB_PAGE_SIZE = 30;
+var AVDB_PLUGIN_VERSION = "1.2.0";
 
 function _safeJson(value, fallback) {
     try {
@@ -129,15 +136,15 @@ function _episodeEntries(video) {
 function getManifest() {
     return JSON.stringify({
         id: "avdbapi_jav",
-        name: "AVDBAPI - JAV",
-        version: "1.1.1",
+        name: "AVDBAPI - JAV (Tìm theo diễn viên)",
+        version: AVDB_PLUGIN_VERSION,
         baseUrl: AVDB_SITE,
         iconUrl: "https://avdbapi.com/favicon.ico",
         isEnabled: true,
         isAdult: true,
         type: "MOVIE",
         layoutType: "VERTICAL",
-        playerType: "embed"
+        playerType: "auto"
     });
 }
 
@@ -181,8 +188,27 @@ function getUrlList(slug, filtersJson) {
     var page = parseInt(filters.page || filters.pg || 1, 10);
     if (!page || page < 1) page = 1;
     var typeId = "";
+    var actor = _str(filters.actor || "").trim();
     var sectionMap = { censored: "1", uncensored: "2", "uncensored-leaked": "3", amateur: "4", chinese: "5", hentai: "6", "english-subtitle": "7" };
-    if (/^[1-7]$/.test(_str(slug))) typeId = _str(slug);
+
+    // Actor route: getUrlList("actor:Actor Name", filtersJson).
+    // Also accept actor/Actor%20Name and actor names passed in filters.actor.
+    slug = _str(slug || "");
+    if (slug.indexOf("actor:") === 0) actor = slug.substring(6).trim();
+    else if (slug.indexOf("actor/") === 0) actor = decodeURIComponent(slug.substring(6)).trim();
+
+    if (actor) {
+        return _apiUrl({
+            ac: "detail",
+            actor: actor,
+            pg: page,
+            pagesize: AVDB_PAGE_SIZE,
+            year: filters.year || "",
+            sort_direction: filters.sort || filters.sort_direction || "desc"
+        });
+    }
+
+    if (/^[1-7]$/.test(slug)) typeId = slug;
     else if (sectionMap[slug]) typeId = sectionMap[slug];
     else if (filters.categoryId) typeId = filters.categoryId;
 
@@ -201,7 +227,23 @@ function getUrlSearch(keyword, filtersJson) {
     var filters = _safeJson(filtersJson, {});
     var page = parseInt(filters.page || filters.pg || 1, 10);
     if (!page || page < 1) page = 1;
-    return _apiUrl({ ac: "detail", wd: _str(keyword).trim(), pg: page, pagesize: AVDB_PAGE_SIZE });
+    keyword = _str(keyword).trim();
+
+    // Optional actor-search shortcut: search keyword "actor:Name".
+    if (keyword.toLowerCase().indexOf("actor:") === 0) {
+        return _apiUrl({ ac: "detail", actor: keyword.substring(6).trim(), pg: page, pagesize: AVDB_PAGE_SIZE });
+    }
+    return _apiUrl({ ac: "detail", wd: keyword, pg: page, pagesize: AVDB_PAGE_SIZE });
+}
+
+// Explicit helper for integrations that can expose actor links/buttons.
+// The VAAPP template does not declare this hook, but hosts may call it.
+function getUrlActor(actorName, filtersJson) {
+    var filters = _safeJson(filtersJson, {});
+    var page = parseInt(filters.page || filters.pg || 1, 10);
+    if (!page || page < 1) page = 1;
+    return _apiUrl({ ac: "detail", actor: _str(actorName).trim(), pg: page, pagesize: AVDB_PAGE_SIZE,
+        year: filters.year || "", sort_direction: filters.sort || filters.sort_direction || "desc" });
 }
 
 function getUrlDetail(slug) {
@@ -222,7 +264,7 @@ function parseListResponse(response) {
         var rawItems = _extractVideos(data);
         var items = rawItems.map(function (item) {
             var v = _normalVideo(item);
-            return { id: v.id, title: v.title, posterUrl: v.posterUrl, backdropUrl: v.backdropUrl, description: v.description, year: v.year, quality: v.quality, status: v.status, movieCode: v.movieCode };
+            return { id: v.id, title: v.title, posterUrl: v.posterUrl, backdropUrl: v.backdropUrl, description: v.description, year: v.year, quality: v.quality, status: v.status, movieCode: v.movieCode, casts: v.casts, actors: _arr(_first(item, ["actor", "vod_actor"], [])) };
         });
         var page = parseInt(data.page || 1, 10);
         var pageCount = parseInt(data.pagecount || 1, 10);
@@ -251,14 +293,7 @@ function parseMovieDetail(response) {
                 byServer[e.server] = { name: e.server, episodes: [] };
                 servers.push(byServer[e.server]);
             }
-            // Resolve the episode through AVDB's detail API first. The API returns
-            // link_embed; AVDB recommends using that embed URL instead of guessing
-            // or extracting an m3u8 URL from the player page.
-            var episodeId = e.id;
-            if (item.id !== undefined && item.id !== null && item.id !== "" && /^https?:\/\//i.test(e.id)) {
-                episodeId = _apiUrl({ ac: "detail", ids: item.id });
-            }
-            byServer[e.server].episodes.push({ id: episodeId, name: e.name, slug: e.slug });
+            byServer[e.server].episodes.push({ id: e.id, name: e.name, slug: e.slug });
         }
         return JSON.stringify({
             id: v.id,
@@ -273,6 +308,7 @@ function parseMovieDetail(response) {
             status: v.status || _str(item.type_name || ""),
             duration: v.duration,
             casts: v.casts,
+            actors: _arr(_first(item, ["actor", "vod_actor"], [])),
             director: v.director,
             category: v.category,
             movieCode: v.movieCode
@@ -326,16 +362,7 @@ function parseDetailResponse(response) {
         if (data && data.url) return JSON.stringify(data);
         if (data && data.list && data.list.length) {
             var found = _episodeEntries(data.list[0]);
-            if (found.length) {
-                // link_embed is the final player page. Do not recursively scrape
-                // it for an m3u8: AVDB's own troubleshooting recommends embed.
-                return JSON.stringify({
-                    url: _absoluteUrl(found[0].id, AVDB_SITE),
-                    isEmbed: false,
-                    headers: { Referer: AVDB_SITE },
-                    subtitles: []
-                });
-            }
+            if (found.length) return JSON.stringify({ url: found[0].id, isEmbed: true, headers: { Referer: AVDB_SITE } });
         }
     } catch (ignore) {}
 
