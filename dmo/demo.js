@@ -1,8 +1,7 @@
 // =============================================================================
-// VAAPP Plugin - AVDB API
-// API mẫu: https://avdbapi.com/api.php/provide/vod?ac=detail&ids=663160
-// Lưu ý: API được cung cấp chỉ có endpoint CHI TIẾT theo ID.
-// Chưa có endpoint danh sách/tìm kiếm nên các hàm list/search để trống.
+// VAAPP Plugin - AVDBAPI
+// Danh sach/tim kiem: HTML website AVDBAPI
+// Chi tiet: JSON API /api.php/provide/vod?ac=detail&ids=ID
 // =============================================================================
 
 var API_BASE = "https://avdbapi.com/api.php/provide/vod";
@@ -35,7 +34,7 @@ function getManifest() {
     return JSON.stringify({
         id: "avdb_api",
         name: "AVDB API",
-        version: "1.0.0",
+        version: "1.0.1",
         baseUrl: SITE_BASE,
         iconUrl: "https://avdbapi.com/favicon.ico",
         isEnabled: true,
@@ -48,12 +47,28 @@ function getManifest() {
 }
 
 function getHomeSections() {
-    // Chưa có endpoint danh sách trong thông tin API được cung cấp.
-    return JSON.stringify([]);
+    return JSON.stringify([
+        { slug: "latest", title: "Mới cập nhật", type: "Vertical", path: "/" },
+        { slug: "censored", title: "Censored", type: "Vertical", path: "/category/censored/" },
+        { slug: "uncensored", title: "Uncensored", type: "Vertical", path: "/category/uncensored/" },
+        { slug: "uncensored-leaked", title: "Uncensored Leaked", type: "Vertical", path: "/category/uncensored-leaked/" },
+        { slug: "amateur", title: "Amateur", type: "Vertical", path: "/category/amateur/" },
+        { slug: "chinese-av", title: "Chinese AV", type: "Vertical", path: "/category/chinese-av/" },
+        { slug: "hentai", title: "Hentai", type: "Vertical", path: "/category/hentai/" },
+        { slug: "english-subtitle", title: "English subtitle", type: "Vertical", path: "/category/english-subtitle/" }
+    ]);
 }
 
 function getPrimaryCategories() {
-    return JSON.stringify([]);
+    return JSON.stringify([
+        { name: "Censored", slug: "censored" },
+        { name: "Uncensored", slug: "uncensored" },
+        { name: "Uncensored Leaked", slug: "uncensored-leaked" },
+        { name: "Amateur", slug: "amateur" },
+        { name: "Chinese AV", slug: "chinese-av" },
+        { name: "Hentai", slug: "hentai" },
+        { name: "English subtitle", slug: "english-subtitle" }
+    ]);
 }
 
 function getFilterConfig() {
@@ -65,13 +80,25 @@ function getFilterConfig() {
 // =============================================================================
 
 function getUrlList(slug, filtersJson) {
-    // Không tự đoán endpoint danh sách khi chưa có tài liệu API.
-    return "";
+    var filters = safeJsonParse(filtersJson) || {};
+    var page = Math.max(1, parseInt(filters.page || 1, 10));
+    var path = "/";
+    var key = String(slug || "latest").replace(/^\/+|\/+$/g, "");
+    if (key && key !== "latest" && key !== "home") {
+        if (key.indexOf("category/") === 0) path = "/" + key + "/";
+        else path = "/category/" + key + "/";
+    }
+    if (page > 1) {
+        if (path === "/") path = "/index-" + page + "/";
+        else path = path.replace(/\/$/, "") + "-" + page + "/";
+    }
+    return SITE_BASE + path;
 }
 
 function getUrlSearch(keyword, filtersJson) {
-    // Không có endpoint search trong API mẫu.
-    return "";
+    var filters = safeJsonParse(filtersJson) || {};
+    var page = Math.max(1, parseInt(filters.page || 1, 10));
+    return SITE_BASE + "/search/?wd=" + encodeURIComponent(String(keyword || "")) + (page > 1 ? "&page=" + page : "");
 }
 
 function getUrlDetail(slug) {
@@ -96,34 +123,80 @@ function getUrlYears() { return ""; }
 
 function parseListResponse(response) {
     try {
-        var data = safeJsonParse(response) || {};
-        var source = Array.isArray(data.list) ? data.list : [];
-        var items = source.map(function (item) {
-            return {
-                id: String(item.id || item.slug || ""),
-                title: decodeHtml(item.name || item.origin_name || ""),
-                posterUrl: item.poster_url || item.thumb_url || "",
-                thumbUrl: item.thumb_url || item.poster_url || "",
-                description: decodeHtml(item.description || ""),
-                year: item.year || "",
-                quality: item.quality || "",
-                category: asText(item.category || item.type_name)
-            };
-        });
+        var html = String(response || "");
+        var data = safeJsonParse(html);
+        if (data && Array.isArray(data.list)) {
+            var jsonItems = data.list.map(function (item) {
+                return {
+                    id: String(item.id || item.slug || ""),
+                    title: decodeHtml(item.name || item.origin_name || ""),
+                    posterUrl: item.poster_url || item.thumb_url || "",
+                    thumbUrl: item.thumb_url || item.poster_url || "",
+                    description: decodeHtml(item.description || ""),
+                    year: item.year || "", quality: item.quality || "",
+                    category: asText(item.category || item.type_name)
+                };
+            });
+            return JSON.stringify({ items: jsonItems, pagination: {
+                currentPage: Number(data.page || 1), totalPages: Number(data.pagecount || 1),
+                totalItems: Number(data.total || jsonItems.length)
+            }});
+        }
 
-        return JSON.stringify({
-            items: items,
-            pagination: {
-                currentPage: Number(data.page || 1),
-                totalPages: Number(data.pagecount || 1),
-                totalItems: Number(data.total || items.length)
-            }
-        });
+        function attr(tag, name) {
+            var m = String(tag || "").match(new RegExp(name + "=([^\\s>]+)", "i"));
+            if (!m) return "";
+            var value = m[1].replace(/^[\"']|[\"']$/g, "");
+            return decodeHtml(value);
+        }
+        function textOf(fragment) {
+            return decodeHtml(String(fragment || "").replace(/<[^>]*>/g, " ")
+                .replace(/&middot;/g, "·").replace(/\s+/g, " ").trim());
+        }
+        var items = [];
+        var liRe = /<li\b[^>]*class=["'][^"']*\bv\b[^"']*["'][^>]*>([\s\S]*?)<\/li>/gi;
+        var li;
+        while ((li = liRe.exec(html)) !== null) {
+            var block = li[1];
+            var linkMatch = block.match(/<a\b[^>]*class=["'][^"']*v-thumb[^"']*["'][^>]*>/i);
+            var titleMatch = block.match(/<a\b[^>]*class=["'][^"']*v-title[^"']*["'][^>]*>([\s\S]*?)<\/a>/i);
+            var idMatch = block.match(/<span\b[^>]*class=["'][^"']*v-id[^"']*["'][^>]*>([\s\S]*?)<\/span>/i);
+            var codeMatch = block.match(/<span\b[^>]*class=["'][^"']*v-code[^"']*["'][^>]*>([\s\S]*?)<\/span>/i);
+            var durMatch = block.match(/<span\b[^>]*class=["'][^"']*v-dur[^"']*["'][^>]*>([\s\S]*?)<\/span>/i);
+            var typeMatch = block.match(/<span\b[^>]*class=["'][^"']*v-type[^"']*["'][^>]*>([\s\S]*?)<\/span>/i);
+            var dateMatch = block.match(/<span\b[^>]*class=["'][^"']*v-date[^"']*["'][^>]*>([\s\S]*?)<\/span>/i);
+            var id = idMatch ? textOf(idMatch[1]) : "";
+            var titleTag = titleMatch ? titleMatch[0].match(/^<a\b[^>]*>/i) : null;
+            var detailPath = titleTag ? attr(titleTag[0], "href") : "";
+            var imageMatch = block.match(/<img\b[^>]*>/i);
+            var imageTag = imageMatch ? imageMatch[0] : "";
+            var poster = imageTag ? (attr(imageTag, "data-src") || attr(imageTag, "src")) : "";
+            if (!id && detailPath) { var idFromPath = detailPath.match(/(\d+)(?:\/)?$/); if (idFromPath) id = idFromPath[1]; }
+            if (!id || !titleMatch) continue;
+            items.push({
+                id: id, title: textOf(titleMatch[1]), posterUrl: poster, thumbUrl: poster,
+                detailUrl: detailPath ? SITE_BASE + detailPath : "",
+                code: codeMatch ? textOf(codeMatch[1]) : "",
+                duration: durMatch ? textOf(durMatch[1]) : "",
+                category: typeMatch ? textOf(typeMatch[1]) : "",
+                updatedAt: dateMatch ? textOf(dateMatch[1]) : ""
+            });
+        }
+        var total = 0, currentPage = 1;
+        var pager = html.match(/<nav\b[^>]*class=["'][^"']*pager[^"']*["'][^>]*>/i);
+        if (pager) {
+            var totalMatch = pager[0].match(/data-total=["'](\d+)["']/i);
+            if (totalMatch) total = parseInt(totalMatch[1], 10);
+            var cur = html.match(/<a\b[^>]*aria-current=["']page["'][^>]*>(\d+)<\/a>/i);
+            if (cur) currentPage = parseInt(cur[1], 10);
+        }
+        var totalPages = total || 1;
+        return JSON.stringify({ items: items, pagination: {
+            currentPage: currentPage, totalPages: totalPages,
+            totalItems: total ? total * 50 : items.length
+        }});
     } catch (e) {
-        return JSON.stringify({
-            items: [],
-            pagination: { currentPage: 1, totalPages: 1 }
-        });
+        return JSON.stringify({ items: [], pagination: { currentPage: 1, totalPages: 1, totalItems: 0 } });
     }
 }
 
