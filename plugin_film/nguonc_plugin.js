@@ -1,48 +1,74 @@
 // =============================================================================
-// VAAPP Plugin - NguonC (phim.nguonc.com)
-// API-based plugin for movie streaming
+// VAAPP Plugin - NguồnC (phim.nguonc.com)
+// API: https://phim.nguonc.com/api/films/... (trả JSON)
 // =============================================================================
 
-var BASE_URL = "https://phim.nguonc.com";
+var BASE = "https://phim.nguonc.com";
+var EMBED_REFERER = "https://embed.streamc.xyz/";
+
+// Biến tạm lưu embed URL của tập đang xử lý (dùng khi không parse được link trực tiếp)
+var __lastEmbedUrl = "";
 
 // =============================================================================
-// NHÓM 1: CẤU HÌNH
+// NHÓM 1: CẤU HÌNH (Config & Metadata)
 // =============================================================================
 
 function getManifest() {
     return JSON.stringify({
-        "id": "nguonc_plugin",
-        "name": "NguonC Phim",
-        "version": "1.0.2",
-        "baseUrl": BASE_URL,
+        "id": "nguonc",
+        "name": "NguồnC",
+        "version": "1.0.0",
+        "baseUrl": "https://phim.nguonc.com",
         "iconUrl": "https://phim.nguonc.com/favicon.ico",
         "isEnabled": true,
         "isAdult": false,
         "type": "MOVIE",
         "layoutType": "VERTICAL",
-        "playerType": "auto"
+        "playerType": "auto"   // episode trả về m3u8/mp4 → ExoPlayer; còn lại → WebView embed
     });
 }
 
 function getHomeSections() {
     return JSON.stringify([
         { slug: 'phim-moi-cap-nhat', title: 'Phim Mới Cập Nhật', type: 'Horizontal', path: '' },
-        { slug: 'phim-le', title: 'Phim Lẻ', type: 'Horizontal', path: '' },
-        { slug: 'phim-bo', title: 'Phim Bộ', type: 'Horizontal', path: '' }
+        { slug: 'phim-le', title: 'Phim Lẻ Mới', type: 'Horizontal', path: '' },
+        { slug: 'phim-bo', title: 'Phim Bộ Mới', type: 'Horizontal', path: '' },
+        { slug: 'hoat-hinh', title: 'Hoạt Hình', type: 'Horizontal', path: '' },
+        { slug: 'tv-shows', title: 'TV Shows', type: 'Horizontal', path: '' }
     ]);
 }
 
 function getPrimaryCategories() {
     return JSON.stringify([
-        { name: 'Hành Động', slug: 'hanh-dong' },
-        { name: 'Kinh Dị', slug: 'kinh-di' },
-        { name: 'Hài Hước', slug: 'phim-hai' },
-        { name: 'Tình Cảm', slug: 'tinh-cam' }
+        { name: 'Hành Động', slug: 'the-loai/hanh-dong' },
+        { name: 'Tình Cảm', slug: 'the-loai/tinh-cam' },
+        { name: 'Hài Hước', slug: 'the-loai/hai-huoc' },
+        { name: 'Kinh Dị', slug: 'the-loai/kinh-di' },
+        { name: 'Viễn Tưởng', slug: 'the-loai/vien-tuong' },
+        { name: 'Phiêu Lưu', slug: 'the-loai/phieu-luu' },
+        { name: 'Hoạt Hình', slug: 'the-loai/hoat-hinh' },
+        { name: 'Võ Thuật', slug: 'the-loai/vo-thuat' },
+        { name: 'Thần Bí', slug: 'the-loai/than-bi' },
+        { name: 'Cổ Trang', slug: 'the-loai/co-trang' },
+        { name: 'Khoa Học', slug: 'the-loai/khoa-hoc' },
+        { name: 'Tâm Lý', slug: 'the-loai/tam-ly' },
+        { name: 'Chiến Tranh', slug: 'the-loai/chien-tranh' },
+        { name: 'Tài Liệu', slug: 'the-loai/tai-lieu' },
+        { name: 'Thể Thao', slug: 'the-loai/the-thao' }
     ]);
 }
 
 function getFilterConfig() {
-    return JSON.stringify({ sort: [], category: [] });
+    // API NguồnC chưa hỗ trợ sort; category dùng đúng pattern /api/films/the-loai/{slug}
+    return JSON.stringify({ sort: [], category: [
+        { name: 'Hành Động', slug: 'the-loai/hanh-dong' },
+        { name: 'Tình Cảm', slug: 'the-loai/tinh-cam' },
+        { name: 'Kinh Dị', slug: 'the-loai/kinh-di' },
+        { name: 'Viễn Tưởng', slug: 'the-loai/vien-tuong' },
+        { name: 'Hoạt Hình', slug: 'the-loai/hoat-hinh' },
+        { name: 'Cổ Trang', slug: 'the-loai/co-trang' },
+        { name: 'Hài Hước', slug: 'the-loai/hai-huoc' }
+    ]});
 }
 
 // =============================================================================
@@ -52,19 +78,24 @@ function getFilterConfig() {
 function getUrlList(slug, filtersJson) {
     var filters = JSON.parse(filtersJson || "{}");
     var page = filters.page || 1;
-    if (slug === 'phim-moi-cap-nhat') {
-        return BASE_URL + "/api/films/phim-moi-cap-nhat?page=" + page;
-    }
-    return BASE_URL + "/api/films/danh-sach/" + slug + "?page=" + page;
+    // slug từ HomeSections: "phim-le", "phim-bo", "hoat-hinh", "tv-shows", "phim-moi-cap-nhat"
+    // slug từ Category:    "the-loai/hanh-dong", "quoc-gia/viet-nam", "nam-phat-hanh/2026"
+    return BASE + "/api/films/" + slug + "?page=" + page;
 }
 
 function getUrlSearch(keyword, filtersJson) {
     var page = JSON.parse(filtersJson || "{}").page || 1;
-    return BASE_URL + "/api/films/search?keyword=" + encodeURIComponent(keyword) + "&page=" + page;
+    return BASE + "/api/films/search?keyword=" + encodeURIComponent(keyword) + "&page=" + page;
 }
 
-function getUrlDetail(slug) {
-    return BASE_URL + "/api/film/" + slug;
+function getUrlDetail(id) {
+    // id là embed URL của tập (được gán trong parseMovieDetail) → trả về chính nó
+    if (id && id.indexOf("http") === 0) {
+        __lastEmbedUrl = id;
+        return id;
+    }
+    // id là slug phim → API chi tiết
+    return BASE + "/api/film/" + id;
 }
 
 function getUrlCategories() { return ""; }
@@ -75,33 +106,36 @@ function getUrlYears() { return ""; }
 // NHÓM 3: PARSER
 // =============================================================================
 
-function mapMovieItem(item) {
+function mapItem(item) {
     return {
         id: item.slug,
         title: item.name,
+        originalTitle: item.original_name || "",
         posterUrl: item.poster_url || item.thumb_url || "",
-        backdropUrl: item.thumb_url || "",
-        year: item.year || 0,
-        quality: item.quality || "HD",
-        description: item.description || "",
-        status: item.current_episode || ""
+        year: parseInt(item.year) || 0,
+        quality: item.quality || "",
+        language: item.language || "",
+        currentEpisode: item.current_episode || "",
+        totalEpisodes: item.total_episodes || 0
     };
 }
 
-function parseListResponse(jsonText) {
+function parseListResponse(html) {
     try {
-        var data = JSON.parse(jsonText);
+        var data = JSON.parse(html);
         var items = [];
-        var rawItems = data.items || (data.data && data.data.items) || [];
-        for (var i = 0; i < rawItems.length; i++) {
-            items.push(mapMovieItem(rawItems[i]));
+        if (data.items && data.items.length) {
+            for (var i = 0; i < data.items.length; i++) {
+                items.push(mapItem(data.items[i]));
+            }
         }
-        var pagination = data.pagination || {};
+        var paginate = data.paginate || {};
         return JSON.stringify({
             items: items,
             pagination: {
-                currentPage: pagination.currentPage || 1,
-                totalPages: pagination.totalPages || 1
+                currentPage: paginate.current_page || 1,
+                totalPages: paginate.total_page || 1,
+                totalItems: paginate.total_items || items.length
             }
         });
     } catch (e) {
@@ -109,211 +143,132 @@ function parseListResponse(jsonText) {
     }
 }
 
-function parseSearchResponse(jsonText) {
-    return parseListResponse(jsonText);
+function parseSearchResponse(html) {
+    return parseListResponse(html);
 }
 
-/**
- * Parse chi tiết phim.
- * SỬA: bổ sung ep.embed để lấy liên kết phát thực tế từ NguonC.
- */
-function parseMovieDetail(jsonText) {
+function parseMovieDetail(html) {
     try {
-        var data = JSON.parse(jsonText);
-        var movie = data.movie || data;
+        var data = JSON.parse(html);
+        var movie = data.movie || {};
+        __lastEmbedUrl = "";
 
+        // ---- Ghép danh sách server / tập phim ----
         var servers = [];
-        var rawEpisodes = movie.episodes || [];
-
-        if (rawEpisodes.length > 0) {
-            for (var s = 0; s < rawEpisodes.length; s++) {
-                var serverData = rawEpisodes[s];
-                var serverName = serverData.server_name || ("Server " + (s + 1));
-                var episodes = [];
-                var listEpisodes = serverData.items || serverData.list || [];
-
-                for (var e = 0; e < listEpisodes.length; e++) {
-                    var ep = listEpisodes[e];
-                    // QUAN TRỌNG: ưu tiên ep.embed (trường thực tế của NguonC)
-                    var epId = ep.embed || ep.link_m3u8 || ep.link_embed || ep.slug || ep.id || "";
-                    var epName = ep.name || ("Tập " + (e + 1));
-                    episodes.push({
-                        id: epId,
-                        name: epName,
-                        slug: ep.slug || ""
-                    });
-                }
-
-                if (episodes.length > 0) {
-                    servers.push({ name: serverName, episodes: episodes });
-                }
+        var eps = movie.episodes || [];
+        for (var s = 0; s < eps.length; s++) {
+            var server = eps[s];
+            var episodes = [];
+            var items = server.items || [];
+            for (var i = 0; i < items.length; i++) {
+                var ep = items[i];
+                episodes.push({
+                    // id = embed URL → App gọi getUrlDetail(id) → parseDetailResponse
+                    id: ep.embed || "",
+                    name: ep.name || ("Tập " + (i + 1)),
+                    slug: ep.slug || ""
+                });
+            }
+            if (episodes.length > 0) {
+                servers.push({
+                    name: server.server_name || ("Server " + (s + 1)),
+                    episodes: episodes
+                });
             }
         }
 
-        // Trích xuất metadata phân loại
-        var categoryName = "";
-        var countryName = "";
-        if (movie.category) {
-            var cats = movie.category;
-            for (var key in cats) {
-                if (cats.hasOwnProperty(key)) {
-                    var group = cats[key];
-                    if (group.group && group.group.name === "Thể loại" && group.list && group.list.length > 0) {
-                        var catNames = [];
-                        for (var c = 0; c < group.list.length; c++) {
-                            catNames.push(group.list[c].name);
-                        }
-                        categoryName = catNames.join(", ");
-                    }
-                    if (group.group && group.group.name === "Quốc gia" && group.list && group.list.length > 0) {
-                        countryName = group.list[0].name;
-                    }
-                }
+        // ---- Gom thể loại từ category groups ----
+        var cats = [];
+        var groups = movie.category || [];
+        for (var g = 0; g < groups.length; g++) {
+            var list = groups[g].list || [];
+            for (var l = 0; l < list.length; l++) {
+                if (list[l] && list[l].name) cats.push(list[l].name);
             }
+        }
+
+        // ---- Làm sạch mô tả (bỏ thẻ HTML) ----
+        var desc = (movie.description || "").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+
+        var status = "Đang chiếu";
+        if (movie.current_episode && movie.current_episode.indexOf("Hoàn tất") !== -1) {
+            status = "Full";
         }
 
         return JSON.stringify({
-            id: movie.slug,
-            title: movie.name,
-            posterUrl: movie.poster_url || "",
+            id: movie.slug || "",
+            title: movie.name || "",
+            originalTitle: movie.original_name || "",
+            posterUrl: movie.poster_url || movie.thumb_url || "",
             backdropUrl: movie.thumb_url || "",
-            description: movie.description || "",
+            description: desc,
             servers: servers,
-            quality: movie.quality || "HD",
-            year: movie.year || 0,
-            rating: 0,
-            status: movie.current_episode || "",
+            quality: movie.quality || "",
+            year: parseInt(movie.year) || 0,
+            status: status,
             duration: movie.time || "",
             casts: movie.casts || "",
             director: movie.director || "",
-            category: categoryName,
-            country: countryName
+            category: cats.join(", "),
+            language: movie.language || "",
+            totalEpisodes: movie.total_episodes || 0,
+            currentEpisode: movie.current_episode || ""
         });
     } catch (e) {
         return JSON.stringify({
-            id: "", title: "", posterUrl: "", servers: [],
-            description: "", quality: "", year: 0, rating: 0,
-            status: "", duration: "", casts: "", director: "", category: ""
+            id: "", title: "", posterUrl: "", backdropUrl: "", description: "",
+            servers: [], pagination: { currentPage: 1, totalPages: 1 }
         });
     }
 }
 
-/**
- * Parse liên kết phát cuối cùng.
- * Nếu episode.id là liên kết embed, trả về isEmbed: true để WebView xử lý.
- */
-function parseDetailResponse(jsonText) {
-    if (jsonText && jsonText.indexOf('embed.php') !== -1) {
-        return JSON.stringify({
-            url: jsonText,
-            headers: {
-                "Referer": "https://phim.nguonc.com/",
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
-            },
-            isEmbed: true
-        });
-    }
-
+function parseDetailResponse(html) {
     try {
-        var data = JSON.parse(jsonText);
-        var movie = data.movie || data;
-        var episodes = movie.episodes || [];
-
-        for (var s = 0; s < episodes.length; s++) {
-            var items = episodes[s].items || [];
-            for (var e = 0; e < items.length; e++) {
-                var ep = items[e];
-                var url = ep.embed || ep.link_m3u8 || ep.link_embed || "";
-                if (!url) continue;
-
-                if (url.indexOf('.m3u8') !== -1 || url.indexOf('.mp4') !== -1) {
-                    return JSON.stringify({
-                        url: url,
-                        headers: { "Referer": "https://phim.nguonc.com/" },
-                        isEmbed: false,
-                        mimeType: url.indexOf('.m3u8') !== -1 ? "application/x-mpegURL" : "video/mp4"
-                    });
-                }
-
-                return JSON.stringify({
-                    url: url,
-                    headers: {
-                        "Referer": "https://phim.nguonc.com/",
-                        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
-                    },
-                    isEmbed: true
-                });
-            }
+        // Trang embed (streamc) thường chứa link stream dạng:
+        //   "file":"https://.../index.m3u8"  hoặc  src="...m3u8..."  hoặc setup jwplayer
+        var m3u8 = html.match(/https?:\/\/[^\s"'\\\]]+\.m3u8[^\s"'\\\]]*/);
+        if (m3u8) {
+            return JSON.stringify({
+                url: m3u8[0],
+                isEmbed: false,
+                mimeType: "application/x-mpegURL",
+                headers: {
+                    "Referer": EMBED_REFERER,
+                    "Origin": "https://embed.streamc.xyz"
+                },
+                subtitles: []
+            });
         }
+
+        var mp4 = html.match(/https?:\/\/[^\s"'\\\]]+\.mp4[^\s"'\\\]]*/);
+        if (mp4) {
+            return JSON.stringify({
+                url: mp4[0],
+                isEmbed: false,
+                mimeType: "video/mp4",
+                headers: { "Referer": EMBED_REFERER },
+                subtitles: []
+            });
+        }
+
+        // Không tìm được link trực tiếp → để App mở embed trong WebView
+        if (__lastEmbedUrl) {
+            return JSON.stringify({
+                url: __lastEmbedUrl,
+                isEmbed: false,
+                headers: { "Referer": BASE + "/" },
+                subtitles: []
+            });
+        }
+
+        return JSON.stringify({ url: "", isEmbed: false });
     } catch (e) {
-        // Bỏ qua, thực hiện fallback
-    }
-
-    return JSON.stringify({ url: "", isEmbed: false });
-}
-
-/**
- * Phân tích phản hồi HTML của embed (dự phòng).
- * Tăng cường khả năng trích xuất m3u8/mp4 trong script và iframe.
- */
-function parseEmbedResponse(html, sourceUrl) {
-    if (!html) {
         return JSON.stringify({ url: "", isEmbed: false });
     }
+}
 
-    var referer = sourceUrl || "https://phim.nguonc.com/";
-
-    // 1. Tìm trực tiếp URL media (bao gồm trong script, thuộc tính)
-    var mediaRegex = /https?:\/\/[^"'\s\\<>]+\.(?:m3u8|mp4)(?:\?[^"'\s\\<>]*)?/gi;
-    var matches = html.match(mediaRegex);
-    if (matches && matches.length > 0) {
-        for (var i = 0; i < matches.length; i++) {
-            if (matches[i].indexOf('.m3u8') !== -1) {
-                return JSON.stringify({
-                    url: matches[i],
-                    headers: { "Referer": referer },
-                    isEmbed: false,
-                    mimeType: "application/x-mpegURL"
-                });
-            }
-        }
-        return JSON.stringify({
-            url: matches[0],
-            headers: { "Referer": referer },
-            isEmbed: false,
-            mimeType: "video/mp4"
-        });
-    }
-
-    // 2. Tìm iframe (embed lồng nhau)
-    var iframeMatch = html.match(/<iframe[^>]+src=["']([^"']+)["']/i);
-    if (iframeMatch && iframeMatch[1]) {
-        var iframeUrl = iframeMatch[1];
-        if (iframeUrl.indexOf('//') === 0) {
-            iframeUrl = 'https:' + iframeUrl;
-        }
-        return JSON.stringify({
-            url: iframeUrl,
-            isEmbed: true
-        });
-    }
-
-    // 3. Tìm biến JS: file/src/url: "xxx.m3u8"
-    var jsVarRegex = /(?:file|src|url|source)\s*[:=]\s*["']([^"']+\.(?:m3u8|mp4)[^"']*)["']/i;
-    var jsMatch = html.match(jsVarRegex);
-    if (jsMatch && jsMatch[1]) {
-        var jsUrl = jsMatch[1];
-        if (jsUrl.indexOf('//') === 0) {
-            jsUrl = 'https:' + jsUrl;
-        }
-        return JSON.stringify({
-            url: jsUrl,
-            headers: { "Referer": referer },
-            isEmbed: false,
-            mimeType: jsUrl.indexOf('.m3u8') !== -1 ? "application/x-mpegURL" : "video/mp4"
-        });
-    }
-
+function parseEmbedResponse(html, sourceUrl) {
+    // Không cần nhiều bước — parseDetailResponse đã xử lý trực tiếp
     return JSON.stringify({ url: "", isEmbed: false });
 }
 
