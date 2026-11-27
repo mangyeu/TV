@@ -450,4 +450,3 @@ function parseEmbedResponse(html, url) {
         return JSON.stringify({ url: "", isEmbed: false, headers: {} });
     }
 }
-```[cite: 1]
