@@ -1,12 +1,12 @@
 // =============================================================================
 // VAAPP Plugin - NguồnC (phim.nguonc.com)
 // API: https://phim.nguonc.com/api/films/... (trả JSON)
+// Phát phim: embed URL qua WebView (server embed chặn fetch trực tiếp)
 // =============================================================================
 
 var BASE = "https://phim.nguonc.com";
-var EMBED_REFERER = "https://embed.streamc.xyz/";
 
-// Biến tạm lưu embed URL của tập đang xử lý (dùng khi không parse được link trực tiếp)
+// Biến tạm lưu embed URL của tập đang xử lý
 var __lastEmbedUrl = "";
 
 // =============================================================================
@@ -17,14 +17,14 @@ function getManifest() {
     return JSON.stringify({
         "id": "nguonc",
         "name": "NguồnC",
-        "version": "1.0.0",
+        "version": "1.0.1",
         "baseUrl": "https://phim.nguonc.com",
         "iconUrl": "https://phim.nguonc.com/favicon.ico",
         "isEnabled": true,
         "isAdult": false,
         "type": "MOVIE",
         "layoutType": "VERTICAL",
-        "playerType": "auto"   // episode trả về m3u8/mp4 → ExoPlayer; còn lại → WebView embed
+        "playerType": "embed"   // Mọi link phát qua WebView
     });
 }
 
@@ -59,7 +59,6 @@ function getPrimaryCategories() {
 }
 
 function getFilterConfig() {
-    // API NguồnC chưa hỗ trợ sort; category dùng đúng pattern /api/films/the-loai/{slug}
     return JSON.stringify({ sort: [], category: [
         { name: 'Hành Động', slug: 'the-loai/hanh-dong' },
         { name: 'Tình Cảm', slug: 'the-loai/tinh-cam' },
@@ -78,8 +77,6 @@ function getFilterConfig() {
 function getUrlList(slug, filtersJson) {
     var filters = JSON.parse(filtersJson || "{}");
     var page = filters.page || 1;
-    // slug từ HomeSections: "phim-le", "phim-bo", "hoat-hinh", "tv-shows", "phim-moi-cap-nhat"
-    // slug từ Category:    "the-loai/hanh-dong", "quoc-gia/viet-nam", "nam-phat-hanh/2026"
     return BASE + "/api/films/" + slug + "?page=" + page;
 }
 
@@ -89,7 +86,7 @@ function getUrlSearch(keyword, filtersJson) {
 }
 
 function getUrlDetail(id) {
-    // id là embed URL của tập (được gán trong parseMovieDetail) → trả về chính nó
+    // id là embed URL của tập → trả về chính nó, lưu tạm để parseDetailResponse dùng
     if (id && id.indexOf("http") === 0) {
         __lastEmbedUrl = id;
         return id;
@@ -153,7 +150,6 @@ function parseMovieDetail(html) {
         var movie = data.movie || {};
         __lastEmbedUrl = "";
 
-        // ---- Ghép danh sách server / tập phim ----
         var servers = [];
         var eps = movie.episodes || [];
         for (var s = 0; s < eps.length; s++) {
@@ -163,8 +159,7 @@ function parseMovieDetail(html) {
             for (var i = 0; i < items.length; i++) {
                 var ep = items[i];
                 episodes.push({
-                    // id = embed URL → App gọi getUrlDetail(id) → parseDetailResponse
-                    id: ep.embed || "",
+                    id: ep.embed || "",      // embed URL → App gọi getUrlDetail(id)
                     name: ep.name || ("Tập " + (i + 1)),
                     slug: ep.slug || ""
                 });
@@ -177,7 +172,6 @@ function parseMovieDetail(html) {
             }
         }
 
-        // ---- Gom thể loại từ category groups ----
         var cats = [];
         var groups = movie.category || [];
         for (var g = 0; g < groups.length; g++) {
@@ -187,7 +181,6 @@ function parseMovieDetail(html) {
             }
         }
 
-        // ---- Làm sạch mô tả (bỏ thẻ HTML) ----
         var desc = (movie.description || "").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
 
         var status = "Đang chiếu";
@@ -217,50 +210,27 @@ function parseMovieDetail(html) {
     } catch (e) {
         return JSON.stringify({
             id: "", title: "", posterUrl: "", backdropUrl: "", description: "",
-            servers: [], pagination: { currentPage: 1, totalPages: 1 }
+            servers: []
         });
     }
 }
 
 function parseDetailResponse(html) {
     try {
-        // Trang embed (streamc) thường chứa link stream dạng:
-        //   "file":"https://.../index.m3u8"  hoặc  src="...m3u8..."  hoặc setup jwplayer
-        var m3u8 = html.match(/https?:\/\/[^\s"'\\\]]+\.m3u8[^\s"'\\\]]*/);
-        if (m3u8) {
-            return JSON.stringify({
-                url: m3u8[0],
-                isEmbed: false,
-                mimeType: "application/x-mpegURL",
-                headers: {
-                    "Referer": EMBED_REFERER,
-                    "Origin": "https://embed.streamc.xyz"
-                },
-                subtitles: []
-            });
-        }
-
-        var mp4 = html.match(/https?:\/\/[^\s"'\\\]]+\.mp4[^\s"'\\\]]*/);
-        if (mp4) {
-            return JSON.stringify({
-                url: mp4[0],
-                isEmbed: false,
-                mimeType: "video/mp4",
-                headers: { "Referer": EMBED_REFERER },
-                subtitles: []
-            });
-        }
-
-        // Không tìm được link trực tiếp → để App mở embed trong WebView
+        // Server embed chặn fetch từ App (không trả HTML hữu ích),
+        // nên bỏ qua nội dung fetch và trả embed URL để WebView tự tải.
+        // Referer = trang gốc nguonc.com để vượt kiểm tra nguồn của server embed.
         if (__lastEmbedUrl) {
             return JSON.stringify({
                 url: __lastEmbedUrl,
                 isEmbed: false,
-                headers: { "Referer": BASE + "/" },
+                headers: {
+                    "Referer": "https://phim.nguonc.com/",
+                    "Origin": "https://phim.nguonc.com"
+                },
                 subtitles: []
             });
         }
-
         return JSON.stringify({ url: "", isEmbed: false });
     } catch (e) {
         return JSON.stringify({ url: "", isEmbed: false });
@@ -268,7 +238,6 @@ function parseDetailResponse(html) {
 }
 
 function parseEmbedResponse(html, sourceUrl) {
-    // Không cần nhiều bước — parseDetailResponse đã xử lý trực tiếp
     return JSON.stringify({ url: "", isEmbed: false });
 }
 
