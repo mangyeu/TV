@@ -136,13 +136,13 @@ function getManifest() {
     return JSON.stringify({
         id: "avdbapi_jav",
         name: "AVDBAPI - JAV",
-        version: "1.0.8",
+        version: "1.1.0",
         baseUrl: AVDB_SITE,
         iconUrl: "https://avdbapi.com/favicon.ico",
         isEnabled: true,
         isAdult: true,
         type: "MOVIE",
-        layoutType: "Horizontal",
+        layoutType: "VERTICAL",
         playerType: "embed"
     });
 }
@@ -257,7 +257,14 @@ function parseMovieDetail(response) {
                 byServer[e.server] = { name: e.server, episodes: [] };
                 servers.push(byServer[e.server]);
             }
-            byServer[e.server].episodes.push({ id: e.id, name: e.name, slug: e.slug });
+            // Resolve the episode through AVDB's detail API first. The API returns
+            // link_embed; AVDB recommends using that embed URL instead of guessing
+            // or extracting an m3u8 URL from the player page.
+            var episodeId = e.id;
+            if (item.id !== undefined && item.id !== null && item.id !== "" && /^https?:\/\//i.test(e.id)) {
+                episodeId = _apiUrl({ ac: "detail", ids: item.id });
+            }
+            byServer[e.server].episodes.push({ id: episodeId, name: e.name, slug: e.slug });
         }
         return JSON.stringify({
             id: v.id,
@@ -325,7 +332,16 @@ function parseDetailResponse(response) {
         if (data && data.url) return JSON.stringify(data);
         if (data && data.list && data.list.length) {
             var found = _episodeEntries(data.list[0]);
-            if (found.length) return JSON.stringify({ url: found[0].id, isEmbed: true, headers: { Referer: AVDB_SITE } });
+            if (found.length) {
+                // link_embed is the final player page. Do not recursively scrape
+                // it for an m3u8: AVDB's own troubleshooting recommends embed.
+                return JSON.stringify({
+                    url: _absoluteUrl(found[0].id, AVDB_SITE),
+                    isEmbed: false,
+                    headers: { Referer: AVDB_SITE },
+                    subtitles: []
+                });
+            }
         }
     } catch (ignore) {}
 
