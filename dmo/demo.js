@@ -1,61 +1,61 @@
 // =============================================================================
-// VAAPP Plugin - AVDBAPI
-// Danh sach/tim kiem: HTML website AVDBAPI
-// Chi tiet: JSON API /api.php/provide/vod?ac=detail&ids=ID
+// AVDBAPI Plugin cho VAAPP
+// API: https://avdbapi.com
+// Ngôn ngữ mặc định: Tiếng Việt (vi)
+// Dựa trên VAAPP Plugin Template và tài liệu AVDBAPI Multilingual.
 // =============================================================================
 
-var API_BASE = "https://avdbapi.com/api.php/provide/vod";
-var SITE_BASE = "https://avdbapi.com";
-var DEFAULT_MOVIE_ID = "663160";
+var AVDB_LANG = "vi"; // vi, en, th, id, ko, zh, ja, fr, de, es, pt, ru, ar, tr, hi, ms, tl
+var AVDB_BASE = "https://avdbapi.com/" + (AVDB_LANG === "en" ? "" : AVDB_LANG + "/") + "api.php/provide/vod";
+var AVDB_PAGE_SIZE = 30;
 
-function safeJsonParse(value) {
-    try {
-        return typeof value === "string" ? JSON.parse(value) : value;
-    } catch (e) {
-        return null;
+function apiUrl(params) {
+    var query = [];
+    for (var key in params) {
+        if (params.hasOwnProperty(key) && params[key] !== undefined && params[key] !== null && params[key] !== "") {
+            query.push(encodeURIComponent(key) + "=" + encodeURIComponent(String(params[key])));
+        }
     }
+    return AVDB_BASE + "?" + query.join("&");
 }
 
-function decodeHtml(value) {
-    return String(value || "")
-        .replace(/&amp;/g, "&")
-        .replace(/&#039;|&#39;/g, "'")
-        .replace(/&quot;/g, '"')
-        .replace(/&lt;/g, "<")
-        .replace(/&gt;/g, ">");
+function parseJson(input) {
+    if (input && typeof input === "object") return input;
+    try { return JSON.parse(input || "{}"); } catch (e) { return {}; }
 }
 
 function asText(value) {
+    if (value === null || value === undefined) return "";
     if (Array.isArray(value)) return value.join(", ");
-    return value == null ? "" : String(value);
+    return String(value);
 }
 
 function getManifest() {
     return JSON.stringify({
-        id: "avdb_api",
-        name: "AVDB API",
-        version: "1.0.2",
-        baseUrl: SITE_BASE,
+        id: "avdbapi_jav",
+        name: "AVDBAPI - JAV",
+        version: "1.0.5",
+        baseUrl: "https://avdbapi.com",
         iconUrl: "https://avdbapi.com/favicon.ico",
         isEnabled: true,
         isAdult: true,
         type: "MOVIE",
         layoutType: "VERTICAL",
-        // Link nguồn là trang embed; nếu App hỗ trợ WebView thì dùng embed.
         playerType: "embed"
     });
 }
 
+// Danh mục API: t=1..7 theo tài liệu AVDBAPI.
 function getHomeSections() {
     return JSON.stringify([
-        { slug: "latest", title: "Mới cập nhật", type: "Vertical", path: "/" },
-        { slug: "censored", title: "Censored", type: "Vertical", path: "/category/censored/" },
-        { slug: "uncensored", title: "Uncensored", type: "Vertical", path: "/category/uncensored/" },
-        { slug: "uncensored-leaked", title: "Uncensored Leaked", type: "Vertical", path: "/category/uncensored-leaked/" },
-        { slug: "amateur", title: "Amateur", type: "Vertical", path: "/category/amateur/" },
-        { slug: "chinese-av", title: "Chinese AV", type: "Vertical", path: "/category/chinese-av/" },
-        { slug: "hentai", title: "Hentai", type: "Vertical", path: "/category/hentai/" },
-        { slug: "english-subtitle", title: "English subtitle", type: "Vertical", path: "/category/english-subtitle/" }
+        { slug: "latest", title: "Mới cập nhật", type: "Horizontal", path: "" },
+        { slug: "censored", title: "Censored", type: "Horizontal", path: "" },
+        { slug: "uncensored", title: "Uncensored", type: "Horizontal", path: "" },
+        { slug: "leaked", title: "Uncensored Leaked", type: "Horizontal", path: "" },
+        { slug: "amateur", title: "Amateur", type: "Horizontal", path: "" },
+        { slug: "chinese", title: "Chinese AV", type: "Horizontal", path: "" },
+        { slug: "hentai", title: "Hentai", type: "Horizontal", path: "" },
+        { slug: "english-subtitle", title: "English Subtitle", type: "Horizontal", path: "" }
     ]);
 }
 
@@ -63,150 +63,93 @@ function getPrimaryCategories() {
     return JSON.stringify([
         { name: "Censored", slug: "censored" },
         { name: "Uncensored", slug: "uncensored" },
-        { name: "Uncensored Leaked", slug: "uncensored-leaked" },
+        { name: "Uncensored Leaked", slug: "leaked" },
         { name: "Amateur", slug: "amateur" },
-        { name: "Chinese AV", slug: "chinese-av" },
+        { name: "Chinese AV", slug: "chinese" },
         { name: "Hentai", slug: "hentai" },
-        { name: "English subtitle", slug: "english-subtitle" }
+        { name: "English Subtitle", slug: "english-subtitle" }
     ]);
 }
 
 function getFilterConfig() {
-    return JSON.stringify({ sort: [], category: [], country: [], year: [] });
+    return JSON.stringify({
+        sort: [
+            { name: "Mới nhất", slug: "desc" },
+            { name: "Cũ nhất", slug: "asc" }
+        ],
+        category: []
+    });
 }
 
-// =============================================================================
-// SINH URL
-// =============================================================================
-
+// Sinh URL danh sách. API cung cấp ac=detail để lấy poster và metadata đầy đủ.
 function getUrlList(slug, filtersJson) {
-    var filters = safeJsonParse(filtersJson) || {};
-    var page = Math.max(1, parseInt(filters.page || 1, 10));
-    var path = "/";
-    var key = String(slug || "latest").replace(/^\/+|\/+$/g, "");
-    if (key && key !== "latest" && key !== "home") {
-        if (key.indexOf("category/") === 0) path = "/" + key + "/";
-        else path = "/category/" + key + "/";
-    }
-    if (page > 1) {
-        if (path === "/") path = "/index-" + page + "/";
-        else path = path.replace(/\/$/, "") + "-" + page + "/";
-    }
-    return SITE_BASE + path;
+    var filters = parseJson(filtersJson);
+    var params = { ac: "detail", pg: filters.page || 1, pagesize: AVDB_PAGE_SIZE };
+    var typeMap = {
+        censored: 1, uncensored: 2, leaked: 3, amateur: 4,
+        chinese: 5, hentai: 6, "english-subtitle": 7
+    };
+    if (typeMap[slug]) params.t = typeMap[slug];
+    if (filters.year) params.year = filters.year;
+    if (filters.sort) params.sort_direction = filters.sort;
+    if (filters.actor) params.actor = filters.actor;
+    if (filters.category) params.category = filters.category;
+    return apiUrl(params);
 }
 
 function getUrlSearch(keyword, filtersJson) {
-    var filters = safeJsonParse(filtersJson) || {};
-    var page = Math.max(1, parseInt(filters.page || 1, 10));
-    return SITE_BASE + "/search/?wd=" + encodeURIComponent(String(keyword || "")) + (page > 1 ? "&page=" + page : "");
+    var filters = parseJson(filtersJson);
+    return apiUrl({
+        ac: "detail",
+        wd: keyword,
+        pg: filters.page || 1,
+        pagesize: AVDB_PAGE_SIZE
+    });
 }
 
-function getUrlDetail(slug) {
-    var value = String(slug || DEFAULT_MOVIE_ID).trim();
-
-    // AVDB XML trả link tập theo dạng TEN_TAP$URL_PHAT.
-    // Ví dụ: Full$https://upload18.to/play/index/...
-    // URL phát nằm SAU dấu $, không phải phần tên tập.
-    if (value.indexOf("$") >= 0) {
-        var parts = value.split("$");
-        var candidate = String(parts.slice(1).join("$") || "").trim();
-        if (/^https?:\/\//i.test(candidate)) value = candidate;
-        else value = String(parts[0] || "").trim();
-    }
-
-    // URL player/embed đầy đủ.
-    if (/^https?:\/\//i.test(value)) return value;
-
-    // API detail nhận ID số qua tham số ids.
-    var id = /^\d+$/.test(value) ? value : DEFAULT_MOVIE_ID;
-    return API_BASE + "?ac=detail&ids=" + encodeURIComponent(id);
+// id của item dùng AVDBAPI numeric id; fallback slug/movie_code nếu App truyền dạng khác.
+function getUrlDetail(id) {
+    return apiUrl({ ac: "detail", ids: id });
 }
 
 function getUrlCategories() { return ""; }
 function getUrlCountries() { return ""; }
 function getUrlYears() { return ""; }
 
-// =============================================================================
-// PARSER DANH SÁCH
-// Dùng được nếu sau này API trả JSON có cấu trúc { list: [...] }.
-// =============================================================================
+// Chuẩn hóa item AVDBAPI sang cấu trúc VAAPP.
+function mapVideo(item) {
+    return {
+        id: String(item.id || item.slug || item.movie_code || ""),
+        title: asText(item.name || item.origin_name || item.movie_code),
+        posterUrl: item.poster_url || item.thumb_url || "",
+        description: asText(item.description),
+        year: item.year || "",
+        quality: item.quality || "",
+        category: asText(item.category || item.type_name),
+        casts: asText(item.actor),
+        director: asText(item.director),
+        duration: item.time || "",
+        status: item.status || "",
+        movieCode: item.movie_code || "",
+        backdropUrl: item.thumb_url || item.poster_url || ""
+    };
+}
 
 function parseListResponse(response) {
     try {
-        var html = String(response || "");
-        var data = safeJsonParse(html);
-        if (data && Array.isArray(data.list)) {
-            var jsonItems = data.list.map(function (item) {
-                return {
-                    id: String(item.id || item.slug || ""),
-                    title: decodeHtml(item.name || item.origin_name || ""),
-                    posterUrl: item.poster_url || item.thumb_url || "",
-                    thumbUrl: item.thumb_url || item.poster_url || "",
-                    description: decodeHtml(item.description || ""),
-                    year: item.year || "", quality: item.quality || "",
-                    category: asText(item.category || item.type_name)
-                };
-            });
-            return JSON.stringify({ items: jsonItems, pagination: {
-                currentPage: Number(data.page || 1), totalPages: Number(data.pagecount || 1),
-                totalItems: Number(data.total || jsonItems.length)
-            }});
-        }
-
-        function attr(tag, name) {
-            var m = String(tag || "").match(new RegExp(name + "=([^\\s>]+)", "i"));
-            if (!m) return "";
-            var value = m[1].replace(/^[\"']|[\"']$/g, "");
-            return decodeHtml(value);
-        }
-        function textOf(fragment) {
-            return decodeHtml(String(fragment || "").replace(/<[^>]*>/g, " ")
-                .replace(/&middot;/g, "·").replace(/\s+/g, " ").trim());
-        }
-        var items = [];
-        var liRe = /<li\b[^>]*class=["'][^"']*\bv\b[^"']*["'][^>]*>([\s\S]*?)<\/li>/gi;
-        var li;
-        while ((li = liRe.exec(html)) !== null) {
-            var block = li[1];
-            var linkMatch = block.match(/<a\b[^>]*class=["'][^"']*v-thumb[^"']*["'][^>]*>/i);
-            var titleMatch = block.match(/<a\b[^>]*class=["'][^"']*v-title[^"']*["'][^>]*>([\s\S]*?)<\/a>/i);
-            var idMatch = block.match(/<span\b[^>]*class=["'][^"']*v-id[^"']*["'][^>]*>([\s\S]*?)<\/span>/i);
-            var codeMatch = block.match(/<span\b[^>]*class=["'][^"']*v-code[^"']*["'][^>]*>([\s\S]*?)<\/span>/i);
-            var durMatch = block.match(/<span\b[^>]*class=["'][^"']*v-dur[^"']*["'][^>]*>([\s\S]*?)<\/span>/i);
-            var typeMatch = block.match(/<span\b[^>]*class=["'][^"']*v-type[^"']*["'][^>]*>([\s\S]*?)<\/span>/i);
-            var dateMatch = block.match(/<span\b[^>]*class=["'][^"']*v-date[^"']*["'][^>]*>([\s\S]*?)<\/span>/i);
-            var id = idMatch ? textOf(idMatch[1]) : "";
-            var titleTag = titleMatch ? titleMatch[0].match(/^<a\b[^>]*>/i) : null;
-            var detailPath = titleTag ? attr(titleTag[0], "href") : "";
-            var imageMatch = block.match(/<img\b[^>]*>/i);
-            var imageTag = imageMatch ? imageMatch[0] : "";
-            var poster = imageTag ? (attr(imageTag, "data-src") || attr(imageTag, "src")) : "";
-            if (!id && detailPath) { var idFromPath = detailPath.match(/(\d+)(?:\/)?$/); if (idFromPath) id = idFromPath[1]; }
-            if (!id || !titleMatch) continue;
-            items.push({
-                id: id, title: textOf(titleMatch[1]), posterUrl: poster, thumbUrl: poster,
-                detailUrl: detailPath ? SITE_BASE + detailPath : "",
-                code: codeMatch ? textOf(codeMatch[1]) : "",
-                duration: durMatch ? textOf(durMatch[1]) : "",
-                category: typeMatch ? textOf(typeMatch[1]) : "",
-                updatedAt: dateMatch ? textOf(dateMatch[1]) : ""
-            });
-        }
-        var total = 0, currentPage = 1;
-        var pager = html.match(/<nav\b[^>]*class=["'][^"']*pager[^"']*["'][^>]*>/i);
-        if (pager) {
-            var totalMatch = pager[0].match(/data-total=["'](\d+)["']/i);
-            if (totalMatch) total = parseInt(totalMatch[1], 10);
-            var cur = html.match(/<a\b[^>]*aria-current=["']page["'][^>]*>(\d+)<\/a>/i);
-            if (cur) currentPage = parseInt(cur[1], 10);
-        }
-        var totalPages = total || 1;
-        return JSON.stringify({ items: items, pagination: {
-            currentPage: currentPage, totalPages: totalPages,
-            totalItems: total ? total * 50 : items.length
-        }});
+        var data = parseJson(response);
+        var source = Array.isArray(data.list) ? data.list : [];
+        var items = source.map(mapVideo);
+        return JSON.stringify({
+            items: items,
+            pagination: {
+                currentPage: Number(data.page || 1),
+                totalPages: Number(data.pagecount || 1),
+                totalItems: Number(data.total || items.length)
+            }
+        });
     } catch (e) {
-        return JSON.stringify({ items: [], pagination: { currentPage: 1, totalPages: 1, totalItems: 0 } });
+        return JSON.stringify({ items: [], pagination: { currentPage: 1, totalPages: 1 } });
     }
 }
 
@@ -214,183 +157,170 @@ function parseSearchResponse(response) {
     return parseListResponse(response);
 }
 
-// =============================================================================
-// PARSER CHI TIẾT PHIM
-// API trả episodes.server_data dạng object:
-// { "Full": { "slug": "full", "link_embed": "https://..." } }
-// =============================================================================
+// Parse link phát theo cả Standard API (episodes.server_data) và
+// Maccms API (vod_play_from + vod_play_url).
+// Ví dụ: vod_play_url = "Full$https://upload18.to/play/index/fns-053"
+// Nhiều server phân cách bằng $$$; nhiều tập trong server phân cách bằng #.
+function parseVodPlayUrl(item) {
+    var servers = [];
+    var playUrlText = item.vod_play_url || "";
+    var playFromText = item.vod_play_from || "";
+    if (!playUrlText) return servers;
 
-function parseMovieDetail(response) {
-    try {
-        var raw = String(response || "");
-        var data = safeJsonParse(raw);
-        var item = data && data.list && data.list.length ? data.list[0] : data;
+    var sourceNames = String(playFromText).split("$$$");
+    var sourceBlocks = String(playUrlText).split("$$$");
 
-        // AVDB RSS/XML response: <list><video>...</video></list>
-        if (!item || !item.id) {
-            function xmlValue(tag) {
-                var re = new RegExp("<" + tag + "\\b[^>]*>([\\s\\S]*?)</" + tag + ">", "i");
-                var m = raw.match(re);
-                if (!m) return "";
-                var v = m[1].replace(/^\s*<!\[CDATA\[/i, "").replace(/\] >\s*$/i, "");
-                v = v.replace(/\]\]>\s*$/i, "").trim();
-                return decodeHtml(v.replace(/<[^>]*>/g, " ").trim());
-            }
-            var id = xmlValue("id");
-            if (id) {
-                var linkBlock = raw.match(/<dd\b[^>]*>([\s\S]*?)<\/dd>/i);
-                var linkValue = "";
-                if (linkBlock) {
-                    linkValue = linkBlock[1]
-                        .replace(/^\s*<!\[CDATA\[/i, "")
-                        .replace(/\]\]>\s*$/i, "")
-                        .trim();
-                }
-                var linkParts = linkValue.split("$");
-                var playUrl = linkParts.length > 1 ? linkParts.slice(1).join("$").trim() : linkValue.trim();
-                var episodeName = linkParts.length > 1 ? linkParts[0].trim() : "Full";
-                item = {
-                    id: id,
-                    name: xmlValue("name"),
-                    type_name: xmlValue("type"),
-                    poster_url: xmlValue("pic"),
-                    actor: xmlValue("actor"),
-                    director: xmlValue("director"),
-                    year: xmlValue("year"),
-                    time: (xmlValue("des").match(/runtime\s+([0-9:]+)/i) || [])[1] || "",
-                    description: xmlValue("des"),
-                    episodes: { server_name: "Upload18", server_data: {} }
-                };
-                if (/^https?:\/\//i.test(playUrl)) {
-                    item.episodes.server_data[episodeName || "Full"] = {
-                        slug: (episodeName || "Full").toLowerCase(),
-                        link_embed: playUrl
-                    };
-                }
-            }
-        }
-
-        if (!item || !item.id) {
-            return JSON.stringify({ id: "", title: "Không tìm thấy dữ liệu phim", posterUrl: "", backdropUrl: "", description: "", servers: [], quality: "", year: "", status: "", duration: "", casts: "", director: "", category: "" });
-        }
-
-        var serverData = item.episodes && item.episodes.server_data ? item.episodes.server_data : {};
+    for (var si = 0; si < sourceBlocks.length; si++) {
+        var block = sourceBlocks[si] || "";
+        var episodeRows = block.split("#");
         var episodes = [];
-        Object.keys(serverData).forEach(function (episodeName) {
-            var ep = serverData[episodeName] || {};
-            if (!ep.link_embed) return;
-            var rawLink = String(ep.link_embed).trim();
-            // Chuẩn hóa cả trường hợp link_embed vẫn còn dạng Full$URL.
-            if (rawLink.indexOf("$") >= 0) {
-                var split = rawLink.split("$");
-                if (/^https?:\/\//i.test(String(split.slice(1).join("$")).trim())) rawLink = String(split.slice(1).join("$")).trim();
-            }
-            episodes.push({ id: rawLink, name: episodeName || ep.slug || "Full", slug: ep.slug || episodeName || "full" });
-        });
 
-        var serverName = item.episodes && item.episodes.server_name ? item.episodes.server_name : "Server 1";
-        return JSON.stringify({
-            id: String(item.id),
-            title: decodeHtml(item.name || item.origin_name || ""),
-            posterUrl: item.poster_url || item.pic || item.thumb_url || "",
-            backdropUrl: item.thumb_url || item.poster_url || item.pic || "",
-            description: decodeHtml(item.description || item.des || ""),
-            servers: episodes.length ? [{ name: serverName, episodes: episodes }] : [],
-            quality: item.quality || "", year: item.year || "", rating: 0,
-            status: item.status || "", duration: item.time || "",
-            casts: asText(item.actor), director: asText(item.director),
-            category: asText(item.category || item.type_name), country: asText(item.country),
-            movieCode: item.movie_code || item.note || "",
-            releaseDate: item.vod_pubdate || item.created_at || item.last || ""
-        });
-    } catch (e) {
-        return JSON.stringify({ id: "", title: "", posterUrl: "", backdropUrl: "", description: "", servers: [], quality: "", year: "", status: "", duration: "", casts: "", director: "", category: "" });
-    }
-}
+        for (var ei = 0; ei < episodeRows.length; ei++) {
+            var row = episodeRows[ei] || "";
+            var dollar = row.indexOf("$");
+            if (dollar < 0) continue;
 
-// =============================================================================
-// PARSER LINK XEM
-// Hỗ trợ lấy iframe hoặc URL player từ HTML/JSON của trang embed.
-// Nếu upload18.to thay đổi cấu trúc trang, cần cập nhật regex tương ứng.
-// =============================================================================
+            var epName = row.substring(0, dollar).trim() || ("Tập " + (ei + 1));
+            var epUrl = row.substring(dollar + 1).trim();
+            if (!epUrl) continue;
 
-function extractEmbedUrl(content) {
-    var source = String(content || "");
-    var patterns = [
-        /<iframe[^>]+src=["']([^"']+)["']/i,
-        /<iframe[^]+?src=["']([^"']+)["']/i,
-        /(?:file|url|src)\s*[:=]\s*["'](https?:\\?\/\\?\/[^"'\\]+)["']/i,
-        /https?:\/\/[^"'\\\s<>]+(?:\.m3u8|\.mp4)(?:\?[^"'\\\s<>]*)?/i
-    ];
-
-    for (var i = 0; i < patterns.length; i++) {
-        var match = source.match(patterns[i]);
-        if (match) {
-            var found = match[1] || match[0];
-            found = found.replace(/\\\//g, "/").replace(/&amp;/g, "&");
-            if (found.indexOf("//") === 0) found = "https:" + found;
-            return found;
-        }
-    }
-    return "";
-}
-
-function parseDetailResponse(response) {
-    try {
-        var data = safeJsonParse(response);
-
-        // Trường hợp endpoint trả JSON có URL trực tiếp.
-        if (data && typeof data === "object") {
-            var direct = data.url || data.file || data.src || "";
-            if (direct) {
-                return JSON.stringify({
-                    url: direct,
-                    headers: {},
-                    subtitles: [],
-                    isEmbed: false
-                });
-            }
-        }
-
-        var embedUrl = extractEmbedUrl(response);
-        if (embedUrl) {
-            return JSON.stringify({
-                url: embedUrl,
-                headers: { "Referer": "https://upload18.to/", "Origin": "https://upload18.to" },
-                subtitles: [],
-                isEmbed: !/\.(m3u8|mp4)(\?|$)/i.test(embedUrl),
-                mimeType: /\.(m3u8)(\?|$)/i.test(embedUrl)
-                    ? "application/x-mpegURL"
-                    : (/\.(mp4)(\?|$)/i.test(embedUrl) ? "video/mp4" : "")
+            // URL trang play (ví dụ upload18.to/play/...) dùng WebView/embed.
+            episodes.push({
+                id: epUrl,
+                name: epName,
+                slug: epName
             });
         }
 
-        // Không có URL player nhận diện được: trả rỗng để tránh phát sai URL.
-        return JSON.stringify({ url: "", isEmbed: false, subtitles: [] });
+        if (episodes.length) {
+            servers.push({
+                name: (sourceNames[si] || ("Server " + (si + 1))).trim(),
+                episodes: episodes
+            });
+        }
+    }
+    return servers;
+}
+
+function parseMovieDetail(response) {
+    try {
+        var data = parseJson(response);
+        var item = (data.list && data.list.length) ? data.list[0] : data;
+        var servers = [];
+
+        // Ưu tiên Maccms vod_play_url nếu API trả trường này.
+        servers = parseVodPlayUrl(item);
+
+        // Standard API: episodes.server_data.
+        if (!servers.length) {
+            var epObject = item.episodes || {};
+            var serverName = epObject.server_name || "AVDBAPI";
+            var serverData = epObject.server_data || {};
+            var episodes = [];
+
+            for (var key in serverData) {
+                if (!serverData.hasOwnProperty(key)) continue;
+                var ep = serverData[key];
+                if (!ep) continue;
+                var playUrl = ep.link_embed || ep.link || ep.url || "";
+                if (playUrl) {
+                    episodes.push({
+                        id: playUrl,
+                        name: key || ep.name || "Full",
+                        slug: ep.slug || key || "full"
+                    });
+                }
+            }
+
+            if (episodes.length === 0 && Array.isArray(epObject)) {
+                for (var i = 0; i < epObject.length; i++) {
+                    var row = epObject[i] || {};
+                    var url = row.link_embed || row.link || row.url || "";
+                    if (url) episodes.push({
+                        id: url,
+                        name: row.name || ("Tập " + (i + 1)),
+                        slug: row.slug || ""
+                    });
+                }
+            }
+            if (episodes.length) servers.push({ name: serverName, episodes: episodes });
+        }
+
+        var video = mapVideo(item);
+        return JSON.stringify({
+            id: video.id,
+            title: video.title,
+            posterUrl: video.posterUrl,
+            backdropUrl: video.backdropUrl,
+            description: video.description,
+            servers: servers,
+            quality: video.quality,
+            year: video.year,
+            rating: 0,
+            status: video.status,
+            duration: video.duration,
+            casts: video.casts,
+            director: video.director,
+            category: video.category
+        });
     } catch (e) {
-        return JSON.stringify({ url: "", isEmbed: false, subtitles: [] });
+        return JSON.stringify({
+            id: "", title: "", posterUrl: "", description: "",
+            servers: []
+        });
     }
 }
 
+// Episode.id đã là link_embed. Hàm này là fallback nếu VAAPP gọi parser resolve.
+function parseDetailResponse(response) {
+    try {
+        var data = parseJson(response);
+        if (data.url) return JSON.stringify(data);
+
+        var item = (data.list && data.list.length) ? data.list[0] : data;
+
+        // Nếu parser nhận thẳng URL tập từ episode.id thì giữ nguyên URL
+        // để playerType=embed mở bằng WebView.
+        if (typeof response === "string" &&
+            /^https?:\/\/[^\s"'<>]+$/i.test(response.trim())) {
+            return JSON.stringify({
+                url: response.trim(),
+                isEmbed: true,
+                headers: { "Referer": "https://avdbapi.com/" },
+                subtitles: []
+            });
+        }
+
+        var maccmsServers = parseVodPlayUrl(item);
+        if (maccmsServers.length && maccmsServers[0].episodes.length) {
+            return JSON.stringify({
+                url: maccmsServers[0].episodes[0].id,
+                isEmbed: true,
+                headers: { "Referer": "https://avdbapi.com/" },
+                subtitles: []
+            });
+        }
+
+        var ep = item.episodes || {};
+        var serverData = ep.server_data || {};
+        for (var key in serverData) {
+            if (!serverData.hasOwnProperty(key)) continue;
+            var row = serverData[key] || {};
+            var url = row.link_embed || row.link || row.url || "";
+            if (url) return JSON.stringify({
+                url: url,
+                isEmbed: true,
+                headers: { "Referer": "https://avdbapi.com/" },
+                subtitles: []
+            });
+        }
+    } catch (e) {}
+    return JSON.stringify({ url: "", isEmbed: false, headers: {}, subtitles: [] });
+}
+
 function parseEmbedResponse(response, sourceUrl) {
-    var embedUrl = extractEmbedUrl(response);
-
-    if (embedUrl) {
-        var isMedia = /\.(m3u8|mp4)(\?|$)/i.test(embedUrl);
-        return JSON.stringify({
-            url: embedUrl,
-            isEmbed: !isMedia,
-            headers: {
-                "Referer": sourceUrl || "https://upload18.to/",
-                "Origin": "https://upload18.to"
-            },
-            mimeType: /\.m3u8(\?|$)/i.test(embedUrl)
-                ? "application/x-mpegURL"
-                : (/\.mp4(\?|$)/i.test(embedUrl) ? "video/mp4" : "")
-        });
-    }
-
-    return JSON.stringify({ url: "", isEmbed: false });
+    // AVDBAPI trả link_embed; không tự bóc tách hay vượt DRM/bảo vệ nội dung.
+    return parseDetailResponse(response);
 }
 
 function parseCategoriesResponse(response) { return "[]"; }
