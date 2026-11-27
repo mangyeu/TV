@@ -8,7 +8,7 @@ function getManifest() {
     return JSON.stringify({
         "id": "missav",
         "name": "MissAV",
-        "version": "1.0.1",
+        "version": "1.0.2",
         "baseUrl": BASE_URL,
         "iconUrl": "https://raw.githubusercontent.com/youngbi/repo/main/plugins/missav.ico",
         "isEnabled": true,
@@ -558,7 +558,7 @@ function parseMovieDetail(html, pageUrl) {
             servers.push({
                 name: "Stream",
                 episodes: [{
-                    id: pageUrl || ("https://surrit.com/" + uuid + "/playlist.m3u8"),
+                    id: pageUrl || ("https://c.surrit.com/" + uuid + "/playlist.m3u8"),
                     name: "Full",
                     slug: "full"
                 }]
@@ -598,7 +598,7 @@ function parseMovieDetail(html, pageUrl) {
 function parseDetailResponse(html) {
     html = PluginUtils.normalizeHtml(html);
     var uuid = PluginUtils.extractUuid(html);
-    var streamUrl = uuid ? ("https://surrit.com/" + uuid + "/playlist.m3u8") : "";
+    var streamUrl = uuid ? ("https://c.surrit.com/" + uuid + "/playlist.m3u8") : "";
 
     return JSON.stringify({
         url: streamUrl,
