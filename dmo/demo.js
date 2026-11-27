@@ -117,7 +117,7 @@ function getManifest() {
         isEnabled: true,
         isAdult: true,
         type: "MOVIE",
-        layoutType: "VERTICAL",
+        layoutType: "Horizontal",
         // AVDB recommends link_embed when direct HLS playback fails.
         playerType: "embed"
     });
