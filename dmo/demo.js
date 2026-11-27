@@ -6,7 +6,8 @@
 // =============================================================================
 
 var AVDB_LANG = "vi"; // vi, en, th, id, ko, zh, ja, fr, de, es, pt, ru, ar, tr, hi, ms, tl
-var AVDB_BASE = "https://avdbapi.com/" + (AVDB_LANG === "en" ? "" : AVDB_LANG + "/") + "api.php/provide/vod";
+// Dùng provide1 vì trường vod_play_url / vod_play_from thuộc Maccms API.
+var AVDB_BASE = "https://avdbapi.com/" + (AVDB_LANG === "en" ? "" : AVDB_LANG + "/") + "api.php/provide1/vod";
 var AVDB_PAGE_SIZE = 30;
 
 function apiUrl(params) {
@@ -34,7 +35,7 @@ function getManifest() {
     return JSON.stringify({
         id: "avdbapi_jav",
         name: "AVDBAPI - JAV",
-        version: "1.0.5",
+        version: "1.0.0",
         baseUrl: "https://avdbapi.com",
         iconUrl: "https://avdbapi.com/favicon.ico",
         isEnabled: true,
@@ -109,6 +110,9 @@ function getUrlSearch(keyword, filtersJson) {
 
 // id của item dùng AVDBAPI numeric id; fallback slug/movie_code nếu App truyền dạng khác.
 function getUrlDetail(id) {
+    // VAAPP có thể gọi hàm này với episode.id là URL trang phát.
+    // URL tập phải được fetch trực tiếp, không được biến thành tham số ids=...
+    if (/^https?:\/\//i.test(String(id || ""))) return String(id).trim();
     return apiUrl({ ac: "detail", ids: id });
 }
 
@@ -119,19 +123,19 @@ function getUrlYears() { return ""; }
 // Chuẩn hóa item AVDBAPI sang cấu trúc VAAPP.
 function mapVideo(item) {
     return {
-        id: String(item.id || item.slug || item.movie_code || ""),
-        title: asText(item.name || item.origin_name || item.movie_code),
-        posterUrl: item.poster_url || item.thumb_url || "",
-        description: asText(item.description),
-        year: item.year || "",
-        quality: item.quality || "",
-        category: asText(item.category || item.type_name),
-        casts: asText(item.actor),
-        director: asText(item.director),
-        duration: item.time || "",
-        status: item.status || "",
-        movieCode: item.movie_code || "",
-        backdropUrl: item.thumb_url || item.poster_url || ""
+        id: String(item.id || item.vod_id || item.slug || item.vod_sub || item.movie_code || item.vod_remarks || ""),
+        title: asText(item.name || item.vod_name || item.origin_name || item.vod_en || item.movie_code || item.vod_remarks),
+        posterUrl: item.poster_url || item.vod_pic || item.thumb_url || "",
+        description: asText(item.description || item.vod_content),
+        year: item.year || item.vod_year || "",
+        quality: item.quality || item.vod_quality || "",
+        category: asText(item.category || item.vod_class || item.type_name),
+        casts: asText(item.actor || item.vod_actor),
+        director: asText(item.director || item.vod_director),
+        duration: item.time || item.vod_duration || "",
+        status: item.status || item.vod_status || "",
+        movieCode: item.movie_code || item.vod_remarks || item.vod_sub || "",
+        backdropUrl: item.thumb_url || item.poster_url || item.vod_pic || ""
     };
 }
 
@@ -272,45 +276,58 @@ function parseMovieDetail(response) {
 }
 
 // Episode.id đã là link_embed. Hàm này là fallback nếu VAAPP gọi parser resolve.
+function getAbsoluteUrl(url, base) {
+    if (!url) return "";
+    url = String(url).trim().replace(/&amp;/g, "&");
+    if (/^https?:\/\//i.test(url)) return url;
+    if (url.indexOf("//") === 0) return "https:" + url;
+    if (!base) return url;
+    var origin = base.match(/^(https?:\/\/[^\/]+)/i);
+    if (!origin) return url;
+    if (url.charAt(0) === "/") return origin[1] + url;
+    var dir = base.substring(0, base.lastIndexOf("/") + 1);
+    return dir + url;
+}
+
 function parseDetailResponse(response) {
     try {
         var data = parseJson(response);
         if (data.url) return JSON.stringify(data);
 
-        var item = (data.list && data.list.length) ? data.list[0] : data;
-
-        // Nếu parser nhận thẳng URL tập từ episode.id thì giữ nguyên URL
-        // để playerType=embed mở bằng WebView.
+        // Trường hợp parser nhận trực tiếp URL của tập.
         if (typeof response === "string" &&
             /^https?:\/\/[^\s"'<>]+$/i.test(response.trim())) {
             return JSON.stringify({
                 url: response.trim(),
                 isEmbed: true,
-                headers: { "Referer": "https://avdbapi.com/" },
+                headers: {},
                 subtitles: []
             });
         }
 
+        // Nếu response là JSON Maccms.
+        var item = (data.list && data.list.length) ? data.list[0] : data;
         var maccmsServers = parseVodPlayUrl(item);
         if (maccmsServers.length && maccmsServers[0].episodes.length) {
             return JSON.stringify({
                 url: maccmsServers[0].episodes[0].id,
                 isEmbed: true,
-                headers: { "Referer": "https://avdbapi.com/" },
+                headers: {},
                 subtitles: []
             });
         }
 
-        var ep = item.episodes || {};
-        var serverData = ep.server_data || {};
-        for (var key in serverData) {
-            if (!serverData.hasOwnProperty(key)) continue;
-            var row = serverData[key] || {};
-            var url = row.link_embed || row.link || row.url || "";
-            if (url) return JSON.stringify({
-                url: url,
-                isEmbed: true,
-                headers: { "Referer": "https://avdbapi.com/" },
+        // Nếu HTML trang phát chứa iframe hoặc thẻ video.
+        var html = String(response || "");
+        var match = html.match(/<iframe[^>]+(?:src|data-src)=["']([^"']+)["']/i);
+        if (!match) match = html.match(/(?:file|src|hls|url)\s*[:=]\s*["'](https?:\/\/[^"']+)["']/i);
+        if (!match) match = html.match(/https?:\\?\/\\?\/[^"'\\\s<>]+\.(?:m3u8|mp4)(?:\?[^"'\\\s<>]*)?/i);
+        if (match) {
+            var found = match[1] || match[0];
+            return JSON.stringify({
+                url: getAbsoluteUrl(found, ""),
+                isEmbed: !/\.(m3u8|mp4)(\?|$)/i.test(found),
+                headers: {},
                 subtitles: []
             });
         }
@@ -319,8 +336,10 @@ function parseDetailResponse(response) {
 }
 
 function parseEmbedResponse(response, sourceUrl) {
-    // AVDBAPI trả link_embed; không tự bóc tách hay vượt DRM/bảo vệ nội dung.
-    return parseDetailResponse(response);
+    // Phân tích iframe / video URL công khai trong HTML trang phát.
+    var result = parseJson(parseDetailResponse(response));
+    if (result.url && sourceUrl) result.url = getAbsoluteUrl(result.url, sourceUrl);
+    return JSON.stringify(result);
 }
 
 function parseCategoriesResponse(response) { return "[]"; }
