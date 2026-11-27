@@ -19,13 +19,13 @@
             "iconUrl": "https://raw.githubusercontent.com/mangyeu/TV/refs/heads/main/plugin_film/favicon.ico"
         },
         {
-            "id": "nguonc",
+            "id": "nguonc_new_plugin",
             "name": "NguồnC",
-            "version": "1.0.1",
+            "version": "1.0.2",
             "baseUrl": "https://phim.nguonc.com",
             "scriptUrl": "https://raw.githubusercontent.com/mangyeu/TV/refs/heads/main/plugin_film/nguonc_plugin.js",
             "iconUrl": "https://raw.githubusercontent.com/mangyeu/TV/refs/heads/main/plugin_film/nguonc.ico"
-    },
+        },
         {
             "id": "phimnet",
       "name": "Phimnet (MOVIE)",
