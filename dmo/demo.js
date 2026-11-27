@@ -224,8 +224,8 @@ function getManifest() {
         isEnabled: true,
         isAdult: true,
         type: "MOVIE",
-        layoutType: "VERTICAL",
-        playerType: "exoplayer"
+        layoutType: "HORIZONTAL",
+        playerType: "embed"
     });
 }
 
