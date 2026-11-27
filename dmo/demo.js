@@ -1,10 +1,3 @@
-// =============================================================================
-// VAAPP Plugin - AVDB API
-// Version: 1.0.0
-// Source API: https://avdbapi.com/api.php/provide/vod/
-// Compatible with VAAPP plugin_template (JSON/MacCMS Provide API)
-// =============================================================================
-
 var AVDB_API_BASE = "https://avdbapi.com/api.php/provide/vod/";
 var AVDB_SITE_BASE = "https://avdbapi.com";
 var AVDB_REFERER = "https://avdbapi.com/";
@@ -225,20 +218,20 @@ function getManifest() {
         isAdult: true,
         type: "MOVIE",
         layoutType: "VERTICAL",
-        playerType: "exoplayer"
+        playerType: "embed"
     });
 }
 
 function getHomeSections() {
     return JSON.stringify([
-        { slug: "latest", title: "Mới cập nhật", type: "Horizontal", path: "" },
         { slug: "censored", title: "Censored", type: "Horizontal", path: "" },
         { slug: "uncensored", title: "Uncensored", type: "Horizontal", path: "" },
         { slug: "uncensored-leaked", title: "Uncensored Leaked", type: "Horizontal", path: "" },
         { slug: "amateur", title: "Amateur", type: "Horizontal", path: "" },
         { slug: "chinese-av", title: "Chinese AV", type: "Horizontal", path: "" },
         { slug: "hentai", title: "Hentai", type: "Horizontal", path: "" },
-        { slug: "english-subtitle", title: "English Subtitle", type: "Horizontal", path: "" }
+        { slug: "english-subtitle", title: "English Subtitle", type: "Horizontal", path: "" },
+        { slug: "latest", title: "Mới cập nhật", type: "Grid", path: "" }
     ]);
 }
 
