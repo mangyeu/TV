@@ -1,8 +1,6 @@
 var BASE_API = "https://avdbapi.com/api.php/provide/vod";
-var DEFAULT_HEADERS = {
-    "Referer": "https://upload18.org/",
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
-};
+var EMBED_REFERER = "https://upload18.org/";
+var DEFAULT_USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36";
 
 // =============================================================================
 // NHÓM 1: CẤU HÌNH (Config & Metadata)
@@ -12,12 +10,12 @@ function getManifest() {
     return JSON.stringify({
         "id": "avdbapi",
         "name": "AVDB JAV",
-        "version": "1.0.0",
+        "version": "1.0.1",
         "baseUrl": BASE_API,
         "iconUrl": "https://avdbapi.com/favicon.ico",
         "isEnabled": true,
         "isAdult": true,
-        "type": "MOVIE",
+        "type": "VIDEO",
         "layoutType": "HORIZONTAL",
         "playerType": "embed"
     });
@@ -52,8 +50,7 @@ function getFilterConfig() {
             { name: "Mới nhất", value: "desc" },
             { name: "Cũ nhất", value: "asc" }
         ],
-        category: [],
-        year: []
+        category: []
     });
 }
 
@@ -69,12 +66,14 @@ function getUrlList(slug, filtersJson) {
 
         if (/^[1-6]$/.test(slug)) {
             url += "&t=" + slug;
+        } else if (slug === "latest") {
+            // Mặc định theo thứ tự mới cập nhật của API
         } else if (filters.category) {
             url += "&t=" + filters.category;
         }
 
-        if (filters.year) url += "&year=" + encodeURIComponent(filters.year);
-        if (filters.sort) url += "&sort_direction=" + encodeURIComponent(filters.sort);
+        if (filters.year) url += "&year=" + filters.year;
+        if (filters.sort) url += "&sort_direction=" + filters.sort;
 
         return url;
     } catch (e) {
@@ -83,13 +82,9 @@ function getUrlList(slug, filtersJson) {
 }
 
 function getUrlSearch(keyword, filtersJson) {
-    try {
-        var filters = JSON.parse(filtersJson || "{}");
-        var page = filters.page || 1;
-        return BASE_API + "?ac=detail&wd=" + encodeURIComponent(keyword || "") + "&pg=" + page + "&pagesize=24";
-    } catch (e) {
-        return BASE_API + "?ac=detail&wd=" + encodeURIComponent(keyword || "") + "&pg=1&pagesize=24";
-    }
+    var filters = JSON.parse(filtersJson || "{}");
+    var page = filters.page || 1;
+    return BASE_API + "?ac=detail&wd=" + encodeURIComponent(keyword) + "&pg=" + page + "&pagesize=24";
 }
 
 function getUrlDetail(episodeId) {
@@ -122,17 +117,17 @@ function parseListResponse(apiResponseJson) {
                 title: item.name || "",
                 posterUrl: item.poster_url || "",
                 backdropUrl: item.thumb_url || "",
-                year: parseInt(item.year, 10) || 0,
+                year: parseInt(item.year) || 0,
                 quality: item.quality || "HD",
                 episode_current: item.status || "",
                 lang: item.movie_code || ""
             };
         });
 
-        var currentPage = parseInt(response.page, 10) || 1;
-        var totalItems = parseInt(response.total, 10) || 0;
-        var itemsPerPage = parseInt(response.limit, 10) || 24;
-        var totalPages = parseInt(response.pagecount, 10) || Math.max(1, Math.ceil(totalItems / itemsPerPage));
+        var currentPage = parseInt(response.page) || 1;
+        var totalItems = parseInt(response.total) || 0;
+        var itemsPerPage = parseInt(response.limit) || 24;
+        var totalPages = parseInt(response.pagecount) || Math.ceil(totalItems / itemsPerPage) || 1;
 
         return JSON.stringify({
             items: items,
@@ -144,19 +139,15 @@ function parseListResponse(apiResponseJson) {
             }
         });
     } catch (e) {
-        return JSON.stringify({ items: [], pagination: { currentPage: 1, totalPages: 1 } });
+        return JSON.stringify({
+            items: [],
+            pagination: { currentPage: 1, totalPages: 1 }
+        });
     }
 }
 
 function parseSearchResponse(apiResponseJson) {
     return parseListResponse(apiResponseJson);
-}
-
-function joinCleanList(value) {
-    if (Array.isArray(value)) {
-        return value.filter(function (v) { return v && v !== "Updating"; }).join(", ");
-    }
-    return value || "";
 }
 
 function parseMovieDetail(apiResponseJson) {
@@ -169,13 +160,13 @@ function parseMovieDetail(apiResponseJson) {
         var servers = [];
         var eps = movie.episodes;
 
-        if (eps && eps.server_data) {
+        if (eps) {
             var serverEpisodes = [];
-            var serverData = eps.server_data;
+            var serverData = eps.server_data || {};
 
             for (var epName in serverData) {
-                if (Object.prototype.hasOwnProperty.call(serverData, epName)) {
-                    var epInfo = serverData[epName] || {};
+                if (serverData.hasOwnProperty(epName)) {
+                    var epInfo = serverData[epName];
                     var embedUrl = epInfo.link_embed || "";
                     if (embedUrl) {
                         serverEpisodes.push({
@@ -195,24 +186,37 @@ function parseMovieDetail(apiResponseJson) {
             }
         }
 
+        var categories = Array.isArray(movie.category)
+            ? movie.category.join(", ")
+            : (movie.category || "");
+        var countries = Array.isArray(movie.country)
+            ? movie.country.join(", ")
+            : (movie.country || "");
+        var directors = Array.isArray(movie.director)
+            ? movie.director.filter(function (d) { return d !== "Updating"; }).join(", ")
+            : (movie.director || "");
+        var actors = Array.isArray(movie.actor)
+            ? movie.actor.filter(function (a) { return a !== "Updating"; }).join(", ")
+            : (movie.actor || "");
+
         return JSON.stringify({
-            id: movie.slug || movie.movie_code || String(movie.id || ""),
+            id: movie.slug || movie.movie_code || "",
             title: movie.name || "",
             originName: movie.origin_name || "",
             posterUrl: movie.poster_url || "",
             backdropUrl: movie.thumb_url || "",
-            description: (movie.description || "").replace(/<[^>]*>/g, "").trim(),
-            year: parseInt(movie.year, 10) || 0,
+            description: (movie.description || "").replace(/<[^>]*>/g, ""),
+            year: parseInt(movie.year) || 0,
             rating: 0,
             quality: movie.quality || "HD",
             duration: movie.time || "",
             servers: servers,
             episode_current: movie.status || "",
             lang: "",
-            category: joinCleanList(movie.category),
-            country: joinCleanList(movie.country),
-            director: joinCleanList(movie.director),
-            casts: joinCleanList(movie.actor),
+            category: categories,
+            country: countries,
+            director: directors,
+            casts: actors,
             status: movie.status || ""
         });
     } catch (e) {
@@ -220,46 +224,49 @@ function parseMovieDetail(apiResponseJson) {
     }
 }
 
-function isM3u8Content(text) {
-    if (!text) return false;
-    return text.indexOf("#EXTM3U") !== -1 || text.indexOf("#EXT-X-") !== -1;
-}
-
 function parseDetailResponse(embedHtml, pageUrl) {
     try {
-        if (isM3u8Content(embedHtml)) {
+        var defaultHeaders = {
+            "Referer": EMBED_REFERER,
+            "User-Agent": DEFAULT_USER_AGENT
+        };
+
+        // Nội dung playlist HLS trực tiếp
+        if (embedHtml.indexOf("#EXTM3U") !== -1 || embedHtml.indexOf("#EXT-X-") !== -1) {
             return JSON.stringify({
                 url: pageUrl || "",
                 isEmbed: false,
-                headers: DEFAULT_HEADERS,
+                headers: defaultHeaders,
                 subtitles: []
             });
         }
 
+        // Trang embed chứa player (JWPlayer / PLAYER_CONFIG) → mở bằng WebView
         if (embedHtml.indexOf("PLAYER_CONFIG") !== -1 || embedHtml.indexOf("jwplayer") !== -1) {
             return JSON.stringify({
                 url: pageUrl || "",
                 isEmbed: true,
-                headers: DEFAULT_HEADERS,
+                headers: defaultHeaders,
                 subtitles: []
             });
         }
 
+        // Fallback tìm link .m3u8 trực tiếp trong HTML
         var fallbackMatch = embedHtml.match(/["'](https?:\/\/[^"']+\.m3u8[^"']*?)["']/);
         if (fallbackMatch) {
             return JSON.stringify({
                 url: fallbackMatch[1],
                 isEmbed: false,
-                mimeType: "application/x-mpegURL",
-                headers: { "Referer": "https://upload18.org/" },
+                headers: { "Referer": EMBED_REFERER },
                 subtitles: []
             });
         }
 
+        // Fallback cuối: trả về trang embed cho WebView xử lý
         return JSON.stringify({
             url: pageUrl || "",
             isEmbed: true,
-            headers: DEFAULT_HEADERS,
+            headers: defaultHeaders,
             subtitles: []
         });
     } catch (e) {
@@ -269,23 +276,33 @@ function parseDetailResponse(embedHtml, pageUrl) {
 
 function parseEmbedResponse(m3u8Content, tokenUrl) {
     try {
-        if (isM3u8Content(m3u8Content)) {
+        if (m3u8Content.indexOf("#EXTM3U") !== -1 || m3u8Content.indexOf("#EXT-X-") !== -1) {
             return JSON.stringify({
-                url: tokenUrl || "",
+                url: tokenUrl,
                 isEmbed: false,
-                mimeType: "application/x-mpegURL",
-                headers: DEFAULT_HEADERS,
+                headers: {
+                    "Referer": EMBED_REFERER,
+                    "User-Agent": DEFAULT_USER_AGENT
+                },
                 subtitles: []
             });
         }
-        return JSON.stringify({ url: "", isEmbed: false });
+
+        return "{}";
     } catch (e) {
         return "{}";
     }
 }
 
 function parseCategoriesResponse(apiResponseJson) {
-    return getPrimaryCategories();
+    return JSON.stringify([
+        { name: "Censored", slug: "1" },
+        { name: "Uncensored", slug: "2" },
+        { name: "Uncensored Leaked", slug: "3" },
+        { name: "Amateur", slug: "4" },
+        { name: "Chinese AV", slug: "5" },
+        { name: "Western", slug: "6" }
+    ]);
 }
 
 function parseCountriesResponse(apiResponseJson) {
