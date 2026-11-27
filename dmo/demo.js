@@ -1,9 +1,3 @@
-// =============================================================================
-// VAAPP Plugin - AVDBAPI (Standard API, Vietnamese)
-// Based on plugin_template.js
-// API docs: https://avdbapi.com/index.php/label/help.html
-// =============================================================================
-
 var AVDB_BASE = "https://avdbapi.com/vi/api.php/provide/vod";
 var AVDB_SITE = "https://avdbapi.com";
 var AVDB_PAGE_SIZE = 30;
@@ -149,13 +143,13 @@ function getManifest() {
 
 function getHomeSections() {
     return JSON.stringify([
-        { slug: "latest", title: "Mới cập nhật", type: "Horizontal", path: "" },
         { slug: "censored", title: "Có kiểm duyệt", type: "Horizontal", path: "" },
         { slug: "uncensored", title: "Không kiểm duyệt", type: "Horizontal", path: "" },
         { slug: "amateur", title: "Amateur", type: "Horizontal", path: "" },
         { slug: "chinese", title: "Chinese AV", type: "Horizontal", path: "" },
         { slug: "hentai", title: "Hentai", type: "Horizontal", path: "" },
-        { slug: "english-subtitle", title: "Phụ đề tiếng Anh", type: "Horizontal", path: "" }
+        { slug: "english-subtitle", title: "Phụ đề tiếng Anh", type: "Horizontal", path: "" },
+        { slug: "latest", title: "Mới cập nhật", type: "Grid", path: "" }
     ]);
 }
 
