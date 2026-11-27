@@ -18,10 +18,10 @@
         "iconUrl": "https://javhdz.today/favicon.ico"
     },
     {
-        "id": "",
-        "name": "",
-        "version": "1.1.0",
-        "baseUrl": "https://123av.org",
+        "id": "missav",
+        "name": "MissAV",
+        "version": "1.0.0",
+        "baseUrl": "https://missav.media",
         "scriptUrl": "https://raw.githubusercontent.com/mangyeu/TV/refs/heads/main/dmo/missav.js",
         "iconUrl": "https://raw.githubusercontent.com/mangyeu/TV/refs/heads/main/dmo/missav.ico"
     },
