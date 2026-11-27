@@ -1,13 +1,6 @@
-// =============================================================================
-// VAAPP Plugin - AVDBAPI (Standard API, Vietnamese) - Actor Search
-// Based on plugin_template.js
-// API docs: https://avdbapi.com/index.php/label/help.html
-// =============================================================================
-
 var AVDB_BASE = "https://avdbapi.com/vi/api.php/provide/vod";
 var AVDB_SITE = "https://avdbapi.com";
 var AVDB_PAGE_SIZE = 30;
-var AVDB_PLUGIN_VERSION = "1.2.0";
 
 function _safeJson(value, fallback) {
     try {
@@ -136,15 +129,15 @@ function _episodeEntries(video) {
 function getManifest() {
     return JSON.stringify({
         id: "avdbapi_jav",
-        name: "AVDBAPI - JAV (Tìm theo diễn viên)",
-        version: AVDB_PLUGIN_VERSION,
+        name: "AVDBAPI - JAV",
+        version: "1.2.0",
         baseUrl: AVDB_SITE,
         iconUrl: "https://avdbapi.com/favicon.ico",
         isEnabled: true,
         isAdult: true,
         type: "MOVIE",
         layoutType: "VERTICAL",
-        playerType: "auto"
+        playerType: "embed"
     });
 }
 
