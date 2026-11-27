@@ -28,31 +28,31 @@
         },
         {
             "id": "phimnet",
-      "name": "Phimnet (MOVIE)",
-      "version": "1.2.1",
-      "scriptUrl": "https://vx2plugin.alokillgtv.workers.dev/Plugins/movie/phimnet_plugin.js",
-      "iconUrl": "https://vaxplugin.alokillgtv.workers.dev/img/icon/phimnet.png?cache=true",
-      "isVip": false,
-      "openvax": true
+            "name": "Phimnet (MOVIE)",
+            "version": "1.2.1",
+            "scriptUrl": "https://vx2plugin.alokillgtv.workers.dev/Plugins/movie/phimnet_plugin.js",
+            "iconUrl": "https://vaxplugin.alokillgtv.workers.dev/img/icon/phimnet.png?cache=true",
+            "isVip": false,
+            "openvax": true
         },
         {
-      "id": "rophim",
-      "name": "Rophim (MOVIE)",
-      "version": "2.4",
-      "scriptUrl": "https://vx2plugin.alokillgtv.workers.dev/Plugins/movie/rophim_plugin.js",
-      "iconUrl": "https://vaxplugin.alokillgtv.workers.dev/img/icon/rophim.png?cache=true",
-      "info": "Nguồn Rophim phục hồi lại. Xem 4K hơi bị ok nha.",
-      "isVip": false,
-      "openvax": true
-    },
+            "id": "rophim",
+            "name": "Rophim (MOVIE)",
+            "version": "2.4",
+            "scriptUrl": "https://vx2plugin.alokillgtv.workers.dev/Plugins/movie/rophim_plugin.js",
+            "iconUrl": "https://vaxplugin.alokillgtv.workers.dev/img/icon/rophim.png?cache=true",
+            "info": "Nguồn Rophim phục hồi lại. Xem 4K hơi bị ok nha.",
+            "isVip": false,
+            "openvax": true
+        },
         {
-      "id": "clbpxVIP",
-      "name": "Clbpxvip (MOVIE)",
-      "version": "2.3.1",
-      "scriptUrl": "https://vx2plugin.alokillgtv.workers.dev/Plugins/movie/clbpxVIP_plugin.js",
-      "iconUrl": "https://vaxplugin.alokillgtv.workers.dev/img/icon/clbpxVIP.png?cache=true",
-      "isVip": false,
-      "openvax": true
+            "id": "clbpxVIP",
+            "name": "Clbpxvip (MOVIE)",
+            "version": "2.3.1",
+            "scriptUrl": "https://vx2plugin.alokillgtv.workers.dev/Plugins/movie/clbpxVIP_plugin.js",
+            "iconUrl": "https://vaxplugin.alokillgtv.workers.dev/img/icon/clbpxVIP.png?cache=true",
+            "isVip": false,
+            "openvax": true
     },
         {
             "id": "phimmoichillz",
