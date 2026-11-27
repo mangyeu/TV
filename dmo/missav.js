@@ -8,7 +8,7 @@ function getManifest() {
     return JSON.stringify({
         "id": "missav",
         "name": "MissAV",
-        "version": "1.0.0",
+        "version": "1.0.1",
         "baseUrl": BASE_URL,
         "iconUrl": "https://raw.githubusercontent.com/youngbi/repo/main/plugins/missav.ico",
         "isEnabled": true,
@@ -598,14 +598,14 @@ function parseMovieDetail(html, pageUrl) {
 function parseDetailResponse(html) {
     html = PluginUtils.normalizeHtml(html);
     var uuid = PluginUtils.extractUuid(html);
-    var streamUrl = uuid ? ("https://c.surrit.com/" + uuid + "/playlist.m3u8") : "";
+    var streamUrl = uuid ? ("https://surrit.com/" + uuid + "/playlist.m3u8") : "";
 
     return JSON.stringify({
         url: streamUrl,
         headers: {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-            "Referer": "https://missav123.com/",
-            "Origin": "https://missav123.com"
+            "Referer": "https://123av.org/",
+            "Origin": "https://123av.org"
         },
         subtitles: []
     });
