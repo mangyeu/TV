@@ -137,7 +137,7 @@ function getManifest() {
         isAdult: true,
         type: "MOVIE",
         layoutType: "VERTICAL",
-        playerType: "auto"
+        playerType: "embed"
     });
 }
 
