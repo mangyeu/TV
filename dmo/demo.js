@@ -2,19 +2,16 @@
 // CONFIGURATION & METADATA
 // =============================================================================
 
-var BASE_API = "https://avdbapi.com/api.php/provide/vod";
-var DEFAULT_UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36";
-
 function getManifest() {
     return JSON.stringify({
         "id": "avdbapi",
         "name": "AVDB JAV",
-        "version": "1.0.9",
-        "baseUrl": BASE_API,
+        "version": "1.0.3",
+        "baseUrl": "https://avdbapi.com/api.php/provide/vod",
         "iconUrl": "https://avdbapi.com/favicon.ico",
         "isEnabled": true,
         "isAdult": true,
-        "type": "MOVIE",
+        "type": "VIDEO",
         "layoutType": "HORIZONTAL",
         "playerType": "embed"
     });
@@ -56,6 +53,8 @@ function getFilterConfig() {
 // URL GENERATION
 // =============================================================================
 
+var BASE_API = "https://avdbapi.com/api.php/provide/vod";
+
 function getUrlList(slug, filtersJson) {
     try {
         var filters = JSON.parse(filtersJson || "{}");
@@ -85,50 +84,25 @@ function getUrlSearch(keyword, filtersJson) {
     return BASE_API + "?ac=detail&wd=" + encodeURIComponent(keyword) + "&pg=" + page + "&pagesize=24";
 }
 
-/**
- * Nhận episodeId:
- * - Nếu là link_embed (vd: https://upload18.to/play/index/ofes-049-sub): trả về chính URL để fetch
- * - Nếu là numeric id hoặc slug/code: gọi API chi tiết để lấy link_embed
- */
+// getUrlDetail nhận episodeId (chính là embed URL upload18)
+// App sẽ fetch URL này → nhận HTML embed → truyền vào parseDetailResponse
 function getUrlDetail(episodeId) {
-    if (!episodeId) return "";
-    var idStr = String(episodeId).trim();
-
-    if (idStr.indexOf("http://") === 0 || idStr.indexOf("https://") === 0) {
-        return idStr;
+    // episodeId = "https://upload18.to/play/index/xxx" (embed URL)
+    // Trả về chính embed URL để app fetch HTML
+    if (episodeId.indexOf("http") === 0) {
+        return episodeId;
     }
-    if (/^\d+$/.test(idStr)) {
-        return BASE_API + "?ac=detail&ids=" + idStr;
+    // Nếu là numeric id → dùng ids= parameter (chính xác nhất)
+    if (/^\d+$/.test(episodeId)) {
+        return BASE_API + "?ac=detail&ids=" + episodeId;
     }
-    return BASE_API + "?ac=detail&code=" + encodeURIComponent(idStr) + "&pagesize=1";
+    // Fallback: nếu là slug thì dùng code= parameter (tìm theo mã phim)
+    return BASE_API + "?ac=detail&code=" + encodeURIComponent(episodeId) + "&pagesize=1";
 }
 
 function getUrlCategories() { return ""; }
 function getUrlCountries() { return ""; }
 function getUrlYears() { return ""; }
-
-// =============================================================================
-// HELPERS
-// =============================================================================
-
-function getOriginFromUrl(url, fallback) {
-    var defaultOrigin = fallback || "https://upload18.to/";
-    if (!url) return defaultOrigin;
-    var match = String(url).match(/^(https?:\/\/[^\/]+)/i);
-    return match ? (match[1] + "/") : defaultOrigin;
-}
-
-function extractStreamUrl(text) {
-    if (!text) return "";
-    // Tìm link .m3u8 hoặc .mp4 trực tiếp trong HTML/JS/JSON
-    var m3u8Match = text.match(/["'](https?:\/\/[^"'\s]+\.m3u8[^"'\s]*?)["']/i);
-    if (m3u8Match) return m3u8Match[1];
-
-    var mp4Match = text.match(/["'](https?:\/\/[^"'\s]+\.mp4[^"'\s]*?)["']/i);
-    if (mp4Match) return mp4Match[1];
-
-    return "";
-}
 
 // =============================================================================
 // PARSERS
@@ -141,21 +115,21 @@ function parseListResponse(apiResponseJson) {
 
         var movies = list.map(function (item) {
             return {
-                id: String(item.id || item.slug || item.movie_code || ""),
-                title: item.name || item.origin_name || "",
-                posterUrl: item.poster_url || item.thumb_url || "",
-                backdropUrl: item.thumb_url || item.poster_url || "",
+                id: String(item.id || ""),  // Dùng numeric API id → getUrlDetail sẽ dùng ids= parameter
+                title: item.name || "",
+                posterUrl: item.poster_url || "",
+                backdropUrl: item.thumb_url || "",
                 year: parseInt(item.year) || 0,
                 quality: item.quality || "HD",
                 episode_current: item.status || "",
-                lang: item.movie_code || ""
+                lang: item.movie_code || ""  // Hiện mã phim dưới title
             };
         });
 
         var currentPage = parseInt(response.page) || 1;
         var totalItems = parseInt(response.total) || 0;
         var itemsPerPage = parseInt(response.limit) || 24;
-        var totalPages = parseInt(response.pagecount) || Math.ceil(totalItems / itemsPerPage) || 1;
+        var totalPages = parseInt(response.pagecount) || Math.ceil(totalItems / itemsPerPage);
 
         return JSON.stringify({
             items: movies,
@@ -182,18 +156,22 @@ function parseMovieDetail(apiResponseJson) {
         if (list.length === 0) return "null";
 
         var movie = list[0];
+
+        // Parse episodes từ cấu trúc AVDBAPI
+        // episodes: { server_name: "VIP #1", server_data: { "Full": { slug, link_embed } } }
         var servers = [];
         var eps = movie.episodes;
-
         if (eps) {
             var serverEpisodes = [];
             var serverData = eps.server_data || {};
 
             for (var epName in serverData) {
                 if (serverData.hasOwnProperty(epName)) {
-                    var epInfo = serverData[epName] || {};
-                    var embedUrl = epInfo.link_embed || epInfo.link_m3u8 || "";
+                    var epInfo = serverData[epName];
+                    var embedUrl = epInfo.link_embed || "";
                     if (embedUrl) {
+                        // Episode ID = embed URL (upload18.to)
+                        // App sẽ dùng ID này gọi getStreamLink → getUrlDetail → fetch embed → parseDetailResponse
                         serverEpisodes.push({
                             id: embedUrl,
                             name: epName,
@@ -205,7 +183,7 @@ function parseMovieDetail(apiResponseJson) {
 
             if (serverEpisodes.length > 0) {
                 servers.push({
-                    name: eps.server_name || "VIP #1",
+                    name: eps.server_name || "Server #1",
                     episodes: serverEpisodes
                 });
             }
@@ -218,14 +196,14 @@ function parseMovieDetail(apiResponseJson) {
             ? movie.country.join(", ")
             : (movie.country || "");
         var directors = Array.isArray(movie.director)
-            ? movie.director.filter(function (d) { return d && d !== "Updating"; }).join(", ")
+            ? movie.director.filter(function (d) { return d !== "Updating"; }).join(", ")
             : (movie.director || "");
         var actors = Array.isArray(movie.actor)
-            ? movie.actor.filter(function (a) { return a && a !== "Updating"; }).join(", ")
+            ? movie.actor.filter(function (a) { return a !== "Updating"; }).join(", ")
             : (movie.actor || "");
 
         return JSON.stringify({
-            id: movie.slug || movie.movie_code || String(movie.id || ""),
+            id: movie.slug || movie.movie_code || "",
             title: movie.name || "",
             originName: movie.origin_name || "",
             posterUrl: movie.poster_url || "",
@@ -237,73 +215,97 @@ function parseMovieDetail(apiResponseJson) {
             duration: movie.time || "",
             servers: servers,
             episode_current: movie.status || "",
-            lang: movie.movie_code || "",
+            lang: "",
             category: categories,
             country: countries,
             director: directors,
             casts: actors,
             status: movie.status || ""
         });
-    } catch (error) {
-        return "null";
-    }
+    } catch (error) { return "null"; }
 }
 
 // =============================================================================
-// STREAM LINK - parseDetailResponse & parseEmbedResponse
+// STREAM LINK - parseDetailResponse
+// Nhận HTML từ embed upload18.org → trả isEmbed + url token_hash
 // =============================================================================
-
-function normalizeUrl(rawUrl) {
-    if (!rawUrl) return "";
-    return String(rawUrl).replace(/\\\//g, "/").trim();
-}
 
 function parseDetailResponse(embedHtml, pageUrl) {
     try {
-        var html = normalizeUrl(embedHtml);
-        var targetUrl = normalizeUrl(pageUrl);
-
-        // Nếu html có chứa link_embed dạng escaped hoặc thường thì lấy làm dự phòng
-        if (!targetUrl) {
-            var embedMatch = html.match(/["']?(https?:\/\/[^"'\s<>]+\/play\/[^"'\s<>]+)["']?/i);
-            if (embedMatch) {
-                targetUrl = normalizeUrl(embedMatch[1]);
-            }
-        }
-
-        if (!targetUrl) {
-            return JSON.stringify({ url: "", isEmbed: false });
-        }
-
-        var referer = getOriginFromUrl(targetUrl, "https://upload18.to/");
-        var headers = {
-            "Referer": referer,
-            "User-Agent": DEFAULT_UA
-        };
-
-        // Tìm link stream trực tiếp nếu có trong HTML
-        var streamMatch = html.match(/["'](https?:\/\/[^"'\s<>]+\.(?:m3u8|mp4)[^"'\s<>]*?)["']/i);
-        if (streamMatch) {
-            var directUrl = normalizeUrl(streamMatch[1]);
+        // Nếu response là m3u8 content → trả pageUrl để AVPlayer play trực tiếp
+        if (embedHtml.indexOf("#EXTM3U") !== -1 || embedHtml.indexOf("#EXT-X-") !== -1) {
             return JSON.stringify({
-                url: directUrl,
+                url: pageUrl || "",
                 isEmbed: false,
-                mimeType: directUrl.indexOf(".m3u8") !== -1 ? "application/x-mpegURL" : "video/mp4",
-                headers: headers,
+                headers: {
+                    "Referer": "https://upload18.to/",
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
+                },
                 subtitles: []
             });
         }
 
-        // Mặc định trả URL embed đã unescape (https://upload18.to/play/index/ofes-049-sub)
+        // Nếu là HTML embed page → trả isEmbed: true để iOS dùng WebView
+        // WebView sẽ render JWPlayer bên trong, tự xử lý m3u8 + Cloudflare cookies
+        if (embedHtml.indexOf("PLAYER_CONFIG") !== -1 || embedHtml.indexOf("jwplayer") !== -1) {
+            return JSON.stringify({
+                url: pageUrl || "",
+                isEmbed: true,
+                headers: {
+                    "Referer": "https://upload18.to/",
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
+                },
+                subtitles: []
+            });
+        }
+
+        // Fallback: tìm link m3u8 trực tiếp
+        var fallbackMatch = embedHtml.match(/["'](https?:\/\/[^"']+\.m3u8[^"']*?)["']/);
+        if (fallbackMatch) {
+            return JSON.stringify({
+                url: fallbackMatch[1],
+                isEmbed: false,
+                headers: { "Referer": "https://upload18.to/" },
+                subtitles: []
+            });
+        }
+
+        // Fallback cuối: trả embed URL cho WebView load trực tiếp
         return JSON.stringify({
-            url: targetUrl,
+            url: pageUrl || "",
             isEmbed: true,
-            headers: headers,
+            headers: {
+                "Referer": "https://upload18.to/",
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
+            },
             subtitles: []
         });
-    } catch (e) {
-        return JSON.stringify({ url: "", isEmbed: false });
-    }
+    } catch (error) { return "{}"; }
+}
+
+// =============================================================================
+// parseEmbedResponse - Nhận response từ token_hash endpoint
+// Response = m3u8 playlist text → ExoPlayer sẽ play trực tiếp từ URL
+// =============================================================================
+
+function parseEmbedResponse(m3u8Content, tokenUrl) {
+    try {
+        // tokenUrl = "https://upload18.to/play/token_hash?hash=xxx"
+        // m3u8Content = nội dung m3u8 playlist
+        // ExoPlayer cần URL, không phải content → trả tokenUrl là URL playable
+        if (m3u8Content.indexOf("#EXTM3U") !== -1 || m3u8Content.indexOf("#EXT-X-") !== -1) {
+            return JSON.stringify({
+                url: tokenUrl,
+                headers: {
+                    "Referer": "https://upload18.to/",
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
+                },
+                subtitles: []
+            });
+        }
+
+        return "{}";
+    } catch (error) { return "{}"; }
 }
 
 // =============================================================================
