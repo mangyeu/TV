@@ -13,7 +13,7 @@ function getManifest() {
     return JSON.stringify({
         "id": "avdbapi_plugin",
         "name": "AVDBAPI",
-        "version": "1.0.2",
+        "version": "1.0.3",
         "baseUrl": BASE_URL,
         "iconUrl": "https://avdbapi.com/template/api/lemetu/v2/favicon-32.b434cfc1bf.png",
         "isEnabled": true,
