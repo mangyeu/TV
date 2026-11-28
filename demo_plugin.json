@@ -4,8 +4,8 @@
     {
         "id": "avdbapi",
         "name": "AVDB JAV",
-        "version": "1.0.4",
-        "baseUrl": "https://avdbapi.com",
+        "version": "1.0.5",
+        "baseUrl": "https://avdbapi.com/api.php/provide/vod",
         "scriptUrl": "https://raw.githubusercontent.com/mangyeu/TV/refs/heads/main/dmo/demo.js",
         "iconUrl": "https://javhdz.today/favicon.ico"
     },
