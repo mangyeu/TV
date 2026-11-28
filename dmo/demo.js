@@ -2,19 +2,19 @@
 // CONFIGURATION & METADATA
 // =============================================================================
 
-var BASE_API = "https://avdbapi.com";
+var BASE_API = "https://avdbapi.com/api.php/provide/vod";
 var DEFAULT_UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36";
 
 function getManifest() {
     return JSON.stringify({
         "id": "avdbapi",
         "name": "AVDB JAV",
-        "version": "1.0.4",
+        "version": "1.0.5",
         "baseUrl": BASE_API,
         "iconUrl": "https://avdbapi.com/favicon.ico",
         "isEnabled": true,
         "isAdult": true,
-        "type": "VIDEO",
+        "type": "MOVIE",
         "layoutType": "HORIZONTAL",
         "playerType": "embed"
     });
