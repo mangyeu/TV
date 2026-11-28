@@ -9,7 +9,7 @@ function getManifest() {
     return JSON.stringify({
         "id": "avdbapi",
         "name": "AVDB JAV",
-        "version": "1.0.6",
+        "version": "1.0.7",
         "baseUrl": BASE_API,
         "iconUrl": "https://avdbapi.com/favicon.ico",
         "isEnabled": true,
@@ -256,51 +256,39 @@ function parseMovieDetail(apiResponseJson) {
 function parseDetailResponse(embedHtml, pageUrl) {
     try {
         var content = embedHtml || "";
-        var targetUrl = pageUrl || "https://upload18.to/play/index/ofes-049-sub";
-        var referer = getOriginFromUrl(targetUrl, "https://upload18.to/");
-        var headers = {
-            "Referer": referer,
-            "User-Agent": DEFAULT_UA
-        };
+        var url = pageUrl || "";
 
-        // Nếu response là JSON API chi tiết thì lấy link_embed bên trong
-        if (content.trim().charAt(0) === "{") {
-            try {
-                var apiJson = JSON.parse(content);
-                var firstItem = (apiJson.list && apiJson.list[0]) || null;
-                var sData = firstItem && firstItem.episodes && firstItem.episodes.server_data;
-                if (sData) {
-                    for (var k in sData) {
-                        if (sData.hasOwnProperty(k) && sData[k] && sData[k].link_embed) {
-                            targetUrl = sData[k].link_embed;
-                            break;
-                        }
-                    }
-                }
-            } catch (e) {}
-        }
-
-        // Nếu có link .m3u8 hoặc .mp4 rõ ràng trong HTML thì phát trực tiếp
-        var directStream = extractStreamUrl(content);
-        if (directStream) {
+        // Nếu html có chứa link embed hoặc m3u8/mp4 rõ ràng thì ưu tiên bắt
+        var streamMatch = content.match(/["'](https?:\/\/[^"'\s]+\.(?:m3u8|mp4)[^"'\s]*?)["']/i);
+        if (streamMatch) {
             return JSON.stringify({
-                url: directStream,
+                url: streamMatch[1],
                 isEmbed: false,
-                mimeType: directStream.indexOf(".m3u8") !== -1 ? "application/x-mpegURL" : "video/mp4",
-                headers: headers,
+                headers: {
+                    "Referer": getOriginFromUrl(url || streamMatch[1], "https://upload18.to/"),
+                    "User-Agent": DEFAULT_UA
+                },
                 subtitles: []
             });
         }
 
-        // Còn lại trả link embed cho WebView/player của app mở như trên trình duyệt
-        return JSON.stringify({
-            url: targetUrl,
-            isEmbed: true,
-            headers: headers,
-            subtitles: []
-        });
-    } catch (error) {
-        return "{}";
+        // Nếu content chính là URL embed (hoặc có pageUrl từ app)
+        var embedTarget = url || (content.trim().indexOf("http") === 0 ? content.trim() : "");
+        if (embedTarget) {
+            return JSON.stringify({
+                url: embedTarget,
+                isEmbed: true,
+                headers: {
+                    "Referer": getOriginFromUrl(embedTarget, "https://upload18.to/"),
+                    "User-Agent": DEFAULT_UA
+                },
+                subtitles: []
+            });
+        }
+
+        return JSON.stringify({ url: "", isEmbed: false });
+    } catch (e) {
+        return JSON.stringify({ url: "", isEmbed: false });
     }
 }
 
