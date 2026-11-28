@@ -16,7 +16,7 @@ function getManifest() {
         "isAdult": true,
         "type": "MOVIE",
         "layoutType": "HORIZONTAL",
-        "playerType": "auto"
+        "playerType": "embed"
     });
 }
 
