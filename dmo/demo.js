@@ -9,7 +9,7 @@ function getManifest() {
     return JSON.stringify({
         "id": "avdbapi",
         "name": "AVDB JAV",
-        "version": "1.0.5",
+        "version": "1.0.6",
         "baseUrl": BASE_API,
         "iconUrl": "https://avdbapi.com/favicon.ico",
         "isEnabled": true,
@@ -256,23 +256,14 @@ function parseMovieDetail(apiResponseJson) {
 function parseDetailResponse(embedHtml, pageUrl) {
     try {
         var content = embedHtml || "";
-        var referer = getOriginFromUrl(pageUrl, "https://upload18.to/");
+        var targetUrl = pageUrl || "https://upload18.to/play/index/ofes-049-sub";
+        var referer = getOriginFromUrl(targetUrl, "https://upload18.to/");
         var headers = {
             "Referer": referer,
             "User-Agent": DEFAULT_UA
         };
 
-        // 1. Nếu response đã là nội dung playlist m3u8
-        if (content.indexOf("#EXTM3U") !== -1 || content.indexOf("#EXT-X-") !== -1) {
-            return JSON.stringify({
-                url: pageUrl || "",
-                isEmbed: false,
-                headers: headers,
-                subtitles: []
-            });
-        }
-
-        // 2. Nếu response là JSON từ API chi tiết bị gọi lại (có episodes.server_data)
+        // Nếu response là JSON API chi tiết thì lấy link_embed bên trong
         if (content.trim().charAt(0) === "{") {
             try {
                 var apiJson = JSON.parse(content);
@@ -281,48 +272,29 @@ function parseDetailResponse(embedHtml, pageUrl) {
                 if (sData) {
                     for (var k in sData) {
                         if (sData.hasOwnProperty(k) && sData[k] && sData[k].link_embed) {
-                            return JSON.stringify({
-                                url: sData[k].link_embed,
-                                isEmbed: true,
-                                headers: {
-                                    "Referer": getOriginFromUrl(sData[k].link_embed, referer),
-                                    "User-Agent": DEFAULT_UA
-                                },
-                                subtitles: []
-                            });
+                            targetUrl = sData[k].link_embed;
+                            break;
                         }
                     }
                 }
             } catch (e) {}
         }
 
-        // 3. Thử tách link stream trực tiếp (.m3u8 / .mp4) nếu có trong HTML/JS
+        // Nếu có link .m3u8 hoặc .mp4 rõ ràng trong HTML thì phát trực tiếp
         var directStream = extractStreamUrl(content);
         if (directStream) {
-            var isHls = directStream.indexOf(".m3u8") !== -1;
             return JSON.stringify({
                 url: directStream,
                 isEmbed: false,
-                mimeType: isHls ? "application/x-mpegURL" : "video/mp4",
+                mimeType: directStream.indexOf(".m3u8") !== -1 ? "application/x-mpegURL" : "video/mp4",
                 headers: headers,
                 subtitles: []
             });
         }
 
-        // 4. Nếu có token_hash endpoint trong HTML embed → chuyển sang parseEmbedResponse
-        var tokenMatch = content.match(/["'](https?:\/\/[^"'\s]*token_hash[^"'\s]*?)["']/i);
-        if (tokenMatch) {
-            return JSON.stringify({
-                url: tokenMatch[1],
-                isEmbed: true,
-                headers: headers,
-                subtitles: []
-            });
-        }
-
-        // 5. Mặc định trả trang embed (upload18.to/play/index/...) cho WebView player xử lý
+        // Còn lại trả link embed cho WebView/player của app mở như trên trình duyệt
         return JSON.stringify({
-            url: pageUrl || "",
+            url: targetUrl,
             isEmbed: true,
             headers: headers,
             subtitles: []
