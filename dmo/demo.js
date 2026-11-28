@@ -9,7 +9,7 @@ function getManifest() {
     return JSON.stringify({
         "id": "avdbapi",
         "name": "AVDB JAV",
-        "version": "1.0.8",
+        "version": "1.0.9",
         "baseUrl": BASE_API,
         "iconUrl": "https://avdbapi.com/favicon.ico",
         "isEnabled": true,
@@ -253,20 +253,38 @@ function parseMovieDetail(apiResponseJson) {
 // STREAM LINK - parseDetailResponse & parseEmbedResponse
 // =============================================================================
 
+function normalizeUrl(rawUrl) {
+    if (!rawUrl) return "";
+    return String(rawUrl).replace(/\\\//g, "/").trim();
+}
+
 function parseDetailResponse(embedHtml, pageUrl) {
     try {
-        var html = embedHtml || "";
-        var targetUrl = pageUrl || "";
+        var html = normalizeUrl(embedHtml);
+        var targetUrl = normalizeUrl(pageUrl);
+
+        // Nếu html có chứa link_embed dạng escaped hoặc thường thì lấy làm dự phòng
+        if (!targetUrl) {
+            var embedMatch = html.match(/["']?(https?:\/\/[^"'\s<>]+\/play\/[^"'\s<>]+)["']?/i);
+            if (embedMatch) {
+                targetUrl = normalizeUrl(embedMatch[1]);
+            }
+        }
+
+        if (!targetUrl) {
+            return JSON.stringify({ url: "", isEmbed: false });
+        }
+
         var referer = getOriginFromUrl(targetUrl, "https://upload18.to/");
         var headers = {
             "Referer": referer,
             "User-Agent": DEFAULT_UA
         };
 
-        // 1. Tìm link stream trực tiếp (.m3u8 hoặc .mp4)
+        // Tìm link stream trực tiếp nếu có trong HTML
         var streamMatch = html.match(/["'](https?:\/\/[^"'\s<>]+\.(?:m3u8|mp4)[^"'\s<>]*?)["']/i);
         if (streamMatch) {
-            var directUrl = streamMatch[1].replace(/\\\//g, "/");
+            var directUrl = normalizeUrl(streamMatch[1]);
             return JSON.stringify({
                 url: directUrl,
                 isEmbed: false,
@@ -276,41 +294,13 @@ function parseDetailResponse(embedHtml, pageUrl) {
             });
         }
 
-        // 2. Tìm endpoint sinh link/token (nếu có) để đưa sang parseEmbedResponse
-        var tokenMatch = html.match(/["'](https?:\/\/[^"'\s<>]*(?:token_hash|get_link|stream|play)[^"'\s<>]*?)["']/i);
-        if (tokenMatch) {
-            return JSON.stringify({
-                url: tokenMatch[1].replace(/\\\//g, "/"),
-                isEmbed: true,
-                headers: headers,
-                subtitles: []
-            });
-        }
-
-        // 3. Tìm iframe lồng bên trong trang embed
-        var iframeMatch = html.match(/<iframe[^>]+src=["']([^"']+)["']/i);
-        if (iframeMatch && iframeMatch[1]) {
-            var iframeUrl = iframeMatch[1].replace(/\\\//g, "/");
-            if (iframeUrl.indexOf("//") === 0) iframeUrl = "https:" + iframeUrl;
-            return JSON.stringify({
-                url: iframeUrl,
-                isEmbed: true,
-                headers: headers,
-                subtitles: []
-            });
-        }
-
-        // 4. Trả lại chính URL embed nếu có
-        if (targetUrl) {
-            return JSON.stringify({
-                url: targetUrl,
-                isEmbed: true,
-                headers: headers,
-                subtitles: []
-            });
-        }
-
-        return JSON.stringify({ url: "", isEmbed: false });
+        // Mặc định trả URL embed đã unescape (https://upload18.to/play/index/ofes-049-sub)
+        return JSON.stringify({
+            url: targetUrl,
+            isEmbed: true,
+            headers: headers,
+            subtitles: []
+        });
     } catch (e) {
         return JSON.stringify({ url: "", isEmbed: false });
     }
