@@ -20,7 +20,7 @@ function getManifest() {
         "isAdult": true,
         "type": "MOVIE",
         "layoutType": "HORIZONTAL",
-        "playerType": "embed" // Hỗ trợ phát embed qua WebView hoặc bóc stream
+        "playerType": "auto" // Hỗ trợ phát embed qua WebView hoặc bóc stream
     });
 }
 
