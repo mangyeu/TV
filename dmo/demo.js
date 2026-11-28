@@ -1,10 +1,11 @@
 // =============================================================================
-// VAAPP Plugin - AVDBAPI JSON
+// VAAPP Plugin - AVDBAPI JSON (Fix url="{}" & Embed Fallback)
 // =============================================================================
 
 var BASE_URL = "https://avdbapi.com";
 var API_ENDPOINT = BASE_URL + "/api.php/provide/vod";
 var DEFAULT_UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:161.0) Gecko/20100101 Firefox/161.0";
+var LAST_EMBED_URL = "";
 
 // =============================================================================
 // NHÓM 1: CẤU HÌNH (Config & Metadata)
@@ -14,7 +15,7 @@ function getManifest() {
     return JSON.stringify({
         "id": "avdbapi_json",
         "name": "AVDB JAV",
-        "version": "1.0.1",
+        "version": "1.0.3",
         "baseUrl": API_ENDPOINT,
         "iconUrl": BASE_URL + "/favicon.ico",
         "isEnabled": true,
@@ -99,6 +100,7 @@ function getUrlDetail(episodeOrMovieId) {
     if (!episodeOrMovieId) return "";
     var target = String(episodeOrMovieId).trim();
     if (target.indexOf("http") === 0) {
+        LAST_EMBED_URL = target;
         return target;
     }
     if (/^\d+$/.test(target)) {
@@ -126,9 +128,32 @@ function joinCleanArray(val) {
 }
 
 function getEmbedReferer(url) {
-    if (!url) return BASE_URL + "/";
+    if (!url || String(url).indexOf("http") !== 0) return "https://upload18.to/";
     var match = String(url).match(/^(https?:\/\/[^\/]+)/i);
-    return match ? (match[1] + "/") : (BASE_URL + "/");
+    return match ? (match[1] + "/") : "https://upload18.to/";
+}
+
+function isValidHttpUrl(val) {
+    return typeof val === "string" && /^https?:\/\//i.test(val.trim());
+}
+
+function extractEmbedFromApiJson(rawText) {
+    try {
+        var obj = JSON.parse(rawText);
+        if (obj && Array.isArray(obj.list) && obj.list.length > 0) {
+            var eps = obj.list[0].episodes;
+            if (eps && eps.server_data) {
+                for (var key in eps.server_data) {
+                    if (Object.prototype.hasOwnProperty.call(eps.server_data, key)) {
+                        var item = eps.server_data[key] || {};
+                        var u = item.link_embed || item.link_m3u8 || "";
+                        if (isValidHttpUrl(u)) return u.trim();
+                    }
+                }
+            }
+        }
+    } catch (e) {}
+    return "";
 }
 
 function parseListResponse(apiResponseJson) {
@@ -194,6 +219,9 @@ function parseMovieDetail(apiResponseJson) {
                     var epInfo = serverData[epName] || {};
                     var streamOrEmbedUrl = epInfo.link_embed || epInfo.link_m3u8 || "";
                     if (streamOrEmbedUrl) {
+                        if (!LAST_EMBED_URL) {
+                            LAST_EMBED_URL = streamOrEmbedUrl;
+                        }
                         serverEpisodes.push({
                             id: streamOrEmbedUrl,
                             name: epName,
@@ -238,18 +266,75 @@ function parseMovieDetail(apiResponseJson) {
     }
 }
 
+function extractPlayableUrl(text) {
+    var s = String(text || "");
+    var patterns = [
+        /(?:file|src|url|hls|m3u8|mp4|source)\s*[:=]\s*["'](https?:\/\/[^"'\s<>]+\.(?:m3u8|mp4)[^"'\s<>]*?)["']/i,
+        /["'](https?:\/\/[^"'\s<>]+\.m3u8[^"'\s<>]*?)["']/i,
+        /["'](https?:\/\/[^"'\s<>]+\.mp4[^"'\s<>]*?)["']/i
+    ];
+    for (var i = 0; i < patterns.length; i++) {
+        var m = s.match(patterns[i]);
+        if (m && m[1]) {
+            return m[1].replace(/\\\//g, "/");
+        }
+    }
+    return "";
+}
+
+function extractNextEmbedUrl(text, baseUrl) {
+    var s = String(text || "");
+    var iframe = s.match(/<iframe[^>]+src=["']([^"']+)["']/i);
+    if (iframe && iframe[1]) {
+        var src = iframe[1].trim();
+        if (isValidHttpUrl(src)) return src;
+        if (src.indexOf("/") === 0) {
+            return getEmbedReferer(baseUrl).replace(/\/$/, "") + src;
+        }
+    }
+    var tokenMatch = s.match(/["']((?:https?:\/\/[^"'\s<>]+)?\/play\/token_hash[^"'\s<>]*)["']/i);
+    if (tokenMatch && tokenMatch[1]) {
+        var tUrl = tokenMatch[1].replace(/\\\//g, "/");
+        if (isValidHttpUrl(tUrl)) return tUrl;
+        if (tUrl.indexOf("/") === 0) {
+            return getEmbedReferer(baseUrl).replace(/\/$/, "") + tUrl;
+        }
+    }
+    return "";
+}
+
 function parseDetailResponse(htmlOrStream, pageUrl) {
     try {
         var content = String(htmlOrStream || "");
-        var referer = getEmbedReferer(pageUrl);
+        var validPageUrl = isValidHttpUrl(pageUrl) ? String(pageUrl).trim() : "";
+
+        // 1. Nếu content là JSON từ avdbapi → tách link_embed trực tiếp
+        var apiEmbedUrl = extractEmbedFromApiJson(content);
+        if (apiEmbedUrl) {
+            LAST_EMBED_URL = apiEmbedUrl;
+            validPageUrl = apiEmbedUrl;
+        }
+
+        // 2. Nếu content là URL trực tiếp
+        if (!validPageUrl && isValidHttpUrl(content.trim())) {
+            validPageUrl = content.trim();
+        }
+
+        // 3. Dự phòng cuối cùng nếu App truyền pageUrl = "{}" hoặc undefined
+        if (!validPageUrl && isValidHttpUrl(LAST_EMBED_URL)) {
+            validPageUrl = LAST_EMBED_URL;
+        }
+
+        var referer = getEmbedReferer(validPageUrl);
         var defaultHeaders = {
             "Referer": referer,
             "User-Agent": DEFAULT_UA
         };
 
+        // 4. Nếu response là playlist M3U8
         if (content.indexOf("#EXTM3U") !== -1 || content.indexOf("#EXT-X-") !== -1) {
             return JSON.stringify({
-                url: pageUrl || "",
+                url: validPageUrl,
                 isEmbed: false,
                 mimeType: "application/x-mpegURL",
                 headers: defaultHeaders,
@@ -257,32 +342,48 @@ function parseDetailResponse(htmlOrStream, pageUrl) {
             });
         }
 
-        var m3u8Match = content.match(/["'](https?:\/\/[^"']+\.m3u8[^"']*?)["']/i);
-        if (m3u8Match) {
+        // 5. Nếu HTML có sẵn link .m3u8 hoặc .mp4
+        var directPlayable = extractPlayableUrl(content);
+        if (directPlayable) {
+            var isHls = directPlayable.indexOf(".m3u8") !== -1;
             return JSON.stringify({
-                url: m3u8Match[1],
+                url: directPlayable,
                 isEmbed: false,
-                mimeType: "application/x-mpegURL",
+                mimeType: isHls ? "application/x-mpegURL" : "video/mp4",
                 headers: defaultHeaders,
                 subtitles: []
             });
         }
+
+        // 6. Nếu HTML có iframe hoặc token_hash
+        var nextEmbed = extractNextEmbedUrl(content, validPageUrl);
+        var finalEmbedUrl = nextEmbed || validPageUrl;
 
         return JSON.stringify({
-            url: pageUrl || "",
-            isEmbed: true,
+            url: finalEmbedUrl,
+            isEmbed: Boolean(finalEmbedUrl),
             headers: defaultHeaders,
             subtitles: []
         });
     } catch (e) {
-        return "{}";
+        var fallbackUrl = isValidHttpUrl(pageUrl) ? String(pageUrl).trim() : LAST_EMBED_URL;
+        return JSON.stringify({
+            url: fallbackUrl || "",
+            isEmbed: Boolean(fallbackUrl),
+            headers: {
+                "Referer": getEmbedReferer(fallbackUrl),
+                "User-Agent": DEFAULT_UA
+            },
+            subtitles: []
+        });
     }
 }
 
 function parseEmbedResponse(embedContent, sourceUrl) {
     try {
         var content = String(embedContent || "");
-        var referer = getEmbedReferer(sourceUrl);
+        var validSourceUrl = isValidHttpUrl(sourceUrl) ? String(sourceUrl).trim() : LAST_EMBED_URL;
+        var referer = getEmbedReferer(validSourceUrl);
         var defaultHeaders = {
             "Referer": referer,
             "User-Agent": DEFAULT_UA
@@ -290,7 +391,7 @@ function parseEmbedResponse(embedContent, sourceUrl) {
 
         if (content.indexOf("#EXTM3U") !== -1 || content.indexOf("#EXT-X-") !== -1) {
             return JSON.stringify({
-                url: sourceUrl || "",
+                url: validSourceUrl,
                 isEmbed: false,
                 mimeType: "application/x-mpegURL",
                 headers: defaultHeaders,
@@ -298,11 +399,23 @@ function parseEmbedResponse(embedContent, sourceUrl) {
             });
         }
 
-        var fileMatch = content.match(/["'](https?:\/\/[^"']+\.(?:m3u8|mp4)[^"']*?)["']/i);
-        if (fileMatch) {
+        var directPlayable = extractPlayableUrl(content);
+        if (directPlayable) {
+            var isHls = directPlayable.indexOf(".m3u8") !== -1;
             return JSON.stringify({
-                url: fileMatch[1],
+                url: directPlayable,
                 isEmbed: false,
+                mimeType: isHls ? "application/x-mpegURL" : "video/mp4",
+                headers: defaultHeaders,
+                subtitles: []
+            });
+        }
+
+        var nextEmbed = extractNextEmbedUrl(content, validSourceUrl);
+        if (nextEmbed && nextEmbed !== validSourceUrl) {
+            return JSON.stringify({
+                url: nextEmbed,
+                isEmbed: true,
                 headers: defaultHeaders,
                 subtitles: []
             });
@@ -310,7 +423,7 @@ function parseEmbedResponse(embedContent, sourceUrl) {
 
         return JSON.stringify({ url: "", isEmbed: false });
     } catch (e) {
-        return "{}";
+        return JSON.stringify({ url: "", isEmbed: false });
     }
 }
 
