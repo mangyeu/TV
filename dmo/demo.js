@@ -1,5 +1,7 @@
 // =============================================================================
-// VAAPP Plugin - AVDB API (MacCMS V10 format)
+// AVDBAPI Plugin cho VAAPP (viết lại theo plugin_template)
+// API: https://avdbapi.com
+// Ngôn ngữ mặc định: Tiếng Việt (vi)
 // =============================================================================
 
 // =============================================================================
@@ -8,97 +10,103 @@
 
 function getManifest() {
     return JSON.stringify({
-        "id": "avdbapi_v2",
-        "name": "AVDB JAV (API)",
-        "version": "1.0.0",
-        "baseUrl": "https://avdbapi.com/api.php/provide/vod",
+        "id": "avdbapi_jav",
+        "name": "AVDBAPI - JAV",
+        "version": "1.0.1",
+        "baseUrl": "https://avdbapi.com",
         "iconUrl": "https://avdbapi.com/favicon.ico",
         "isEnabled": true,
         "isAdult": true,
         "type": "MOVIE",
-        "layoutType": "HORIZONTAL",
+        "layoutType": "VERTICAL",
         "playerType": "embed"
     });
 }
 
 function getHomeSections() {
     return JSON.stringify([
-        { slug: 'latest', title: 'Mới Cập Nhật', type: 'Grid', path: '' },
-        { slug: '3', title: 'Uncensored Leaked', type: 'Horizontal', path: 'category' },
-        { slug: '1', title: 'Censored', type: 'Horizontal', path: 'category' },
-        { slug: '2', title: 'Uncensored', type: 'Horizontal', path: 'category' },
-        { slug: '4', title: 'Amateur', type: 'Horizontal', path: 'category' },
-        { slug: '5', title: 'Chinese AV', type: 'Horizontal', path: 'category' },
-        { slug: '6', title: 'Western', type: 'Horizontal', path: 'category' }
+        { slug: 'latest', title: 'Mới cập nhật', type: 'Horizontal', path: '' },
+        { slug: 'censored', title: 'Censored', type: 'Horizontal', path: '' },
+        { slug: 'uncensored', title: 'Uncensored', type: 'Horizontal', path: '' },
+        { slug: 'leaked', title: 'Uncensored Leaked', type: 'Horizontal', path: '' },
+        { slug: 'amateur', title: 'Amateur', type: 'Horizontal', path: '' },
+        { slug: 'chinese', title: 'Chinese AV', type: 'Horizontal', path: '' },
+        { slug: 'hentai', title: 'Hentai', type: 'Horizontal', path: '' },
+        { slug: 'english-subtitle', title: 'English Subtitle', type: 'Horizontal', path: '' }
     ]);
 }
 
 function getPrimaryCategories() {
     return JSON.stringify([
-        { name: 'Censored', slug: '1' },
-        { name: 'Uncensored', slug: '2' },
-        { name: 'Uncensored Leaked', slug: '3' },
-        { name: 'Amateur', slug: '4' },
-        { name: 'Chinese AV', slug: '5' },
-        { name: 'Western', slug: '6' }
+        { name: 'Censored', slug: 'censored' },
+        { name: 'Uncensored', slug: 'uncensored' },
+        { name: 'Uncensored Leaked', slug: 'leaked' },
+        { name: 'Amateur', slug: 'amateur' },
+        { name: 'Chinese AV', slug: 'chinese' },
+        { name: 'Hentai', slug: 'hentai' },
+        { name: 'English Subtitle', slug: 'english-subtitle' }
     ]);
 }
 
 function getFilterConfig() {
     return JSON.stringify({
         sort: [
-            { name: 'Mới nhất', value: 'desc' },
-            { name: 'Cũ nhất', value: 'asc' }
-        ]
+            { name: 'Mới nhất', slug: 'desc' },
+            { name: 'Cũ nhất', slug: 'asc' }
+        ],
+        category: []
     });
 }
 
 // =============================================================================
-// NHÓM 2: SINH URL
+// NHÓM 2: SINH URL (App gọi hàm → nhận URL → tự fetch HTTP)
 // =============================================================================
 
-var BASE_API = "https://avdbapi.com/api.php/provide/vod";
+var AVDB_LANG = "vi";
+var AVDB_BASE = "https://avdbapi.com/" + (AVDB_LANG === "en" ? "" : AVDB_LANG + "/") + "api.php/provide1/vod";
+var AVDB_PAGE_SIZE = 30;
+
+function apiUrl(params) {
+    var query = [];
+    for (var key in params) {
+        if (params.hasOwnProperty(key) && params[key] !== undefined && params[key] !== null && params[key] !== "") {
+            query.push(encodeURIComponent(key) + "=" + encodeURIComponent(String(params[key])));
+        }
+    }
+    return AVDB_BASE + "?" + query.join("&");
+}
 
 function getUrlList(slug, filtersJson) {
-    try {
-        var filters = JSON.parse(filtersJson || "{}");
-        var page = filters.page || 1;
-        var url = BASE_API + "?ac=detail&pg=" + page;
-
-        if (/^[1-6]$/.test(slug)) {
-            url += "&t=" + slug;
-        } else if (slug === 'latest') {
-            // default sort by time
-        } else if (filters.category) {
-            url += "&t=" + filters.category;
-        }
-
-        if (filters.year) url += "&year=" + filters.year;
-        if (filters.sort) url += "&sort_direction=" + filters.sort;
-
-        return url;
-    } catch (e) {
-        return BASE_API + "?ac=detail&pg=1";
-    }
+    var filters = {};
+    try { filters = JSON.parse(filtersJson || "{}"); } catch (e) {}
+    var params = { ac: "detail", pg: filters.page || 1, pagesize: AVDB_PAGE_SIZE };
+    var typeMap = {
+        censored: 1, uncensored: 2, leaked: 3, amateur: 4,
+        chinese: 5, hentai: 6, "english-subtitle": 7
+    };
+    if (typeMap[slug]) params.t = typeMap[slug];
+    if (filters.year) params.year = filters.year;
+    if (filters.sort) params.sort_direction = filters.sort;
+    if (filters.actor) params.actor = filters.actor;
+    if (filters.category) params.category = filters.category;
+    return apiUrl(params);
 }
 
 function getUrlSearch(keyword, filtersJson) {
-    var filters = JSON.parse(filtersJson || "{}");
-    var page = filters.page || 1;
-    return BASE_API + "?ac=detail&wd=" + encodeURIComponent(keyword) + "&pg=" + page;
+    var filters = {};
+    try { filters = JSON.parse(filtersJson || "{}"); } catch (e) {}
+    return apiUrl({
+        ac: "detail",
+        wd: keyword,
+        pg: filters.page || 1,
+        pagesize: AVDB_PAGE_SIZE
+    });
 }
 
-function getUrlDetail(episodeId) {
-    // episodeId = embed URL (https://upload18.to/play/index/xxx) → fetch trực tiếp
-    if (episodeId.indexOf("http") === 0) {
-        return episodeId;
-    }
-    // numeric id → dùng ids= parameter
-    if (/^\d+$/.test(episodeId)) {
-        return BASE_API + "?ac=detail&ids=" + episodeId;
-    }
-    // fallback: tìm theo mã phim (vd: dldss-574-uncensored-leak)
-    return BASE_API + "?ac=detail&wd=" + encodeURIComponent(episodeId) + "&pagesize=1";
+function getUrlDetail(id) {
+    // Nếu episode.id là URL trang phát (http/https) → fetch trực tiếp
+    if (/^https?:\/\//i.test(String(id || ""))) return String(id).trim();
+    return apiUrl({ ac: "detail", ids: id });
 }
 
 function getUrlCategories() { return ""; }
@@ -106,237 +114,244 @@ function getUrlCountries() { return ""; }
 function getUrlYears() { return ""; }
 
 // =============================================================================
-// NHÓM 3: PARSER
+// NHÓM 3: PARSER (App fetch URL xong → ném HTML/JSON thô vào đây → bạn parse)
 // =============================================================================
 
-function parseListResponse(apiResponseJson) {
+function parseJson(input) {
+    if (input && typeof input === "object") return input;
+    try { return JSON.parse(input || "{}"); } catch (e) { return {}; }
+}
+
+function asText(value) {
+    if (value === null || value === undefined) return "";
+    if (Array.isArray(value)) return value.join(", ");
+    return String(value);
+}
+
+function mapVideo(item) {
+    return {
+        id: String(item.id || item.vod_id || item.slug || ""),
+        title: asText(item.name || item.vod_name || item.origin_name || item.movie_code),
+        posterUrl: item.poster_url || item.vod_pic || item.thumb_url || "",
+        description: asText(item.description || item.vod_content),
+        year: item.year || item.vod_year || "",
+        quality: item.quality || item.vod_quality || "",
+        category: asText(item.category || item.vod_class || item.type_name),
+        casts: asText(item.actor || item.vod_actor),
+        director: asText(item.director || item.vod_director),
+        duration: item.time || item.vod_duration || "",
+        status: item.status || item.vod_status || "",
+        movieCode: item.movie_code || "",
+        backdropUrl: item.thumb_url || item.poster_url || item.vod_pic || ""
+    };
+}
+
+/**
+ * Parse danh sách phim từ JSON AVDBAPI.
+ * App mong đợi: { items: [{id, title, posterUrl, ...}], pagination: {...} }
+ */
+function parseListResponse(response) {
     try {
-        var response = JSON.parse(apiResponseJson);
-        var list = response.list || [];
-
-        var movies = list.map(function (item) {
-            return {
-                id: String(item.vod_id || ""),
-                title: item.vod_name || "",
-                posterUrl: item.vod_pic || "",
-                backdropUrl: item.vod_pic_thumb || item.vod_pic_slide || "",
-                year: parseInt(item.vod_year) || 0,
-                quality: item.vod_version || "HD",
-                episode_current: item.vod_remarks || "",
-                lang: item.vod_lang || "",
-                rating: parseFloat(item.vod_score) || 0,
-                duration: item.vod_duration || ""
-            };
-        });
-
-        var currentPage = parseInt(response.page) || 1;
-        var totalPages = parseInt(response.pagecount) || 1;
-        var totalItems = parseInt(response.total) || 0;
-        var itemsPerPage = parseInt(response.limit) || 100;
-
+        var data = parseJson(response);
+        var source = Array.isArray(data.list) ? data.list : [];
+        var items = source.map(mapVideo);
         return JSON.stringify({
-            items: movies,
+            items: items,
             pagination: {
-                currentPage: currentPage,
-                totalPages: totalPages,
-                totalItems: totalItems,
-                itemsPerPage: itemsPerPage
+                currentPage: Number(data.page || 1),
+                totalPages: Number(data.pagecount || 1),
+                totalItems: Number(data.total || items.length)
             }
         });
-    } catch (error) {
+    } catch (e) {
         return JSON.stringify({ items: [], pagination: { currentPage: 1, totalPages: 1 } });
     }
 }
 
-function parseSearchResponse(apiResponseJson) {
-    return parseListResponse(apiResponseJson);
+function parseSearchResponse(response) {
+    return parseListResponse(response);
 }
 
-function parseMovieDetail(apiResponseJson) {
+/**
+ * Parse chi tiết phim: title, description, servers + episodes.
+ * Cấu trúc AVDBAPI:
+ *   episodes.server_name = "VIP #1"
+ *   episodes.server_data = { "Full": { slug, link_embed } }
+ *
+ * episode.id = link_embed (URL trang play) → App sẽ gọi getUrlDetail(id) để fetch
+ *              trang play đó, rồi gọi parseDetailResponse(html) để lấy link stream.
+ */
+function parseMovieDetail(response) {
     try {
-        var response = JSON.parse(apiResponseJson);
-        var list = response.list || [];
-        if (list.length === 0) return "null";
-
-        var movie = list[0];
-
-        // Parse servers từ vod_play_from / vod_play_url
-        // vod_play_from = "ngm3u8"
-        // vod_play_url  = "Full$https://upload18.to/play/index/dldss-574-uncensored-leak"
+        var data = parseJson(response);
+        var item = (data.list && data.list.length) ? data.list[0] : data;
+        var video = mapVideo(item);
         var servers = [];
-        var playFromArr = (movie.vod_play_from || "").split("$$$");
-        var playUrlArr = (movie.vod_play_url || "").split("$$$");
 
-        for (var i = 0; i < playUrlArr.length; i++) {
-            var serverName = playFromArr[i] || ("Server #" + (i + 1));
-            var epString = playUrlArr[i] || "";
-            if (!epString) continue;
-
+        var epObject = item.episodes || {};
+        if (epObject && epObject.server_data) {
+            var serverName = epObject.server_name || "AVDBAPI";
+            var serverData = epObject.server_data;
             var episodes = [];
-            var epParts = epString.split("#");
-            for (var j = 0; j < epParts.length; j++) {
-                var ep = epParts[j];
-                if (!ep) continue;
-                var dollarIdx = ep.indexOf("$");
-                if (dollarIdx === -1) continue;
 
-                var epName = ep.substring(0, dollarIdx).trim();
-                var epUrl = ep.substring(dollarIdx + 1).trim();
-                if (!epUrl) continue;
-
+            for (var key in serverData) {
+                if (!serverData.hasOwnProperty(key)) continue;
+                var ep = serverData[key] || {};
+                var playUrl = ep.link_embed || ep.link || ep.url || "";
+                if (!playUrl) continue;
                 episodes.push({
-                    id: epUrl,               // embed URL → dùng getUrlDetail để fetch
-                    name: epName || ("Tập " + (j + 1)),
-                    slug: epUrl
+                    id: playUrl,
+                    name: key || ep.name || "Full",
+                    slug: ep.slug || key.toLowerCase()
                 });
             }
 
-            if (episodes.length > 0) {
-                servers.push({
-                    name: serverName,
-                    episodes: episodes
-                });
+            if (episodes.length) {
+                servers.push({ name: serverName, episodes: episodes });
             }
         }
 
-        var categories = Array.isArray(movie.vod_class) ? movie.vod_class.join(", ") : (movie.vod_class || "");
-        var country = movie.vod_area || "";
-        var director = movie.vod_director || "";
-        var actors = movie.vod_actor || "";
-
-        // Lấy mô tả: ưu tiên vod_content, fallback vod_blurb
-        var description = (movie.vod_content || movie.vod_blurb || "").replace(/<[^>]*>/g, "");
-
         return JSON.stringify({
-            id: movie.vod_id ? String(movie.vod_id) : (movie.vod_sub || ""),
-            title: movie.vod_name || "",
-            originName: movie.vod_en || "",
-            posterUrl: movie.vod_pic || "",
-            backdropUrl: movie.vod_pic_slide || movie.vod_pic_thumb || "",
-            description: description,
-            year: parseInt(movie.vod_year) || 0,
-            rating: parseFloat(movie.vod_score) || 0,
-            quality: movie.vod_version || "HD",
-            duration: movie.vod_duration || "",
+            id: video.id,
+            title: video.title,
+            posterUrl: video.posterUrl,
+            backdropUrl: video.backdropUrl,
+            description: video.description,
             servers: servers,
-            episode_current: movie.vod_remarks || "",
-            lang: movie.vod_lang || "",
-            category: categories,
-            country: country,
-            director: director,
-            casts: actors,
-            status: movie.vod_state || movie.vod_remarks || ""
+            quality: video.quality,
+            year: video.year,
+            rating: 0,
+            status: video.status,
+            duration: video.duration,
+            casts: video.casts,
+            director: video.director,
+            category: video.category
         });
-    } catch (error) { return "null"; }
-}
-
-// =============================================================================
-// STREAM LINK
-// =============================================================================
-
-    function parseDetailResponse(embedHtml, pageUrl) {
-    var headers = {
-        "Referer": "https://upload18.to/",
-        "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1",
-        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-        "Accept-Language": "en-US,en;q=0.9"
-    };
-
-    // Luôn trả URL embed gốc — đã xác nhận phát được
-    return JSON.stringify({
-        url: pageUrl || "",
-        isEmbed: true,
-        headers: headers,
-        subtitles: []
-    });
-}
-
-        // Trường hợp 2: HTML embed page (JWPlayer, Cloudflare, token_hash)
-        if (embedHtml.indexOf("PLAYER_CONFIG") !== -1 ||
-            embedHtml.indexOf("jwplayer") !== -1 ||
-            embedHtml.indexOf("token_hash") !== -1 ||
-            embedHtml.indexOf("<video") !== -1) {
-            return JSON.stringify({
-                url: pageUrl || "",
-                isEmbed: true,
-                headers: {
-                    "Referer": "https://upload18.to/",
-                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
-                },
-                subtitles: []
-            });
-        }
-
-        // Trường hợp 3: tìm link m3u8 trực tiếp trong HTML
-        var m3u8Match = embedHtml.match(/["'](https?:\/\/[^"']+\.m3u8[^"']*?)["']/);
-        if (m3u8Match) {
-            return JSON.stringify({
-                url: m3u8Match[1],
-                isEmbed: false,
-                headers: {
-                    "Referer": "https://upload18.to/",
-                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
-                },
-                subtitles: []
-            });
-        }
-
-        // Fallback: load embed URL bằng WebView
+    } catch (e) {
         return JSON.stringify({
-            url: pageUrl || "",
-            isEmbed: true,
-            headers: {
-                "Referer": "https://upload18.to/",
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
-            },
-            subtitles: []
+            id: "", title: "", posterUrl: "", description: "", servers: []
         });
-    } catch (error) { return "{}"; }
+    }
 }
 
-function parseEmbedResponse(m3u8Content, tokenUrl) {
+function getAbsoluteUrl(url, base) {
+    if (!url) return "";
+    url = String(url).trim().replace(/&amp;/g, "&");
+    if (/^https?:\/\//i.test(url)) return url;
+    if (url.indexOf("//") === 0) return "https:" + url;
+    if (!base) return url;
+    var origin = base.match(/^(https?:\/\/[^\/]+)/i);
+    if (!origin) return url;
+    if (url.charAt(0) === "/") return origin[1] + url;
+    var dir = base.substring(0, base.lastIndexOf("/") + 1);
+    return dir + url;
+}
+
+/**
+ * Parse link video cuối cùng để Player phát.
+ *
+ * Với AVDBAPI: episode.id = link_embed (vd: https://upload18.to/play/index/wpsl-285)
+ * → App fetch URL đó → response là HTML trang play của upload18.to
+ * → Hàm này trích xuất iframe / stream URL từ HTML đó.
+ *
+ * Trả về:
+ *   - isEmbed: true  → App fetch tiếp URL (iframe)
+ *   - isEmbed: false → URL cuối cùng, phát luôn (m3u8/mp4)
+ *   - url: ""        → Dừng
+ */
+function parseDetailResponse(response) {
     try {
-        if (m3u8Content.indexOf("#EXTM3U") !== -1 || m3u8Content.indexOf("#EXT-X-") !== -1) {
+        var text = String(response || "").trim();
+
+        // 1) Nếu response đã là JSON có url → dùng luôn
+        if (text.charAt(0) === "{") {
+            var data = parseJson(text);
+            if (data.url) return JSON.stringify(data);
+        }
+
+        // 2) Nếu response là URL thuần (trang play) → fetch tiếp
+        if (/^https?:\/\/[^\s"'<>]+$/i.test(text)) {
             return JSON.stringify({
-                url: tokenUrl,
-                headers: {
-                    "Referer": "https://upload18.to/",
-                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
-                },
+                url: text,
+                isEmbed: true,
+                headers: {},
                 subtitles: []
             });
         }
-        return "{}";
-    } catch (error) { return "{}"; }
+
+        // 3) Trích iframe src (trang play upload18.to thường chứa iframe)
+        var match = text.match(/<iframe[^>]+(?:src|data-src)=["']([^"']+)["']/i);
+
+        // 4) Trích file m3u8/mp4 trong script
+        if (!match) {
+            match = text.match(/(?:file|src|hls|url|source)\s*[:=]\s*["'](https?:\/\/[^"']+\.(?:m3u8|mp4)[^"']*)["']/i);
+        }
+
+        // 5) Fallback: bất kỳ link m3u8/mp4 nào
+        if (!match) {
+            match = text.match(/https?:\\?\/\\?\/[^"'\\\s<>]+\.(?:m3u8|mp4)(?:\?[^"'\\\s<>]*)?/i);
+        }
+
+        if (match) {
+            var found = match[1] || match[0];
+            found = found.replace(/\\\//g, "/");
+            var absolute = getAbsoluteUrl(found, "");
+            var isDirect = /\.(m3u8|mp4)(\?|$)/i.test(absolute);
+            return JSON.stringify({
+                url: absolute,
+                isEmbed: !isDirect,
+                headers: { "Referer": "https://upload18.to/" },
+                subtitles: []
+            });
+        }
+    } catch (e) {}
+    return JSON.stringify({ url: "", isEmbed: false, headers: {}, subtitles: [] });
 }
 
-// =============================================================================
-// CATEGORIES / COUNTRIES / YEARS
-// =============================================================================
+/**
+ * Xử lý embed nhiều bước (tối đa 3 lần).
+ * AVDBAPI: trang play → iframe → stream URL
+ */
+function parseEmbedResponse(response, sourceUrl) {
+    var text = String(response || "").trim();
 
-function parseCategoriesResponse(apiResponseJson) {
-    return JSON.stringify([
-        { name: "Censored", slug: "1" },
-        { name: "Uncensored", slug: "2" },
-        { name: "Uncensored Leaked", slug: "3" },
-        { name: "Amateur", slug: "4" },
-        { name: "Chinese AV", slug: "5" },
-        { name: "Western", slug: "6" }
-    ]);
-}
-
-function parseCountriesResponse(apiResponseJson) {
-    return JSON.stringify([
-        { name: "Japan", value: "Japan" },
-        { name: "China", value: "China" },
-        { name: "Western", value: "Western" }
-    ]);
-}
-
-function parseYearsResponse(apiResponseJson) {
-    var years = [];
-    for (var i = 2026; i >= 2010; i--) {
-        years.push({ name: i.toString(), value: i.toString() });
+    // Nếu response là URL thuần → fetch tiếp
+    if (/^https?:\/\/[^\s"'<>]+$/i.test(text)) {
+        return JSON.stringify({
+            url: getAbsoluteUrl(text, sourceUrl),
+            isEmbed: true,
+            headers: {}
+        });
     }
-    return JSON.stringify(years);
+
+    // Trích iframe
+    var match = text.match(/<iframe[^>]+(?:src|data-src)=["']([^"']+)["']/i);
+    if (match) {
+        return JSON.stringify({
+            url: getAbsoluteUrl(match[1], sourceUrl),
+            isEmbed: true,
+            headers: {}
+        });
+    }
+
+    // Trích stream URL
+    match = text.match(/(?:file|src|hls|url|source)\s*[:=]\s*["'](https?:\/\/[^"']+\.(?:m3u8|mp4)[^"']*)["']/i);
+    if (!match) {
+        match = text.match(/https?:\\?\/\\?\/[^"'\\\s<>]+\.(?:m3u8|mp4)(?:\?[^"'\\\s<>]*)?/i);
+    }
+    if (match) {
+        var found = (match[1] || match[0]).replace(/\\\//g, "/");
+        return JSON.stringify({
+            url: getAbsoluteUrl(found, sourceUrl),
+            isEmbed: false,
+            mimeType: "application/x-mpegURL",
+            headers: { "Referer": sourceUrl || "https://upload18.to/" }
+        });
+    }
+
+    return JSON.stringify({ url: "", isEmbed: false });
 }
+
+function parseCategoriesResponse(response) { return "[]"; }
+function parseCountriesResponse(response) { return "[]"; }
+function parseYearsResponse(response) { return "[]"; }
