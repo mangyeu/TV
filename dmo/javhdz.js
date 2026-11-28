@@ -6,7 +6,7 @@ function getManifest() {
     return JSON.stringify({
         "id": "javhd",
         "name": "JavHD",
-        "version": "1.0.0",
+        "version": "1.0.1",
         "baseUrl": "https://javhdz.today",
         "iconUrl": "https://javhdz.today/favicon.ico",
         "isEnabled": true,
@@ -118,13 +118,60 @@ function getUrlList(slug, filtersJson) {
     return finalUrl + separator + params.join('&');
 }
 
+// Trả về danh sách kiểu tìm kiếm để giao diện app có thể hiển thị
+// Videos / Photos / Pornstars / Users.
+function getSearchTypes() {
+    return JSON.stringify([
+        { name: "Videos", value: "video", icon: "video-camera" },
+        { name: "Photos", value: "photo", icon: "image" },
+        { name: "Pornstars", value: "pornstar", icon: "user" },
+        { name: "Users", value: "users", icon: "users" }
+    ]);
+}
+
+// Tạo URL tìm kiếm theo loại được chọn.
+// filters.searchType (hoặc filters.type) nhận một trong:
+// video, photo, pornstar, users.
+// Mặc định là pornstar theo form HTML bạn cung cấp.
 function getUrlSearch(keyword, filtersJson) {
-    var filters = JSON.parse(filtersJson || "{}");
-    var page = parseInt(filters.page) || 1;
-    var url = "https://javhdz.today/search/video/?s=" + encodeURIComponent(keyword) + "&ajax=1";
+    var filters = {};
+    try {
+        filters = JSON.parse(filtersJson || "{}");
+    } catch (e) {
+        filters = {};
+    }
+
+    var page = parseInt(filters.page, 10) || 1;
+    var searchType = String(
+        filters.searchType || filters.search_type || filters.type || "pornstar"
+    ).toLowerCase();
+
+    // Chuẩn hóa một số tên thường gặp từ giao diện.
+    if (searchType === "videos") searchType = "video";
+    if (searchType === "photos") searchType = "photo";
+    if (searchType === "user" || searchType === "community") searchType = "users";
+
+    // Các đường dẫn theo cấu trúc /search/{type}/ của website.
+    var searchPaths = {
+        video: "video",
+        photo: "photo",
+        pornstar: "pornstar",
+        users: "users"
+    };
+
+    if (!searchPaths[searchType]) {
+        searchType = "pornstar";
+    }
+
+    var url = "https://javhdz.today/search/" +
+        searchPaths[searchType] +
+        "/?s=" + encodeURIComponent(keyword || "") +
+        "&ajax=1";
+
     if (page > 1) {
         url += "&page=" + page;
     }
+
     return url;
 }
 
@@ -316,8 +363,122 @@ function parseListResponse(html) {
     }
 }
 
-function parseSearchResponse(html) {
-    return parseListResponse(html);
+// Parser tìm kiếm.
+// Videos giữ nguyên parser cũ để không ảnh hưởng dữ liệu phim.
+// Với Photos / Pornstars / Users, parser đọc các thẻ liên kết và ảnh phổ biến
+// rồi chuẩn hóa về cấu trúc item mà app đang sử dụng.
+function parseSearchResponse(html, searchType) {
+    var type = String(searchType || "video").toLowerCase();
+
+    if (type === "video" || type === "videos" || !searchType) {
+        return parseListResponse(html);
+    }
+
+    try {
+        var responseHtml = html || "";
+        var paginationHtml = "";
+
+        // Một số endpoint AJAX trả JSON dạng { html, pagination }.
+        if (responseHtml.trim().charAt(0) === "{") {
+            try {
+                var data = JSON.parse(responseHtml);
+                if (data && data.html) {
+                    responseHtml = data.html;
+                    paginationHtml = data.pagination || "";
+                }
+            } catch (e) {
+                // Nếu không phải JSON hợp lệ, tiếp tục parse HTML gốc.
+            }
+        }
+
+        var items = [];
+        var seen = {};
+        var anchorRegex = /<a\b([^>]*)>([\s\S]*?)<\/a>/gi;
+        var match;
+
+        while ((match = anchorRegex.exec(responseHtml)) !== null) {
+            var attrs = match[1] || "";
+            var inner = match[2] || "";
+            var hrefMatch = attrs.match(/\bhref=["']([^"']+)["']/i);
+            if (!hrefMatch) continue;
+
+            var href = hrefMatch[1];
+            if (!href || href.charAt(0) === "#") continue;
+
+            var imgMatch = inner.match(/<img\b([^>]*)>/i);
+            var imgAttrs = imgMatch ? imgMatch[1] : "";
+            var srcMatch = imgAttrs.match(/\b(?:data-src|data-original|src)=["']([^"']+)["']/i);
+            var titleMatch = attrs.match(/\btitle=["']([^"']*)["']/i);
+            var altMatch = imgAttrs.match(/\balt=["']([^"']*)["']/i);
+
+            var title = titleMatch ? titleMatch[1] :
+                (altMatch ? altMatch[1] : PluginUtils.cleanText(inner));
+
+            title = PluginUtils.cleanText(title);
+            if (!title && !srcMatch) continue;
+
+            // Bỏ qua các link điều hướng không phải kết quả.
+            if (/^(javascript:|mailto:)/i.test(href)) continue;
+
+            var id = href;
+            if (id.indexOf("http") !== 0 && id.charAt(0) !== "/") {
+                id = "/" + id;
+            }
+
+            if (seen[id]) continue;
+            seen[id] = true;
+
+            var imageUrl = srcMatch ? srcMatch[1] : "";
+            items.push({
+                id: id,
+                title: title || "Không có tiêu đề",
+                posterUrl: imageUrl,
+                backdropUrl: imageUrl,
+                year: 0,
+                quality: "",
+                episode_current: "",
+                lang: "",
+                itemType: type
+            });
+        }
+
+        var totalPages = 1;
+        var currentPage = 1;
+        var paginationSrc = paginationHtml || responseHtml;
+        var activeMatch = paginationSrc.match(
+            /<li[^>]*class=["'][^"']*active[^"']*["'][^>]*>\s*<a[^>]*>(\d+)<\/a>/i
+        ) || paginationSrc.match(
+            /<li[^>]*class=["'][^"']*active[^"']*["'][^>]*>\s*<span[^>]*>(\d+)<\/span>/i
+        );
+
+        if (activeMatch) currentPage = parseInt(activeMatch[1], 10) || 1;
+
+        var pageMatches = paginationSrc.match(/(?:[?&]page=|\/page\/)(\d+)/gi);
+        if (pageMatches) {
+            for (var i = 0; i < pageMatches.length; i++) {
+                var numberMatch = pageMatches[i].match(/(\d+)/);
+                if (numberMatch) {
+                    var pageNumber = parseInt(numberMatch[1], 10);
+                    if (pageNumber > totalPages) totalPages = pageNumber;
+                }
+            }
+        }
+
+        return JSON.stringify({
+            items: items,
+            pagination: {
+                currentPage: currentPage,
+                totalPages: totalPages,
+                totalItems: items.length,
+                itemsPerPage: 20
+            }
+        });
+    } catch (e) {
+        return JSON.stringify({
+            items: [],
+            pagination: { currentPage: 1, totalPages: 1, totalItems: 0, itemsPerPage: 20 }
+        });
+    }
 }
 
 function parseMovieDetail(html) {
