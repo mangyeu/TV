@@ -6,8 +6,8 @@ function getManifest() {
     return JSON.stringify({
         "id": "avdbapi",
         "name": "AVDB JAV",
-        "version": "1.0.3",
-        "baseUrl": "https://avdbapi.com/api.php/provide/vod",
+        "version": "1.0.4",
+        "baseUrl": "https://avdbapi.com",
         "iconUrl": "https://avdbapi.com/favicon.ico",
         "isEnabled": true,
         "isAdult": true,
