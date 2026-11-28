@@ -1,25 +1,25 @@
 // =============================================================================
-// AVDBAPI Plugin cho VAAPP - Hoàn chỉnh
-// API: https://avdbapi.com
-// Stream: upload18.to (JWPlayer + helvid.com HLS)
+// AVDBAPI Plugin cho VAAPP
+// Stream: upload18.to (JWPlayer + helvid.com worker)
+// Chiến lược: dùng WebView embed vì trang chống scrape mạnh
 // =============================================================================
 
 // =============================================================================
-// NHÓM 1: CẤU HÌNH (Config & Metadata)
+// NHÓM 1: CẤU HÌNH
 // =============================================================================
 
 function getManifest() {
     return JSON.stringify({
         "id": "avdbapi_jav",
         "name": "AVDB JAV",
-        "version": "1.0.4",
+        "version": "1.0.5",
         "baseUrl": "https://avdbapi.com",
         "iconUrl": "https://avdbapi.com/favicon.ico",
         "isEnabled": true,
         "isAdult": true,
         "type": "VIDEO",
         "layoutType": "HORIZONTAL",
-        "playerType": "exoplayer"
+        "playerType": "embed"   // BẮT BUỘC: WebView xử lý JWPlayer
     });
 }
 
@@ -56,7 +56,7 @@ function getFilterConfig() {
 }
 
 // =============================================================================
-// NHÓM 2: SINH URL (App gọi hàm → nhận URL → tự fetch HTTP)
+// NHÓM 2: SINH URL
 // =============================================================================
 
 var BASE_API = "https://avdbapi.com/api.php/provide/vod";
@@ -70,7 +70,7 @@ function getUrlList(slug, filtersJson) {
         if (/^[1-6]$/.test(slug)) {
             url += "&t=" + slug;
         } else if (slug === 'latest') {
-            // Mới cập nhật - default sort
+            // default sort
         } else if (filters.category) {
             url += "&t=" + filters.category;
         }
@@ -92,10 +92,8 @@ function getUrlSearch(keyword, filtersJson) {
 }
 
 /**
- * getUrlDetail nhận episodeId.
- * - Nếu là URL http(s) → đây là embed URL (upload18.to) → fetch trực tiếp
- * - Nếu là numeric id → dùng ids= parameter
- * - Nếu là slug/movie_code → dùng code= parameter
+ * episode.id = link_embed (https://upload18.to/play/index/xxx)
+ * → Trả về nguyên URL để App fetch HTML trang play
  */
 function getUrlDetail(episodeId) {
     if (!episodeId) return "";
@@ -125,24 +123,6 @@ function asText(value) {
     if (value === null || value === undefined) return "";
     if (Array.isArray(value)) return value.join(", ");
     return String(value);
-}
-
-/**
- * Giải mã URL trong JSON nhúng của upload18.to:
- *   `\/`      → `/`
- *   `\u0026`  → `&`
- *   `\u003d`  → `=`
- *   `\u0025`  → `%`
- *   `&amp;`   → `&`
- */
-function cleanUrl(raw) {
-    return String(raw || "")
-        .replace(/\\\//g, "/")
-        .replace(/\\u0026/g, "&")
-        .replace(/\\u003d/g, "=")
-        .replace(/\\u0025/g, "%")
-        .replace(/&amp;/g, "&")
-        .trim();
 }
 
 // -----------------------------------------------------------------------------
@@ -201,10 +181,9 @@ function parseMovieDetail(apiResponseJson) {
         if (list.length === 0) return "null";
 
         var movie = list[0];
-
-        // Parse episodes: { server_name, server_data: { "Full": { slug, link_embed } } }
         var servers = [];
         var eps = movie.episodes;
+
         if (eps) {
             var serverEpisodes = [];
             var serverData = eps.server_data || {};
@@ -214,11 +193,8 @@ function parseMovieDetail(apiResponseJson) {
                     var epInfo = serverData[epName];
                     var embedUrl = epInfo.link_embed || "";
                     if (embedUrl) {
-                        // episode.id = embed URL (upload18.to)
-                        // → App gọi getUrlDetail(id) → fetch HTML trang play
-                        // → parseDetailResponse(html) → trích xuất m3u8
                         serverEpisodes.push({
-                            id: embedUrl,
+                            id: embedUrl,   // URL trang play upload18.to
                             name: epName,
                             slug: epInfo.slug || epName.toLowerCase()
                         });
@@ -273,157 +249,28 @@ function parseMovieDetail(apiResponseJson) {
 }
 
 // -----------------------------------------------------------------------------
-// STREAM LINK (parseDetailResponse)
+// STREAM LINK — WebView embed
 //
-// Input: HTML trang play upload18.to
-// HTML chứa: window.PLAYER_CONFIG = {... "m3u8":"https:\/\/helvid.com\/m\/...playlist.m3u8?e=...&h=...", ...}
-//
-// Output mong đợi của VAAPP:
-//   { url, isEmbed, mimeType, headers, subtitles }
-//   - isEmbed: false → phát luôn bằng ExoPlayer
-//   - isEmbed: true  → App fetch tiếp URL
+// Với upload18.to, link m3u8 trong PLAYER_CONFIG là ciphertext,
+// JWPlayer + JS obfuscated mới giải mã được. Plugin JS thuần KHÔNG lấy được.
+// → Trả về isEmbed: true + URL trang play gốc để WebView load.
 // -----------------------------------------------------------------------------
 
 function parseDetailResponse(embedHtml, pageUrl) {
-    try {
-        var html = String(embedHtml || "");
-
-        // 1) Nếu App truyền thẳng URL thuần → fetch tiếp
-        if (/^https?:\/\/[^\s"'<>]+$/i.test(html.trim())) {
-            return JSON.stringify({
-                url: html.trim(),
-                isEmbed: true,
-                headers: {}
-            });
-        }
-
-        // 2) Nếu response đã là JSON có url → dùng luôn
-        if (html.trim().charAt(0) === "{") {
-            var j = parseJson(html);
-            if (j.url) return JSON.stringify(j);
-        }
-
-        // 3) Bắt link m3u8 trong window.PLAYER_CONFIG (ưu tiên)
-        var m = html.match(/"m3u8"\s*:\s*"([^"]+)"/i);
-        if (m && m[1]) {
-            var streamUrl = cleanUrl(m[1]);
-            if (/^https?:\/\//i.test(streamUrl)) {
-                return JSON.stringify({
-                    url: streamUrl,
-                    isEmbed: false,
-                    mimeType: "application/x-mpegURL",
-                    headers: {
-                        "Referer": "https://upload18.to/",
-                        "Origin": "https://upload18.to",
-                        "User-Agent": "Mozilla/5.0 (Linux; Android 10) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Mobile Safari/537.36"
-                    },
-                    subtitles: []
-                });
-            }
-        }
-
-        // 4) Fallback: bắt "file"/"src"/"source"/"hls": "...m3u8|mp4"
-        m = html.match(/"(?:file|src|source|hls)"\s*:\s*"([^"]+\.(?:m3u8|mp4)[^"]*)"/i);
-        if (m && m[1]) {
-            var fileUrl = cleanUrl(m[1]);
-            if (/^https?:\/\//i.test(fileUrl)) {
-                return JSON.stringify({
-                    url: fileUrl,
-                    isEmbed: false,
-                    mimeType: /\.m3u8/i.test(fileUrl) ? "application/x-mpegURL" : "video/mp4",
-                    headers: { "Referer": "https://upload18.to/" },
-                    subtitles: []
-                });
-            }
-        }
-
-        // 5) Fallback: bất kỳ link m3u8/mp4 trong HTML
-        m = html.match(/(https?:\\?\/\\?\/[^"'\\\s<>]+\.(?:m3u8|mp4)(?:\?[^"'\\\s<>]*)?)/i);
-        if (m && m[1]) {
-            var fallbackUrl = cleanUrl(m[1]);
-            return JSON.stringify({
-                url: fallbackUrl,
-                isEmbed: false,
-                mimeType: /\.m3u8/i.test(fallbackUrl) ? "application/x-mpegURL" : "video/mp4",
-                headers: { "Referer": "https://upload18.to/" },
-                subtitles: []
-            });
-        }
-
-        // 6) Fallback: iframe (một số video dùng embed khác)
-        m = html.match(/<iframe[^>]+(?:src|data-src)=["']([^"']+)["']/i);
-        if (m && m[1]) {
-            return JSON.stringify({
-                url: m[1],
-                isEmbed: true,
-                headers: {}
-            });
-        }
-
-        // 7) Fallback cuối: trả embed URL cho WebView
-        return JSON.stringify({
-            url: pageUrl || "",
-            isEmbed: true,
-            headers: {
-                "Referer": "https://upload18.to/",
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
-            },
-            subtitles: []
-        });
-    } catch (error) {
-        return JSON.stringify({ url: "", isEmbed: false, headers: {}, subtitles: [] });
-    }
+    return JSON.stringify({
+        url: pageUrl || "",
+        isEmbed: true,
+        headers: {
+            "Referer": "https://upload18.to/",
+            "User-Agent": "Mozilla/5.0 (Linux; Android 10) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Mobile Safari/537.36"
+        },
+        subtitles: []
+    });
 }
 
-/**
- * parseEmbedResponse: xử lý embed nhiều bước (tối đa 3 lần).
- * Với upload18.to thường không cần vì đã lấy m3u8 ở bước 1,
- * nhưng giữ để phòng iframe lồng nhau.
- */
 function parseEmbedResponse(response, sourceUrl) {
-    try {
-        var html = String(response || "").trim();
-
-        // URL thuần → fetch tiếp
-        if (/^https?:\/\/[^\s"'<>]+$/i.test(html)) {
-            return JSON.stringify({
-                url: html,
-                isEmbed: true,
-                headers: {}
-            });
-        }
-
-        // Bắt m3u8/file
-        var m = html.match(/"m3u8"\s*:\s*"([^"]+)"/i)
-             || html.match(/"(?:file|src|source|hls)"\s*:\s*"([^"]+\.(?:m3u8|mp4)[^"]*)"/i)
-             || html.match(/(https?:\\?\/\\?\/[^"'\\\s<>]+\.(?:m3u8|mp4)(?:\?[^"'\\\s<>]*)?)/i);
-        if (m && m[1]) {
-            var u = cleanUrl(m[1]);
-            if (/^https?:\/\//i.test(u)) {
-                return JSON.stringify({
-                    url: u,
-                    isEmbed: false,
-                    mimeType: /\.m3u8/i.test(u) ? "application/x-mpegURL" : "video/mp4",
-                    headers: {
-                        "Referer": sourceUrl || "https://upload18.to/",
-                        "Origin": "https://upload18.to"
-                    }
-                });
-            }
-        }
-
-        // Iframe
-        m = html.match(/<iframe[^>]+(?:src|data-src)=["']([^"']+)["']/i);
-        if (m && m[1]) {
-            var abs = /^https?:\/\//i.test(m[1]) ? m[1]
-                    : (m[1].charAt(0) === "/" ? "https://upload18.to" + m[1] : m[1]);
-            return JSON.stringify({ url: abs, isEmbed: true, headers: {} });
-        }
-
-        return JSON.stringify({ url: "", isEmbed: false });
-    } catch (error) {
-        return JSON.stringify({ url: "", isEmbed: false });
-    }
+    // Không dùng khi playerType = embed
+    return JSON.stringify({ url: "", isEmbed: false });
 }
 
 // =============================================================================
