@@ -1,10 +1,4 @@
 // =============================================================================
-// AVDBAPI Plugin cho VAAPP
-// Stream: upload18.to (JWPlayer + helvid.com worker)
-// Chiến lược: dùng WebView embed vì trang chống scrape mạnh
-// =============================================================================
-
-// =============================================================================
 // NHÓM 1: CẤU HÌNH
 // =============================================================================
 
@@ -12,8 +6,8 @@ function getManifest() {
     return JSON.stringify({
         "id": "avdbapi_jav",
         "name": "AVDB JAV",
-        "version": "1.0.5",
-        "baseUrl": "https://avdbapi.com",
+        "version": "1.0.1",
+        "baseUrl": "https://avdbapi.com/api.php/provide/vod",
         "iconUrl": "https://avdbapi.com/favicon.ico",
         "isEnabled": true,
         "isAdult": true,
