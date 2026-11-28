@@ -234,20 +234,22 @@ function parseMovieDetail(apiResponseJson) {
 // STREAM LINK
 // =============================================================================
 
-function parseDetailResponse(embedHtml, pageUrl) {
-    try {
-        // Trường hợp 1: Response đã là m3u8 content → play trực tiếp pageUrl
-        if (embedHtml.indexOf("#EXTM3U") !== -1 || embedHtml.indexOf("#EXT-X-") !== -1) {
-            return JSON.stringify({
-                url: pageUrl || "",
-                isEmbed: false,
-                headers: {
-                    "Referer": "https://upload18.to/",
-                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
-                },
-                subtitles: []
-            });
-        }
+    function parseDetailResponse(embedHtml, pageUrl) {
+    var headers = {
+        "Referer": "https://upload18.to/",
+        "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "Accept-Language": "en-US,en;q=0.9"
+    };
+
+    // Luôn trả URL embed gốc — đã xác nhận phát được
+    return JSON.stringify({
+        url: pageUrl || "",
+        isEmbed: true,
+        headers: headers,
+        subtitles: []
+    });
+}
 
         // Trường hợp 2: HTML embed page (JWPlayer, Cloudflare, token_hash)
         if (embedHtml.indexOf("PLAYER_CONFIG") !== -1 ||
