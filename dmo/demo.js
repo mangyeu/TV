@@ -1,10 +1,9 @@
 // =============================================================================
-// VAAPP Plugin: AVDBAPI (avdbapi.com) - Cập nhật theo schema thực tế
+// VAAPP Plugin: AVDBAPI (avdbapi.com) - Bản hoàn chỉnh theo JSON detail
 // =============================================================================
 
 var BASE_URL = "https://avdbapi.com";
 var API_URL = "https://avdbapi.com/api.php/provide/vod";
-var THUMB_BASE = "https://upload18.cc/v/";
 
 // =============================================================================
 // NHÓM 1: CẤU HÌNH (Config & Metadata)
@@ -14,14 +13,14 @@ function getManifest() {
     return JSON.stringify({
         "id": "avdbapi_plugin",
         "name": "AVDBAPI",
-        "version": "1.0.1",
+        "version": "1.0.2",
         "baseUrl": BASE_URL,
         "iconUrl": "https://avdbapi.com/template/api/lemetu/v2/favicon-32.b434cfc1bf.png",
         "isEnabled": true,
         "isAdult": true,
         "type": "MOVIE",
         "layoutType": "HORIZONTAL",
-        "playerType": "auto" // Hỗ trợ cả m3u8/mp4 trực tiếp lẫn link_embed
+        "playerType": "embed" // Hỗ trợ phát embed qua WebView hoặc bóc stream
     });
 }
 
@@ -110,21 +109,11 @@ function getUrlYears() { return ""; }
 function joinArrayField(val, fallback) {
     if (Array.isArray(val)) {
         var filtered = val.filter(function(x) {
-            return x && String(x).toLowerCase() !== "updating";
+            return x && String(x).trim() !== "" && String(x).toLowerCase() !== "updating";
         });
         return filtered.length > 0 ? filtered.join(", ") : (fallback || "");
     }
     return val ? String(val) : (fallback || "");
-}
-
-function buildPosterUrl(item) {
-    if (item.posterUrl) return item.posterUrl;
-    if (item.thumb) return item.thumb;
-    if (item.pic) return item.pic;
-    if (item.movie_code) {
-        return THUMB_BASE + encodeURIComponent(String(item.movie_code).trim()) + "/thumb.jpg";
-    }
-    return "";
 }
 
 function parseListResponse(responseText) {
@@ -135,15 +124,18 @@ function parseListResponse(responseText) {
 
         for (var i = 0; i < list.length; i++) {
             var item = list[i];
-            var poster = buildPosterUrl(item);
+            var poster = item.thumb_url || item.poster_url || item.posterUrl || item.thumb || "";
+            if (!poster && item.movie_code) {
+                poster = "https://upload18.cc/v/" + encodeURIComponent(String(item.movie_code).trim()) + "/thumb.jpg";
+            }
 
             items.push({
                 id: String(item.id),
                 title: item.name || item.origin_name || "",
                 posterUrl: poster,
-                backdropUrl: poster,
-                quality: item.movie_code || "",
-                year: item.vod_time ? parseInt(String(item.vod_time).slice(0, 4), 10) || 2026 : 2026
+                backdropUrl: item.poster_url || poster,
+                quality: item.quality || item.movie_code || "HD",
+                year: parseInt(item.year, 10) || (item.vod_time ? parseInt(String(item.vod_time).slice(0, 4), 10) : 2026)
             });
         }
 
@@ -163,11 +155,6 @@ function parseSearchResponse(responseText) {
     return parseListResponse(responseText);
 }
 
-/**
- * Hỗ trợ episodes ở dạng:
- * - Object: { server_name: "VIP #1", server_data: { Full: { slug: "full", link_embed: "...", link_m3u8: "..." } } }
- * - Hoặc Array các server nếu API mở rộng thêm server khác
- */
 function parseServersFromEpisodes(episodesObj) {
     var servers = [];
     if (!episodesObj) return servers;
@@ -186,16 +173,15 @@ function parseServersFromEpisodes(episodesObj) {
         for (var j = 0; j < epKeys.length; j++) {
             var epKey = epKeys[j];
             var epInfo = serverData[epKey] || {};
-            var streamUrl = epInfo.link_m3u8 || epInfo.link_embed || epInfo.url || "";
+            var embedUrl = (epInfo.link_m3u8 || epInfo.link_embed || epInfo.url || "").trim();
 
-            // Nếu link rỗng, vẫn giữ tập với id là slug hoặc rỗng để tránh crash UI
-            var epId = streamUrl || (epInfo.slug ? String(epInfo.slug) : "");
-
-            episodes.push({
-                id: epId,
-                name: epKey,
-                slug: epInfo.slug || epKey
-            });
+            if (embedUrl) {
+                episodes.push({
+                    id: embedUrl, // Trả thẳng link_embed để App resolve/phát
+                    name: epKey,
+                    slug: epInfo.slug || epKey
+                });
+            }
         }
 
         if (episodes.length > 0) {
@@ -222,22 +208,24 @@ function parseMovieDetail(responseText) {
 
         if (!vod) return "{}";
 
-        var poster = buildPosterUrl(vod);
+        var thumb = vod.thumb_url || vod.poster_url || "";
+        var backdrop = vod.poster_url || vod.thumb_url || "";
         var servers = parseServersFromEpisodes(vod.episodes);
         var categoryStr = joinArrayField(vod.category, vod.type_name || "");
+        var cleanDesc = (vod.description || "").replace(/<[^>]*>?/gm, "").trim();
 
         return JSON.stringify({
             id: String(vod.id),
             title: vod.name || vod.origin_name || "",
-            posterUrl: poster,
-            backdropUrl: poster,
-            description: vod.origin_name && vod.origin_name !== vod.name ? vod.origin_name : "",
+            posterUrl: thumb,
+            backdropUrl: backdrop,
+            description: cleanDesc,
             servers: servers,
-            quality: vod.movie_code || "HD",
-            year: vod.vod_time ? parseInt(String(vod.vod_time).slice(0, 4), 10) || 2026 : 2026,
+            quality: vod.quality || "HD",
+            year: parseInt(vod.year, 10) || 2026,
             rating: 8.0,
-            status: vod.vod_time ? ("Cập nhật: " + vod.vod_time) : "Full",
-            duration: "",
+            status: vod.status || "Full",
+            duration: vod.time || "",
             casts: joinArrayField(vod.actor, ""),
             director: joinArrayField(vod.director, ""),
             category: categoryStr
@@ -253,7 +241,7 @@ function parseDetailResponse(responseText) {
         return JSON.stringify({ url: "", headers: {}, subtitles: [] });
     }
 
-    // Nếu App truyền thẳng URL stream vào đây
+    // App truyền thẳng link_embed (ví dụ: https://upload18.to/play/index/jur-823-sub)
     if (trimmed.indexOf("http") === 0 && trimmed.indexOf("{") !== 0) {
         var isDirect = trimmed.indexOf(".m3u8") !== -1 || trimmed.indexOf(".mp4") !== -1;
         return JSON.stringify({
@@ -267,26 +255,24 @@ function parseDetailResponse(responseText) {
         });
     }
 
-    // Nếu App gọi lại URL chi tiết JSON
+    // Dự phòng nếu App gọi lại JSON chi tiết
     try {
         var data = JSON.parse(trimmed);
         var vod = (Array.isArray(data.list) && data.list.length > 0) ? data.list[0] : data;
         var servers = parseServersFromEpisodes(vod && vod.episodes);
 
         if (servers.length > 0 && servers[0].episodes.length > 0) {
-            var firstUrl = servers[0].episodes[0].id || "";
-            if (firstUrl.indexOf("http") === 0) {
-                var isM3u8 = firstUrl.indexOf(".m3u8") !== -1;
-                return JSON.stringify({
-                    url: firstUrl,
-                    isEmbed: !isM3u8 && firstUrl.indexOf(".mp4") === -1,
-                    mimeType: isM3u8 ? "application/x-mpegURL" : "",
-                    headers: {
-                        "Referer": BASE_URL + "/"
-                    },
-                    subtitles: []
-                });
-            }
+            var targetUrl = servers[0].episodes[0].id || "";
+            var isDirectStream = targetUrl.indexOf(".m3u8") !== -1 || targetUrl.indexOf(".mp4") !== -1;
+            return JSON.stringify({
+                url: targetUrl,
+                isEmbed: !isDirectStream,
+                mimeType: targetUrl.indexOf(".m3u8") !== -1 ? "application/x-mpegURL" : "",
+                headers: {
+                    "Referer": BASE_URL + "/"
+                },
+                subtitles: []
+            });
         }
     } catch (e) {}
 
@@ -294,15 +280,21 @@ function parseDetailResponse(responseText) {
 }
 
 function parseEmbedResponse(html, sourceUrl) {
-    var m3u8Match = html.match(/(https?:\/\/[^"'\s]+\.m3u8[^"'\s]*)/);
-    if (m3u8Match) {
+    // Nếu trang embed có nhúng trực tiếp link .m3u8 hoặc .mp4 trong HTML/JS
+    var streamMatch = html.match(/(https?:\/\/[^"'\s<>]+\.(?:m3u8|mp4)[^"'\s<>]*)/i);
+    if (streamMatch) {
+        var foundUrl = streamMatch[1];
         return JSON.stringify({
-            url: m3u8Match[1],
+            url: foundUrl,
             isEmbed: false,
-            mimeType: "application/x-mpegURL",
-            headers: { "Referer": sourceUrl }
+            mimeType: foundUrl.toLowerCase().indexOf(".m3u8") !== -1 ? "application/x-mpegURL" : "video/mp4",
+            headers: {
+                "Referer": sourceUrl || (BASE_URL + "/")
+            }
         });
     }
+
+    // Nếu không bắt được link m3u8/mp4 trực tiếp, trả url rỗng để App dùng WebView/embed mặc định
     return JSON.stringify({ url: "", isEmbed: false });
 }
 
