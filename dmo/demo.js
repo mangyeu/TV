@@ -81,7 +81,7 @@ function getManifest() {
     return JSON.stringify({
         "id": "avdb_exact_feed",
         "name": "AVDB Feed",
-        "version": "1.0.0",
+        "version": "1.0.1",
         "baseUrl": PLUGIN_BASE_URL,
         "iconUrl": "https://upload18.cc/v/OFES-049-SUB/thumb.jpg",
         "isEnabled": true,
